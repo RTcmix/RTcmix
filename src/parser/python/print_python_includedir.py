@@ -1,3 +1,3 @@
-import distutils.sysconfig
-print distutils.sysconfig.get_config_vars("INCLUDEPY")[0]
+import sysconfig
+print sysconfig.get_config_vars("INCLUDEPY")[0]
 
