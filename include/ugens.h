@@ -207,9 +207,9 @@ typedef enum {
 /* printing macros */
 
 #define MMP_FATAL			0
-#define MMP_PRINTS			1
-#define MMP_RTERRORS		2
-#define MMP_WARN			3
+#define MMP_RTERRORS		1
+#define MMP_WARN			2
+#define MMP_PRINTS          3
 #define MMP_ADVISE			4
 #define MMP_PRINTALL		5
 #define MMP_DEBUG			6
