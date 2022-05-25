@@ -1970,6 +1970,9 @@ samptable(const Arg args[], const int nargs)
 				}
 			}
 		}
+        else {
+            return die("samptable", "NULL table argument");
+        }
 	}
 	return die("samptable", "Usage: value = samptable(table, [interp,] index)");
 }
