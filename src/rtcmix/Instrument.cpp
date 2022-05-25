@@ -120,7 +120,7 @@ double Instrument::s_dArray[MAXDISPARGS];
 
 /* ------------------------------------------------------------ setup () --- */
 
-// This function is now the one called by checkInsts().  It calls init().
+// This function is now the one called by checkInsts() via loadPFieldsAndSetup().  It calls init().
 
 int Instrument::setup(PFieldSet *pfields)
 {
