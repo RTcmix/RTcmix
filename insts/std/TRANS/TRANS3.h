@@ -2,6 +2,7 @@
 #include <rtdefs.h>
 
 class TRANS3 : public Instrument {
+   bool   _useRatio;
    int    incount, inframe, branch, inchan, nargs;
    bool   getframe;
    double _increment, counter, oneover_cpsoct10;
@@ -17,5 +18,14 @@ public:
    int init(double *, int);
    int configure();
    int run();
+protected:
+   TRANS3(bool inUseRatio);
+   void clear();
+};
+
+class RTRANS3 : public TRANS3 {
+public:
+    RTRANS3();
+    virtual ~RTRANS3();
 };
 

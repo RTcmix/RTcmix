@@ -254,13 +254,15 @@ Instrument *makeTRANS()
    return inst;
 }
 
-extern Instrument *makeTRANS3();    // from TRANS3.cpp
-
 #ifndef EMBEDDED
+
+extern Instrument *makeTRANS3(), *makeRTRANS3();    // from TRANS3.cpp
+
 void rtprofile()
 {
    RT_INTRO("TRANS", makeTRANS);
    RT_INTRO("TRANS3", makeTRANS3);
+   RT_INTRO("RTRANS3", makeRTRANS3);
 }
 #endif
 
