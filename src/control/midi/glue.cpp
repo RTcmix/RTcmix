@@ -229,21 +229,26 @@ create_pfield(const Arg args[], const int nargs)
 		return NULL;
 	}
 
-	if (args[5].isType(StringType))
+    if (args[5].isType(StringType)) {
 		type = _string_to_type(args[5]);
-	else
+    }
+    else {
 		return _midi_usage();
-	if (type == kMIDIInvalidType)
+    }
+    if (type == kMIDIInvalidType) {
 		return _midi_usage();
-
+    }
 	if (nargs > 6) {
-		if (args[6].isType(StringType))
+        if (args[6].isType(StringType)) {
 			subtype = _string_to_subtype(type, args[6]);
-		else if (args[6].isType(DoubleType))
+        }
+        else if (args[6].isType(DoubleType)) {
 			// NB: this can be a code or a literal int, e.g. note or controller num
 			subtype = (MIDISubType) (int) args[6];
-		else
+        }
+        else {
 			return _midi_usage();
+        }
 		if (subtype == kMIDIInvalidSubType)
 			return _midi_usage();
 	}

@@ -144,6 +144,7 @@ void TRANS3::doupdate()
 #ifdef DEBUG
       RTPrintf("_increment: %g\n", _increment);
 #endif
+      assert(_increment > 0.0);
    }
 }
 
