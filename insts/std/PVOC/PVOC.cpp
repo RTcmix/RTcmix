@@ -195,10 +195,10 @@ int PVOC::init(double *p, int n_args)
 	// Note:  all these are class vars
 	
 	R	 = (int)SR;			/* sampling rate */
-	N	 = (int)p[5];		/* FFT length */
-	Nw	= (int)p[6];		/* window size */
-	D	 = (int)p[7];		/* decimation factor */
-	I	 = (int)p[8];		/* interpolation factor */
+	_fftLen	 = (int)p[5];		/* FFT length */
+	_windowLen	= (int)p[6];		/* window size */
+	_decimation	 = (int)p[7];		/* decimation factor */
+	_interpolation	 = (int)p[8];		/* interpolation factor */
 	P	 = p[9];			/* oscillator bank pitch factor */
 	Np	= (int)p[10];		/* linear prediction order */
 	_oscThreshold  = (float)p[11];		/* synthesis threshhold */
@@ -206,39 +206,40 @@ int PVOC::init(double *p, int n_args)
 #ifdef debug
 	printf("initial PVOC parameters:\n" );
 	printf("R (samprate) = %d\n", R );
-	printf("N (fft len) = %d\n", N );
-	printf("Nw (windowlen) = %d\n", Nw );
-	printf("D (decimation) = %d\n", D );
+	printf("N (fft len) = %d\n", _fftLen );
+	printf("Nw (windowlen) = %d\n", _windowLen );
+	printf("D (decimation) = %d\n", _decimation );
 	printf("I (interpolation) = %d\n", I );
 	printf("P = %g\n", P );
 	printf("Np = %d\n", Np );
 	printf("thresh = %g\n", _oscThreshold );
 #endif
-	if (D <= 0) {
+	if (_decimation <= 0) {
 		die("PVOC", "decimation must be >= 1");
 		return(DONT_SCHEDULE);
 	}
-	if (I <= 0) {
+	if (_interpolation <= 0) {
 		die("PVOC", "interpolation must be >= 1");
 		return(DONT_SCHEDULE);
 	}
-	if (I > Nw) {
+	if (_interpolation > _windowLen) {
 		die("PVOC", "Window size must be >= interpolation factor");
 		return(DONT_SCHEDULE);
 	}
 	TWOPI = 8.*atan(1.);
 	obank = P != 0.;
-	N2 = N>>1;
-	Nw2 = Nw>>1;
+	N2 = _fftLen>>1;
+	Nw2 = _windowLen>>1;
 
-	if (obank)
-		initOscbank(N2, Np, R, Nw, I, P);
-	
+    if (obank) {
+        rtcmix_advise("PVOC", "Using oscillator bank resynthesis");
+		initOscbank(N2, Np, R, _windowLen, _interpolation, P);
+    }
 	// Factors for convert() and unconvert()
 	
 	_fundamental = (float) R / (N2 * 2);
-	_convertFactor = R / (D * TWOPI);
-	_unconvertFactor = TWOPI * I / R;
+	_convertFactor = R / (_decimation * TWOPI);
+	_unconvertFactor = TWOPI * _interpolation / R;
 	_convertPhase = ::NewArray(N2 + 1);
 	_unconvertPhase = ::NewArray(N2 + 1);
 
@@ -247,9 +248,9 @@ int PVOC::init(double *p, int n_args)
 /*
  * initialize input and output time values (in samples)
  */
-	_in = -Nw;
-	if ( D )
-		_on = (_in*I)/D;
+	_in = -_windowLen;
+	if ( _decimation )
+		_on = (_in*_interpolation)/_decimation;
 	else
 		_on = _in;
 
@@ -270,29 +271,29 @@ int PVOC::configure()
 	/*
 	 * allocate memory
 	 */
-	Wanal = ::NewArray(Nw);		/* analysis window */
-	Wsyn = ::NewArray(Nw);		/* synthesis window */
-	_pvInput = ::NewArray(Nw);	/* input buffer */
-	Hwin = ::NewArray(Nw);		/* plain Hamming window */
-	winput = ::NewArray(Nw);		/* windowed input buffer */
+	Wanal = ::NewArray(_windowLen);		/* analysis window */
+	Wsyn = ::NewArray(_windowLen);		/* synthesis window */
+	_pvInput = ::NewArray(_windowLen);	/* input buffer */
+	Hwin = ::NewArray(_windowLen);		/* plain Hamming window */
+	winput = ::NewArray(_windowLen);		/* windowed input buffer */
 	lpcoef = ::NewArray(Np+1);	/* lp coefficients */
-	_fftBuf = ::NewArray(N);		/* FFT buffer */
-	channel = ::NewArray(N+2);	/* analysis channels */
-	_pvOutput = ::NewArray(Nw);	/* output buffer */
+	_fftBuf = ::NewArray(_fftLen);		/* FFT buffer */
+	channel = ::NewArray(_fftLen+2);	/* analysis channels */
+	_pvOutput = ::NewArray(_windowLen);	/* output buffer */
 	/*
 	 * create windows
 	 */
-	makewindows( Hwin, Wanal, Wsyn, Nw, N, I, obank );
+	makewindows( Hwin, Wanal, Wsyn, _windowLen, _fftLen, _interpolation, obank );
 
 	// The input buffer is larger than BUFSAMPS so it can be filled with
 	// enough samples (via multiple calls to rtgetin()) to satisfy the input.
 	
-	_inbuf = new BUFTYPE[inputChannels() * Nw];
+	_inbuf = new BUFTYPE[inputChannels() * _windowLen];
 
 	// The output buffer is also larger in order to allow at least a full
 	// window of synthesized output to be stored.
 	
-	_outbuf = new BUFTYPE[Nw];	// XXX CHECK THIS SIZE
+	_outbuf = new BUFTYPE[_windowLen];	// XXX CHECK THIS SIZE
 		
 	return 0;
 }
@@ -306,32 +307,32 @@ int PVOC::doUpdate()
 #endif
 	_amp = update(3, _inputFrames, _currentInputFrame);
 	/* decimation factor */
-	double newD = update(7, _inputFrames, _currentInputFrame);
-	if ((int)newD != D && newD >= 1.0) {
-		D = (int)newD;
-		_convertFactor = R / (D * TWOPI);
+	double newDecimation = update(7, _inputFrames, _currentInputFrame);
+	if ((int)newDecimation != _decimation && newDecimation >= 1.0) {
+		_decimation = (int)newDecimation;
+		_convertFactor = R / (_decimation * TWOPI);
 #ifdef debug
-		printf("D updated to %d\n", D);
+		printf("_decimation updated to %d\n", _decimation);
 #endif
 	}
 #ifdef ALLOW_DYNAMIC_INTERPOLATION
 	/* interpolation factor */
-	double newI = update(8, _inputFrames, _currentInputFrame);
-	if ((int)newI != I && newI >= 1.0) {
-		I	= (int)newI;
-		if (I > Nw) {
+	double newInterpolation = update(8, _inputFrames, _currentInputFrame);
+	if ((int)newInterpolation != _interpolation && newInterpolation >= 1.0) {
+		_interpolation	= (int)newInterpolation;
+		if (_interpolation > _windowLen) {
 			rtcmix_warn("PVOC", "interpolation factor limited to window size (%d)", Nw);
-			I = Nw;
+			_interpolation = _windowLen;
 		}
-		_unconvertFactor = TWOPI * I / R;
-		_Iinv = 1./I;
+		_unconvertFactor = TWOPI * _interpolation / R;
+		_Iinv = 1./_interpolation;
 	}
 #endif
 	/* oscillator bank pitch factor */
-	double newP = update(9, _inputFrames, _currentInputFrame);
-	if (newP != P) {
-		const int N2 = N >> 1;
-		P = newP;
+	double newPitch = update(9, _inputFrames, _currentInputFrame);
+	if (newPitch != P) {
+		const int N2 = _fftLen >> 1;
+		P = newPitch;
 		_Pinc = P*L/R;
 		_ffac = P*PI/N2;
 		if ( P > 1. )
@@ -384,31 +385,31 @@ int PVOC::run()
 	while (outFramesNeeded > 0)
 	{
 #ifdef debug
-		printf("\ttop of loop: needed=%d _in=%d _on=%d Nw=%d\n",
-			   outFramesNeeded, _in, _on, Nw);
+		printf("\ttop of loop: needed=%d _in=%d _on=%d _windowLen=%d\n",
+			   outFramesNeeded, _in, _on, _windowLen);
 #endif	
 		/*
-		* analysis: input D samples; window, fold and rotate input
+		* analysis: input _decimation samples; window, fold and rotate input
 		* samples into FFT buffer; take FFT; and convert to
 		* amplitude-frequency (phase vocoder) form
 		*/
-		shiftin( _pvInput, Nw, D);
+		shiftin( _pvInput, _windowLen, _decimation);
 		/*
 		 * increment times
 		 */
-		_in += D;
-		_on += I;
+		_in += _decimation;
+		_on += _interpolation;
 
 		if ( Np ) {
-			::vvmult( winput, Hwin, _pvInput, Nw );
-			lpcoef[0] = ::lpa( winput, Nw, lpcoef, Np );
+			::vvmult( winput, Hwin, _pvInput, _windowLen );
+			lpcoef[0] = ::lpa( winput, _windowLen, lpcoef, Np );
 		/*			printf("%.3g/", lpcoef[0] ); */
 		}
-		::fold( _pvInput, Wanal, Nw, _fftBuf, N, _in );
+		::fold( _pvInput, Wanal, _windowLen, _fftBuf, _fftLen, _in );
 		::rfft( _fftBuf, N2, FORWARD );
-		convert( _fftBuf, channel, N2, D, R );
+		convert( _fftBuf, channel, N2, _decimation, R );
 
-	// 	if ( I == 0 ) {
+	// 	if ( _interpolation == 0 ) {
 	// 		if ( Np )
 	// 			fwrite( lpcoef, sizeof(float), Np+1, stdout );
 	// 		fwrite( channel, sizeof(float), N+2, stdout );
@@ -436,27 +437,27 @@ int PVOC::run()
 			/*
 			 * oscillator bank resynthesis
 			 */
-			oscbank( channel, N2, lpcoef, Np, R, Nw, I, P, _pvOutput );
+			oscbank( channel, N2, lpcoef, Np, R, _windowLen, _interpolation, P, _pvOutput );
 #if defined(debug) && 0
 			printf("osc output (first 16):\n");
 			for (int x=0;x<16;++x) printf("%g ",_pvOutput[x]);
 			printf("\n");
 #endif
-			shiftout( _pvOutput, Nw, I, _on+Nw-I);
+			shiftout( _pvOutput, _windowLen, _interpolation, _on+_windowLen-_interpolation);
 		}
 		else {
 			/*
 			 * overlap-add resynthesis
 			 */
-			unconvert( channel, _fftBuf, N2, I, R );
+			unconvert( channel, _fftBuf, N2, _interpolation, R );
 			::rfft( _fftBuf, N2, INVERSE );
-			::overlapadd( _fftBuf, N, Wsyn, _pvOutput, Nw, _on );
-			// I samples written into _outbuf
-			shiftout( _pvOutput, Nw, I, _on);
+			::overlapadd( _fftBuf, _fftLen, Wsyn, _pvOutput, _windowLen, _on );
+			// _interpolation samples written into _outbuf
+			shiftout( _pvOutput, _windowLen, _interpolation, _on);
 		}
 	   // Handle case where last synthesized block extended beyond outFramesNeeded
 
-		int framesToOutput = ::min(outFramesNeeded, I);
+		int framesToOutput = ::min(outFramesNeeded, _interpolation);
 #ifdef debug
 		printf("\tbottom of loop. framesToOutput: %d\n", framesToOutput);
 #endif
@@ -733,7 +734,7 @@ PVOC::initOscbank(int N, int npoles, int R, int Nw, int I, float P)
 	const float TWOPIoL = TWOPI/L;
 	for (int n = 0; n < L; ++n)
 		_table[n] = tabscale*cosf( TWOPIoL*n );
-	_Iinv = 1./I;
+	_Iinv = 1./_interpolation;
 	_Pinc = P*L/R;
 	_ffac = P*PI/N;
 	if ( P > 1. )
