@@ -103,23 +103,24 @@ MincStruct::~MincStruct()
     }
 }
 
-Symbol * MincStruct::addMember(const char *name, MincDataType type, int scope, const char *subtype)
+Symbol * MincStruct::addMember(const char *name, const MincValue &value, int scope, const char *structTypeName)
 {
     // Element symbols are not linked to any scope, so we call create() directly.
-    // RIGHT HERE, WE NEED THE FOLLOWING LINES, BUT WE ALSO NEED TO BE PASSED THE STRUCT TYPE
+    // RIGHT HERE, WE NEED THE FOLLOWING LINES, BUT WE ALSO NEED TO BE PASSED THE STRUCT TYPENAME
     const StructType *structType = NULL;
-    if (type == MincStructType) {
-        structType = lookupStructType(subtype, GlobalLevel);    // GlobalLevel for now
+    if (value.dataType() == MincStructType) {
+        structType = lookupStructType(structTypeName, GlobalLevel);    // GlobalLevel for now
         if (!structType) {
-            minc_die("struct type '%s' is not defined", subtype);
+            minc_die("struct type '%s' is not defined", structTypeName);
         }
     }
 
     Symbol *memberSym = Symbol::create(name);
-    DPRINT("MincStruct::addMember(member '%s', type %s) => symbol %p\n", name, MincTypeName(type), memberSym);
-    memberSym->value() = MincValue(type);   // initialize MincValue to correct type for member
+    DPRINT("MincStruct::addMember(member '%s', type %s) => symbol %p\n", name, MincTypeName(value.dataType()), memberSym);
+    memberSym->value() = value;     // initialize member value
     memberSym->scope = scope;
     if (structType) {
+        // Recursively initialize a struct member within a struct.
         memberSym->initAsStruct(structType);
     }
 

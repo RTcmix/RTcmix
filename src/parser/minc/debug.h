@@ -10,7 +10,7 @@
 
 #undef DEBUG_TRACE
 // #define DEBUG_TRACE 2
-// #define DEBUG_MEMORY
+//#define DEBUG_MEMORY
 
 #include "minc_internal.h"
 

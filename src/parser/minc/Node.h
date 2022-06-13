@@ -475,11 +475,11 @@ protected:
     void                writeWithMapKey();
 };
 
-class NodeMember : public Node1Child
+class NodeMemberAccess : public Node1Child
 {
 public:
-    NodeMember(Node *n1, const char *memberName) : Node1Child(OpFree, eNodeMember, n1), _memberName(memberName) {
-        NPRINT("NodeMember(%p, '%s') => %p\n", n1, memberName, this);
+    NodeMemberAccess(Node *n1, const char *memberName) : Node1Child(OpFree, eNodeMember, n1), _memberName(memberName) {
+        NPRINT("NodeMemberAccess(%p, '%s') => %p\n", n1, memberName, this);
     }
 protected:
     virtual Node*        doExct();
@@ -542,10 +542,11 @@ private:
 	const char *	_symbolName;
 };
 
-class NodeStructDecl : public Node
+class NodeStructDecl : public Node1Child
 {
 public:
-    NodeStructDecl(const char *name, const char *typeName) : Node(OpFree, eNodeStructDecl), _symbolName(name), _typeName(typeName) {
+    NodeStructDecl(const char *name, const char *typeName, Node *initializerList=NULL) : Node1Child(OpFree, eNodeStructDecl, initializerList),
+        _symbolName(name), _typeName(typeName) {
         this->_type = MincStructType;
         NPRINT("NodeStructDecl('struct %s %s') => %p\n", _typeName, _symbolName, this);
     }

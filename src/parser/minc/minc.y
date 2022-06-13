@@ -56,7 +56,8 @@ static void 	cleanup();
 static void 	incrLevel();
 static void		decrLevel();
 static Node * declare(MincDataType type);
-static Node * declareStruct(const char *typeName);
+static Node * declareStructs(const char *typeName);
+static Node * initializeStruct(const char *typeName, Node *initList);
 static Node * parseArgumentQuery(const char *text, int *pOutErr);
 static Node * parseScoreArgument(const char *text, int *pOutErr);
 static Node * go(Node * t1);
@@ -88,11 +89,11 @@ static Node * go(Node * t1);
 %token <ival> TOK_FUNC_DECL;
 %token <ival> TOK_IDENT TOK_NUM TOK_ARG_QUERY TOK_ARG TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
-%type  <node> stml stmt rstmt bexp expl exp str ret bstml obj fexp fexpl func
-%type  <node> fdecl sdecl hdecl ldecl mdecl structdecl funcdecl arg argl fdef fstml fargl funcname mbr mbrl structdef
+%type  <node> stml stmt rstmt bexp expl exp expblk str ret bstml obj fexp fexpl func
+%type  <node> fdecl sdecl hdecl ldecl mdecl structdecl structinit funcdecl arg argl fdef fstml fargl funcname mbr mbrl structdef
 %type  <str> id structname
 
-%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl mdecl structdecl funcdecl fdef fstml arg argl fargl funcname mbr mbrl structdef obj fexp fexpl
+%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl mdecl structdecl structinit funcdecl fdef fstml arg argl fargl funcname mbr mbrl structdef obj fexp fexpl expblk
 
 %error-verbose
 
@@ -116,6 +117,7 @@ stmt: rstmt					{ MPRINT("rstmt");	$$ = go($1); }
 	| ldecl
     | mdecl
     | structdecl
+    | structinit
     | funcdecl
 	| TOK_IF level bexp stmt {	xblock = 1; MPRINT("IF bexp stmt");
 								decrLevel();
@@ -226,41 +228,44 @@ mdecl:    TOK_MAP_DECL idl    {     MPRINT("mdecl");
                                 idcount = 0;
                               }
     ;
-structdecl: TOK_STRUCT_DECL id idl    {     MPRINT("structdecl");
-                                            $$ = go(declareStruct($2));
-                                            idcount = 0;
-                                        }
+
+structdecl: TOK_STRUCT_DECL id idl    {     MPRINT("structdecl"); $$ = go(declareStructs($2)); idcount = 0; }
     ;
+    
 funcdecl:    TOK_FUNC_DECL idl    {     MPRINT("funcdecl");
                                             $$ = go(declare(MincFunctionType));
                                             idcount = 0;
                                         }
     ;
-
+    
 /* statement nesting level counter */
 level:  /* nothing */ { incrLevel(); }
 	;
 
 /* An obj is anything that can be operator accessed via . or [] */
 obj:    id                  {       MPRINT("obj: id");          $$ = new NodeLoadSym($1); }
-    |   obj'.'id            {       MPRINT("obj: obj.id");      $$ = new NodeMember($1, $3);  }
+    |   obj'.'id            {       MPRINT("obj: obj.id");      $$ = new NodeMemberAccess($1, $3);  }
     |   obj'[' exp ']'      {       MPRINT("obj: obj[exp]");    $$ = new NodeSubscriptRead($1, $3); }     // This is always non-terminal therefor read-access only
     ;
 
 func:   id                  {       MPRINT("func: id");         $$ = new NodeLoadFuncSym($1); }
-    |   obj'.'id            {       MPRINT("func: obj.id");     $$ = new NodeMember($1, $3); }
+    |   obj'.'id            {       MPRINT("func: obj.id");     $$ = new NodeMemberAccess($1, $3); }
     |   obj'[' exp ']'      {       MPRINT("func: obj[exp]");   $$ = new NodeSubscriptRead($1, $3); }
+    ;
+
+/* expression list block */
+expblk: '{' level expl '}'    { MPRINT("expblk: {expl}");    decrLevel(); $$ = new NodeList($3); }
     ;
 
 /* function expression */
 fexp:   exp             { MPRINT("fexp: exp"); $$ = $1; }
     |   bexp            { MPRINT("fexp: bexp"); $$ = $1; }
-;
+    ;
 
 /* function expression list */
 fexpl:  fexp            { MPRINT("fexpl: fexp"); $$ = new NodeListElem(new NodeEmptyListElem(), $1); }
     |   fexpl ',' fexp  {  MPRINT("fexpl: fexpl,fexp"); $$ = new NodeListElem($1, $3); }
-;
+    ;
 
 /* statement returning a value: assignments, function calls, etc. */
 rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAutoDeclLoadSym($1), $3); }
@@ -269,10 +274,10 @@ rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAuto
 	| id TOK_MULEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpMul); }
 	| id TOK_DIVEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpDiv); }
 
-    | TOK_PLUSPLUS id %prec CASTTOKEN {
+    | TOK_PLUSPLUS id %prec CASTTOKEN { MPRINT("rstmt: TOK_PLUSPLUS id \%prec CASTTOKEN");
         $$ = new NodeOpAssign(new NodeLoadSym($2), new NodeConstf(1.0), OpPlusPlus);
     }
-    | TOK_MINUSMINUS id %prec CASTTOKEN {
+    | TOK_MINUSMINUS id %prec CASTTOKEN { MPRINT("rstmt: TOK_MINUSMINUS id \%prec CASTTOKEN");
         $$ = new NodeOpAssign(new NodeLoadSym($2), new NodeConstf(1.0), OpMinusMinus);
     }
 
@@ -282,13 +287,15 @@ rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAuto
 	| func '(' ')' {			MPRINT("rstmt: func()");
 								$$ = new NodeCall($1, new NodeEmptyListElem());
 							}
+    /* Special case: Assigning value to an array at an index */
 	| obj '[' exp ']' '=' exp {
                                 MPRINT("rstmt: obj[exp] = exp");
                                 $$ = new NodeSubscriptWrite($1, $3, $6);
                             }
+    /* Special case: Assigning value to an element in a struct */
     | obj'.'id '=' exp       {
                                 MPRINT("rstmt: obj.id = exp");
-                                $$ = new NodeStore(new NodeMember($1, $3), $5);
+                                $$ = new NodeStore(new NodeMemberAccess($1, $3), $5);
                             }
 	;
 
@@ -313,6 +320,9 @@ str:	TOK_STRING		{
 								$$ = new NodeString(strsave(s));
 							}
 	;
+
+/* struct decl plus initializer */
+structinit: TOK_STRUCT_DECL id idl '=' expblk {   MPRINT("structinit: struct <type> id = expblk"); $$ = go(initializeStruct($2, $5)); idcount = 0; }
 
 /* Boolean expression, before being wrapped in () */
 bexp:	exp %prec LOWPRIO	{ MPRINT("bexp"); $$ = $1; }
@@ -344,26 +354,23 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 							$$ = new NodeConstf(f);
 						}
     /* DAS THESE ARE NOW PURE RIGHT-HAND-SIDE */
-    | '{' level expl '}'	{ MPRINT("exp: {expl}");	decrLevel(); $$ = new NodeList($3); }
+    | obj                   { MPRINT("exp: obj");   $$ = $1; }
+    | expblk                { MPRINT("exp: expblk");   $$ = $1; }
 	| '{' '}'				{ MPRINT("exp: {}");	$$ = new NodeList(new NodeEmptyListElem()); }
-
-	| obj '[' exp ']' 	{	MPRINT("exp: obj[exp]");    $$ = new NodeSubscriptRead($1, $3); }
-    | obj'.'id           {   MPRINT("exp: obj.id");    $$ = new NodeMember($1, $3); }
-	| TOK_ARG_QUERY		{
-                            $$ = parseArgumentQuery(yytext, &flerror);
-						}
-	| TOK_ARG			{
-                            $$ = parseScoreArgument(yytext, &flerror);
-						}
+	| TOK_ARG_QUERY		    { $$ = parseArgumentQuery(yytext, &flerror); }
+	| TOK_ARG			    { $$ = parseScoreArgument(yytext, &flerror) }
+    
 	| TOK_TRUE			{ $$ = new NodeConstf(1.0); }
 	| TOK_FALSE			{ $$ = new NodeConstf(0.0); }
-	| '-' exp %prec CASTTOKEN {
+    | '-' exp %prec CASTTOKEN { MPRINT("exp: rstmt: '-' exp \%prec CASTTOKEN");
 								/* NodeConstf is a dummy; makes exct_operator work */
 								$$ = new NodeOp(OpNeg, $2, new NodeConstf(0.0));
 							}
+/*
 	| id					{
 								MPRINT("exp: id");    $$ = new NodeLoadSym($1);
 							}
+*/
 	;
 
 /* struct member declaration.
@@ -529,15 +536,28 @@ static Node * declare(MincDataType type)
 	return t;
 }
 
-static Node * declareStruct(const char *typeName)
+static Node * declareStructs(const char *typeName)
 {
-    MPRINT2("declareStruct(typeName='%s', idcount=%d)", typeName, idcount);
+    MPRINT2("declareStructs(typeName='%s', idcount=%d)", typeName, idcount);
     assert(idcount > 0);
     Node * t = new NodeNoop();    // end of the list
     for (int i = 0; i < idcount; i++) {
         Node * decl = new NodeStructDecl(idlist[i], typeName);
         t = new NodeSeq(t, decl);
     }
+    return t;
+}
+
+static Node * initializeStruct(const char *typeName, Node *initList)
+{
+    MPRINT2("initializeStruct(typeName='%s', initList=%p)", typeName, initList);
+    assert(idcount > 0);
+    if (idcount > 1) {
+        minc_die("Only one struct variable can be initialized at a time");
+    }
+    Node * t = new NodeNoop();    // end of the list
+    Node * decl = new NodeStructDecl(idlist[0], typeName, initList);
+    t = new NodeSeq(t, decl);
     return t;
 }
 

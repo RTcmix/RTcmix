@@ -89,7 +89,7 @@
 #define MAXMSP 1
 
 #define VERSION "2.01"
-#define RTcmixVERSION "RTcmix-maxmsp-4.6.0"
+#define RTcmixVERSION "RTcmix-maxmsp-5.1.0"
 
 #if MAX_SDK_VERSION==6
 #include <ext.h>

@@ -109,7 +109,7 @@ static const char *s_NodeKinds[] = {
    "NodeEmptyListElem",
    "NodeSubscriptRead",
    "NodeSubscriptWrite",
-   "NodeMember",
+   "NodeMemberAccess",
    "NodeOpAssign",
    "NodeLoadSym",
    "NodeAutoDeclLoadSym",
@@ -212,19 +212,21 @@ const char * Node::classname() const
 
 void Node::print()
 {
-    TPRINT("Node %p contents: class: %s type: %s ", this, classname(), MincTypeName(this->dataType()));
+    TPRINT("Node %p contents: class: %s type: %s\n", this, classname(), MincTypeName(this->dataType()));
 	if (kind == eNodeLoadSym) {
-		TPRINT("symbol: ");
+		TPRINT("\tsymbol:\n");
         u.symbol->print();
 	}
 	else if (this->dataType() == MincVoidType && child(0) != NULL) {
-		TPRINT("child 0: ");
+		TPRINT("\tchild 0:\n");
 		child(0)->print();
 	}
     else {
-        TPRINT("value: ");
+        TPRINT("\tvalue: ");
 #if DEBUG_TRACE
         value().print();
+#else
+        TPRINT("\n");
 #endif
     }
 }
@@ -261,7 +263,7 @@ Node::copyValue(Node *source, bool allowTypeOverwrite)
         }
     }
     value() = source->value();
-    TPRINT("this: ");
+    TPRINT("\tthis: ");
     print();
     return this;
 }
@@ -281,7 +283,7 @@ Node::copyValue(Symbol *source, bool allowTypeOverwrite)
         }
     }
     value() = source->value();
-    TPRINT("this: ");
+    TPRINT("\tthis: ");
     print();
     return this;
 }
@@ -449,11 +451,10 @@ Node *	NodeOp::do_op_list_float(const MincList *srcList, const MincFloat val, co
 {
 	ENTER();
    int i;
-   MincValue *dest;
    const int len = srcList->len;
    MincValue *src = srcList->data;
    MincList *destList = new MincList(len);
-   dest = destList->data;
+   MincValue *dest = destList->data;
    assert(len >= 0);
    switch (op) {
       case OpPlus:
@@ -907,7 +908,7 @@ Node *	NodeSubscriptWrite::doExct()	// was exct_subscript_write()
 	return this;
 }
 
-Node *  NodeMember::doExct()
+Node *  NodeMemberAccess::doExct()
 {
     ENTER();
     TPRINT("Object:\n");
@@ -916,7 +917,7 @@ Node *  NodeMember::doExct()
     // NOTE: If LHS was a temporary variable, structSymbol will be null
     Symbol *structSymbol = child(0)->symbol();
     const char *targetName = (structSymbol != NULL) ? structSymbol->name() : "temp lhs";
-    TPRINT("NodeMember: attempting to access member '%s' on object '%s'\n", _memberName, targetName);
+    TPRINT("NodeMemberAccess: attempting to access member '%s' on object '%s'\n", _memberName, targetName);
     if (child(0)->dataType() == MincStructType) {
         MincStruct *theStruct = (MincStruct *) child(0)->value();
         if (theStruct) {
@@ -924,7 +925,7 @@ Node *  NodeMember::doExct()
            if (memberSymbol) {
                 setSymbol(memberSymbol);
                 /* also assign the symbol's value into tree's value field */
-                TPRINT("NodeMember: copying value from member symbol '%s' to us\n", _memberName);
+                TPRINT("NodeMemberAccess: copying value from member symbol '%s' to us\n", _memberName);
                 copyValue(memberSymbol);
             }
             else {
@@ -1577,13 +1578,17 @@ Node *  NodeStructDef::doExct()
     return this;
 }
 
+// NodeMemberDecl is invoked once for each struct member listed in the struct definition
+
 Node *  NodeMemberDecl::doExct()
 {
     TPRINT("NodeMemberDecl(%p) -- storing decl info for member '%s', type %s\n", this, _symbolName, MincTypeName(this->_type));
     assert(sNewStructType != NULL);
-    sNewStructType->addElement(_symbolName, this->_type, this->_symbolSubtype);
+    sNewStructType->addMemberInfo(_symbolName, this->_type, this->_symbolSubtype);
     return this;
 }
+
+// NodeStructDecl does the actual work of creating an instance of a particular struct type
 
 Node *    NodeStructDecl::doExct()
 {
@@ -1591,15 +1596,23 @@ Node *    NodeStructDecl::doExct()
     const StructType *structType = lookupStructType(_typeName, GlobalLevel);    // GlobalLevel for now
     if (structType) {
         TPRINT("-- declaring struct variable '%s'\n", _symbolName);
+        Node *initializers = child(0);
+        if (initializers) {
+            initializers->exct();   // This can throw
+        }
         Symbol *sym = lookupSymbol(_symbolName, GlobalLevel);       // GlobalLevel for now
         if (!sym) {
             sym = installSymbol(_symbolName, YES);          // YES for now
-            sym->initAsStruct(structType);
+            MincList *initList = (initializers) ? (MincList *)initializers->value() : NULL;
+            sym->initAsStruct(structType, initList);
         }
         else {
             if (sym->scope == current_scope()) {
                 if (inCalledFunctionArgList) {
                     minc_die("%s(): argument variable '%s' already used", sCalledFunctions.back(), _symbolName);
+                }
+                else if (initializers != NULL) {
+                    minc_die("cannot redefine struct variable '%s' with initializers", _symbolName);
                 }
                 minc_warn("variable '%s' redefined - using existing one", _symbolName);
             }
@@ -1608,7 +1621,8 @@ Node *    NodeStructDecl::doExct()
                     minc_warn("variable '%s' also defined at enclosing scope", _symbolName);
                 }
                 sym = installSymbol(_symbolName, NO);
-                sym->initAsStruct(structType);
+                MincList *initList = (initializers) ? (MincList *)initializers->value() : NULL;
+                sym->initAsStruct(structType, initList);
             }
         }
         this->setSymbol(sym);

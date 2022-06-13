@@ -33,6 +33,7 @@ struct_as_func_arg.sco \
 struct_as_func_return.sco \
 struct_as_member.sco \
 struct_copy.sco \
+struct_initializer.sco \
 test_double_include.sco \
 unaryop.sco
 
@@ -42,6 +43,8 @@ handletest1.sco \
 include_error.sco \
 struct_duplicate_member.sco \
 struct_duplicate_membername.sco \
+struct_init_wrong_type.sco \
+struct_init_insufficient_args.sco \
 uninit_fun_member.sco
 
 
