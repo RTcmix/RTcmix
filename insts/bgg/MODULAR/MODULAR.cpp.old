@@ -1,0 +1,794 @@
+/* MODULAR - patchable synth
+
+	p0 = output start time
+	p1 = duration
+
+	BGG, 5/2022
+*/
+
+// BGGx
+#include <PField.h>
+#include <RTcmix.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <string.h>
+#include "../../../src/rtcmix/tableutils.h"
+
+#include <Instrument.h>
+#include <ugens.h>
+#include <Ougens.h>
+#include "MODULAR.h"
+#include <rt.h>
+#include <rtdefs.h>
+
+MODULAR::MODULAR() : Instrument()
+{
+}
+
+MODULAR::~MODULAR()
+{
+}
+
+int MODULAR::init(double p[], int n_args)
+{
+	if (rtsetoutput(p[0], p[1], this) == -1)
+		return DONT_SCHEDULE;
+	if (outputChannels() > 2)
+		return die("MODULAR", "Can't handle more than 2 output channels.");
+
+	outsig = new msigout;
+	for (int i = 0; i < NSLOTS; i++) {
+		oscils[i] = new moscil;
+		envs[i] = new menv;
+	}
+
+	totbytes = 0;
+	struct stat file_stat;
+	stat("TTT.txt", &file_stat);
+	oldtime = file_stat.st_mtime;
+
+	branch = 0;
+
+	return nSamps();
+}
+
+extern char specarray[50];
+
+void MODULAR::doupdate()
+{
+   struct stat file_stat;
+   stat("TTT.txt", &file_stat);
+	char linebuf[80];
+	char *tok; // for the tokenizing
+#define MAXTOKS 7
+#define MAXLABEL 7
+	char toks[MAXTOKS][MAXLABEL];
+	float fval1, fval2;
+	int ival1, ival2;
+
+	// BGGx
+	if (specarray[0] != 'X') {
+		oldtime = 0; // the specarray contains data; set it so it will parse
+	}
+
+/*
+	+ oscil osc# sigout sigout#
+	+ oscil osc# sigout sigout# amp
+	+ oscil osc# oscil(2) osc# freq
+	+ oscil osc# oscil(2) osc# amp
+	+ env env# sigout sigout#
+	+ env env# sigout sigout# amp
+	+ env env# osc osc# amp
+	= sigout sigout# amp
+	= oscil osc# freq freqval#
+	= oscil osc# amp ampval#
+	= oscil osc# wave wave#
+		wave# 0 == sine
+		wave# 1 == saw
+		wave# 2 == square
+		wave# 3 == triangle
+		wave# 4 == pulse
+	= env env# ping #pingval
+	= env env# time #timeval
+	= env env# loop #loopflag
+	- oscil osc# sigout sigout#
+	- oscil osc# sigout sigout# amp
+	- oscil(2) osc# oscil oscil# amp
+	- oscil(2) osc# oscil oscil# freq
+	- env env# sigout sigout#
+	- env env# sigout sigout# amp
+	- env env# oscil sigout#
+	- env env# oscil oscil# amp
+*/
+	
+
+// BGGx
+	if(file_stat.st_mtime != oldtime) {
+		fd = open ("TTT.txt", O_RDONLY);
+		lseek(fd, totbytes, SEEK_SET);
+		nbytes = read(fd, (void *)linebuf, 80);
+		totbytes += nbytes;
+
+/*
+		tok = strtok(linebuf, " ");
+		int numtoks = 0;
+		while (tok != NULL) {
+			strcpy(toks[numtoks++], tok);
+			tok = strtok(NULL, " ");
+		}
+*/
+// BGGx
+		char *ptr = linebuf;
+//		char *ptr = specarray;
+		int numtoks = 0;
+		while ((tok = strsep(&ptr, " ")) != NULL) {
+			if (*tok != '\0') {
+				strcpy(toks[numtoks++], tok);
+			}
+		}
+// BGGx
+	specarray[0] = 'X';  // now it's parsed, signal not to until new data
+
+
+		// "+" -- we are connecting
+		if (strcmp(toks[0], "+") == 0) {
+
+			// oscil
+			if (strcmp(toks[1], "oscil") == 0) {
+				sscanf(toks[2], "%f", &fval1);
+				ival1 = fval1;
+
+				if (strcmp(toks[3], "sigout") == 0) {	// connect oscil to sigout
+					sscanf(toks[4], "%f", &fval2);
+					ival2 = fval2;
+
+					if (strcmp(toks[5], "amp\n") == 0) { // connect to sigout amp input
+						oscils[ival1]->ampslot = outsig->connectamp(oscils[ival1]);
+					} else { // connect to sigout main signal input
+						oscils[ival1]->outslot = outsig->connect(oscils[ival1]);
+					}
+				}
+
+				if (strcmp(toks[3], "oscil") == 0) {  // connect to another oscil
+					sscanf(toks[4], "%f", &fval2);
+					ival2 = fval2;
+
+					if (strcmp(toks[5], "freq\n") == 0) {  // connect to freq input
+						oscils[ival1]->freqslot = oscils[ival2]->connectfreq(oscils[ival1]);
+					}
+
+					if (strcmp(toks[5], "amp\n") == 0) {  // connect to amp input
+						oscils[ival1]->ampslot = oscils[ival2]->connectamp(oscils[ival1]);
+					}
+				}
+			} // end of oscil connecting
+
+			// env
+			if (strcmp(toks[1], "env") == 0) {
+				sscanf(toks[2], "%f", &fval1);
+				ival1 = fval1;
+
+				if (strcmp(toks[3], "sigout") == 0) {  // connect to sigout
+					sscanf(toks[4], "%f", &fval2); // not used for sigout right now
+					if (strcmp(toks[5], "amp\n") == 0) {
+						envs[ival1]->outslot = outsig->connectamp(envs[ival1]);
+					} else { // connect to sigout main signal input
+						envs[ival1]->outslot = outsig->connect(envs[ival1]);
+					}
+				}
+
+				if (strcmp(toks[3], "oscil") == 0) {  // connect to oscil
+					sscanf(toks[4], "%f", &fval2);
+					ival2 = fval2;
+
+					if (strcmp(toks[5], "amp\n") == 0) {
+						envs[ival1]->outslot = oscils[ival2]->connectamp(envs[ival1]);
+					}
+				}
+			} // end of env connecting
+		} // end of "+"
+
+
+		// "=" -- we are setting a val
+		if (strcmp(toks[0], "=") == 0) {
+
+			// sigout
+			if (strcmp(toks[1], "sigout") == 0) {
+				sscanf(toks[2], "%f", &fval1);
+				ival1 = fval1; // we don't use this for outsig
+
+				if (strcmp(toks[3], "amp") == 0) {
+					sscanf(toks[4], "%f", &fval2);
+					outsig->setamp(fval2);
+				}
+			} // end of sigout setting
+
+			// oscil
+			if (strcmp(toks[1], "oscil") == 0) {
+				sscanf(toks[2], "%f", &fval1);
+				ival1 = fval1;
+
+				if (strcmp(toks[3], "freq") == 0) {
+					sscanf(toks[4], "%f", &fval2);
+					oscils[ival1]->setfreq(fval2);
+				}
+				if (strcmp(toks[3], "amp") == 0) {
+					sscanf(toks[4], "%f", &fval2);
+					oscils[ival1]->setamp(fval2);
+				}
+				if (strcmp(toks[3], "wave") == 0) {
+					sscanf(toks[4], "%f", &fval2);
+					oscils[ival1]->setwave((int)fval2);
+				}
+			} // end of oscil setting
+
+			// env
+			if (strcmp(toks[1], "env") == 0) {
+				sscanf(toks[2], "%f", &fval1);
+				ival1 = fval1;
+
+				if (strcmp(toks[3], "ping") == 0) {
+					sscanf(toks[4], "%f", &fval2);
+					envs[ival1]->ping(fval2);
+				}
+				if (strcmp(toks[3], "time") == 0) {
+               sscanf(toks[4], "%f", &fval2);
+               envs[ival1]->settimelength(fval2);
+            } 
+				if (strcmp(toks[3], "loop") == 0) {
+               sscanf(toks[4], "%f", &fval2);
+               envs[ival1]->setloop((int)fval2);
+            } 
+			} // end of env setting
+		} // end of "="
+
+
+		// "-" -- we are disconnecting
+		if (strcmp(toks[0], "-") == 0) {
+
+			// oscil
+			if (strcmp(toks[1], "oscil") == 0) {
+				sscanf(toks[2], "%f", &fval1);
+				ival1 = fval1;
+
+				if (strcmp(toks[3], "sigout") == 0) { // oscil connected to sigout
+					if (strcmp(toks[5], "amp\n") == 0) { // disconnect the amp input
+						outsig->disconnectamp(oscils[ival1]->ampslot);
+					} else { // disconnect the main signal input
+					outsig->disconnect(oscils[ival1]->outslot);
+					}
+				}
+
+				if (strcmp(toks[3], "oscil") == 0) {
+					sscanf(toks[4], "%f", &fval2);
+					ival2 = fval2;
+
+					if (strcmp(toks[5], "freq\n") == 0) { // disconnect freq input
+                  oscils[ival2]->disconnectfreq(oscils[ival1]->freqslot);
+					}
+
+					if (strcmp(toks[5], "amp\n") == 0) { // disconnect the amp input
+                  oscils[ival2]->disconnectamp(oscils[ival1]->ampslot);
+					}
+				}
+			} // end of oscil disconnecting
+
+			// env
+			if (strcmp(toks[1], "env") == 0) {
+				sscanf(toks[2], "%f", &fval1);
+				ival1 = fval1;
+
+				if (strcmp(toks[3], "sigout") == 0) { // env connected to sigout
+					if (strcmp(toks[5], "amp\n") == 0) { // disconnect the ampinput
+						outsig->disconnectamp(envs[ival1]->ampslot);
+					} else { // disconnect the main signal input
+						outsig->disconnect(envs[ival1]->outslot);
+					}
+				}
+
+				if (strcmp(toks[3], "oscil") == 0) { // env connected to oscil
+					sscanf(toks[4], "%f", &fval2);
+					ival2 = fval2;
+
+					if (strcmp(toks[5], "amp\n") == 0) { // disconnect the amp input
+						oscils[ival2]->disconnectamp(envs[ival1]->ampslot);
+					}
+				}
+			} // end of env disconnecting
+
+
+		} // end of "-"
+
+
+
+/*
+			// "-" -- we are disconnecting
+			if (strcmp(tok, "-") == 0) {
+				tok = strtok(NULL, " ");
+
+				// oscil
+				if (strcmp(tok, "oscil") == 0) {
+					tok = strtok(NULL, " ");
+					sscanf(tok, "%f", &fval1);
+					ival1 = fval1;
+*/
+
+
+/*
+			sscanf(tok, "%f", &comparetok);
+
+			printf("%s   %f\n", tok, hhh);
+			if (atof(tok) == hhh) printf(" 		YEAH IT'S A NUMBER!\n");
+
+		}
+return;
+
+
+
+// + oscil osc# sigout #sigout#
+// = oscil osc# freq freqval#
+// = oscil osc# amp ampval#
+// = oscil osc# wave wave#
+		// wave# 0 == sine
+		// wave# 1 == saw
+		// wave# 2 == square
+		// wave# 3 == triangle
+		// wave# 4 == pulse
+// = env env# ping #pingval
+// - oscil osc# sigout sigout#
+// f+ oscil osc# osc2 osc#
+// f- oscil osc# osc2 osc#
+// a+ oscil osc# osc2 osc#
+// a- oscil osc# osc2 osc#
+// a+ env env# osc osc#
+
+		char op[10];
+		char modname[10];
+		float fval1;
+		int modnum;
+		char destname[10];
+		float fval2;
+		
+		sscanf(linebuf, "%s %s %f %s %f", op, modname, &fval1, destname, &fval2);
+		printf("%s %s %f %s %f\n", op, modname, fval1, destname, fval2);
+
+		int ival1 = (int)fval1;
+		int ival2 = (int)fval2;
+
+		if (strcmp(op, "+") == 0) {
+			printf("Got a plus!\n");
+
+			// just look at the first char for now
+			switch((int)destname[0]) {
+				case (int)'s':  // "sigout"
+					printf("SIGOUT!\n");
+					if (strcmp("oscil", modname) == 0) {
+						oscils[ival1]->outslot = outsig->connect(oscils[ival1]);
+					}
+
+					if (strcmp("env", modname) == 0) {
+						envs[ival1]->outslot = outsig->connect(envs[ival1]);
+					}
+					break;
+			}
+		}
+
+
+		if (strcmp(op, "=") == 0) {
+			printf("got an equals!\n");
+
+			// just look at the first char for now
+			switch((int)destname[0]) {
+				case (int)'f': // "freq"
+					printf("FREQ!\n");
+					if (strcmp("oscil", modname) == 0) {
+						oscils[ival1]->setfreq(fval2);
+					}
+			}
+
+			switch((int)destname[0]) {
+				case (int)'a': // "amp"
+					printf("AMP!\n");
+					if (strcmp("oscil", modname) == 0) {
+						oscils[ival1]->setamp(fval2);
+					}
+			}
+
+			switch((int)destname[0]) {
+				case (int)'w': // "wave"
+					printf("WAVE!\n");
+					if (strcmp("oscil", modname) == 0) {
+						oscils[ival1]->setwave((int)fval2);
+					}
+			}
+
+			switch((int)destname[0]) {
+				case (int)'p': // "ping"
+					printf("ENV-PING!\n");
+					if (strcmp("env", modname) == 0) {
+						envs[ival1]->ping(fval2);
+					}
+			}
+
+			switch((int)destname[0]) {
+				case (int)'l': // "loop"
+					printf("ENV-PING!\n");
+					if (strcmp("env", modname) == 0) {
+						envs[ival1]->setloop(ival2);
+					}
+			}
+
+			switch((int)destname[0]) {
+				case (int)'t': // "timelength"
+					printf("ENV-TIME!\n");
+					if (strcmp("env", modname) == 0) {
+						envs[ival1]->settimelength(fval2);
+					}
+			}
+		}
+
+
+		if (strcmp(op, "-") == 0) {
+			printf("Got a minus!\n");
+
+			// just look at the first char for now
+			switch((int)destname[0]) {
+				case (int)'s':  // "sigout"
+					printf("SIGOUT!\n");
+					if (strcmp("oscil", modname) == 0) {
+						outsig->disconnect(oscils[ival1]->outslot);
+					}
+
+					if (strcmp("env", modname) == 0) {
+						outsig->disconnect(envs[ival1]->outslot);
+					}
+
+					break;
+			}
+		}
+
+
+		if (strcmp(op, "f+") == 0) {
+			printf("Got an f+!\n");
+
+			// just look at the first char for now
+			switch((int)destname[0]) {
+				case (int)'o':  // "oscil"
+					printf("DFREQ!\n");
+					if (strcmp("oscil", modname) == 0) {
+						oscils[ival1]->freqslot = oscils[ival2]->connectfreq(oscils[ival1]);
+					}
+					break;
+			}
+		}
+
+		if (strcmp(op, "f-") == 0) {
+			printf("Got an f-!\n");
+
+			// just look at the first char for now
+			switch((int)destname[0]) {
+				case (int)'o':  // "oscil"
+					printf("DFREQ!\n");
+
+               if (strcmp("oscil", modname) == 0) {
+                  oscils[ival2]->disconnectfreq(oscils[ival1]->freqslot);
+					}
+					break;
+			}
+		}
+
+
+		if (strcmp(op, "a+") == 0) {
+			printf("Got an a+!\n");
+
+			// just look at the first char for now
+			switch((int)destname[0]) {
+				case (int)'o':  // "oscil"
+					printf("DAMP0!\n");
+					if (strcmp("oscil", modname) == 0) {
+						oscils[ival1]->ampslot = oscils[ival2]->connectamp(oscils[ival1]);
+					}
+					if (strcmp("env", modname) == 0) {
+						envs[ival1]->ampslot = oscils[ival2]->connectamp(envs[ival1]);
+					}
+					break;
+			}
+		}
+
+
+		if (strcmp(op, "a-") == 0) {
+			printf("Got an a-!\n");
+
+			// just look at the first char for now
+			switch((int)destname[0]) {
+				case (int)'o':  // "oscil"
+					printf("DAMP2!\n");
+               if (strcmp("oscil", modname) == 0) {
+                  oscils[ival2]->disconnectamp(oscils[ival1]->ampslot);
+					}
+
+               if (strcmp("env", modname) == 0) {
+                  oscils[ival2]->disconnectamp(envs[ival1]->ampslot);
+					}
+					break;
+			}
+		}
+		}
+*/
+
+		oldtime = file_stat.st_mtime;
+		close(fd);
+	}
+}
+
+int MODULAR::run()
+{
+	int i;
+	float out[2];
+
+	for (i = 0; i < framesToRun(); i++) {
+		out[0] = out[1] = outsig->getval() * 10000.0;
+		rtaddout(out);
+
+		if (branch-- == 0) {
+			doupdate();
+			branch = getSkip();
+		}
+
+		increment();
+	}
+	return i;
+}
+
+Instrument*
+makeMODULAR()
+{
+	MODULAR *inst;
+	inst = new MODULAR();
+	inst->set_bus_config("MODULAR");
+	return inst;
+}
+
+#ifndef EMBEDDED
+void
+rtprofile()
+{
+	RT_INTRO("MODULAR",makeMODULAR);
+}
+#endif
+
+
+// -------
+moscil::moscil()
+{
+	// make a sine wave (the default)
+	wavetable_from_string("sine", wavetable[0], TABLELEN, NULL);
+
+	// saw
+	wavetable_from_string("saw", wavetable[1], TABLELEN, NULL);
+
+	// square
+	wavetable_from_string("square", wavetable[2], TABLELEN, NULL);
+
+	// triangle
+	wavetable_from_string("tri", wavetable[3], TABLELEN, NULL);
+
+	// buzz (pulse)
+	wavetable_from_string("buzz", wavetable[4], TABLELEN, NULL);
+
+
+	theoscil = new Ooscili(RTcmix::sr(), 350.0, wavetable[0], TABLELEN);
+
+	amp = 1;
+
+	freq = 350.0;
+	for (int i = 0; i < NSLOTS; i++) freqarray[i] = NULL;
+	for (int i = 0; i < NSLOTS; i++) amparray[i] = NULL;
+}
+
+float moscil::getval()
+{
+	float accum = 0.0;
+
+	// calculate any freq control
+	for (int i = 0; i < NSLOTS; i++) {
+		if (freqarray[i] != NULL)
+			accum += freqarray[i]->getval();
+	}
+	theoscil->setfreq(freq + accum);
+	
+	accum = 0.0;
+
+	// calculate any amp control
+	for (int i = 0; i < NSLOTS; i++) {
+		if (amparray[i] != NULL)
+			accum += amparray[i]->getval();
+	}
+
+	return  theoscil->next() * (amp + accum);;
+}
+
+void moscil::setfreq(float f)
+{
+	freq = f;
+}
+
+void moscil::setamp(float a)
+{
+	amp = a;
+}
+
+void moscil::setwave(int w)
+{
+	theoscil = new Ooscili(RTcmix::sr(), freq, wavetable[w], TABLELEN);
+}
+
+int moscil::connectfreq(MODULES *mf1)
+{
+	int i;
+
+	for (i = 0; i < NSLOTS; i++) {
+		if (freqarray[i] == NULL) {
+			freqarray[i] = mf1;
+			break;
+		}
+	}
+	return i;
+}
+
+void moscil::disconnectfreq(int slotno)
+{
+	freqarray[slotno] = NULL;
+}
+
+int moscil::connectamp(MODULES *am1)
+{
+	int i;
+
+	for (i = 0; i < NSLOTS; i++) {
+		if (amparray[i] == NULL) {
+			amparray[i] = am1;
+			break;
+		}
+	}
+	return i;
+}
+
+void moscil::disconnectamp(int slotno)
+{
+	amparray[slotno] = NULL;
+}
+
+
+// -------
+msigout::msigout()
+{
+	for (int i = 0; i < NSLOTS; i++) {
+		sigarray[i] = NULL;
+		amparray[i] = NULL;
+	}
+
+	amp = 1.0;
+}
+
+int msigout::connect(MODULES* m1)
+{
+	int i;
+
+	for (i = 0; i < NSLOTS; i++) {
+		if (sigarray[i] == NULL) {
+			sigarray[i] = m1;
+			break;
+		}
+	}
+	return i;
+}
+
+void msigout::disconnect(int slotno)
+{
+	sigarray[slotno] = NULL;
+}
+
+void msigout::setamp(float a)
+{
+	amp = a;
+}
+
+float msigout::getval()
+{
+	float accum = 0.0;
+
+	for (int i = 0; i < NSLOTS; i++) {
+		if (sigarray[i] != NULL)
+			accum += sigarray[i]->getval();
+	}
+
+	float ampaccum = 0.0;
+
+	// calculate any amp control
+	for (int i = 0; i < NSLOTS; i++) {
+		if (amparray[i] != NULL)
+			ampaccum += amparray[i]->getval();
+	}
+
+	return accum * (amp + ampaccum);
+}
+
+int msigout::connectamp(MODULES *am1)
+{
+	int i;
+
+	for (i = 0; i < NSLOTS; i++) {
+		if (amparray[i] == NULL) {
+			amparray[i] = am1;
+			break;
+		}
+	}
+	return i;
+}
+
+void msigout::disconnectamp(int slotno)
+{
+	amparray[slotno] = NULL;
+}
+
+
+// -------
+menv::menv()
+{
+	// defaults
+	curval = 1.0;
+	timelength = 3.0;
+	curenv = 0;
+	index = 0.0;
+	is_going = false;
+	is_looping = 0;
+
+	int nargs = 5;
+	Arg *args = new Arg [nargs];
+	args[0] = 0.0;
+	args[1] = TABLELEN/2;
+	args[2] = 1.0;
+	args[3] = TABLELEN/2;
+	args[4] = 0.0;
+
+	fill_linebrk_table(args, nargs, envtable[curenv], TABLELEN);
+
+	incr = (float)TABLELEN / (timelength * RTcmix::sr());
+}
+
+void menv::ping(float oamp)
+{
+	index = 0.0;
+	is_going = true;
+	overamp = oamp;
+}
+
+void menv::settimelength(float tv)
+{
+	timelength = tv;
+	incr = (float)TABLELEN / (timelength * RTcmix::sr());
+}
+
+void menv::setloop(int l)
+{
+	is_looping = l;
+}
+
+float menv::getval()
+{
+	if (is_going) {
+		curval = TablePField::Interpolate2ndOrder(envtable[curenv], TABLELEN, index) * overamp;
+		index += incr;
+		if ((int)index > TABLELEN) is_going = false;
+	} else {
+		if (is_looping == 1) {
+			index = 0.0;
+			is_going = true;
+		}
+	}
+
+	return curval;
+}

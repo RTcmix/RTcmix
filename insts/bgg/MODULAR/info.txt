@@ -1,0 +1,8 @@
+#include <PFIeld.h>
+
+// BGGx
+   const PField &field = getPField(2);
+   const char *str = field.stringValue(0);
+
+   printf("hey! -- %s\n", str);
+

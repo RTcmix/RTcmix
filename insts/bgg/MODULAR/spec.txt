@@ -1,0 +1,7 @@
+// sender ... receiver
+// + oscil osc# sigin inslot# dummy#
+// = oscil osc# freq freqval# dummy#
+// = oscil osc# amp ampval# dummy#
+// - oscil osc# sigin inslot# dummy#
+// f oscil osc# osc2 osc# fslot#
+// a oscil osc# osc2 osc# aslot#

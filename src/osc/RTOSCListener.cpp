@@ -16,12 +16,13 @@ int score_handler(const char *path, const char *types, lo_arg ** argv,
     return 0;
 }
 
-// BGGx
+char specarray[50];
+
 int modular_handler(const char *path, const char *types, lo_arg ** argv,
         int argc, void *data, void *user_data) {
 
 	char *theSpec = &argv[0]->s;
-	printf("theSpec: %s\n", theSpec);
+	strcpy(specarray, theSpec);
 
 	return 0;
 }
@@ -34,9 +35,10 @@ lo_server_thread* start_osc_thread(int (*parseCallback)(const char*, int)){
     lo_server_thread_add_method(*st, "/RTcmix/ScoreCommands", "s",
             &score_handler, (void*) parseCallback);
 
-// BGGx
     lo_server_thread_add_method(*st, "/modular", "s",
             &modular_handler, (void*) parseCallback);
+
+	specarray[0] = 'X'; // signals don't try to parse this; no values
     
     lo_server_thread_start(*st);
 
