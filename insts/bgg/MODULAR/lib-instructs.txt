@@ -1,0 +1,4 @@
+install_name_tool -change /Users/brad/RTcmix/lib/librtcmix.dylib ./librtcmix.dylib
+install_name_tool -change /usr/local/lib/liblo.7.dylib ./liblo.7.dylib
+
+(otool -L CMIX shows them))
