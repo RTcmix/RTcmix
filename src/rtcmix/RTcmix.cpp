@@ -208,6 +208,10 @@ RTcmix::init_globals()
 		max_input_fds = 128;		// what we used to hardcode
 	else
 		max_input_fds -= RESERVE_INPUT_FDS;
+
+	// BGGx -- this is necessary for rtcmix~ to work under Big Sur and later
+	// doesn't seem to affect standalone (although > 128 files open might
+	max_input_fds = 128;
 	
 	inputFileTable = new InputFile[max_input_fds];
 	last_input_index = -1;

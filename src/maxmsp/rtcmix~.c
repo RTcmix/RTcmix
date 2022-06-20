@@ -88,7 +88,7 @@
 #define EMBEDDEDAUDIO 1
 #define MAXMSP 1
 
-#define VERSION "2.01"
+#define VERSION "2.03"
 #define RTcmixVERSION "RTcmix-maxmsp-4.6.0"
 
 #if MAX_SDK_VERSION==6
