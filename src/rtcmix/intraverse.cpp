@@ -142,6 +142,7 @@ int RTcmix::runMainLoop(void)
 int RTcmix::waitForMainLoop()
 {
 	rtcmix_debug(NULL, "waitForMainLoop():  entering function, audioDone = %d", audioDone);
+    RTPrintf("playing...\n");
 	while (!audioDone) {
 		usleep(10000);
 	}
