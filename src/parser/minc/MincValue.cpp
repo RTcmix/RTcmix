@@ -162,7 +162,6 @@ MincFunction::~MincFunction()
 #ifdef DEBUG_MEMORY
     MPRINT("deleting MincFunction %p\n", this);
 #endif
-//    delete _functionBody;
 }
 
 void

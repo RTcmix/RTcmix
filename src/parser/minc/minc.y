@@ -180,7 +180,7 @@ bstml:	'{'			{ if (!xblock) incrLevel(); }
 /* A return statement.  Only used inside functions. */
 
 ret: TOK_RETURN exp			{	MPRINT("ret exp");
-								MPRINT1("called at level %d", level);
+								MPRINT1("\tcalled at level %d", level);
 								if (flevel == 0) {
 									minc_die("return statements not allowed in main score");
 									$$ = new NodeNoop();
@@ -190,7 +190,7 @@ ret: TOK_RETURN exp			{	MPRINT("ret exp");
 								}
 							}
 	| TOK_RETURN exp ';'	{	MPRINT("ret exp;");
-								MPRINT1("called at level %d", level);
+								MPRINT1("\tcalled at level %d", level);
 								if (flevel == 0) {
 									minc_die("return statements not allowed in main score");
 									$$ = new NodeNoop();
@@ -242,32 +242,33 @@ funcdecl:    TOK_FUNC_DECL idl    {     MPRINT("funcdecl");
 level:  /* nothing */ { incrLevel(); }
 	;
 
-/* An obj is anything that can be operator accessed via . or [] */
+/* An obj is an id or anything that can be operator accessed via . or [] */
 obj:    id                  {       MPRINT("obj: id");          $$ = new NodeLoadSym($1); }
     |   obj'.'id            {       MPRINT("obj: obj.id");      $$ = new NodeMemberAccess($1, $3);  }
     |   obj'[' exp ']'      {       MPRINT("obj: obj[exp]");    $$ = new NodeSubscriptRead($1, $3); }     // This is always non-terminal therefor read-access only
     ;
 
+/* A function can be an id, a member access on a struct/class, or a list element accessed by index */
 func:   id                  {       MPRINT("func: id");         $$ = new NodeLoadFuncSym($1); }
     |   obj'.'id            {       MPRINT("func: obj.id");     $$ = new NodeMemberAccess($1, $3); }
     |   obj'[' exp ']'      {       MPRINT("func: obj[exp]");   $$ = new NodeSubscriptRead($1, $3); }
     ;
 
-/* expression list block */
+/* An expression list block is used to initialize a list or a struct */
 expblk: '{' level expl '}'    { MPRINT("expblk: {expl}");    decrLevel(); $$ = new NodeList($3); }
     ;
 
-/* function expression */
+/* A function expression is an item that can appear in a set of function arguments */
 fexp:   exp             { MPRINT("fexp: exp"); $$ = $1; }
     |   bexp            { MPRINT("fexp: bexp"); $$ = $1; }
     ;
 
-/* function expression list */
+/* A function expression list is a function expression or a series of comma-separated function expressions */
 fexpl:  fexp            { MPRINT("fexpl: fexp"); $$ = new NodeListElem(new NodeEmptyListElem(), $1); }
     |   fexpl ',' fexp  {  MPRINT("fexpl: fexpl,fexp"); $$ = new NodeListElem($1, $3); }
     ;
 
-/* statement returning a value: assignments, function calls, etc. */
+/* An rstmt is statement returning a value, such as assignments, function calls, etc. */
 rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAutoDeclLoadSym($1), $3); }
 	| id TOK_PLUSEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpPlus); }
 	| id TOK_MINUSEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpMinus); }
@@ -299,21 +300,21 @@ rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAuto
                             }
 	;
 
-/* identifier list */
+/* An identifier list is used to declare a variable of a particular type, e.g., "float gain" */
 idl: id					{ MPRINT("idl: id"); idlist[idcount++] = $1; }
 	| idl ',' id		{ MPRINT("idl: idl,id"); idlist[idcount++] = $3; }
 	;
 
-/* identifier */
+/* An identifier is any single text token */
 id:  TOK_IDENT			{ MPRINT("id"); $$ = strsave(yytext); }
 	;
 
-/* expression list */
+/* An expression list is an expression or set of expressions which will be wrapped in a block */
 expl:	exp				{ MPRINT("expl: exp"); $$ = new NodeListElem(new NodeEmptyListElem(), $1); }
 	| expl ',' exp		{ MPRINT("expl: expl,exp"); $$ = new NodeListElem($1, $3); }
 	;
 
-/* string */
+/* A string is quoted text */
 str:	TOK_STRING		{
 								char *s = yytext + 1;
 								s[strlen(s) - 1] = '\0';
@@ -321,7 +322,7 @@ str:	TOK_STRING		{
 							}
 	;
 
-/* struct decl plus initializer */
+/* A structinit is a struct decl plus an initializer */
 structinit: TOK_STRUCT_DECL id idl '=' expblk {   MPRINT("structinit: struct <type> id = expblk"); $$ = go(initializeStruct($2, $5)); idcount = 0; }
 
 /* Boolean expression, before being wrapped in () */
@@ -373,8 +374,8 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 */
 	;
 
-/* struct member declaration.
-    An <mbr> is always a type followed by an <id>, like "float length". They only occur in struct definitions.
+/* An mbr is struct member declaration.
+    It is either a type followed by an <id>, like "float length", or a method declaration.
  */
 
 mbr: TOK_FLOAT_DECL id        { MPRINT("mbr");  $$ = new NodeMemberDecl($2, MincFloatType); }

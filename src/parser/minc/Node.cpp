@@ -946,18 +946,18 @@ Node *	NodeCall::doExct()
 {
     ENTER();
     TPRINT("NodeCall: Func:\n");
-    child(0)->exct();         /* lookup target */
+    Node *calledFunction = child(0)->exct();         /* lookup target */
 	push_list();
     TPRINT("NodeCall: Args = %p\n", child(1));
     child(1)->exct();    // execute arg expression list (stored on this NodeCall)
-	if (child(0)->dataType() == MincFunctionType) {
-        Symbol *funcSymbol = child(0)->symbol();
+	if (calledFunction->dataType() == MincFunctionType) {
+        Symbol *funcSymbol = calledFunction->symbol();
         sCalledFunctions.push_back(funcSymbol ? funcSymbol->name() : "temp lhs");   // FIX ME: have temp LHS vars store symbols
-        MincFunction *theFunction = (MincFunction *)child(0)->value();
+        MincFunction *theFunction = (MincFunction *)calledFunction->value();
         if (theFunction) {
-			TPRINT("NodeCall: theFunction = %p\n", theFunction);
+			TPRINT("NodeCall: theFunction = %p -- dropping in\n", theFunction);
 			push_function_stack();
-			push_scope();
+			push_scope();           // move into function-body scope
 			int savedLineNo=0, savedScope=0, savedCallDepth=0;
 			Node * temp = NULL;
 			try {
@@ -1003,7 +1003,7 @@ Node *	NodeCall::doExct()
         }
 		sCalledFunctions.pop_back();
 	}
-	else if (child(0)->dataType() == MincStringType) {
+	else if (calledFunction->dataType() == MincStringType) {
         // We stored this away when we noticed this was a builtin function
         const char *functionName = (MincString)child(0)->value();
         if (!functionName) {
@@ -1437,7 +1437,7 @@ Node *	NodeArgListElem::doExct()
 {
 	++sArgListLen;
 	child(0)->exct();	// work our way to the front of the list
-    TPRINT("NodeArgListElem(%p): run arg decls %p (child 1)\n", this, child(1));
+    TPRINT("NodeArgListElem(%p): execute arg decls %p (child 1)\n", this, child(1));
 	child(1)->exct();	// run the arg decl
 	// Symbol associated with this function argument
 	Symbol *argSym = child(1)->symbol();
@@ -1458,6 +1458,7 @@ Node *	NodeArgListElem::doExct()
 	}
 	/* compare stored NodeLoadSym with user-passed arg */
 	else {
+        TPRINT("NodeArgListElem: verify argument type and initialize with passed-in value\n");
 		// Pre-cached argument value from caller
 		MincValue &argValue = sMincList[sArgListIndex];
 		bool compatible = false;
@@ -1491,7 +1492,7 @@ Node *	NodeArgListElem::doExct()
 
 Node *	NodeRet::doExct()
 {
-    TPRINT("NodeRet(%p): Evaluate value %p (child 0)\n", this, child(0));
+    TPRINT("NodeRet(%p): Evaluate returned value %p (child 0)\n", this, child(0));
 	child(0)->exct();
 	copyValue(child(0));
 	TPRINT("NodeRet throwing %p for return stmt\n", this);
@@ -1501,7 +1502,9 @@ Node *	NodeRet::doExct()
 
 Node *	NodeFuncSeq::doExct()
 {
+    TPRINT("NodeFuncSeq(%p): Executing function body\n", this);
 	child(0)->exct();
+    TPRINT("NodeFuncSeq executing return statement\n");
 	child(1)->exct();
 	copyValue(child(1));
 	return this;
