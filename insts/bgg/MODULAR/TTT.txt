@@ -1,1 +1,1 @@
-+ oscil 0 sigout 0
++ oscil 0 sigout 0 sig

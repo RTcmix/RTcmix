@@ -38,7 +38,7 @@ int MODULAR::init(double p[], int n_args)
 	if (outputChannels() > 2)
 		return die("MODULAR", "Can't handle more than 2 output channels.");
 
-	outsig = new msigout;
+	outsig = new msigout; // not using an array, only one
 	for (int i = 0; i < NSLOTS; i++) {
 		oscils[i] = new moscil;
 		envs[i] = new menv;
@@ -65,31 +65,30 @@ void MODULAR::doupdate()
 	char *tok; // for the tokenizing
 	char ttok[10]; // for the sscanf apparently needed for the ending of lines
 						// (arg! strcmp()!)
-#define MAXTOKS 10
-#define MAXLABEL 80
+// MAXTOKS and MAXLABEL defined in MODULAR.h at the top
 	char toks[MAXTOKS][MAXLABEL];
 	float fval1, fval2;
 	int ival1, ival2;
 
 /*
 	LEGEND
-	+ oscil osc# sigout sigout#
+	+ oscil osc# sigout sigout# sig
 	+ oscil osc# sigout sigout# amp
 	+ oscil osc# oscil(2) osc# freq
 	+ oscil osc# oscil(2) osc# amp
-	+ oscil osc# moogvcf moog#
+	+ oscil osc# moogvcf moog# sig
 	+ oscil osc# moogcvf moog# amp
 	+ oscil osc# moogcvf moog# cfreq
 	+ oscil osc# moogcvf moog# reson
-	+ env env# sigout sigout#
+	+ env env# sigout sigout# sig
 	+ env env# sigout sigout# amp
 	+ env env# osc osc# amp
 	+ env env# osc osc# freq
 	+ env env# moogvcf moog# amp
 	+ env env# moogvcf moog# cfreq
 	+ env env# moogvcf moog# reson
-	+ moogvcf moog# sigout sigout#
-	+ moogvcf moog# moogvcf(2) moog#
+	+ moogvcf moog# sigout sigout# sig
+	+ moogvcf moog# moogvcf(2) moog# sig
 	= sigout sigout# amp ampval#
 	= oscil osc# freq freqval#
 	= oscil osc# amp ampval#
@@ -105,19 +104,19 @@ void MODULAR::doupdate()
 	= moogvcf moog# cfreq cfreqval#
 	= moogvcf moog# reson resonval#
 	= moogvcf moog# amp ampval#
-	- oscil osc# sigout sigout#
+	- oscil osc# sigout sigout# sig
 	- oscil osc# sigout sigout# amp
 	- oscil(2) osc# oscil osc# amp
 	- oscil(2) osc# oscil osc# freq
-	- oscil osc# moogvcf moog#
+	- oscil osc# moogvcf moog# sig
 	- oscil osc# moogvcf moog# amp
 	- oscil osc# moogvcf moog# cfreq
 	- oscil osc# moogvcf moog# reson
-	- env env# sigout sigout#
+	- env env# sigout sigout# sig
 	- env env# sigout sigout# amp
 	- env env# oscil osc# amp
 	- env env# oscil osc# freq
-	- moogvcf moog# sigout sigout#
+	- moogvcf moog# sigout sigout# sig
 	- moogvcf moog# moogvcf(2) moog#
 */
 	
@@ -132,8 +131,8 @@ void MODULAR::doupdate()
 	for (int i = 0; i < MAXTOKS; i++) *toks[i] = (char)NULL;
 
 // BGGx  specarray for p interface (CMIX -o), linebuf for CMIX < MM.sco
-//		char *ptr = linebuf;
-		char *ptr = specarray;
+		char *ptr = linebuf;
+//		char *ptr = specarray;
 		int numtoks = 0;
 		while ((tok = strsep(&ptr, " ")) != NULL) {
 			if (*tok != '\0') {
@@ -151,46 +150,23 @@ void MODULAR::doupdate()
 				sscanf(toks[2], "%f", &fval1);
 				ival1 = fval1;
 
-				if (strcmp(toks[3], "sigout") == 0) {	// connect oscil to sigout
+				// connect oscil to sigout (note: not using ival2/fval2)
+				if (strcmp(toks[3], "sigout") == 0)
+					outsig->connect(oscils[ival1], toks[5]); // "amp"/"sig"
+
+				// connect oscil to moogvcf
+				if (strcmp(toks[3], "moogvcf") == 0) {
 					sscanf(toks[4], "%f", &fval2);
 					ival2 = fval2;
-
-					if (strcmp(toks[5], "amp\n") == 0) { // connect to sigout amp input
-						oscils[ival1]->ampslot = outsig->connectamp(oscils[ival1]);
-					} else { // connect to sigout main signal input
-						oscils[ival1]->outslot = outsig->connect(oscils[ival1]);
-					}
+						// "sig"/"amp"/"reson"/"cfreq"
+					moogvcfs[ival2]->connect(oscils[ival1], toks[5]);
 				}
 
-				if (strcmp(toks[3], "moogvcf") == 0) {	// connect oscil to moogvcf
+				// connect to another oscil
+				if (strcmp(toks[3], "oscil") == 0) {
 					sscanf(toks[4], "%f", &fval2);
 					ival2 = fval2;
-					sscanf(toks[5], "%s", ttok); // arg!  strcmp()!
-
-					if (strcmp(ttok, "amp") == 0) { // cnx to moogvcf amp in
-						oscils[ival1]->mvcfampslot = moogvcfs[ival2]->connectamp(oscils[ival1]);
-					} else
-					if (strcmp(ttok, "cfreq") == 0) { // cnx to moogvcf cfreq in
-						oscils[ival1]->cfslot = moogvcfs[ival2]->connectcf(oscils[ival1]);
-					} else
-					if (strcmp(ttok, "reson") == 0) { // cnx to moogvcf reson in
-						oscils[ival1]->resslot = moogvcfs[ival2]->connectres(oscils[ival1]);
-					} else { // connect to moogvcf signal input
-						oscils[ival1]->mvcfoutslot = moogvcfs[ival2]->connect(oscils[ival1]);
-					}
-				}
-
-				if (strcmp(toks[3], "oscil") == 0) {  // connect to another oscil
-					sscanf(toks[4], "%f", &fval2);
-					ival2 = fval2;
-
-					if (strcmp(toks[5], "freq\n") == 0) {  // connect to freq input
-						oscils[ival1]->freqslot = oscils[ival2]->connectfreq(oscils[ival1]);
-					}
-
-					if (strcmp(toks[5], "amp\n") == 0) {  // connect to amp input
-						oscils[ival1]->moscampslot = oscils[ival2]->connectamp(oscils[ival1]);
-					}
+               oscils[ival2]->connect(oscils[ival1], toks[5]); // "freq"/"amp"
 				}
 			} // end of oscil connecting
 
@@ -199,17 +175,14 @@ void MODULAR::doupdate()
 				sscanf(toks[2], "%f", &fval1);
 				ival1 = fval1;
 
-				if (strcmp(toks[3], "sigout") == 0) {	// connect moogvcf to sigout
-					sscanf(toks[4], "%f", &fval2);
-					ival2 = fval2;
-						moogvcfs[ival1]->outslot = outsig->connect(moogvcfs[ival1]);
-				}
+            // connect moogvcf to sigout (note: not using ival2/fval2)
+            if (strcmp(toks[3], "sigout") == 0)
+               outsig->connect(moogvcfs[ival1], toks[5]); // "sig"
 
 				if (strcmp(toks[3], "moogvcf") == 0) {	// cnx moogvcf to moogvcf
 					sscanf(toks[4], "%f", &fval2);
 					ival2 = fval2;
-
-					moogvcfs[ival1]->mvcfoutslot = moogvcfs[ival2]->connect(moogvcfs[ival1]);
+					moogvcfs[ival2]->connect(moogvcfs[ival1], toks[5]); // "sig"
 				}
 			} // end of moogvcf connecting
 
@@ -219,41 +192,23 @@ void MODULAR::doupdate()
 				sscanf(toks[2], "%f", &fval1);
 				ival1 = fval1;
 
-				if (strcmp(toks[3], "sigout") == 0) {  // connect to sigout
-					sscanf(toks[4], "%f", &fval2); // not used for sigout right now
-					if (strcmp(toks[5], "amp\n") == 0) { // connect to amp input
-						envs[ival1]->ampslot = outsig->connectamp(envs[ival1]);
-					} else { // connect to sigout main signal input
-						envs[ival1]->outslot = outsig->connect(envs[ival1]);
-					}
-				}
+            // connect env to sigout (note: not using ival2/fval2)
+            if (strcmp(toks[3], "sigout") == 0)
+               outsig->connect(envs[ival1], toks[5]); // "amp"/"sig"
 
-				if (strcmp(toks[3], "oscil") == 0) {  // connect to oscil
+				// connect to oscil
+				if (strcmp(toks[3], "oscil") == 0) {
 					sscanf(toks[4], "%f", &fval2);
 					ival2 = fval2;
-
-					if (strcmp(toks[5], "amp\n") == 0) { // connect to amp input
-						envs[ival1]->ampslot = oscils[ival2]->connectamp(envs[ival1]);
-					}
-					if (strcmp(toks[5], "freq\n") == 0) { // connect to freq input
-						envs[ival1]->freqslot = oscils[ival2]->connectfreq(envs[ival1]);
-					}
+               oscils[ival2]->connect(envs[ival1], toks[5]); // "freq"/"amp"
 				}
 
-				if (strcmp(toks[3], "moogvcf") == 0) {  // connect to moogvcf
+				// connect to moogvcf
+				if (strcmp(toks[3], "moogvcf") == 0) {
 					sscanf(toks[4], "%f", &fval2);
 					ival2 = fval2;
-					sscanf(toks[5], "%s", ttok); // arg!  strcmp()!
-
-					if (strcmp(ttok, "amp") == 0) { // connect to amp input
-						envs[ival1]->mvcfampslot = moogvcfs[ival2]->connectamp(envs[ival1]);
-					}
-					if (strcmp(ttok, "cfreq") == 0) { // connect to cfreq input
-						envs[ival1]->cfslot = moogvcfs[ival2]->connectcf(envs[ival1]);
-					}
-					if (strcmp(ttok, "reson") == 0) { // connect to reson input
-						envs[ival1]->resonslot = moogvcfs[ival2]->connectres(envs[ival1]);
-					}
+						// "sig"/"amp"/"reson"/"cfreq"
+					moogvcfs[ival2]->connect(envs[ival1], toks[5]);
 				}
 			} // end of env connecting
 		} // end of "+"
@@ -339,43 +294,23 @@ void MODULAR::doupdate()
 				sscanf(toks[2], "%f", &fval1);
 				ival1 = fval1;
 
-				if (strcmp(toks[3], "sigout") == 0) { // oscil connected to sigout
-					if (strcmp(toks[5], "amp\n") == 0) { // disconnect the amp input
-						outsig->disconnectamp(oscils[ival1]->ampslot);
-					} else { // disconnect the main signal input
-					outsig->disconnect(oscils[ival1]->outslot);
-					}
-				}
+				// oscil connected to sigout  (note: not using ival2/fval2)
+				if (strcmp(toks[3], "sigout") == 0)
+					outsig->disconnect(oscils[ival1], toks[5]); // "amp"/"sig"
 
-				if (strcmp(toks[3], "oscil") == 0) { //disconnect from another oscil
+				// disconnect from another oscil
+				if (strcmp(toks[3], "oscil") == 0) {
 					sscanf(toks[4], "%f", &fval2);
 					ival2 = fval2;
-
-					if (strcmp(toks[5], "freq\n") == 0) { // disconnect freq input
-                  oscils[ival2]->disconnectfreq(oscils[ival1]->freqslot);
-					}
-
-					if (strcmp(toks[5], "amp\n") == 0) { // disconnect the amp input
-                  oscils[ival2]->disconnectamp(oscils[ival1]->ampslot);
-					}
+					oscils[ival2]->disconnect(oscils[ival1], toks[5]); //"freq"/"sig"
 				}
 
-				if (strcmp(toks[3], "moogvcf") == 0) { // disconnect from moogvcf
+				// disconnect from moogvcf
+				if (strcmp(toks[3], "moogvcf") == 0) {
 					sscanf(toks[4], "%f", &fval2);
 					ival2 = fval2;
-					sscanf(toks[5], "%s", ttok); // arg!  strcmp()
-
-					if (strcmp(ttok, "amp") == 0) { // disconnect amp input
-                  moogvcfs[ival2]->disconnectamp(oscils[ival1]->mvcfampslot);
-					} else
-					if (strcmp(ttok, "cfreq") == 0) { // disconnect cfreq input
-                  moogvcfs[ival2]->disconnectcf(oscils[ival1]->cfslot);
-					} else
-					if (strcmp(ttok, "reson") == 0) { // disconnect reson input
-                  moogvcfs[ival2]->disconnectres(oscils[ival1]->resslot);
-					}  else { // disconnect signal input
-						moogvcfs[ival2]->disconnect(oscils[ival1]->mvcfoutslot);
-					}
+						// "sig"/"amp"/"reson"/"cfreq"
+					moogvcfs[ival2]->disconnect(oscils[ival1], toks[5]);
 				}
 			} // end of oscil disconnecting
 
@@ -384,40 +319,23 @@ void MODULAR::doupdate()
 				sscanf(toks[2], "%f", &fval1);
 				ival1 = fval1;
 
-				if (strcmp(toks[3], "sigout") == 0) { // env connected to sigout
-					if (strcmp(toks[5], "amp\n") == 0) { // disconnect the ampinput
-						outsig->disconnectamp(envs[ival1]->ampslot);
-					} else { // disconnect the main signal input
-						outsig->disconnect(envs[ival1]->outslot);
-					}
-				}
+				// env connected to sigout  (note: not using ival2/fval2)
+				if (strcmp(toks[3], "sigout") == 0)
+					outsig->disconnect(envs[ival1], toks[5]); // "amp"/"sig"
 
-				if (strcmp(toks[3], "oscil") == 0) { // env connected to oscil
+				// env connected to oscil
+				if (strcmp(toks[3], "oscil") == 0) {
 					sscanf(toks[4], "%f", &fval2);
 					ival2 = fval2;
-
-					if (strcmp(toks[5], "amp\n") == 0) { // disconnect the amp input
-						oscils[ival2]->disconnectamp(envs[ival1]->ampslot);
-					}
-					if (strcmp(toks[5], "freq\n") == 0) { // disconnect freq input
-						oscils[ival2]->disconnectfreq(envs[ival1]->freqslot);
-					}
+					oscils[ival2]->disconnect(envs[ival1], toks[5]); // "freq"/"amp"
 				}
 
-				if (strcmp(toks[3], "moogvcf") == 0) { // env connected to moogvcf
+				// env connected to moogvcf
+				if (strcmp(toks[3], "moogvcf") == 0) {
 					sscanf(toks[4], "%f", &fval2);
 					ival2 = fval2;
-					sscanf(toks[5], "%s", ttok); // arg!  strcmp()!
-
-					if (strcmp(ttok, "amp") == 0) { // disconnect the amp input
-						moogvcfs[ival2]->disconnectamp(envs[ival1]->mvcfampslot);
-					}
-					if (strcmp(ttok, "cfreq") == 0) { // discnx the cfreq input
-						moogvcfs[ival2]->disconnectcf(envs[ival1]->cfslot);
-					}
-					if (strcmp(ttok, "reson") == 0) { // discnx the reson input
-						moogvcfs[ival2]->disconnectcf(envs[ival1]->resonslot);
-					}
+						// "sig"/"amp"/"reson"/"cfreq"
+					moogvcfs[ival2]->disconnect(envs[ival1], toks[5]);
 				}
 			} // end of env disconnecting
 
@@ -426,10 +344,18 @@ void MODULAR::doupdate()
 				sscanf(toks[2], "%f", &fval1);
 				ival1 = fval1;
 
-				if (strcmp(toks[3], "sigout") == 0) { // moogvcf connected to sigout
-					outsig->disconnect(moogvcfs[ival1]->outslot);
+				// moogvcf connected to sigout
+				if (strcmp(toks[3], "sigout") == 0)
+					outsig->disconnect(moogvcfs[ival1], toks[5]); // "sig"
+
+				// moogvcf connected to moogvcf
+				if (strcmp(toks[3], "moogvcf") == 0) {
+					sscanf(toks[4], "%f", &fval2);
+					ival2 = fval2;
+						// "sig"
+					moogvcfs[ival2]->disconnect(moogvcfs[ival1], toks[5]); // sig
 				}
-			} // enf of moogvcf disconnecting
+			} // end of moogvcf disconnecting
 
 		} // end of "-"
 
@@ -547,40 +473,52 @@ void moscil::setwave(int w)
 	theoscil = new Ooscili(RTcmix::sr(), freq, wavetable[w], TABLELEN);
 }
 
-int moscil::connectfreq(MODULES *mf1)
-{
+void moscil::connect(MODULES *m, char *in) {
 	int i;
+	char ttok[MAXLABEL];
+	sscanf(in, "%s", ttok); // arg, strcmp!
 
-	for (i = 0; i < NSLOTS; i++) {
-		if (freqarray[i] == NULL) {
-			freqarray[i] = mf1;
-			break;
+	if (strcmp(ttok, "freq") == 0) {
+		for (i = 0; i < NSLOTS; i++) {
+			if (freqarray[i] == NULL) {
+				freqarray[i] = m;
+				break;
+			}
 		}
 	}
-	return i;
+
+	if (strcmp(ttok, "amp") == 0) {
+	   for (i = 0; i < NSLOTS; i++) {
+  	   	if (amparray[i] == NULL) {
+	         amparray[i] = m;
+	         break;
+  	    	}
+  	 	}
+	}
 }
 
-void moscil::disconnectfreq(int slotno)
-{
-	freqarray[slotno] = NULL;
-}
-
-int moscil::connectamp(MODULES *am1)
-{
+void moscil::disconnect(MODULES *m, char *in) {
 	int i;
+	char ttok[MAXLABEL];
+	sscanf(in, "%s", ttok); // arg, strcmp!
 
-	for (i = 0; i < NSLOTS; i++) {
-		if (amparray[i] == NULL) {
-			amparray[i] = am1;
-			break;
+	if (strcmp(ttok, "freq") == 0) {
+		for (i = 0; i < NSLOTS; i++) {
+			if (freqarray[i] == m) {
+				freqarray[i] = NULL;
+				break;
+			}
 		}
 	}
-	return i;
-}
 
-void moscil::disconnectamp(int slotno)
-{
-	amparray[slotno] = NULL;
+	if (strcmp(ttok, "amp") == 0) {
+	   for (i = 0; i < NSLOTS; i++) {
+  	   	if (amparray[i] == m) {
+	         amparray[i] = NULL;
+	         break;
+  	    	}
+  	 	}
+	}
 }
 
 
@@ -593,24 +531,6 @@ msigout::msigout()
 	}
 
 	amp = 1.0;
-}
-
-int msigout::connect(MODULES* m1)
-{
-	int i;
-
-	for (i = 0; i < NSLOTS; i++) {
-		if (sigarray[i] == NULL) {
-			sigarray[i] = m1;
-			break;
-		}
-	}
-	return i;
-}
-
-void msigout::disconnect(int slotno)
-{
-	sigarray[slotno] = NULL;
 }
 
 void msigout::setamp(float a)
@@ -638,22 +558,50 @@ float msigout::getval()
 	return accum * (amp + ampaccum);
 }
 
-int msigout::connectamp(MODULES *am1)
-{
+void msigout::connect(MODULES *m, char *in) {
 	int i;
+	char ttok[MAXLABEL];
+	sscanf(in, "%s", ttok); // arg, strcmp!
 
-	for (i = 0; i < NSLOTS; i++) {
-		if (amparray[i] == NULL) {
-			amparray[i] = am1;
-			break;
+	if (strcmp(ttok, "amp") == 0) {
+		for (i = 0; i < NSLOTS; i++) {
+			if (amparray[i] == NULL) {
+				amparray[i] = m;
+				break;
+			}
 		}
 	}
-	return i;
+	if (strcmp(ttok, "sig") == 0) {
+		for (i = 0; i < NSLOTS; i++) {
+			if (sigarray[i] == NULL) {
+				sigarray[i] = m;
+				break;
+			}
+		}
+	}
 }
 
-void msigout::disconnectamp(int slotno)
-{
-	amparray[slotno] = NULL;
+void msigout::disconnect(MODULES *m, char *in) {
+	int i;
+	char ttok[MAXLABEL];
+	sscanf(in, "%s", ttok); // arg, strcmp!
+
+	if (strcmp(ttok, "amp") == 0) {
+		for (i = 0; i < NSLOTS; i++) {
+			if (amparray[i] == m) {
+				amparray[i] = NULL;
+				break;
+			}
+		}
+	}
+	if (strcmp(ttok, "sig") == 0) {
+		for (i = 0; i < NSLOTS; i++) {
+			if (sigarray[i] == m) {
+				sigarray[i] = NULL;
+				break;
+			}
+		}
+	}
 }
 
 
@@ -778,19 +726,6 @@ void mmoogvcf::setres(float rval) {
 	q = resonance * (1.0 + 0.5 * q * (1.0 - q + 5.6 * q * q));
 }
 
-int mmoogvcf::connect(MODULES* m1)
-{
-	int i;
-
-	for (i = 0; i < NSLOTS; i++) {
-		if (sigarray[i] == NULL) {
-			sigarray[i] = m1;
-			break;
-		}
-	}
-	return i;
-}
-
 float mmoogvcf::getval() {
 	if (!is_calculated) {
 
@@ -857,62 +792,86 @@ float mmoogvcf::getval() {
 	return retval;
 }
 
-void mmoogvcf::disconnect(int slotno)
-{
-	sigarray[slotno] = NULL;
-}
-
-int mmoogvcf::connectamp(MODULES *am1)
-{
+void mmoogvcf::connect(MODULES *m, char *in) {
 	int i;
+	char ttok[MAXLABEL];
+	sscanf(in, "%s", ttok); // arg, strcmp!
 
-	for (i = 0; i < NSLOTS; i++) {
-		if (amparray[i] == NULL) {
-			amparray[i] = am1;
-			break;
+	if (strcmp(ttok, "sig") == 0) {
+		for (i = 0; i < NSLOTS; i++) {
+			if (sigarray[i] == NULL) {
+				sigarray[i] = m;
+				break;
+			}
 		}
 	}
-	return i;
-}
 
-void mmoogvcf::disconnectamp(int slotno)
-{
-	amparray[slotno] = NULL;
-}
-
-int mmoogvcf::connectres(MODULES *rs1)
-{
-	int i;
-
-	for (i = 0; i < NSLOTS; i++) {
-		if (resarray[i] == NULL) {
-			resarray[i] = rs1;
-			break;
+	if (strcmp(ttok, "amp") == 0) {
+		for (i = 0; i < NSLOTS; i++) {
+			if (amparray[i] == NULL) {
+				amparray[i] = m;
+				break;
+			}
 		}
 	}
-	return i;
-}
 
-void mmoogvcf::disconnectres(int slotno)
-{
-	resarray[slotno] = NULL;
-}
-
-int mmoogvcf::connectcf(MODULES *cf1)
-{
-	int i;
-
-	for (i = 0; i < NSLOTS; i++) {
-		if (cfarray[i] == NULL) {
-			cfarray[i] = cf1;
-			break;
+	if (strcmp(ttok, "reson") == 0) {
+		for (i = 0; i < NSLOTS; i++) {
+			if (resarray[i] == NULL) {
+				resarray[i] = m;
+				break;
+			}
 		}
 	}
-	return i;
+
+	if (strcmp(ttok, "cfreq") == 0) {
+		for (i = 0; i < NSLOTS; i++) {
+			if (cfarray[i] == NULL) {
+				cfarray[i] = m;
+				break;
+			}
+		}
+	}
 }
 
-void mmoogvcf::disconnectcf(int slotno)
-{
-	cfarray[slotno] = NULL;
-}
+void mmoogvcf::disconnect(MODULES *m, char *in) {
+	int i;
+	char ttok[MAXLABEL];
+	sscanf(in, "%s", ttok); // arg, strcmp!
 
+	if (strcmp(ttok, "sig") == 0) {
+		for (i = 0; i < NSLOTS; i++) {
+			if (sigarray[i] == m) {
+				sigarray[i] = NULL;
+				break;
+			}
+		}
+	}
+
+	if (strcmp(ttok, "amp") == 0) {
+		for (i = 0; i < NSLOTS; i++) {
+			if (amparray[i] == m) {
+				amparray[i] = NULL;
+				break;
+			}
+		}
+	}
+
+	if (strcmp(ttok, "reson") == 0) {
+		for (i = 0; i < NSLOTS; i++) {
+			if (resarray[i] == m) {
+				resarray[i] = NULL;
+				break;
+			}
+		}
+	}
+
+	if (strcmp(ttok, "cfreq") == 0) {
+		for (i = 0; i < NSLOTS; i++) {
+			if (cfarray[i] == m) {
+				cfarray[i] = NULL;
+				break;
+			}
+		}
+	}
+}

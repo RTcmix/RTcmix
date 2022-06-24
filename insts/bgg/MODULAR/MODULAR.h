@@ -1,7 +1,11 @@
-#define NSLOTS 7 // # of connections allowed
+#define NSLOTS 7 // # of connections allowed to each input
 #define NWAVES 5 // # of waveforms for moscil()
 #define TABLELEN 1024 // length of wavetables/envelopes
-#define NENVS 5 // # of envelopes for nenv()
+#define NENVS 5 // # of envelopes for menv()
+
+#define MAXTOKS 10 // # of tokens in a single parse-line
+#define MAXLABEL 80 // max number of chars in the token name
+
 
 class MODULES
 {
@@ -25,24 +29,8 @@ public:
 	void setfreq(float);
 	void setamp(float);
 	void setwave(int);
-	int connectfreq(MODULES*);
-	void disconnectfreq(int);
-	int connectamp(MODULES*);
-	void disconnectamp(int);
-
-	// for sigout
-	int outslot;
-	int ampslot;
-
-	// for oscil
-	int freqslot;
-	int moscampslot;
-
-	// for mmoogcvf
-	int mvcfoutslot;
-	int mvcfampslot;
-	int resslot;
-	int cfslot;
+	void connect(MODULES*, char*);
+	void disconnect(MODULES*, char*);
 
 	bool is_calculated;
 	float retval;
@@ -58,11 +46,9 @@ class msigout : public MODULES
 public:
 	msigout();
 	void setamp(float);
-	int connect(MODULES*);
-	void disconnect(int);
 	float getval();
-	int connectamp(MODULES*);
-	void disconnectamp(int);
+	void connect(MODULES*, char*);
+	void disconnect(MODULES*, char*);
 };
 
 
@@ -76,22 +62,12 @@ class menv : public MODULES
 
 public:
 	menv();
-	int connect(MODULES*);
-	void disconnect(int);
 	void ping(float);
 	void settimelength(float);
 	void setloop(int);
 	float getval();
 
-	int ampslot;
 	float overamp;
-	int freqslot;
-	int outslot;
-
-	// for moogvcf
-	int cfslot;
-	int resonslot;
-	int mvcfampslot;
 
 	int curenv;
 	double timelength;
@@ -117,18 +93,10 @@ public:
 	void setamp(float);
 	void setres(float);
 	void setcfreq(float);
-	int connect(MODULES*);
-	void disconnect(int);
-	int connectamp(MODULES*);
-	void disconnectamp(int);
-	int connectres(MODULES*);
-	void disconnectres(int);
-	int connectcf(MODULES*);
-	void disconnectcf(int);
+	void connect(MODULES*, char*);
+	void disconnect(MODULES*, char*);
 	float getval();
 
-	int outslot;
-	int mvcfoutslot;
 	bool is_calculated;
 	float retval;
 };
