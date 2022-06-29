@@ -37,6 +37,12 @@ const char *lookup_token(const char *token, bool printWarning);
 #define MPRINT2(x,y,z)
 #endif
 
+#ifdef DEBUG_ID
+#define MPRINT_ID(id) MPRINT1("id\t\t\(%s)", yytext)
+#else
+#define MPRINT_ID(id) MPRINT("id")
+#endif
+
 #undef YYDEBUG
 #define YYDEBUG 1
 #define MAXTOK_IDENTLIST 200
@@ -303,7 +309,7 @@ idl: id					{ MPRINT("idl: id"); idlist[idcount++] = $1; }
 	;
 
 /* An identifier is any single text token */
-id:  TOK_IDENT			{ MPRINT("id"); $$ = strsave(yytext); }
+id:  TOK_IDENT			{ MPRINT_ID(yytext); $$ = strsave(yytext); }
 	;
 
 /* An expression list is an expression or set of expressions which will be wrapped in a block */
