@@ -90,10 +90,10 @@ static Node * go(Node * t1);
 %token <ival> TOK_IDENT TOK_NUM TOK_ARG_QUERY TOK_ARG TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
 %type  <node> stml stmt rstmt bexp expl exp expblk str ret bstml obj fexp fexpl func
-%type  <node> fdecl sdecl hdecl ldecl mdecl structdecl structinit funcdecl arg argl fdef fstml fargl funcname mbr mbrl structdef
+%type  <node> fdecl sdecl hdecl ldecl mdecl structdecl structinit funcdecl arg argl funcdef fstml fargl funcname mbr mbrl structdef
 %type  <str> id structname
 
-%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl mdecl structdecl structinit funcdecl fdef fstml arg argl fargl funcname mbr mbrl structdef obj fexp fexpl expblk
+%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl mdecl structdecl structinit funcdecl funcdef fstml arg argl fargl funcname mbr mbrl structdef obj fexp fexpl expblk
 
 %error-verbose
 
@@ -140,7 +140,7 @@ stmt: rstmt					{ MPRINT("rstmt");	$$ = go($1); }
 								xblock = 0;
 							}
 	| bstml
-	| fdef
+	| funcdef
 	| ret
     | structdef
 	| error TOK_FLOAT_DECL	{ flerror = 1; $$ = new NodeNoop(); }
@@ -232,10 +232,7 @@ mdecl:    TOK_MAP_DECL idl    {     MPRINT("mdecl");
 structdecl: TOK_STRUCT_DECL id idl    {     MPRINT("structdecl"); $$ = go(declareStructs($2)); idcount = 0; }
     ;
     
-funcdecl:    TOK_FUNC_DECL idl    {     MPRINT("funcdecl");
-                                            $$ = go(declare(MincFunctionType));
-                                            idcount = 0;
-                                        }
+funcdecl:    TOK_FUNC_DECL idl    {     MPRINT("funcdecl"); $$ = go(declare(MincFunctionType)); idcount = 0; }
     ;
     
 /* statement nesting level counter */
@@ -285,7 +282,7 @@ rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAuto
     | func '(' fexpl ')' {	MPRINT("rstmt: func(fexpl)");
 								$$ = new NodeCall($1, $3);
 							}
-	| func '(' ')' {			MPRINT("rstmt: func()");
+	| func '(' ')' {		MPRINT("rstmt: func()");
 								$$ = new NodeCall($1, new NodeEmptyListElem());
 							}
     /* Special case: Assigning value to an array at an index */
@@ -374,6 +371,8 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 */
 	;
 
+/* Rules for declaring and defining structs */
+
 /* An mbr is struct member declaration.
     It is either a type followed by an <id>, like "float length", or a method declaration.
  */
@@ -387,24 +386,20 @@ mbr: TOK_FLOAT_DECL id        { MPRINT("mbr");  $$ = new NodeMemberDecl($2, Minc
     | structname id           { MPRINT("mbr");   $$ = new NodeMemberDecl($2, MincStructType, $1); }     // member decl for struct includes struct type
     ;
 
-/* struct declaration */
-
-/* a <mbrl> is one <mbr> or a series of <mbr>'s separated by commas, for a struct definition,
+/* An mbrl is one <mbr> or a series of <mbr>'s separated by commas, for a struct definition,
     e.g. "float f, float g, string s"
  */
 
-mbrl: mbr               { MPRINT("mbrl: mbr");
-            $$ = new NodeSeq(new NodeNoop(), $1); }
-    | mbrl ',' mbr      { MPRINT("mbrl: mbrl,mbr");
-            $$ = new NodeSeq($1, $3); }
+mbrl: mbr               { MPRINT("mbrl: mbr"); $$ = new NodeSeq(new NodeNoop(), $1); }
+    | mbrl ',' mbr      { MPRINT("mbrl: mbrl,mbr"); $$ = new NodeSeq($1, $3); }
     ;
 
-/* "struct Foo" - here we just return the id for the struct's name */
+/* A structname is the rule for the beginning of a struct decl, e.g., "struct Foo" - we just return the id for the struct's name */
 
 structname: TOK_STRUCT_DECL id { MPRINT("structname"); $$ = $2; }
     ;
 
-/* "struct Foo { <member decls> }" */
+/* A structdef is complete rule for a struct declaration, i.e., "struct Foo { <member decls> }" */
 
 structdef: structname '{' mbrl '}' struct   { MPRINT("structdef");
         --slevel; MPRINT1("slevel => %d", slevel);
@@ -486,23 +481,28 @@ function:  level {	MPRINT("function"); if (flevel > 0) {
 						 }
 ;
 
-/* function statement list.  Must be a statement list ending with a return statement */
+/* function body statement list.  Must be a statement list ending with a return statement */
 
 fstml:	stml ret			{	MPRINT("fstml: stml,ret");
-									$$ = new NodeFuncSeq($1, $2);
+									$$ = new NodeFuncBodySeq($1, $2);
 							}
 	| ret					{	MPRINT("fstml: ret");
-									$$ = new NodeFuncSeq(new NodeEmptyListElem(), $1);
+									$$ = new NodeFuncBodySeq(new NodeEmptyListElem(), $1);
 							}
 	;
 
-/* the full rule for a function definition, e.g. "list myfunction(string s) { ... }" */
+/* funcdef is a complete rule for a function definition, e.g. "list myfunction(string s) { ... }".
+    Note that if we are defining a function (i.e., if slevel==0), this rule's node is fully evaluated
+    in order to make this function available from the point of definition on.  If we are defining a struct method,
+    we postpone the level decrement, which postpones the node evaluation to the point where the struct definition
+    has been fully parsed.
+ */
 
-fdef: funcname fargl '{' fstml '}'	{
-									MPRINT("fdef");
-									decrLevel();
+funcdef: funcname fargl '{' fstml '}'	{ MPRINT1("funcdef%", slevel > 0 ? " (method)" : " (global function)");
+                                    if (slevel == 0) { decrLevel(); }
 									--flevel; MPRINT1("flevel => %d", flevel);
 									$$ = go(new NodeFuncDef($1, $2, $4));
+                                    if (slevel > 0) { decrLevel(); }
 								}
 	| error funcname fargl '{' stml '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
 	| error funcname fargl '{' '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }

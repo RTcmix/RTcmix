@@ -46,7 +46,7 @@ typedef enum {
 	eNodeArgList,
 	eNodeArgListElem,
 	eNodeRet,
-	eNodeFuncSeq,
+	eNodeFuncBodySeq,
 	eNodeCall,
 	eNodeAnd,
 	eNodeOr,
@@ -336,26 +336,26 @@ private:
     const char *    _typeName;
 };
 
-class NodeFuncSeq : public Node2Children
+class NodeFuncBodySeq : public Node2Children
 {
 public:
-	NodeFuncSeq(Node *n1, Node *n2) : Node2Children(OpFree, eNodeFuncSeq, n1, n2) {
-		NPRINT("NodeFuncSeq(%p, %p) => %p\n", n1, n2, this);
+	NodeFuncBodySeq(Node *n1, Node *n2) : Node2Children(OpFree, eNodeFuncBodySeq, n1, n2) {
+		NPRINT("NodeFuncBodySeq(%p, %p) => %p\n", n1, n2, this);
 	}
 protected:
 	virtual Node*		doExct();
 };
 
 // Function definition node
-//	n1 Lookup node
-//	n2 NodeArgList (argument symbol decls)
-//	n3 NodeFuncSeq function body (statements), which returns value
+//	funcDecl Lookup node
+//	argList  NodeArgList (argument symbol decls)
+//	funcBody NodeFuncBodySeq function body (statements), which returns value
 
 class NodeFuncDef : public Node3Children
 {
 public:
-	NodeFuncDef(Node *n1, Node *n2, Node *n3) : Node3Children(OpFree, eNodeFuncDef, n1, n2, n3) {
-		NPRINT("NodeFuncDef(%p, %p, %p) => %p\n", n1, n2, n3, this);
+	NodeFuncDef(Node *funcDecl, Node *argList, Node *funcBody) : Node3Children(OpFree, eNodeFuncDef, funcDecl, argList, funcBody) {
+		NPRINT("NodeFuncDef(%p, %p, %p) => %p\n", funcDecl, argList, funcBody, this);
 	}
 protected:
 	virtual Node*		doExct();

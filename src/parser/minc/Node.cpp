@@ -11,11 +11,24 @@
  
    Major rewrite to convert entire parser to "real" C++ classes.
  
-   Doug Scott, 11/2016 - 04/2017
+    Doug Scott, 11/2016 - 04/2017
  
    Major revision to support struct declarations.
  
-   Doug Scott, 12/2019
+    Doug Scott, 12/2019
+ 
+   Added new Map type.
+ 
+    Doug Scott, 08/2020
+ 
+   Added embedding of types within types.  Added new 'function pointer' mfunction type.
+ 
+    Doug Scott, 11/2020.
+ 
+   Added real object-oriented support via struct member functions.
+ 
+    Doug Scott, 06/2022.
+   
 */
 
 /* This file holds the intermediate tree representation. */
@@ -122,7 +135,7 @@ static const char *s_NodeKinds[] = {
    "NodeArgList",
    "NodeArgListElem",
    "NodeRet",
-   "NodeFuncSeq",
+   "NodeFuncBodySeq",
    "NodeCall",
    "NodeAnd",
    "NodeOr",
@@ -636,7 +649,7 @@ Node *	NodeString::doExct()
 
 Node *	NodeLoadSym::doExct()
 {
-	/* look up the symbol */
+	/* Look up the symbol.  We check for success in finishExct(). */
 	setSymbol(lookupSymbol(_symbolName, AnyLevel));
 	return finishExct();
 }
@@ -913,7 +926,6 @@ Node *  NodeMemberAccess::doExct()
     ENTER();
     TPRINT("Object:\n");
     child(0)->exct();         /* lookup target */
-    child(0)->print();      // DEBUG
     // NOTE: If LHS was a temporary variable, structSymbol will be null
     Symbol *structSymbol = child(0)->symbol();
     const char *targetName = (structSymbol != NULL) ? structSymbol->name() : "temp lhs";
@@ -923,14 +935,24 @@ Node *  NodeMemberAccess::doExct()
         if (theStruct) {
            Symbol *memberSymbol = theStruct->lookupMember(_memberName);
            if (memberSymbol) {
+                // Member with this name was found
                 setSymbol(memberSymbol);
                 /* also assign the symbol's value into tree's value field */
                 TPRINT("NodeMemberAccess: copying value from member symbol '%s' to us\n", _memberName);
                 copyValue(memberSymbol);
             }
-            else {
-                minc_die("struct variable '%s' has no member '%s'", targetName, _memberName);
-            }
+           else {
+               TPRINT("NodeMemberAccess: member with that name not found - attempting to retrieve symbol for method\n");
+               Symbol *methodSymbol = lookupSymbol(_memberName, AnyLevel);
+               if (methodSymbol) {
+                   setSymbol(methodSymbol);
+                   TPRINT("NodeMemberAccess: copying value from method symbol '%s' to us\n", _memberName);
+                   copyValue(methodSymbol);
+               }
+               else {
+                   minc_die("struct variable '%s' has no member or method '%s'", targetName, _memberName);
+               }
+           }
         }
         else {
             minc_die("struct variable %s' is NULL", targetName);
@@ -948,11 +970,13 @@ Node *	NodeCall::doExct()
     TPRINT("NodeCall: Func:\n");
     Node *calledFunction = child(0)->exct();         /* lookup target */
 	push_list();
-    TPRINT("NodeCall: Args = %p\n", child(1));
+    TPRINT("NodeCall: calledFunction = %p, executing argument list (%p)\n", calledFunction, child(1));
     child(1)->exct();    // execute arg expression list (stored on this NodeCall)
 	if (calledFunction->dataType() == MincFunctionType) {
+        // MinC function
         Symbol *funcSymbol = calledFunction->symbol();
         sCalledFunctions.push_back(funcSymbol ? funcSymbol->name() : "temp lhs");   // FIX ME: have temp LHS vars store symbols
+        // Retrieve the workings of the function from its Symbol (stored there by FuncDef)
         MincFunction *theFunction = (MincFunction *)calledFunction->value();
         if (theFunction) {
 			TPRINT("NodeCall: theFunction = %p -- dropping in\n", theFunction);
@@ -969,13 +993,13 @@ Node *	NodeCall::doExct()
                     call_builtin_function("print", sMincList, sMincListLen, &retval);
                 }
 				/* The exp list is copied to the symbols for the function's arg list. */
+                TPRINT("NodeCall: declaring all argument symbols in the function's scope\n");
 				theFunction->copyArguments();
 				savedLineNo = yyget_lineno();
 				savedScope = current_scope();
 				++sFunctionCallDepth;
 				savedCallDepth = sFunctionCallDepth;
-				TPRINT("NodeCall(%p): executing %s(), call depth now %d\n",
-					   this, sCalledFunctions.back(), savedCallDepth);
+				TPRINT("NodeCall: executing %s(), call depth now %d\n", sCalledFunctions.back(), savedCallDepth);
 				temp = theFunction->execute();
 			}
 			catch (Node * returned) {	// This catches return statements!
@@ -1004,7 +1028,7 @@ Node *	NodeCall::doExct()
 		sCalledFunctions.pop_back();
 	}
 	else if (calledFunction->dataType() == MincStringType) {
-        // We stored this away when we noticed this was a builtin function
+        // Builtin function.  We stored this string away when we noticed this in the parser.
         const char *functionName = (MincString)child(0)->value();
         if (!functionName) {
             minc_die("string variable called as function is NULL");
@@ -1500,11 +1524,11 @@ Node *	NodeRet::doExct()
 	return NULL;	// notreached
 }
 
-Node *	NodeFuncSeq::doExct()
+Node *	NodeFuncBodySeq::doExct()
 {
-    TPRINT("NodeFuncSeq(%p): Executing function body\n", this);
+    TPRINT("NodeFuncBodySeq(%p): Executing function body\n", this);
 	child(0)->exct();
-    TPRINT("NodeFuncSeq executing return statement\n");
+    TPRINT("NodeFuncBodySeq executing return statement\n");
 	child(1)->exct();
 	copyValue(child(1));
 	return this;
@@ -1566,7 +1590,7 @@ Node *	NodeDecl::doExct()
 
 Node *  NodeStructDef::doExct()
 {
-    TPRINT("NodeStructDef(%p) -- storing declaration for struct type '%s'\n", this, _typeName);
+    TPRINT("NodeStructDef(%p) -- storing definition for struct type '%s'\n", this, _typeName);
     if (current_scope() == 0) {    // until I allow nested structs
         sNewStructType = installStructType(_typeName, YES);  // all structs global for now
         if (sNewStructType) {
@@ -1661,12 +1685,13 @@ Node *	NodeFuncDecl::doExct()
 
 Node *	NodeFuncDef::doExct()
 {
-	// Look up symbol for function, and bind this FuncDef node to it via a MincFunction.
+	// Look up symbol for function, and bind the function's "guts" to it via a MincFunction.
 	TPRINT("NodeFuncDef(%p): executing lookup node %p\n", this, child(0));
 	child(0)->exct();
 	assert(child(0)->symbol() != NULL);
-    // Note: 'this' stored inside MincFunction.
-	child(0)->symbol()->value() = MincValue(new MincFunction(this));
+    // Note: arglist and body stored inside MincFunction.  This is how we store the behavior
+    // of a function on its symbol for re-use.
+	child(0)->symbol()->value() = MincValue(new MincFunction(child(1), child(2)));
 #warning is this line correct and necessary?
     setValue(child(0)->symbol()->value());
 	return this;

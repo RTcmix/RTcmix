@@ -152,7 +152,8 @@ Symbol * MincStruct::lookupMember(const char *name)
 /* ========================================================================== */
 /* MincFunction */
 
-MincFunction::MincFunction(Node *body) : _functionBody(body)
+MincFunction::MincFunction(Node *argumentList, Node *functionBody)
+    : _argumentList(argumentList), _functionBody(functionBody)
 {
     ENTER();
 }
@@ -167,13 +168,13 @@ MincFunction::~MincFunction()
 void
 MincFunction::copyArguments()
 {
-    (void)_functionBody->child(1)->exct();
+    (void)_argumentList->exct();
 }
 
 Node *
 MincFunction::execute()
 {
-    return _functionBody->child(2)->exct();
+    return _functionBody->exct();
 }
 
 /* ========================================================================== */

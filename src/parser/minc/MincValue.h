@@ -70,19 +70,20 @@ protected:
     Symbol *    _memberList;
 };
 
-// A MincFunction contains a Node which contains the list of operations to be carried
-// out by the function call.
+// A MincFunction contains two Nodes which contain the argument list
+// and the list of operations to be carried out by the function body.
 
 class Node;
 
 class MincFunction : public MincObject, public RefCounted {
 public:
-    MincFunction(Node *body);
+    MincFunction(Node *argumentList, Node *functionBody);
     void    copyArguments();
     Node *  execute();
 protected:
     virtual ~MincFunction();
 private:
+    Node *  _argumentList;
     Node *  _functionBody;
 };
 

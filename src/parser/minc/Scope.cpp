@@ -269,7 +269,7 @@ Symbol * lookupOrAutodeclare(const char *name, Bool inFunctionCall)
         return sym;
     }
     else {
-        DPRINT("\tnot in this scope - trying others\n");
+        DPRINT("\tnot in this scope - checking all scopes\n");
         sym = lookupSymbol(name, AnyLevel);
         if (sym) {
             DPRINT("\tfound it\n");
