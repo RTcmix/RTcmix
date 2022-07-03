@@ -415,9 +415,7 @@ structdef: structname '{' mbrl '}' struct   { MPRINT("structdef");
 
 /* struct level counter */
 
-struct:         {    MPRINT("struct"); if (slevel > 0) { minc_die("nested struct decls not allowed"); }
-                    slevel++; MPRINT1("slevel => %d", slevel);
-                }
+struct:      {    MPRINT("struct"); slevel++; MPRINT1("slevel => %d", slevel); }
     ;
 
 /* Everything from this point down is used to build a function declaration/definition */
@@ -453,11 +451,11 @@ funcname: TOK_FLOAT_DECL id function { MPRINT("funcname");
 									$$ = go(new NodeFuncDecl(strsave($2), MincStringType)); }
 	| TOK_HANDLE_DECL id function { MPRINT("funcname");
 									$$ = go(new NodeFuncDecl(strsave($2), MincHandleType)); }
-	| TOK_LIST_DECL id function { MPRINT("funcname");
+	| TOK_LIST_DECL id function { MPRINT("funcname: returns list");
 									$$ = go(new NodeFuncDecl(strsave($2), MincListType)); }
-    | TOK_MAP_DECL id function { MPRINT("funcname");
+    | TOK_MAP_DECL id function { MPRINT("funcname: returns map");
                                     $$ = go(new NodeFuncDecl(strsave($2), MincMapType)); }
-    | TOK_STRUCT_DECL id id function { MPRINT("funcname");
+    | TOK_STRUCT_DECL id id function { MPRINT("funcname: returns struct");
                                     $$ = go(new NodeFuncDecl(strsave($3), MincStructType)); }
 	;
 
@@ -480,11 +478,9 @@ fargl: '(' argl ')'		{ MPRINT("fargl: (argl)"); $$ = new NodeArgList($2); }
 
 /* function block level counter */
 
-function:  level {	MPRINT("function"); if (flevel > 0) {
-								minc_die("nested function decls not allowed");
-							}
-							flevel++; MPRINT1("flevel => %d", flevel);
-						 }
+function:  level {	if (flevel > 0) { minc_die("nested function decls not allowed"); }
+                    flevel++; MPRINT1("flevel => %d", flevel);
+                 }
 ;
 
 /* function body statement list.  Must be a statement list ending with a return statement */
