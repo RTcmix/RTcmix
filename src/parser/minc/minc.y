@@ -24,7 +24,8 @@ const char *lookup_token(const char *token, bool printWarning);
 #ifdef __cplusplus
 }
 #endif
-#undef MDEBUG	/* turns on yacc debugging below */
+#define MDEBUG	/* turns on yacc debugging below */
+#define DEBUG_ID    /* turns on printing of each ID found (assumes MDEBUG) */
 
 #ifdef MDEBUG
 //int yydebug=1;
@@ -92,14 +93,14 @@ static Node * go(Node * t1);
 %token <ival> TOK_HANDLE_DECL
 %token <ival> TOK_LIST_DECL
 %token <ival> TOK_MAP_DECL
-%token <ival> TOK_FUNC_DECL;
+%token <ival> TOK_MFUNC_DECL;
 %token <ival> TOK_IDENT TOK_NUM TOK_ARG_QUERY TOK_ARG TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
 %type  <node> stml stmt rstmt bexp expl exp expblk str ret bstml obj fexp fexpl func
-%type  <node> fdecl sdecl hdecl ldecl mdecl structdecl structinit funcdecl arg argl funcdef fstml fargl funcname mbr mbrl structdef
+%type  <node> fdecl sdecl hdecl ldecl mdecl structdecl structinit mfuncdecl arg argl funcdef fstml fargl funcname mbr mbrl structdef
 %type  <str> id structname
 
-%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl mdecl structdecl structinit funcdecl funcdef fstml arg argl fargl funcname mbr mbrl structdef obj fexp fexpl expblk
+%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl mdecl structdecl structinit mfuncdecl funcdef fstml arg argl fargl funcname mbr mbrl structdef obj fexp fexpl expblk
 
 %error-verbose
 
@@ -124,7 +125,7 @@ stmt: rstmt					{ MPRINT("rstmt");	$$ = go($1); }
     | mdecl
     | structdecl
     | structinit
-    | funcdecl
+    | mfuncdecl
 	| TOK_IF level bexp stmt {	xblock = 1; MPRINT("IF bexp stmt");
 								decrLevel();
 								$$ = go(new NodeIf($3, $4));
@@ -154,7 +155,7 @@ stmt: rstmt					{ MPRINT("rstmt");	$$ = go($1); }
 	| error TOK_HANDLE_DECL	{ flerror = 1; $$ = new NodeNoop(); }
 	| error TOK_LIST_DECL	{ flerror = 1; $$ = new NodeNoop(); }
     | error TOK_MAP_DECL    { flerror = 1; $$ = new NodeNoop(); }
-    | error TOK_FUNC_DECL    { flerror = 1; $$ = new NodeNoop(); }
+    | error TOK_MFUNC_DECL    { flerror = 1; $$ = new NodeNoop(); }
 	| error TOK_IF		{ flerror = 1; $$ = new NodeNoop(); }
 	| error TOK_WHILE	{ flerror = 1; $$ = new NodeNoop(); }
 	| error TOK_FOR	{ flerror = 1; $$ = new NodeNoop(); }
@@ -238,7 +239,7 @@ mdecl:    TOK_MAP_DECL idl    {     MPRINT("mdecl");
 structdecl: TOK_STRUCT_DECL id idl    {     MPRINT("structdecl"); $$ = go(declareStructs($2)); idcount = 0; }
     ;
     
-funcdecl:    TOK_FUNC_DECL idl    {     MPRINT("funcdecl"); $$ = go(declare(MincFunctionType)); idcount = 0; }
+mfuncdecl:    TOK_MFUNC_DECL idl    {     MPRINT("mfuncdecl"); $$ = go(declare(MincFunctionType)); idcount = 0; }
     ;
     
 /* statement nesting level counter */
@@ -383,13 +384,16 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
     It is either a type followed by an <id>, like "float length", or a method declaration.
  */
 
-mbr: TOK_FLOAT_DECL id        { MPRINT("mbr");  $$ = new NodeMemberDecl($2, MincFloatType); }
-    | TOK_STRING_DECL id    { MPRINT("mbr");    $$ = new NodeMemberDecl($2, MincStringType); }
-    | TOK_HANDLE_DECL id    { MPRINT("mbr");    $$ = new NodeMemberDecl($2, MincHandleType); }
-    | TOK_LIST_DECL id        { MPRINT("mbr");  $$ = new NodeMemberDecl($2, MincListType); }
-    | TOK_MAP_DECL id        { MPRINT("mbr");   $$ = new NodeMemberDecl($2, MincMapType); }
-    | TOK_FUNC_DECL id        { MPRINT("mbr");   $$ = new NodeMemberDecl($2, MincFunctionType); }
-    | structname id           { MPRINT("mbr");   $$ = new NodeMemberDecl($2, MincStructType, $1); }     // member decl for struct includes struct type
+mbr: TOK_FLOAT_DECL id        { MPRINT("mbr: decl");  $$ = new NodeMemberDecl($2, MincFloatType); }
+    | TOK_STRING_DECL id    { MPRINT("mbr: decl");    $$ = new NodeMemberDecl($2, MincStringType); }
+    | TOK_HANDLE_DECL id    { MPRINT("mbr: decl");    $$ = new NodeMemberDecl($2, MincHandleType); }
+    | TOK_LIST_DECL id        { MPRINT("mbr: decl");  $$ = new NodeMemberDecl($2, MincListType); }
+    | TOK_MAP_DECL id        { MPRINT("mbr: decl");   $$ = new NodeMemberDecl($2, MincMapType); }
+    | TOK_MFUNC_DECL id        { MPRINT("mbr: decl");   $$ = new NodeMemberDecl($2, MincFunctionType); }
+    | structname id           { MPRINT("mbr: struct decl");   $$ = new NodeMemberDecl($2, MincStructType, $1); }     // member decl for struct includes struct type
+    /*
+    | funcdef               { MPRINT("mbr: funcdef"); $$ = $1; }    // $1 will be a NodeFuncDef instance
+     */
     ;
 
 /* An mbrl is one <mbr> or a series of <mbr>'s separated by commas, for a struct definition,
@@ -437,7 +441,7 @@ arg: TOK_FLOAT_DECL id      { MPRINT("arg");
                                     $$ = new NodeDecl($2, MincMapType); }
     | TOK_STRUCT_DECL id id { MPRINT("arg");
                                     $$ = new NodeStructDecl($3, $2); }
-    | TOK_FUNC_DECL id      { MPRINT("arg");
+    | TOK_MFUNC_DECL id      { MPRINT("arg");
                                     $$ = new NodeDecl($2, MincFunctionType); }
     ;
 
