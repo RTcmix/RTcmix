@@ -41,6 +41,7 @@ FAIL_SCORES = \
 func_errortests1.sco \
 handletest1.sco \
 include_error.sco \
+nested_func_decls.sco \
 struct_duplicate_member.sco \
 struct_duplicate_membername.sco \
 struct_init_wrong_type.sco \
@@ -53,7 +54,7 @@ scores_that_pass:
         do \
           ( echo "running $$SCORE..."; \
           $(CMIX) -f $$SCORE; \
-		  if [ $$? -eq 0 ]; then echo "SCORE PASSED"; else echo "SCORE FAILED"; fi ); \
+		  if [ $$? -eq 0 ]; then echo "SCORE PASSED"; else echo "SCORE '$$SCORE' FAILED" && exit -1; fi ); \
         done
 
 scores_that_fail:
@@ -61,7 +62,7 @@ scores_that_fail:
         do \
           ( echo "running $$SCORE..."; \
           $(CMIX) -f $$SCORE; \
-		  if [ $$? -eq 0 ]; then echo "SCORE FAILED (BY NOT FAILING)"; else echo "SCORE PASSED (BY CORRECTLY FAILING)"; fi ); \
+		  if [ $$? -eq 0 ]; then echo "SCORE '$$SCORE' FAILED (BY NOT FAILING)" && exit -1; else echo "SCORE PASSED (BY CORRECTLY FAILING)"; fi ); \
         done
 
 all:	scores_that_pass scores_that_fail

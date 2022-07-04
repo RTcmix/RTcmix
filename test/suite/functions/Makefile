@@ -17,7 +17,7 @@ positive-tests:
 	do \
 	  ( echo "running $$TEST..."; \
 	  $(CMIX) -f $${TEST}.sco; \
-	  if [ $$? -eq 0 ]; then echo "SCORE PASSED"; else echo "SCORE FAILED"; fi ); \
+	  if [ $$? -eq 0 ]; then echo "SCORE PASSED"; else echo "SCORE '$${TEST}.sco' FAILED" && exit -1; fi ); \
 	done
 
 compat-tests:
@@ -25,7 +25,7 @@ compat-tests:
 	do \
 	  ( echo "running $$TEST..."; \
 	  $(CMIX) -f $${TEST}.sco; \
-	  if [ $$? -eq 0 ]; then echo "SCORE PASSED"; else echo "SCORE FAILED"; fi ); \
+	  if [ $$? -eq 0 ]; then echo "SCORE PASSED"; else echo "SCORE $${TEST}.sco FAILED" && exit -1; fi ); \
 	done
 
 block-tests:
@@ -33,7 +33,7 @@ block-tests:
 	do \
 	  ( echo "running $$TEST..."; \
 	  $(CMIX) -f $${TEST}.sco; \
-	  if [ $$? -eq 0 ]; then echo "SCORE PASSED"; else echo "SCORE FAILED"; fi ); \
+	  if [ $$? -eq 0 ]; then echo "SCORE PASSED"; else echo "SCORE $${TEST}.sco FAILED" && exit -1; fi ); \
 	done
 
 func-tests:
@@ -41,7 +41,7 @@ func-tests:
 	do \
 	  ( echo "running $$TEST..."; \
 	  $(CMIX) -f $${TEST}.sco; \
-	  if [ $$? -eq 0 ]; then echo "SCORE PASSED"; else echo "SCORE FAILED"; fi ); \
+	  if [ $$? -eq 0 ]; then echo "SCORE PASSED"; else echo "SCORE $${TEST}.sco FAILED" && exit -1; fi ); \
 	done
 
 # Tests which should fail
@@ -51,8 +51,6 @@ negative-tests:
 	do \
 	  ( echo "running $$TEST..."; \
 	  $(CMIX) -f $${TEST}.sco; \
-	  if [ $$? -eq 0 ]; then echo "SCORE FAILED (BY NOT FAILING)"; else echo "SCORE PASSED (BY CORRECTLY FAILING)"; fi ); \
+	  if [ $$? -eq 0 ]; then echo "SCORE $${TEST}.sco FAILED (BY NOT FAILING)" && exit -1; else echo "SCORE PASSED (BY CORRECTLY FAILING)"; fi ); \
 	done
-
-
 

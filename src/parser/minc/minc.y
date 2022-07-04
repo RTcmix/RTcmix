@@ -87,7 +87,9 @@ static Node * go(Node * t1);
 %left  <ival> '*' '/'
 %left  <ival> TOK_POW
 %left  <ival> CASTTOKEN
-%token <ival> TOK_STRUCT_DECL
+
+%right <ival> TOK_STRUCT_DECL
+
 %token <ival> TOK_FLOAT_DECL
 %token <ival> TOK_STRING_DECL
 %token <ival> TOK_HANDLE_DECL
@@ -96,6 +98,7 @@ static Node * go(Node * t1);
 %token <ival> TOK_MFUNC_DECL;
 %token <ival> TOK_IDENT TOK_NUM TOK_ARG_QUERY TOK_ARG TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
+
 %type  <node> stml stmt rstmt bexp expl exp expblk str ret bstml obj fexp fexpl func
 %type  <node> fdecl sdecl hdecl ldecl mdecl structdecl structinit mfuncdecl arg argl funcdef fstml fargl funcname mbr mbrl structdef
 %type  <str> id structname
@@ -242,7 +245,7 @@ structdecl: TOK_STRUCT_DECL id idl    {     MPRINT("structdecl"); $$ = go(declar
 mfuncdecl:    TOK_MFUNC_DECL idl    {     MPRINT("mfuncdecl"); $$ = go(declare(MincFunctionType)); idcount = 0; }
     ;
     
-/* statement nesting level counter */
+/* statement nesting level counter.  This is an inline action between tokens. */
 level:  /* nothing */ { incrLevel(); }
 	;
 
@@ -417,7 +420,7 @@ structdef: structname '{' mbrl '}' struct   { MPRINT("structdef");
     }
     ;
 
-/* struct level counter */
+/* struct level counter.  This is an inline action between tokens. */
 
 struct:      {    MPRINT("struct"); slevel++; MPRINT1("slevel => %d", slevel); }
     ;
@@ -439,28 +442,29 @@ arg: TOK_FLOAT_DECL id      { MPRINT("arg");
                                     $$ = new NodeDecl($2, MincListType); }
     | TOK_MAP_DECL id      { MPRINT("arg");
                                     $$ = new NodeDecl($2, MincMapType); }
-    | TOK_STRUCT_DECL id id { MPRINT("arg");
-                                    $$ = new NodeStructDecl($3, $2); }
-    | TOK_MFUNC_DECL id      { MPRINT("arg");
+    | structname id         { MPRINT("arg: structname");
+                                    $$ = new NodeStructDecl($2, $1); }
+    | TOK_MFUNC_DECL id      { MPRINT("arg: mfunction");
                                     $$ = new NodeDecl($2, MincFunctionType); }
     ;
 
 /* function name, e.g. "list myfunction".  Used as first part of definition.
     TODO: This is where I would add the ability for a function to return a function.
+    DAS NOTE: Nodes not wrapped in "go()" because they are never executed during this rule.
  */
 
-funcname: TOK_FLOAT_DECL id function { MPRINT("funcname");
-									$$ = go(new NodeFuncDecl(strsave($2), MincFloatType)); }
-	| TOK_STRING_DECL id function { MPRINT("funcname");
-									$$ = go(new NodeFuncDecl(strsave($2), MincStringType)); }
-	| TOK_HANDLE_DECL id function { MPRINT("funcname");
-									$$ = go(new NodeFuncDecl(strsave($2), MincHandleType)); }
-	| TOK_LIST_DECL id function { MPRINT("funcname: returns list");
-									$$ = go(new NodeFuncDecl(strsave($2), MincListType)); }
-    | TOK_MAP_DECL id function { MPRINT("funcname: returns map");
-                                    $$ = go(new NodeFuncDecl(strsave($2), MincMapType)); }
-    | TOK_STRUCT_DECL id id function { MPRINT("funcname: returns struct");
-                                    $$ = go(new NodeFuncDecl(strsave($3), MincStructType)); }
+funcname: TOK_FLOAT_DECL id { MPRINT("funcname");
+									$$ = new NodeFuncDecl(strsave($2), MincFloatType); }
+	| TOK_STRING_DECL id { MPRINT("funcname");
+									$$ = new NodeFuncDecl(strsave($2), MincStringType); }
+	| TOK_HANDLE_DECL id { MPRINT("funcname");
+									$$ = new NodeFuncDecl(strsave($2), MincHandleType); }
+	| TOK_LIST_DECL id { MPRINT("funcname: returns list");
+									$$ = new NodeFuncDecl(strsave($2), MincListType); }
+    | TOK_MAP_DECL id { MPRINT("funcname: returns map");
+                                    $$ = new NodeFuncDecl(strsave($2), MincMapType); }
+    | TOK_STRUCT_DECL id id { MPRINT("funcname: returns struct");
+                                    $$ = new NodeFuncDecl(strsave($3), MincStructType); }
 	;
 
 /* a <argl> is one <arg> or a series of <arg>'s separated by commas */
@@ -480,9 +484,9 @@ fargl: '(' argl ')'		{ MPRINT("fargl: (argl)"); $$ = new NodeArgList($2); }
 	| '(' ')'           { MPRINT("fargl: (NULL)"); $$ = new NodeArgList(new NodeEmptyListElem()); }
 	;
 
-/* function block level counter */
+/* function block level counter.  This is an inline action between tokens. */
 
-function:  level {	if (flevel > 0) { minc_die("nested function decls not allowed"); }
+function:    {	if (flevel > 0) { minc_die("nested function decls not allowed"); }
                     flevel++; MPRINT1("flevel => %d", flevel);
                  }
 ;
