@@ -33,7 +33,7 @@
 
 /* This file holds the intermediate tree representation. */
 
-#define DEBUG
+#undef DEBUG
 
 #include "debug.h"
 

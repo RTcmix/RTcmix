@@ -5,7 +5,7 @@
 
 /* symbol table management routines */
 
-#undef SYMBOL_DEBUG
+#define SYMBOL_DEBUG
 #undef DEBUG_SYM_MEMORY
 
 #ifdef SYMBOL_DEBUG

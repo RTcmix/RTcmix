@@ -13,7 +13,7 @@
 #include <vector>
 #include <string.h>
 
-#undef SYMBOL_DEBUG
+#define SYMBOL_DEBUG
 #undef DPRINT
 #ifdef SYMBOL_DEBUG
 #define DPRINT(...) rtcmix_print(__VA_ARGS__)

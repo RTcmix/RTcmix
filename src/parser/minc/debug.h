@@ -8,8 +8,9 @@
 #ifndef debug_h
 #define debug_h
 
-#undef DEBUG_TRACE
-// #define DEBUG_TRACE 2
+//#undef DEBUG_TRACE
+//#define DEBUG_TRACE 1
+#define DEBUG_TRACE 2
 //#define DEBUG_MEMORY
 
 #include "minc_internal.h"
