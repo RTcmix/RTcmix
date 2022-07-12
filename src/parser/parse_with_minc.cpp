@@ -26,11 +26,14 @@ extern "C" {
     int RTcmix_parseScore(char *thebuf, int buflen);
 }
 
+extern int yydebug;
+
 static int
 run_parser(const char *caller)
 {
     int status;
     try {
+//        yydebug = 1;
         status = yyparse();
     }
     catch (MincError err) {
