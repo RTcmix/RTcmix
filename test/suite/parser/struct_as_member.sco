@@ -4,6 +4,8 @@ struct Inner {
 	float c
 };
 
+struct Inner b;
+
 struct Outer {
 	struct Inner b
 };

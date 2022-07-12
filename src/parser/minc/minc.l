@@ -106,8 +106,9 @@ num   {dig}+
 <INIT>list            	return TOK_LIST_DECL;
 <INIT>map               return TOK_MAP_DECL;
 <INIT>mfunction         return TOK_MFUNC_DECL;
-<INIT>return			return TOK_RETURN;
-<INIT>[%={}><,.;*+-]     return (*yytext);
+<INIT>return		return TOK_RETURN;
+<INIT>method		return TOK_METHOD;
+<INIT>[%={}><,.;*+-]    return (*yytext);
 <INIT>"["|"]"|"/"       return (*yytext);
 <INIT>"("|")"           return (*yytext);
 <INIT>"\n"        ;

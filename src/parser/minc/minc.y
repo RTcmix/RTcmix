@@ -96,6 +96,7 @@ static Node * go(Node * t1);
 %token <ival> TOK_LIST_DECL
 %token <ival> TOK_MAP_DECL
 %token <ival> TOK_MFUNC_DECL;
+%token <ival> TOK_METHOD;
 %token <ival> TOK_IDENT TOK_NUM TOK_ARG_QUERY TOK_ARG TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
 
@@ -120,7 +121,7 @@ stml:	stmt				{ MPRINT("stml:	stmt"); $$ = $1; }
 	;
 
 /* statement */
-stmt: rstmt					{ MPRINT("rstmt");	$$ = go($1); }
+stmt: rstmt					{ MPRINT("stmt: rstmt");	$$ = go($1); }
 	| fdecl
 	| sdecl
 	| hdecl
@@ -150,22 +151,9 @@ stmt: rstmt					{ MPRINT("rstmt");	$$ = go($1); }
 								xblock = 0;
 							}
 	| bstml
-	| funcdef
+    | funcdef               { MPRINT("stmt: funcdef"); $$ = go($1); }
 	| ret
     | structdef
-	| error TOK_FLOAT_DECL	{ flerror = 1; $$ = new NodeNoop(); }
-	| error TOK_STRING_DECL	{ flerror = 1; $$ = new NodeNoop(); }
-	| error TOK_HANDLE_DECL	{ flerror = 1; $$ = new NodeNoop(); }
-	| error TOK_LIST_DECL	{ flerror = 1; $$ = new NodeNoop(); }
-    | error TOK_MAP_DECL    { flerror = 1; $$ = new NodeNoop(); }
-    | error TOK_MFUNC_DECL    { flerror = 1; $$ = new NodeNoop(); }
-	| error TOK_IF		{ flerror = 1; $$ = new NodeNoop(); }
-	| error TOK_WHILE	{ flerror = 1; $$ = new NodeNoop(); }
-	| error TOK_FOR	{ flerror = 1; $$ = new NodeNoop(); }
-	| error '{'		{ flerror = 1; $$ = new NodeNoop(); }
-	| error TOK_ELSE	{ flerror = 1; $$ = new NodeNoop(); }
-	| error TOK_RETURN	{ flerror = 1; $$ = new NodeNoop(); }
-	| error ';'			{ flerror = 1; $$ = new NodeNoop(); }
 	;
 
 /* block statement list
@@ -239,9 +227,6 @@ mdecl:    TOK_MAP_DECL idl    {     MPRINT("mdecl");
                               }
     ;
 
-structdecl: TOK_STRUCT_DECL id idl    {     MPRINT("structdecl"); $$ = go(declareStructs($2)); idcount = 0; }
-    ;
-    
 mfuncdecl:    TOK_MFUNC_DECL idl    {     MPRINT("mfuncdecl"); $$ = go(declare(MincFunctionType)); idcount = 0; }
     ;
     
@@ -282,10 +267,10 @@ rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAuto
 	| id TOK_MULEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpMul); }
 	| id TOK_DIVEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpDiv); }
 
-    | TOK_PLUSPLUS id %prec CASTTOKEN { MPRINT("rstmt: TOK_PLUSPLUS id \%prec CASTTOKEN");
+    | TOK_PLUSPLUS id %prec CASTTOKEN { MPRINT("rstmt: TOK_PLUSPLUS id");
         $$ = new NodeOpAssign(new NodeLoadSym($2), new NodeConstf(1.0), OpPlusPlus);
     }
-    | TOK_MINUSMINUS id %prec CASTTOKEN { MPRINT("rstmt: TOK_MINUSMINUS id \%prec CASTTOKEN");
+    | TOK_MINUSMINUS id %prec CASTTOKEN { MPRINT("rstmt: TOK_MINUSMINUS id");
         $$ = new NodeOpAssign(new NodeLoadSym($2), new NodeConstf(1.0), OpMinusMinus);
     }
 
@@ -329,9 +314,6 @@ str:	TOK_STRING		{
 							}
 	;
 
-/* A structinit is a struct decl plus an initializer */
-structinit: TOK_STRUCT_DECL id idl '=' expblk {   MPRINT("structinit: struct <type> id = expblk"); $$ = go(initializeStruct($2, $5)); idcount = 0; }
-
 /* Boolean expression, before being wrapped in () */
 bexp:	exp %prec LOWPRIO	{ MPRINT("bexp"); $$ = $1; }
 	| TOK_NOT bexp %prec TOK_UNEQU { MPRINT("!bexp"); $$ = new NodeNot($2); }
@@ -370,7 +352,7 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
     
 	| TOK_TRUE			{ $$ = new NodeConstf(1.0); }
 	| TOK_FALSE			{ $$ = new NodeConstf(0.0); }
-    | '-' exp %prec CASTTOKEN { MPRINT("exp: rstmt: '-' exp \%prec CASTTOKEN");
+    | '-' exp %prec CASTTOKEN { MPRINT("exp: rstmt: '-' exp");
 								/* NodeConstf is a dummy; makes exct_operator work */
 								$$ = new NodeOp(OpNeg, $2, new NodeConstf(0.0));
 							}
@@ -394,9 +376,7 @@ mbr: TOK_FLOAT_DECL id        { MPRINT("mbr: decl");  $$ = new NodeMemberDecl($2
     | TOK_MAP_DECL id        { MPRINT("mbr: decl");   $$ = new NodeMemberDecl($2, MincMapType); }
     | TOK_MFUNC_DECL id        { MPRINT("mbr: decl");   $$ = new NodeMemberDecl($2, MincFunctionType); }
     | structname id           { MPRINT("mbr: struct decl");   $$ = new NodeMemberDecl($2, MincStructType, $1); }     // member decl for struct includes struct type
-    /*
-    | funcdef               { MPRINT("mbr: funcdef"); $$ = $1; }    // $1 will be a NodeFuncDef instance
-     */
+    | TOK_METHOD funcdef      { MPRINT("mbr: method funcdef"); $$ = $2; }    // $2 will be a NodeFuncDef instance
     ;
 
 /* An mbrl is one <mbr> or a series of <mbr>'s separated by commas, for a struct definition,
@@ -409,27 +389,32 @@ mbrl: mbr               { MPRINT("mbrl: mbr"); $$ = new NodeSeq(new NodeNoop(), 
 
 /* A structname is the rule for the beginning of a struct decl, e.g., "struct Foo" - we just return the id for the struct's name */
 
-structname: TOK_STRUCT_DECL id { MPRINT("structname"); $$ = $2; }
+structname: TOK_STRUCT_DECL id %prec CASTTOKEN { MPRINT("structname"); $$ = $2; }
+    ;
+
+structdecl: TOK_STRUCT_DECL id idl    { MPRINT("structdecl"); $$ = go(declareStructs($2)); idcount = 0; }
     ;
 
 /* A structdef is complete rule for a struct declaration, i.e., "struct Foo { <member decls> }" */
 
-structdef: structname '{' mbrl '}' struct   { MPRINT("structdef");
-        --slevel; MPRINT1("slevel => %d", slevel);
+structdef: structname '{' mbrl '}'   { MPRINT("structdef");
+/*        --slevel; MPRINT1("slevel => %d", slevel); */
         $$ = go(new NodeStructDef($1, $3));
     }
     ;
 
-/* struct level counter.  This is an inline action between tokens. */
+/* A structinit is a struct decl plus an initializer */
+structinit: TOK_STRUCT_DECL id idl '=' expblk {   MPRINT("structinit: struct <type> id = expblk"); $$ = go(initializeStruct($2, $5)); idcount = 0; }
 
+/* struct level counter.  This is an inline action between tokens. */
+/*
 struct:      {    MPRINT("struct"); slevel++; MPRINT1("slevel => %d", slevel); }
     ;
-
-/* Everything from this point down is used to build a function declaration/definition */
+*/
+/* Rules for declaring and defining functions */
 
 /* a <arg> is always a type followed by an <id>, like "float length".  They only occur in function definitions.
-    The variables declared are not visible outside of the function definition.
-    TODO: CAN THESE BE DERIVED FROM SOME OTHER EXISTING RULE?
+    The variables declared are not visible outside of the function.
  */
 
 arg: TOK_FLOAT_DECL id      { MPRINT("arg");
@@ -487,6 +472,7 @@ fargl: '(' argl ')'		{ MPRINT("fargl: (argl)"); $$ = new NodeArgList($2); }
 /* function block level counter.  This is an inline action between tokens. */
 
 function:    {	if (flevel > 0) { minc_die("nested function decls not allowed"); }
+                    incrLevel();
                     flevel++; MPRINT1("flevel => %d", flevel);
                  }
 ;
@@ -502,17 +488,12 @@ fstml:	stml ret			{	MPRINT("fstml: stml,ret");
 	;
 
 /* funcdef is a complete rule for a function definition, e.g. "list myfunction(string s) { ... }".
-    Note that if we are defining a function (i.e., if slevel==0), this rule's node is fully evaluated
-    in order to make this function available from the point of definition on.  If we are defining a struct method,
-    we postpone the level decrement, which postpones the node evaluation to the point where the struct definition
-    has been fully parsed.
  */
 
-funcdef: funcname fargl '{' fstml '}'	{ MPRINT1("funcdef%", slevel > 0 ? " (method)" : " (global function)");
-                                    if (slevel == 0) { decrLevel(); }
+funcdef: funcname fargl function '{' fstml '}'	{ MPRINT1("funcdef%s", slevel > 0 ? " (method)" : " (global function)");
 									--flevel; MPRINT1("flevel => %d", flevel);
-									$$ = go(new NodeFuncDef($1, $2, $4));
-                                    if (slevel > 0) { decrLevel(); }
+                                    decrLevel();
+									$$ = new NodeFuncDef($1, $2, $5);
 								}
 	| error funcname fargl '{' stml '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
 	| error funcname fargl '{' '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
