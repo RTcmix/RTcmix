@@ -31,7 +31,7 @@
    
 */
 
-/* This file holds the intermediate tree representation. */
+/* This file holds the intermediate tree representation as a linked set of Nodes. */
 
 #undef DEBUG
 
@@ -90,7 +90,7 @@ static int sFunctionCallDepth = 0;	// level of actively-executing function calls
 
 static bool inFunctionCall() { return sFunctionCallDepth > 0; }
 
-static void copy_tree_listelem(MincValue *edest, Node *  tpsrc);
+static void copyNodeToMincList(MincValue *edest, Node *  tpsrc);
 
 static MincWarningLevel sMincWarningLevel = MincAllWarnings;
 
@@ -659,7 +659,7 @@ Node *	NodeLoadSym::finishExct()
     Symbol *nodeSymbol;
 	if ((nodeSymbol = symbol()) != NULL) {
 		TPRINT("%s: symbol %p\n", classname(), nodeSymbol);
-        /* also assign the symbol's value into tree's value field */
+        /* also assign the symbol's value into Node's value field */
         TPRINT("NodeLoadSym/NodeAutoDeclLoadSym: copying value from symbol '%s' to us\n", nodeSymbol->name());
         copyValue(nodeSymbol);
 	}
@@ -681,7 +681,7 @@ Node *    NodeLoadFuncSym::finishExct()
     Symbol *nodeSymbol;
     if ((nodeSymbol = symbol()) != NULL) {
         TPRINT("%s: symbol %p\n", classname(), nodeSymbol);
-        /* also assign the symbol's value into tree's value field */
+        /* also assign the symbol's value into Node's value field */
         TPRINT("NodeLoadFuncSym: copying value from symbol '%s' to us\n", nodeSymbol->name());
         copyValue(nodeSymbol);
     }
@@ -705,9 +705,9 @@ Node *	NodeListElem::doExct()
 		TPRINT("NodeListElem %p evaluating payload child Node %p\n", this, child(1));
 		Node * tmp = child(1)->exct();
 		/* Copy entire MincValue union from expr to this and to stack. */
-		TPRINT("NodeListElem %p copying child value into self and stack\n", this);
+		TPRINT("NodeListElem %p copying child value into self and to arguments MincList[%d]\n", this, sMincListLen);
 		copyValue(tmp);
-		copy_tree_listelem(&sMincList[sMincListLen], tmp);
+		copyNodeToMincList(&sMincList[sMincListLen], tmp);
 		sMincListLen++;
 		TPRINT("NodeListElem: list at level %d now len %d\n", list_stack_ptr, sMincListLen);
 	}
@@ -721,7 +721,7 @@ Node *	NodeList::doExct()
 	MincList *theList = new MincList(sMincListLen);
 	this->v = theList;
 	TPRINT("MincList %p assigned to self\n", theList);
-	// Copy from stack list into tree list.
+	// Copy from stack list into Node's MincList.
     for (int i = 0; i < sMincListLen; ++i) {
 		theList->data[i] = sMincList[i];
     }
@@ -884,7 +884,7 @@ void    NodeSubscriptWrite::writeToSubscript()
         TPRINT("exct_subscript_write: MincList %p expanded to len %d\n",
                theList->data, len);
     }
-    copy_tree_listelem(&theList->data[index], child(2));
+    copyNodeToMincList(&theList->data[index], child(2));
 }
 
 void    NodeSubscriptWrite::writeWithMapKey()
@@ -937,7 +937,7 @@ Node *  NodeMemberAccess::doExct()
            if (memberSymbol) {
                 // Member with this name was found
                 setSymbol(memberSymbol);
-                /* also assign the symbol's value into tree's value field */
+                /* also assign the symbol's value into Node's value field */
                 TPRINT("NodeMemberAccess: copying value from member symbol '%s' to us\n", _memberName);
                 copyValue(memberSymbol);
             }
@@ -970,7 +970,7 @@ Node *	NodeCall::doExct()
     TPRINT("NodeCall: Func:\n");
     Node *calledFunction = child(0)->exct();         /* lookup target */
 	push_list();
-    TPRINT("NodeCall: calledFunction = %p, executing argument list (%p)\n", calledFunction, child(1));
+    TPRINT("NodeCall: calledFunction node = %p, processing function argument list node %p\n", calledFunction, child(1));
     child(1)->exct();    // execute arg expression list (stored on this NodeCall)
 	if (calledFunction->dataType() == MincFunctionType) {
         // MinC function
@@ -1725,9 +1725,9 @@ pop_list()
 }
 
 static void
-copy_tree_listelem(MincValue *dest, Node *tpsrc)
+copyNodeToMincList(MincValue *dest, Node *tpsrc)
 {
-   TPRINT("copy_tree_listelem(%p, %p)\n", dest, tpsrc);
+   TPRINT("copyNodeToMincList(%p, %p)\n", dest, tpsrc);
 #ifdef EMBEDDED
 	/* Not yet handling nonfatal errors with throw/catch */
 	if (tpsrc->dataType() == MincVoidType) {
