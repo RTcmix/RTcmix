@@ -124,7 +124,6 @@ int RTcmix::runMainLoop(void)
 					RTPrintf(".");
 				}
 			}
-			RTPrintf("\nPlaying.\n");
 			run_status = RT_GOOD;
 		}
 
@@ -142,7 +141,7 @@ int RTcmix::runMainLoop(void)
 int RTcmix::waitForMainLoop()
 {
 	rtcmix_debug(NULL, "waitForMainLoop():  entering function, audioDone = %d", audioDone);
-    RTPrintf("playing...\n");
+    if (!audioDone) { RTPrintf("Playing...\n"); }
 	while (!audioDone) {
 		usleep(10000);
 	}
