@@ -101,10 +101,10 @@ static Node * go(Node * t1);
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
 
 %type  <node> stml stmt rstmt bexp expl exp expblk str ret bstml obj fexp fexpl func
-%type  <node> fdecl sdecl hdecl ldecl mdecl structdecl structinit mfuncdecl arg argl funcdef fstml fargl funcname mbr mbrl structdef
+%type  <node> fdecl sdecl hdecl ldecl mdecl structdecl structinit mfuncdecl arg argl funcdef fstml fblock fargl funcname mbr mbrl structdef
 %type  <str> id structname
 
-%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl mdecl structdecl structinit mfuncdecl funcdef fstml arg argl fargl funcname mbr mbrl structdef obj fexp fexpl expblk
+%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl mdecl structdecl structinit mfuncdecl funcdef fstml arg argl fargl funcname mbr mbrl structdef obj fexp fexpl fblock expblk
 
 %error-verbose
 
@@ -487,13 +487,17 @@ fstml:	stml ret			{	MPRINT("fstml: stml,ret");
 							}
 	;
 
+/* fblock is a function statement block including its curly braces */
+
+fblock: '{' fstml '}' {     MPRINT("fblock"); $$ = $2; }
+
 /* funcdef is a complete rule for a function definition, e.g. "list myfunction(string s) { ... }".
  */
 
-funcdef: funcname fargl function '{' fstml '}'	{ MPRINT1("funcdef%s", slevel > 0 ? " (method)" : " (global function)");
+funcdef: funcname fargl function fblock	{ MPRINT("funcdef");
 									--flevel; MPRINT1("flevel => %d", flevel);
                                     decrLevel();
-									$$ = new NodeFuncDef($1, $2, $5);
+									$$ = new NodeFuncDef($1, $2, $4);
 								}
 	| error funcname fargl '{' stml '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
 	| error funcname fargl '{' '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
