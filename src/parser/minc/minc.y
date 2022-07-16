@@ -62,6 +62,8 @@ static bool     preserve_symbols = false;   /* what to do with symbol table at e
 static void 	cleanup();
 static void 	incrLevel();
 static void		decrLevel();
+static void     incrFunctionLevel();
+static void     decrFunctionLevel();
 static Node * declare(MincDataType type);
 static Node * declareStructs(const char *typeName);
 static Node * initializeStruct(const char *typeName, Node *initList);
@@ -438,17 +440,17 @@ arg: TOK_FLOAT_DECL id      { MPRINT("arg");
     DAS NOTE: Nodes not wrapped in "go()" because they are never executed during this rule.
  */
 
-funcname: TOK_FLOAT_DECL id { MPRINT("funcname");
+funcname: TOK_FLOAT_DECL id { MPRINT("funcname"); incrFunctionLevel();
 									$$ = new NodeFuncDecl(strsave($2), MincFloatType); }
-	| TOK_STRING_DECL id { MPRINT("funcname");
+    | TOK_STRING_DECL id { MPRINT("funcname"); incrFunctionLevel();
 									$$ = new NodeFuncDecl(strsave($2), MincStringType); }
-	| TOK_HANDLE_DECL id { MPRINT("funcname");
+    | TOK_HANDLE_DECL id { MPRINT("funcname");  incrFunctionLevel();
 									$$ = new NodeFuncDecl(strsave($2), MincHandleType); }
-	| TOK_LIST_DECL id { MPRINT("funcname: returns list");
+    | TOK_LIST_DECL id { MPRINT("funcname: returns list");  incrFunctionLevel();
 									$$ = new NodeFuncDecl(strsave($2), MincListType); }
-    | TOK_MAP_DECL id { MPRINT("funcname: returns map");
+    | TOK_MAP_DECL id { MPRINT("funcname: returns map");  incrFunctionLevel();
                                     $$ = new NodeFuncDecl(strsave($2), MincMapType); }
-    | TOK_STRUCT_DECL id id { MPRINT("funcname: returns struct");
+    | TOK_STRUCT_DECL id id { MPRINT("funcname: returns struct");  incrFunctionLevel();
                                     $$ = new NodeFuncDecl(strsave($3), MincStructType); }
 	;
 
@@ -469,14 +471,6 @@ fargl: '(' argl ')'		{ MPRINT("fargl: (argl)"); $$ = new NodeArgList($2); }
 	| '(' ')'           { MPRINT("fargl: (NULL)"); $$ = new NodeArgList(new NodeEmptyListElem()); }
 	;
 
-/* function block level counter.  This is an inline action between tokens. */
-
-function:    {	if (flevel > 0) { minc_die("nested function decls not allowed"); }
-                    incrLevel();
-                    flevel++; MPRINT1("flevel => %d", flevel);
-                 }
-;
-
 /* function body statement list.  Must be a statement list ending with a return statement */
 
 fstml:	stml ret			{	MPRINT("fstml: stml,ret");
@@ -494,10 +488,9 @@ fblock: '{' fstml '}' {     MPRINT("fblock"); $$ = $2; }
 /* funcdef is a complete rule for a function definition, e.g. "list myfunction(string s) { ... }".
  */
 
-funcdef: funcname fargl function fblock	{ MPRINT("funcdef");
-									--flevel; MPRINT1("flevel => %d", flevel);
-                                    decrLevel();
-									$$ = new NodeFuncDef($1, $2, $4);
+funcdef: funcname fargl fblock	{ MPRINT("funcdef");
+                                    decrFunctionLevel();
+									$$ = new NodeFuncDef($1, $2, $3);
 								}
 	| error funcname fargl '{' stml '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
 	| error funcname fargl '{' '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
@@ -513,6 +506,19 @@ static void 	incrLevel()
 static void		decrLevel()
 {
 	--level; MPRINT1("level => %d", level);
+}
+
+static void     incrFunctionLevel()
+{
+    if (flevel > 0) { minc_die("nested function decls not allowed"); }
+    ++flevel; MPRINT1("flevel => %d", flevel);
+    incrLevel();
+}
+
+static void        decrFunctionLevel()
+{
+    decrLevel();
+    --flevel; MPRINT1("flevel => %d", flevel);
 }
 
 // N.B. Because we have no need for <id>'s to exist in our tree other than for the purpose
