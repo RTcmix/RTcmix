@@ -17,20 +17,24 @@
 
 #if defined(DEBUG_TRACE)
 
+#define MAX_SPACES 128
+
 class Trace {
 public:
     Trace(const char *func) : mFunc(func) {
         rtcmix_print("%s%s -->\n", spaces, mFunc);
         ++sTraceDepth;
-        for (int n =0; n<sTraceDepth*3; ++n) { spaces[n] = ' '; }
-        spaces[sTraceDepth*3] = '\0';
+        const int spaceCount = std::min(MAX_SPACES, sTraceDepth*3);
+        for (int n =0; n<spaceCount; ++n) { spaces[n] = ' '; }
+        spaces[spaceCount] = '\0';
     }
     static char *getBuf() { return sMsgbuf; }
     static void printBuf() { rtcmix_print("%s%s", spaces, sMsgbuf); }
     ~Trace() {
         --sTraceDepth;
-        for (int n =0; n<sTraceDepth*3; ++n) { spaces[n] = ' '; }
-        spaces[sTraceDepth*3] = '\0';
+        const int spaceCount = std::min(MAX_SPACES, sTraceDepth*3);
+        for (int n =0; n<spaceCount; ++n) { spaces[n] = ' '; }
+        spaces[spaceCount] = '\0';
         rtcmix_print("%s<-- %s\n", spaces, mFunc);
     }
 private:
