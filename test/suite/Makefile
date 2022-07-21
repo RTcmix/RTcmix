@@ -165,11 +165,11 @@ test_embedded:
 	@mkdir -p function_scores
 	@for line in `cat every_function.sco`; do echo $$line\(\) > function_scores/$$line.sco; done
 	-./embeddedtest function_scores/*.sco
-#	@rm -rf function_scores
 	@echo Testing embedded use of all instruments
 	@echo "rtinput(\"input.wav\")" > embedded_test.sco
 	@find ${CMIXDIR}/shlib/ -name lib\* | grep -v conn | sed 's/^.*lib//' | sed 's/\.so/(0,0,1,1,1,1,1,1,1,1)/' >> embedded_test.sco
 	-./embeddedtest embedded_test.sco
+	@rm -rf function_scores
 
 clean:
 	@echo Cleaning test suite.

@@ -1,13 +1,24 @@
 struct StructWithMethod {
 	float _floatMember,
-	method float theMethod(string stringArgument) {
-		x = stringArgument;		// this lets us see a normal arg sym lookup
+	method float theMethod() {
 		return this._floatMember;
 	}
 };
 
 struct StructWithMethod myStruct = { 11.0 };
 
-x = myStruct.theMethod("a string");
+x = myStruct.theMethod();
 
+struct StructWithMethodTakingArgument {
+	string _stringMember,
+	method float theMethod(string stringArgument) {
+		this._stringMember = stringArgument;
+		return this._stringMember;
+	}
+};
 
+struct StructWithMethodTakingArgument myStruct = { "This is a string" };
+
+x = myStruct.theMethod("another string");
+
+print(x);

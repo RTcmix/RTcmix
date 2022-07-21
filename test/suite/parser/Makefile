@@ -10,15 +10,16 @@ functest2.sco \
 functest3.sco \
 functest4.sco \
 functest5.sco \
+func_with_undef_struct_arg.sco \
 if_else_scope.sco \
 include_at_line7.sco \
-maptest1.sco \
 maptest2.sco \
 maptest3.sco \
 maptest4.sco \
 maptest5.sco \
 maptest6.sco \
 multistruct.sco \
+negative_list_element.sco \
 nested.sco \
 nested_functions.sco \
 nestednoloop.sco \
@@ -34,6 +35,7 @@ struct_as_func_return.sco \
 struct_as_member.sco \
 struct_copy.sco \
 struct_initializer.sco \
+struct_with_same_as_member.sco \
 test_double_include.sco \
 unaryop.sco
 
@@ -46,6 +48,7 @@ struct_duplicate_member.sco \
 struct_duplicate_membername.sco \
 struct_init_wrong_type.sco \
 struct_init_insufficient_args.sco \
+struct_var_scope.sco \
 uninit_fun_member.sco
 
 
