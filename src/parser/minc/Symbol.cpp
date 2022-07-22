@@ -5,7 +5,7 @@
 
 /* symbol table management routines */
 
-#define SYMBOL_DEBUG
+#undef SYMBOL_DEBUG
 #undef DEBUG_SYM_MEMORY
 
 #ifdef SYMBOL_DEBUG
@@ -149,7 +149,7 @@ private:
 void Symbol::initAsStruct(const StructType *structType, MincList *initList)
 {
     DPRINT("Symbol::initAsStruct(this=%p, structType=%p) - creating struct and adding all members\n", this, structType);
-    this->v = MincValue(new MincStruct);
+    this->v = MincValue(new MincStruct(structType->name()));
     ElementFun functor(this, initList);
     structType->forEachMember(functor);
 }

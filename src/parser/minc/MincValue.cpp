@@ -119,11 +119,12 @@ Symbol * MincStruct::addMember(const char *name, const MincValue &value, int sco
     DPRINT("MincStruct::addMember(member '%s', type %s) => symbol %p\n", name, MincTypeName(value.dataType()), memberSym);
     memberSym->value() = value;     // initialize member value
     memberSym->scope = scope;
+#if ALLOW_RECURSIVE_STRUCT_INIT     /* this causes a crash if a struct contains a struct which contains a... */
     if (structType) {
         // Recursively initialize a struct member within a struct.
         memberSym->initAsStruct(structType);
     }
-
+#endif
     // Ugly, but lets us put them on in order
     if (_memberList == NULL) {
         _memberList = memberSym;
@@ -163,6 +164,19 @@ MincFunction::~MincFunction()
 #ifdef DEBUG_MEMORY
     MPRINT("deleting MincFunction %p\n", this);
 #endif
+}
+
+void
+MincFunction::handleThis(Symbol *symbolForThis)
+{
+    // If NULL, it means this is a non-method function and has no 'this' argument
+    if (symbolForThis) {
+        MincStruct *structForThis = (MincStruct *) symbolForThis->value();
+        Node *nodeStructDecl = new NodeStructDecl(strsave("this"), structForThis->typeName());
+        Node *declaredVarThis = nodeStructDecl->exct();
+        declaredVarThis->copyValue(symbolForThis, NO);  // dont allow type override
+        delete nodeStructDecl;
+    }
 }
 
 void

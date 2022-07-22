@@ -59,7 +59,8 @@ class Symbol;
 class MincStruct : public MincObject, public RefCounted
 {
 public:
-    MincStruct() : _memberList(NULL) {}
+    MincStruct(const char *typeName) : _typeName(typeName), _memberList(NULL) {}
+    const char *typeName() const { return _typeName; }
     Symbol *    addMember(const char *name, const MincValue &value, int scope, const char *structTypeName);
     Symbol *    lookupMember(const char *name);
     Symbol *    members() { return _memberList; }
@@ -67,7 +68,8 @@ public:
 protected:
     virtual ~MincStruct();
 protected:
-    Symbol *    _memberList;
+    const char *    _typeName;
+    Symbol *        _memberList;
 };
 
 // A MincFunction contains two Nodes which contain the argument list
@@ -78,6 +80,7 @@ class Node;
 class MincFunction : public MincObject, public RefCounted {
 public:
     MincFunction(Node *argumentList, Node *functionBody);
+    void    handleThis(Symbol *symbolForThis);
     void    copyArguments();
     Node *  execute();
 protected:

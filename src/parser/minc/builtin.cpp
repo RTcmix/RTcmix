@@ -214,6 +214,7 @@ void    MincStruct::print()
         }
         member = next;
     }
+    RTPrintf("\n");
 }
 
 void    MincMap::print()
@@ -228,6 +229,7 @@ void    MincMap::print()
             RTPrintfCat(", ");
         }
     }
+    RTPrintf("\n");
 }
 
 

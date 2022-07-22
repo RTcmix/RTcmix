@@ -61,6 +61,7 @@ typedef enum {
 	eNodeDecl,
     eNodeStructDecl,
 	eNodeFuncDecl,
+    eNodeMethodDecl,
 	eNodeBlock,
 	eNodeNoop
 } NodeKind;
@@ -373,6 +374,10 @@ public:
 	}
 protected:
 	virtual Node*		doExct();
+private:
+    void                callMincFunctionFromNode(Node *functionNode);
+    void                callListFunction(const char *functionName);
+    void                callBuiltinFunction(const char *functionName);
 };
 
 class NodeAnd : public Node2Children
@@ -475,6 +480,8 @@ protected:
     void                writeWithMapKey();
 };
 
+// NodeMemberAccess returns symbol for member var or method function from RHS of dot operator
+
 class NodeMemberAccess : public Node1Child
 {
 public:
@@ -568,6 +575,22 @@ protected:
 	virtual Node*		doExct();
 private:
 	const char *	_symbolName;
+};
+
+class NodeMethodDecl : public Node
+{
+public:
+    NodeMethodDecl(const char *name, const char *structTypeName, MincDataType type)
+        : Node(OpFree, eNodeMethodDecl),
+          _symbolName(name), _structTypeName(structTypeName) {
+        this->_type = type;        // TODO
+        NPRINT("NodeMethodDecl('%s', '%s') => %p\n", name, structTypeName, this);
+    }
+protected:
+    virtual Node*        doExct();
+private:
+    const char *    _symbolName;
+    const char *    _structTypeName;
 };
 
 class NodeBlock : public Node1Child

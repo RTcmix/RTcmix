@@ -18,6 +18,9 @@ maptest3.sco \
 maptest4.sco \
 maptest5.sco \
 maptest6.sco \
+function_calls_method.sco \
+method_calls_function.sco \
+two_methods.sco \
 multistruct.sco \
 negative_list_element.sco \
 nested.sco \

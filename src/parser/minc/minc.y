@@ -24,8 +24,8 @@ const char *lookup_token(const char *token, bool printWarning);
 #ifdef __cplusplus
 }
 #endif
-#define MDEBUG	/* turns on yacc debugging below */
-#define DEBUG_ID    /* turns on printing of each ID found (assumes MDEBUG) */
+#undef MDEBUG	/* turns on yacc debugging below */
+#undef DEBUG_ID    /* turns on printing of each ID found (assumes MDEBUG) */
 
 #ifdef MDEBUG
 //int yydebug=1;
@@ -56,7 +56,7 @@ static char		*idlist[MAXTOK_IDENTLIST];
 static int		flerror;		/* set if there was an error during parsing */
 static int		level = 0;		/* keeps track whether we are in a sub-block */
 static int		flevel = 0;		/* > 0 if we are in a function decl block */
-static int      slevel = 0;     /* > 0 if we are in a struct decl block */
+static const char *   sCurrentStructname = NULL;   /* set to struct name if we are in a struct decl block */
 static int      xblock = 0;		/* 1 if we are entering a block preceeded by if(), else(), while(), or for() */
 static bool     preserve_symbols = false;   /* what to do with symbol table at end of parse */
 static void 	cleanup();
@@ -64,6 +64,7 @@ static void 	incrLevel();
 static void		decrLevel();
 static void     incrFunctionLevel();
 static void     decrFunctionLevel();
+static void     setStructName(const char *name);
 static Node * declare(MincDataType type);
 static Node * declareStructs(const char *typeName);
 static Node * initializeStruct(const char *typeName, Node *initList);
@@ -103,10 +104,10 @@ static Node * go(Node * t1);
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
 
 %type  <node> stml stmt rstmt bexp expl exp expblk str ret bstml obj fexp fexpl func
-%type  <node> fdecl sdecl hdecl ldecl mdecl structdecl structinit mfuncdecl arg argl funcdef fstml fblock fargl funcname mbr mbrl structdef
+%type  <node> fdecl sdecl hdecl ldecl mapdecl structdecl structinit mfuncdecl arg argl funcdef fstml fblock fargl funcname mbr mbrl structdef methodname methoddef
 %type  <str> id structname
 
-%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl mdecl structdecl structinit mfuncdecl funcdef fstml arg argl fargl funcname mbr mbrl structdef obj fexp fexpl fblock expblk
+%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl mapdecl structdecl structinit mfuncdecl funcdef fstml arg argl fargl funcname mbr mbrl structdef obj fexp fexpl fblock expblk methodname methoddef
 
 %error-verbose
 
@@ -128,7 +129,7 @@ stmt: rstmt					{ MPRINT("stmt: rstmt");	$$ = go($1); }
 	| sdecl
 	| hdecl
 	| ldecl
-    | mdecl
+    | mapdecl
     | structdecl
     | structinit
     | mfuncdecl
@@ -172,7 +173,7 @@ bstml:	'{'			{ if (!xblock) incrLevel(); }
 									$$ = go(new NodeBlock($3));
 								}
 	/* DAS handling empty block as special case to avoid need for empty stml's */
-	| '{''}'		{ 	MPRINT("bstml: {}");
+	| '{' '}'		{ 	MPRINT("bstml: {}");
 								$$ = go(new NodeBlock(new NodeNoop()));
 								}
 	;
@@ -223,7 +224,7 @@ ldecl:	TOK_LIST_DECL idl	{ 	MPRINT("ldecl");
 								idcount = 0;
 							}
     ;
-mdecl:    TOK_MAP_DECL idl    {     MPRINT("mdecl");
+mapdecl:    TOK_MAP_DECL idl    {     MPRINT("mapdecl");
                                 $$ = go(declare(MincMapType));
                                 idcount = 0;
                               }
@@ -238,14 +239,14 @@ level:  /* nothing */ { incrLevel(); }
 
 /* An obj is an id or anything that can be operator accessed via . or [] */
 obj:    id                  {       MPRINT("obj: id");          $$ = new NodeLoadSym($1); }
-    |   obj'.'id            {       MPRINT("obj: obj.id");      $$ = new NodeMemberAccess($1, $3);  }
-    |   obj'[' exp ']'      {       MPRINT("obj: obj[exp]");    $$ = new NodeSubscriptRead($1, $3); }     // This is always non-terminal therefor read-access only
+    |   obj '.' id            {       MPRINT("obj: obj.id");      $$ = new NodeMemberAccess($1, $3);  }
+    |   obj '[' exp ']'      {       MPRINT("obj: obj[exp]");    $$ = new NodeSubscriptRead($1, $3); }     // This is always non-terminal therefor read-access only
     ;
 
-/* A function can be an id, a member access on a struct/class, or a list element accessed by index */
+/* A function can be an id, a member access on a struct/class, or a list element accessed by index, that can be followed by (args) */
 func:   id                  {       MPRINT("func: id");         $$ = new NodeLoadFuncSym($1); }
-    |   obj'.'id            {       MPRINT("func: obj.id");     $$ = new NodeMemberAccess($1, $3); }
-    |   obj'[' exp ']'      {       MPRINT("func: obj[exp]");   $$ = new NodeSubscriptRead($1, $3); }
+    |   obj '.' id            {       MPRINT("func: obj.id");     $$ = new NodeMemberAccess($1, $3); }      // id is member or method name
+    |   obj '[' exp ']'      {       MPRINT("func: obj[exp]");   $$ = new NodeSubscriptRead($1, $3); }
     ;
 
 /* An expression list block is used to initialize a list or a struct */
@@ -275,20 +276,22 @@ rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAuto
     | TOK_MINUSMINUS id %prec CASTTOKEN { MPRINT("rstmt: TOK_MINUSMINUS id");
         $$ = new NodeOpAssign(new NodeLoadSym($2), new NodeConstf(1.0), OpMinusMinus);
     }
+    
+    /* Calls to a function object, with and without arguments */
 
     | func '(' fexpl ')' {	MPRINT("rstmt: func(fexpl)");
 								$$ = new NodeCall($1, $3);
 							}
 	| func '(' ')' {		MPRINT("rstmt: func()");
-								$$ = new NodeCall($1, new NodeEmptyListElem());
-							}
+        $$ = new NodeCall($1, new NodeEmptyListElem());
+                        }
     /* Special case: Assigning value to an array at an index */
 	| obj '[' exp ']' '=' exp {
                                 MPRINT("rstmt: obj[exp] = exp");
                                 $$ = new NodeSubscriptWrite($1, $3, $6);
                             }
     /* Special case: Assigning value to an element in a struct */
-    | obj'.'id '=' exp       {
+    | obj '.' id '=' exp       {
                                 MPRINT("rstmt: obj.id = exp");
                                 $$ = new NodeStore(new NodeMemberAccess($1, $3), $5);
                             }
@@ -358,27 +361,22 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 								/* NodeConstf is a dummy; makes exct_operator work */
 								$$ = new NodeOp(OpNeg, $2, new NodeConstf(0.0));
 							}
-/*
-	| id					{
-								MPRINT("exp: id");    $$ = new NodeLoadSym($1);
-							}
-*/
 	;
 
 /* Rules for declaring and defining structs */
 
 /* An mbr is struct member declaration.
-    It is either a type followed by an <id>, like "float length", or a method declaration.
+    It is either a type followed by an <id>, like "float length", or a method definition.
  */
 
-mbr: TOK_FLOAT_DECL id        { MPRINT("mbr: decl");  $$ = new NodeMemberDecl($2, MincFloatType); }
+mbr: TOK_FLOAT_DECL id  { MPRINT("mbr: decl");  $$ = new NodeMemberDecl($2, MincFloatType); }
     | TOK_STRING_DECL id    { MPRINT("mbr: decl");    $$ = new NodeMemberDecl($2, MincStringType); }
     | TOK_HANDLE_DECL id    { MPRINT("mbr: decl");    $$ = new NodeMemberDecl($2, MincHandleType); }
-    | TOK_LIST_DECL id        { MPRINT("mbr: decl");  $$ = new NodeMemberDecl($2, MincListType); }
-    | TOK_MAP_DECL id        { MPRINT("mbr: decl");   $$ = new NodeMemberDecl($2, MincMapType); }
-    | TOK_MFUNC_DECL id        { MPRINT("mbr: decl");   $$ = new NodeMemberDecl($2, MincFunctionType); }
-    | structname id           { MPRINT("mbr: struct decl");   $$ = new NodeMemberDecl($2, MincStructType, $1); }     // member decl for struct includes struct type
-    | TOK_METHOD funcdef      { MPRINT("mbr: method funcdef"); $$ = $2; }    // $2 will be a NodeFuncDef instance
+    | TOK_LIST_DECL id  { MPRINT("mbr: decl");  $$ = new NodeMemberDecl($2, MincListType); }
+    | TOK_MAP_DECL id   { MPRINT("mbr: decl");   $$ = new NodeMemberDecl($2, MincMapType); }
+    | TOK_MFUNC_DECL id { MPRINT("mbr: decl");   $$ = new NodeMemberDecl($2, MincFunctionType); }
+    | structname id     { MPRINT("mbr: struct decl");   $$ = new NodeMemberDecl($2, MincStructType, $1); }     // member decl for struct includes struct type
+    | TOK_METHOD methoddef  { MPRINT("mbr: methoddef"); $$ = $2; }    // $2 will be a NodeMethodDef instance
     ;
 
 /* An mbrl is one <mbr> or a series of <mbr>'s separated by commas, for a struct definition,
@@ -391,31 +389,63 @@ mbrl: mbr               { MPRINT("mbrl: mbr"); $$ = new NodeSeq(new NodeNoop(), 
 
 /* A structname is the rule for the beginning of a struct decl, e.g., "struct Foo" - we just return the id for the struct's name */
 
-structname: TOK_STRUCT_DECL id %prec CASTTOKEN { MPRINT("structname"); $$ = $2; }
-    ;
-
-structdecl: TOK_STRUCT_DECL id idl    { MPRINT("structdecl"); $$ = go(declareStructs($2)); idcount = 0; }
+structname: TOK_STRUCT_DECL id %prec CASTTOKEN { MPRINT("structname"); $$ = $2; setStructName($2); }
     ;
 
 /* A structdef is complete rule for a struct declaration, i.e., "struct Foo { <member decls> }" */
 
-structdef: structname '{' mbrl '}'   { MPRINT("structdef");
-/*        --slevel; MPRINT1("slevel => %d", slevel); */
-        $$ = go(new NodeStructDef($1, $3));
-    }
+structdef: structname '{' mbrl '}'  { MPRINT("structdef");
+                                        setStructName(NULL);
+                                        $$ = go(new NodeStructDef($1, $3));
+                                    }
+    ;
+
+/* A structdecl is a declaration of an object or list of objects to be type 'struct <SomeStructName>' */
+
+structdecl: TOK_STRUCT_DECL id idl    { MPRINT("structdecl"); $$ = go(declareStructs($2)); idcount = 0; }
     ;
 
 /* A structinit is a struct decl plus an initializer */
 structinit: TOK_STRUCT_DECL id idl '=' expblk {   MPRINT("structinit: struct <type> id = expblk"); $$ = go(initializeStruct($2, $5)); idcount = 0; }
 
-/* struct level counter.  This is an inline action between tokens. */
-/*
-struct:      {    MPRINT("struct"); slevel++; MPRINT1("slevel => %d", slevel); }
-    ;
-*/
-/* Rules for declaring and defining functions */
+/* Rules for declaring and defining functions and methods */
 
-/* a <arg> is always a type followed by an <id>, like "float length".  They only occur in function definitions.
+/* function name, e.g. "list myfunction".  Used as first part of definition.
+    TODO: This is where I would add the ability for a function to return an mfunction.
+ */
+
+funcname: TOK_FLOAT_DECL id { MPRINT("funcname"); incrFunctionLevel();
+                                    $$ = new NodeFuncDecl(strsave($2), MincFloatType); }
+    | TOK_STRING_DECL id { MPRINT("funcname"); incrFunctionLevel();
+                                    $$ = new NodeFuncDecl(strsave($2), MincStringType); }
+    | TOK_HANDLE_DECL id { MPRINT("funcname");  incrFunctionLevel();
+                                    $$ = new NodeFuncDecl(strsave($2), MincHandleType); }
+    | TOK_LIST_DECL id { MPRINT("funcname: returns list");  incrFunctionLevel();
+                                    $$ = new NodeFuncDecl(strsave($2), MincListType); }
+    | TOK_MAP_DECL id { MPRINT("funcname: returns map");  incrFunctionLevel();
+                                    $$ = new NodeFuncDecl(strsave($2), MincMapType); }
+    | TOK_STRUCT_DECL id id { MPRINT("funcname: returns struct");  incrFunctionLevel();
+                                    $$ = new NodeFuncDecl(strsave($3), MincStructType); }
+    ;
+
+/* method name, e.g. "list mymethod".  Used as first part of definition.
+ */
+
+methodname: TOK_FLOAT_DECL id { MPRINT("methodname"); incrFunctionLevel();
+                            $$ = new NodeMethodDecl($2, sCurrentStructname, MincFloatType); }
+    | TOK_STRING_DECL id { MPRINT("methodname"); incrFunctionLevel();
+                            $$ = new NodeMethodDecl($2, sCurrentStructname, MincStringType); }
+    | TOK_HANDLE_DECL id { MPRINT("methodname");  incrFunctionLevel();
+                            $$ = new NodeMethodDecl($2, sCurrentStructname, MincHandleType); }
+    | TOK_LIST_DECL id { MPRINT("methodname: returns list");  incrFunctionLevel();
+                            $$ = new NodeMethodDecl($2, sCurrentStructname, MincListType); }
+    | TOK_MAP_DECL id { MPRINT("methodname: returns map");  incrFunctionLevel();
+                            $$ = new NodeMethodDecl($2, sCurrentStructname, MincMapType); }
+    | TOK_STRUCT_DECL id id { MPRINT("methodname: returns struct");  incrFunctionLevel();
+                            $$ = new NodeMethodDecl($3, sCurrentStructname, MincStructType); }
+    ;
+
+/* an <arg> is always a type followed by an <id>, like "float length".  They only occur in function and method definitions.
     The variables declared are not visible outside of the function.
  */
 
@@ -435,25 +465,6 @@ arg: TOK_FLOAT_DECL id      { MPRINT("arg");
                                     $$ = new NodeDecl($2, MincFunctionType); }
     ;
 
-/* function name, e.g. "list myfunction".  Used as first part of definition.
-    TODO: This is where I would add the ability for a function to return a function.
-    DAS NOTE: Nodes not wrapped in "go()" because they are never executed during this rule.
- */
-
-funcname: TOK_FLOAT_DECL id { MPRINT("funcname"); incrFunctionLevel();
-									$$ = new NodeFuncDecl(strsave($2), MincFloatType); }
-    | TOK_STRING_DECL id { MPRINT("funcname"); incrFunctionLevel();
-									$$ = new NodeFuncDecl(strsave($2), MincStringType); }
-    | TOK_HANDLE_DECL id { MPRINT("funcname");  incrFunctionLevel();
-									$$ = new NodeFuncDecl(strsave($2), MincHandleType); }
-    | TOK_LIST_DECL id { MPRINT("funcname: returns list");  incrFunctionLevel();
-									$$ = new NodeFuncDecl(strsave($2), MincListType); }
-    | TOK_MAP_DECL id { MPRINT("funcname: returns map");  incrFunctionLevel();
-                                    $$ = new NodeFuncDecl(strsave($2), MincMapType); }
-    | TOK_STRUCT_DECL id id { MPRINT("funcname: returns struct");  incrFunctionLevel();
-                                    $$ = new NodeFuncDecl(strsave($3), MincStructType); }
-	;
-
 /* a <argl> is one <arg> or a series of <arg>'s separated by commas */
 
 argl: arg     { MPRINT("argl: arg"); $$ = new NodeArgListElem(new NodeEmptyListElem(), $1); }
@@ -468,12 +479,12 @@ argl: arg     { MPRINT("argl: arg"); $$ = new NodeArgListElem(new NodeEmptyListE
  */
 
 fargl: '(' argl ')'		{ MPRINT("fargl: (argl)"); $$ = new NodeArgList($2); }
-	| '(' ')'           { MPRINT("fargl: (NULL)"); $$ = new NodeArgList(new NodeEmptyListElem()); }
+	| '(' ')'           { MPRINT("fargl: ()"); $$ = new NodeArgList(new NodeEmptyListElem()); }
 	;
 
 /* function body statement list.  Must be a statement list ending with a return statement */
 
-fstml:	stml ret			{	MPRINT("fstml: stml,ret");
+fstml:	stml ret			{	MPRINT("fstml: stml ret");
 									$$ = new NodeFuncBodySeq($1, $2);
 							}
 	| ret					{	MPRINT("fstml: ret");
@@ -495,6 +506,15 @@ funcdef: funcname fargl fblock	{ MPRINT("funcdef");
 	| error funcname fargl '{' stml '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
 	| error funcname fargl '{' '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
 	;
+
+/* methoddef is a complete rule for a struct method definition.  Looks the same as funcdef but only occurs within a struct definition.
+ */
+
+methoddef: methodname fargl fblock    { MPRINT("methoddef");
+                                    decrFunctionLevel();
+                                    $$ = new NodeFuncDef($1, $2, $3);
+                                }
+    ;
 
 %%
 
@@ -519,6 +539,19 @@ static void        decrFunctionLevel()
 {
     decrLevel();
     --flevel; MPRINT1("flevel => %d", flevel);
+}
+
+static void     setStructName(const char *name)
+{
+    if (name == NULL || sCurrentStructname == NULL) {   // never override one with another
+        sCurrentStructname = name;
+        if (name) {
+            MPRINT1("storing struct name '%s'", name);
+        }
+        else {
+            MPRINT("clearing stored struct name");
+        }
+    }
 }
 
 // N.B. Because we have no need for <id>'s to exist in our tree other than for the purpose
@@ -667,7 +700,7 @@ static void cleanup()
 	idcount = 0;
 	flerror = 0;
 	flevel = 0;
-    slevel = 0;
+    sCurrentStructname = NULL;
 	level = 0;
 	include_stack_index = 0;
     if (!preserve_symbols) {

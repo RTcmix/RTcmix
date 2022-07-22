@@ -17,8 +17,8 @@ struct StructWithMethodTakingArgument {
 	}
 };
 
-struct StructWithMethodTakingArgument myStruct = { "This is a string" };
+struct StructWithMethodTakingArgument myStruct2 = { "This is a string" };
 
-x = myStruct.theMethod("another string");
+x = myStruct2.theMethod("another string");
 
 print(x);

@@ -13,7 +13,7 @@
 #include <vector>
 #include <string.h>
 
-#define SYMBOL_DEBUG
+#undef SYMBOL_DEBUG
 #undef DPRINT
 #ifdef SYMBOL_DEBUG
 #define DPRINT(...) rtcmix_print(__VA_ARGS__)
@@ -296,7 +296,7 @@ void push_function_stack()
         sCallStack = new CallStack;
     }
     ScopeStack *stack = ScopeManager::stack();
-    DPRINT("pushing stack %p\n", stack);
+    DPRINT("\tpushing stack %p\n", stack);
     sCallStack->push_back(stack);
     ScopeStack *newStack = new ScopeStack;
     Scope *globalScope = stack->front();

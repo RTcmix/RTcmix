@@ -28,6 +28,10 @@
    Added real object-oriented support via struct member functions.
  
     Doug Scott, 06/2022.
+ 
+   Added full object-oriented support via structs (methods, etc.)
+ 
+    Doug Scott, 07/2022
    
 */
 
@@ -80,6 +84,7 @@ static int list_len_stack[MAXSTACK];
 static int list_stack_ptr;
 
 static StructType *sNewStructType;  // struct currently being defined
+static Symbol *sMethodThisSymbol;   // non-null if calling struct method
 
 static int sArgListLen;		// number of arguments passed to a user-declared function
 static int sArgListIndex;	// used to walk passed-in args for user-declared functions
@@ -111,6 +116,7 @@ void clear_tree_state()
 	sFunctionCallDepth = 0;
 	sArgListLen = 0;
 	sArgListIndex = 0;
+    sNewStructType = NULL;
 }
 
 static const char *s_NodeKinds[] = {
@@ -150,6 +156,7 @@ static const char *s_NodeKinds[] = {
    "NodeDecl",
    "NodeStructDecl",
    "NodeFuncDecl",
+   "NodeMethodDecl",
    "NodeBlock",
    "NodeNoop"
 };
@@ -182,6 +189,31 @@ static const char *printOpKind(OpKind k)
 	return s_OpKinds[k];
 }
 
+// WARNING: NOT THREAD SAFE
+
+static const char *methodNameFromStructAndFunction(const char *structName, const char *functionName)
+{
+    static char sMethodNameBuffer[128];
+    snprintf(sMethodNameBuffer, 128, "#%s$$%s", functionName, structName);
+    return sMethodNameBuffer;
+}
+
+static const char *nameFromMangledName(const char *mangledName)
+{
+    if (*mangledName == '#') {
+        static char sMethodNameBuffer[128];
+        strncpy(sMethodNameBuffer, mangledName+1, 128);
+        char *underscores = strstr(sMethodNameBuffer, "$$");
+        if (underscores) {
+            *underscores = '\0';
+        }
+        return sMethodNameBuffer;
+    }
+    else {
+        return mangledName;
+    }
+}
+
 /* prototypes for local functions */
 static void push_list(void);
 static void pop_list(void);
@@ -196,8 +228,8 @@ static int numNodes = 0;
 Node::Node(OpKind op, NodeKind kind)
 	: kind(kind), op(op), lineno(yyget_lineno())
 {
-#ifdef DEBUG_MEMORY
 	TPRINT("Node::Node (%s) this=%p\n", classname(), this);
+#ifdef DEBUG_MEMORY
 	++numNodes;
 	TPRINT("[%d nodes in existence]\n", numNodes);
 #endif
@@ -924,138 +956,182 @@ Node *	NodeSubscriptWrite::doExct()	// was exct_subscript_write()
 Node *  NodeMemberAccess::doExct()
 {
     ENTER();
-    TPRINT("Object:\n");
+    TPRINT("NodeMemberAccess: get target object:\n");
     child(0)->exct();         /* lookup target */
-    // NOTE: If LHS was a temporary variable, structSymbol will be null
-    Symbol *structSymbol = child(0)->symbol();
-    const char *targetName = (structSymbol != NULL) ? structSymbol->name() : "temp lhs";
-    TPRINT("NodeMemberAccess: attempting to access member '%s' on object '%s'\n", _memberName, targetName);
-    if (child(0)->dataType() == MincStructType) {
-        MincStruct *theStruct = (MincStruct *) child(0)->value();
-        if (theStruct) {
-           Symbol *memberSymbol = theStruct->lookupMember(_memberName);
-           if (memberSymbol) {
-                // Member with this name was found
-                setSymbol(memberSymbol);
-                /* also assign the symbol's value into Node's value field */
-                TPRINT("NodeMemberAccess: copying value from member symbol '%s' to us\n", _memberName);
-                copyValue(memberSymbol);
-            }
-           else {
-               TPRINT("NodeMemberAccess: member with that name not found - attempting to retrieve symbol for method\n");
-               Symbol *methodSymbol = lookupSymbol(_memberName, AnyLevel);
-               if (methodSymbol) {
-                   setSymbol(methodSymbol);
-                   TPRINT("NodeMemberAccess: copying value from method symbol '%s' to us\n", _memberName);
-                   copyValue(methodSymbol);
-               }
+    // NOTE: If LHS was a temporary variable, objectSymbol will be null
+    Symbol *objectSymbol = child(0)->symbol();
+    const char *targetName = (objectSymbol != NULL) ? objectSymbol->name() : "temp lhs";
+    TPRINT("NodeMemberAccess: access member '%s' on object '%s'\n", _memberName, targetName);
+    switch (child(0)->dataType()) {
+        case MincStructType:
+        {
+            MincStruct *theStruct = (MincStruct *) child(0)->value();
+            if (theStruct) {
+               Symbol *memberSymbol = theStruct->lookupMember(_memberName);
+               if (memberSymbol) {
+                    // Member with this name was found
+                    setSymbol(memberSymbol);
+                    /* also assign the symbol's value into Node's value field */
+                    TPRINT("NodeMemberAccess: copying value from member symbol '%s' to us\n", _memberName);
+                    copyValue(memberSymbol);
+                }
                else {
-                   minc_die("struct variable '%s' has no member or method '%s'", targetName, _memberName);
+                   TPRINT("NodeMemberAccess: member with that name not found - attempting to retrieve symbol for method\n");
+                   const char *methodName = methodNameFromStructAndFunction(theStruct->typeName(), _memberName);
+                   Symbol *methodSymbol = lookupSymbol(methodName, AnyLevel);
+                   if (methodSymbol) {
+                       setSymbol(methodSymbol);
+                       TPRINT("NodeMemberAccess: copying value from (mangled) method symbol '%s' to us\n", methodName);
+                       copyValue(methodSymbol);
+                       TPRINT("NodeMemberAccess: store struct symbol for use during call");
+                       sMethodThisSymbol = objectSymbol;
+                   }
+                   else {
+                       minc_die("struct variable '%s' has no member or method '%s'", targetName, _memberName);
+                   }
                }
-           }
+            }
+            else {
+                minc_die("struct variable %s' is NULL", targetName);
+            }
         }
-        else {
-            minc_die("struct variable %s' is NULL", targetName);
+            break;
+#if NOT_YET
+        case MincListType:
+        {
+            MincList *theList = (MincList *) child(0)->value();
+            value() = theList;
         }
-    }
-    else {
-        minc_die("variable '%s' is not a struct", targetName);
+            break;
+#endif
+        default:
+            minc_die("variable '%s' is not a struct", targetName);
+            break;
     }
     return this;
+}
+
+void NodeCall::callMincFunctionFromNode(Node *functionNode)
+{
+    Symbol *funcSymbol = functionNode->symbol();
+    sCalledFunctions.push_back(funcSymbol ? funcSymbol->name() : "temp lhs");   // FIX ME: have temp LHS vars store symbols
+    // Retrieve the workings of the function from its Symbol (stored there by FuncDef)
+    MincFunction *theFunction = (MincFunction *)functionNode->value();
+    if (theFunction) {
+        TPRINT("NodeCall: theFunction = %p -- dropping in\n", theFunction);
+        push_function_stack();
+        push_scope();           // move into function-body scope
+        int savedLineNo=0, savedScope=0, savedCallDepth=0;
+        Node * temp = NULL;
+        try {
+            // This replicates the argument-printing mechanism used by compiled-in functions.
+            if (Option::print() >= MMP_PRINTS) {
+                RTPrintf("============================\n");
+                RTPrintfCat("%s: ", nameFromMangledName(sCalledFunctions.back()));
+                MincValue retval;
+                call_builtin_function("print", sMincList, sMincListLen, &retval);
+            }
+            theFunction->handleThis(sMethodThisSymbol);
+            /* The exp list is copied to the symbols for the function's arg list. */
+            TPRINT("NodeCall: declaring all argument symbols in the function's scope\n");
+            theFunction->copyArguments();
+            savedLineNo = yyget_lineno();
+            savedScope = current_scope();
+            ++sFunctionCallDepth;
+            savedCallDepth = sFunctionCallDepth;
+            TPRINT("NodeCall: executing %s(), call depth now %d\n", sCalledFunctions.back(), savedCallDepth);
+            temp = theFunction->execute();
+        }
+        catch (Node * returned) {    // This catches return statements!
+            TPRINT("NodeCall(%p) caught %p return stmt throw - restoring call depth %d\n",
+                   this, returned, savedCallDepth);
+            temp = returned;
+            sFunctionCallDepth = savedCallDepth;
+            restore_scope(savedScope);
+        }
+        catch(...) {    // Anything else is an error
+            pop_function_stack();
+            --sFunctionCallDepth;
+            throw;
+        }
+        --sFunctionCallDepth;
+        TPRINT("NodeCall: function call depth => %d\n", sFunctionCallDepth);
+        // restore parser line number
+        yyset_lineno(savedLineNo);
+        TPRINT("NodeCall copying def exct results into self\n");
+        copyValue(temp);
+        pop_function_stack();
+    }
+    else {
+        minc_die("mfunction variable '%s' is NULL", sCalledFunctions.back());
+    }
+    sCalledFunctions.pop_back();
+}
+
+void NodeCall::callListFunction(const char *functionName)
+{
+    MincValue retval;
+    MincValue *newarglist = new MincValue[sMincListLen+1];
+    newarglist[0] = sMethodThisSymbol->value();
+    for (int n=0; n<sMincListLen; ++n) {
+        newarglist[n+1] = newarglist[n];
+    }
+    if (FUNCTION_NOT_FOUND != call_builtin_function(functionName, newarglist, sMincListLen+1, &retval)) {
+        this->setValue(retval);
+    }
+}
+
+void NodeCall::callBuiltinFunction(const char *functionName)
+{
+    if (!functionName) {
+        minc_die("string variable called as function is NULL");
+    }
+    MincValue retval;
+    int result = call_builtin_function(functionName, sMincList, sMincListLen,
+                                       &retval);
+    if (result == FUNCTION_NOT_FOUND) {
+        result = call_external_function(functionName, sMincList, sMincListLen,
+                                        &retval);
+    }
+    this->setValue(retval);
+    switch (result) {
+        case NO_ERROR:
+            break;
+        case FUNCTION_NOT_FOUND:
+#if defined(ERROR_FAIL_ON_UNDEFINED_FUNCTION)
+            throw result;
+#endif
+            break;
+        default:
+            throw result;
+            break;
+    }
 }
 
 Node *	NodeCall::doExct()
 {
     ENTER();
-    TPRINT("NodeCall: Func:\n");
     Node *calledFunction = child(0)->exct();         /* lookup target */
+    TPRINT("NodeCall: Func: node %p (child 0)\n", calledFunction);
 	push_list();
-    TPRINT("NodeCall: calledFunction node = %p, processing function argument list node %p\n", calledFunction, child(1));
+    TPRINT("NodeCall: Args: list node %p (child 1)\n", child(1));
     child(1)->exct();    // execute arg expression list (stored on this NodeCall)
-	if (calledFunction->dataType() == MincFunctionType) {
-        // MinC function
-        Symbol *funcSymbol = calledFunction->symbol();
-        sCalledFunctions.push_back(funcSymbol ? funcSymbol->name() : "temp lhs");   // FIX ME: have temp LHS vars store symbols
-        // Retrieve the workings of the function from its Symbol (stored there by FuncDef)
-        MincFunction *theFunction = (MincFunction *)calledFunction->value();
-        if (theFunction) {
-			TPRINT("NodeCall: theFunction = %p -- dropping in\n", theFunction);
-			push_function_stack();
-			push_scope();           // move into function-body scope
-			int savedLineNo=0, savedScope=0, savedCallDepth=0;
-			Node * temp = NULL;
-			try {
-                // This replicates the argument-printing mechanism used by compiled-in functions.
-                if (Option::print() >= MMP_PRINTS) {
-                    RTPrintf("============================\n");
-                    RTPrintfCat("%s: ", sCalledFunctions.back());
-                    MincValue retval;
-                    call_builtin_function("print", sMincList, sMincListLen, &retval);
-                }
-				/* The exp list is copied to the symbols for the function's arg list. */
-                TPRINT("NodeCall: declaring all argument symbols in the function's scope\n");
-				theFunction->copyArguments();
-				savedLineNo = yyget_lineno();
-				savedScope = current_scope();
-				++sFunctionCallDepth;
-				savedCallDepth = sFunctionCallDepth;
-				TPRINT("NodeCall: executing %s(), call depth now %d\n", sCalledFunctions.back(), savedCallDepth);
-				temp = theFunction->execute();
-			}
-			catch (Node * returned) {	// This catches return statements!
-				TPRINT("NodeCall(%p) caught %p return stmt throw - restoring call depth %d\n",
-					   this, returned, savedCallDepth);
-				temp = returned;
-				sFunctionCallDepth = savedCallDepth;
-				restore_scope(savedScope);
-			}
-			catch(...) {	// Anything else is an error
-				pop_function_stack();
-				--sFunctionCallDepth;
-				throw;
-			}
-			--sFunctionCallDepth;
-			TPRINT("NodeCall: function call depth => %d\n", sFunctionCallDepth);
-			// restore parser line number
-			yyset_lineno(savedLineNo);
-			TPRINT("NodeCall copying def exct results into self\n");
-			copyValue(temp);
-			pop_function_stack();
-		}
-        else {
-            minc_die("mfunction variable '%s' is NULL", sCalledFunctions.back());
-        }
-		sCalledFunctions.pop_back();
-	}
-	else if (calledFunction->dataType() == MincStringType) {
-        // Builtin function.  We stored this string away when we noticed this in the parser.
-        const char *functionName = (MincString)child(0)->value();
-        if (!functionName) {
-            minc_die("string variable called as function is NULL");
-        }
-		MincValue retval;
-		int result = call_builtin_function(functionName, sMincList, sMincListLen,
-										   &retval);
-		if (result == FUNCTION_NOT_FOUND) {
-			result = call_external_function(functionName, sMincList, sMincListLen,
-											&retval);
-		}
-		this->setValue(retval);
-		switch (result) {
-            case NO_ERROR:
-                break;
-            case FUNCTION_NOT_FOUND:
-#if defined(ERROR_FAIL_ON_UNDEFINED_FUNCTION)
-                throw result;
+    switch (calledFunction->dataType()) {
+        case MincFunctionType:        // MinC function
+            callMincFunctionFromNode(calledFunction);
+            break;
+        case MincStringType:        // Builtin function
+            // We stored this string away when we noticed this in the parser.
+            callBuiltinFunction((MincString)child(0)->value());
+            break;
+#if NOT_YET
+        case MincListType:          // A method called on list is treated as a string at the level
+            callListFunction((MincString)child(0)->value());
+            break;
 #endif
-                break;
-            default:
-                throw result;
-                break;
-		}
-	}
-    else {
-        minc_die("variable is not a function or instrument");
+        default:
+            minc_die("variable is not a function or instrument");
+            break;
     }
 	pop_list();
 	return this;
@@ -1461,7 +1537,7 @@ Node *	NodeArgListElem::doExct()
 {
 	++sArgListLen;
 	child(0)->exct();	// work our way to the front of the list
-    TPRINT("NodeArgListElem(%p): execute arg decls %p (child 1)\n", this, child(1));
+    TPRINT("NodeArgListElem(%p): execute arg decl %p (child 1)\n", this, child(1));
 	child(1)->exct();	// run the arg decl
 	// Symbol associated with this function argument
 	Symbol *argSym = child(1)->symbol();
@@ -1470,7 +1546,7 @@ Node *	NodeArgListElem::doExct()
 	}
 	else if (sArgListIndex >= sMincListLen) {
         if (sMincWarningLevel > MincNoDefaultedArgWarnings) {
-            minc_warn("%s(): arg '%s' not provided - defaulting to 0", sCalledFunctions.back(), argSym->name());
+            minc_warn("%s(): arg %d ('%s') not provided - defaulting to 0", sCalledFunctions.back(), sArgListIndex, argSym->name());
         }
 		/* Copy zeroed MincValue to us and then to sym. */
 		MincValue zeroElem;
@@ -1482,7 +1558,7 @@ Node *	NodeArgListElem::doExct()
 	}
 	/* compare stored NodeLoadSym with user-passed arg */
 	else {
-        TPRINT("NodeArgListElem: verify argument type and initialize with passed-in value\n");
+        TPRINT("NodeArgListElem: verify argument %d type and initialize with passed-in value\n", sArgListIndex);
 		// Pre-cached argument value from caller
 		MincValue &argValue = sMincList[sArgListIndex];
 		bool compatible = false;
@@ -1495,13 +1571,13 @@ Node *	NodeArgListElem::doExct()
             case MincStructType:
             case MincFunctionType:
 				if (argSym->dataType() != argValue.dataType()) {
-					minc_die("%s() arg '%s' passed as %s, expecting %s",
-								sCalledFunctions.back(), argSym->name(), MincTypeName(argValue.dataType()), MincTypeName(argSym->dataType()));
+					minc_die("%s() arg %d ('%s') passed as %s, expecting %s",
+								sCalledFunctions.back(), sArgListIndex, argSym->name(), MincTypeName(argValue.dataType()), MincTypeName(argSym->dataType()));
 				}
 				else compatible = true;
 				break;
 			default:
-                minc_internal_error("%s() arg '%s' is an unhandled type!", sCalledFunctions.back(), argSym->name());
+                minc_internal_error("%s() arg %d ('%s') is an unhandled type!", sCalledFunctions.back(), sArgListIndex, argSym->name());
 				break;
 		}
 		if (compatible) {
@@ -1586,15 +1662,16 @@ Node *	NodeDecl::doExct()
 	return this;
 }
 
-// NodeStructDef stores the new struct type into the scope's struct type table
+// NodeStructDef stores the new struct type into the scope's struct type table.
+// sNewStructType is used by NodeMemberDecl
 
 Node *  NodeStructDef::doExct()
 {
-    TPRINT("NodeStructDef(%p) -- storing definition for struct type '%s'\n", this, _typeName);
+    TPRINT("NodeStructDef(%p) -- installing struct type '%s'\n", this, _typeName);
     if (current_scope() == 0) {    // until I allow nested structs
         sNewStructType = installStructType(_typeName, YES);  // all structs global for now
         if (sNewStructType) {
-            TPRINT("-- walking element list\n");
+            TPRINT("-- walking struct's element list\n");
             child(0)->exct();
             sNewStructType = NULL;
         }
@@ -1605,7 +1682,7 @@ Node *  NodeStructDef::doExct()
     return this;
 }
 
-// NodeMemberDecl is invoked once for each struct member listed in the struct definition
+// NodeMemberDecl is invoked once for each struct member listed in the struct definition.  sNewStructType was set in NodeStructDef.
 
 Node *  NodeMemberDecl::doExct()
 {
@@ -1619,17 +1696,18 @@ Node *  NodeMemberDecl::doExct()
 
 Node *    NodeStructDecl::doExct()
 {
-    TPRINT("NodeStructDecl(%p) -- looking up type '%s'\n", this, _typeName);
+    TPRINT("NodeStructDecl(%p) -- looking up struct type '%s'\n", this, _typeName);
     const StructType *structType = lookupStructType(_typeName, GlobalLevel);    // GlobalLevel for now
     if (structType) {
-        TPRINT("-- declaring struct variable '%s'\n", _symbolName);
+        TPRINT("-- declaring variable '%s', type struct %s\n", _symbolName, _typeName);
         Node *initializers = child(0);
         if (initializers) {
             initializers->exct();   // This can throw
         }
-        Symbol *sym = lookupSymbol(_symbolName, GlobalLevel);       // GlobalLevel for now
+        // DAS changed this 7/18/22 - was brokenly only checking at global scope
+        Symbol *sym = lookupSymbol(_symbolName, AnyLevel);
         if (!sym) {
-            sym = installSymbol(_symbolName, YES);          // YES for now
+            sym = installSymbol(_symbolName, NO);   // install sym at current scope
             MincList *initList = (initializers) ? (MincList *)initializers->value() : NULL;
             sym->initAsStruct(structType, initList);
         }
@@ -1683,17 +1761,39 @@ Node *	NodeFuncDecl::doExct()
 	return this;
 }
 
+Node *    NodeMethodDecl::doExct()
+{
+    TPRINT("NodeMethodDecl(%p) -- declaring method '%s'\n", this, _symbolName);
+    if (current_scope() > 0) {
+        minc_die("methods may only be declared at global scope");
+    }
+    const char *mangledName = methodNameFromStructAndFunction(_structTypeName, _symbolName);
+    Symbol *sym = lookupSymbol(mangledName, GlobalLevel);    // only look at current global level
+    if (sym == NULL) {
+        sym = installSymbol(mangledName, YES);        // all functions global for now
+        sym->value() = MincValue(MincFunctionType);      // Empty MincFunction value
+        this->setSymbol(sym);
+    }
+    else {
+#ifdef EMBEDDED
+        minc_warn("method %s() is already declared", _symbolName);
+        this->setSymbol(sym);
+#else
+        minc_die("method %s() is already declared for struct %s", _symbolName, _structTypeName);
+#endif
+    }
+    return this;
+}
+
 Node *	NodeFuncDef::doExct()
 {
 	// Look up symbol for function, and bind the function's "guts" to it via a MincFunction.
-	TPRINT("NodeFuncDef(%p): executing lookup node %p\n", this, child(0));
+	TPRINT("NodeFuncDef(%p): executing lookup/install node %p (child 0)\n", this, child(0));
 	child(0)->exct();
 	assert(child(0)->symbol() != NULL);
     // Note: arglist and body stored inside MincFunction.  This is how we store the behavior
     // of a function on its symbol for re-use.
 	child(0)->symbol()->value() = MincValue(new MincFunction(child(1), child(2)));
-#warning is this line correct and necessary?
-    setValue(child(0)->symbol()->value());
 	return this;
 }
 
