@@ -83,7 +83,7 @@ public:
     static int bufsamps() { return sBufferFrameCount; }         // Replaces "RTBUFSAMPS"
     static float sr() { return sSamplingRate; }                 // Replaces "SR"
 	static int chans() { return NCHANS; }
-	static void setBufOffset(FRAMETYPE inOffset, bool inRunToOffset);
+	static void setBufTimeOffset(float inOffset, bool inRunToOffset);
 	static FRAMETYPE getElapsedFrames() { return elapsed + bufsamps(); }
 	static bool outputOpen() { return rtfileit != -1; }
 	static bool rtsetparams_was_called() { return rtsetparams_called; }
@@ -270,7 +270,7 @@ private:
 
 	/* used in intraverse.C, rtsendsamps.c */
 	static bool			runToOffset;
-	static FRAMETYPE	bufOffset;
+	static float    	bufTimeOffset;
 	static FRAMETYPE 	bufStartSamp;
 	static FRAMETYPE	elapsed;
 

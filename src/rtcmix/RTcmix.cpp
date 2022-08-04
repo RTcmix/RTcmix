@@ -63,7 +63,7 @@ int				RTcmix::sBufferFrameCount = 0;
 int				RTcmix::audioNCHANS 	= 0;
 float			RTcmix::sSamplingRate	= 0.0;
 bool			RTcmix::runToOffset		= false;
-FRAMETYPE		RTcmix::bufOffset		= 0;
+float   		RTcmix::bufTimeOffset	= 0.0;
 FRAMETYPE		RTcmix::bufStartSamp 	= 0;
 
 #ifdef EMBEDDED
@@ -245,7 +245,7 @@ RTcmix::free_globals()
 	
 	// Reset state of all global vars
 	runToOffset				= false;
-	bufOffset				= 0;
+	bufTimeOffset			= 0.0;
 	rtsetparams_called 		= 0;
 	audioLoopStarted 		= 0;
 	audio_config 			= 1;
@@ -385,16 +385,16 @@ double RTcmix::offset(float *p, int n_args, double *pp)
 		rtcmix_advise("rtoffset", "Usage: rtoffset(offset_time [, skip_preroll])");
 		return 0;
 	}
-	bufOffset = (FRAMETYPE)(pp[0] * sr());
+	bufTimeOffset = pp[0];
 	runToOffset = (n_args == 1) ? true : pp[1] == 0.0;
 	if (rtrecord) {
 		rtcmix_advise("rtoffset", "Cannot skip forward when recording");
-		bufOffset = 0;
+        bufTimeOffset = 0.0;
 		runToOffset = false;
-		return bufOffset;
+		return bufTimeOffset;
 	}
 	rtcmix_advise("rtoffset", "Starting playback at time %.3f %s preroll.", pp[0], runToOffset ? "with" : "without");
-	return bufOffset;
+	return bufTimeOffset;
 }
 
 // numeric p-field sending command.  The first "double" is to disambiguate
@@ -599,8 +599,8 @@ int RTcmix::getBusCount()
 	return busCount;
 }
 
-void RTcmix::setBufOffset(FRAMETYPE inOffset, bool inRunToOffset) {
-	bufOffset = inOffset; runToOffset = inRunToOffset;
+void RTcmix::setBufTimeOffset(float inOffset, bool inRunToOffset) {
+	bufTimeOffset = inOffset; runToOffset = inRunToOffset;
 }
 
 void RTcmix::registerAudioStartCallback(AudioCallback callback, void *context)

@@ -114,16 +114,21 @@ int RTcmix::runMainLoop(void)
 
 		rtcmix_debug(NULL, "runMainLoop():  calling startAudio()");
 		
-		if (bufOffset > 0) {
-			RTPrintf("Skipping %llu frames", (unsigned long long)bufOffset);
+		if (RTcmix::bufTimeOffset > 0) {
+            const FRAMETYPE bufOffset = (FRAMETYPE)(RTcmix::bufTimeOffset * sr());
+			RTPrintf("Skipping %f seconds (%llu frames)", RTcmix::bufTimeOffset, (unsigned long long)bufOffset);
 			run_status = RT_SKIP;
 			int dot = 0, dotskip = (int)(sr()/bufsamps());	// dots in a second of audio
 			while (bufStartSamp < bufOffset) {
-				inTraverse(audioDevice, this);
+                if (inTraverse(audioDevice, this) == false) {
+                    audioDone = true;
+                    return -1;    // Signal caller not to wait.
+                }
 				if (dot++ % dotskip == 0) {
 					RTPrintf(".");
 				}
 			}
+            RTPrintf("\n");
 			run_status = RT_GOOD;
 		}
 
@@ -156,9 +161,9 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 {
 //	RTcmix *RTCore = (RTcmix *) arg;
 	Bool panic = NO;
-	short bus = -1, bus_count = 0, busq = 0;
+	int bus = -1, bus_count = 0, busq = 0;
 	int i;
-	short bus_q_offset = 0;
+	int bus_q_offset = 0;
     const int frameCount = bufsamps();
 
 #ifdef WBUG
@@ -632,12 +637,6 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 
 #endif  // MULTI_THREAD
 
-	// Write buf to audio device - - - - - - - - - - - - - - - - - - - - -
-#ifdef DBUG
-	printf("Writing samples----------\n");
-	printf("bufEndSamp:  %ld\n", (long)bufEndSamp);
-#endif
-
 #ifdef EMBEDDED
 	// Here is where we now call the "checkers" for Bang, Values, and Print	-- DAS
 	checkForBang();
@@ -649,6 +648,12 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		rtsendzeros(device, false);
 	}
 	else if (run_status != RT_SKIP) {
+        // Write buf to audio device - - - - - - - - - - - - - - - - - - - - -
+#ifdef DBUG
+        printf("Writing samples----------\n");
+        printf("bufEndSamp:  %ld\n", (long)bufEndSamp);
+#endif
+
 		if (rtsendsamps(device) != 0) {
 #ifdef WBUG
 			RTPrintf("EXITING inTraverse()\n");

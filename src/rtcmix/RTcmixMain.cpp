@@ -66,10 +66,11 @@ usage()
       "           -k NUM   socket number (netplay)\n"
       "           -r NUM   remote host ip (or name for netplay)\n"
 #endif
-      "          NOTE: -s, -d, and -e are not yet implemented\n"
-      "           -s NUM   start time (seconds)\n"
+      "           -s NUM   start (offset) time (seconds)\n"
+#ifdef NOT_YET
       "           -d NUM   duration (seconds)\n"
       "           -e NUM   end time (seconds)\n"
+#endif
       "           -f NAME  read score from NAME instead of stdin\n"
       "                      (Minc and Python only)\n"
       "           --debug  enter parser debugger (Perl only)\n"
@@ -338,7 +339,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                netplay = 1;
                break;
 #endif
-            case 's':               /* set up a socket offset */
+            case 'S':               /* set up a socket offset */
                if (++i >= argc) {
                   fprintf(stderr, "You didn't give a socket offset.\n");
                   exit(1);
@@ -346,10 +347,16 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                socknew = atoi(argv[i]);
                printf("%s listening on socket %d\n", xargv[0], MYPORT + socknew);
                break;
-//            case 's':               /* start time (unimplemented) */
+            case 's':               /* start time (offset into playback) */
+                 if (++i >= argc) {
+                    fprintf(stderr, "You didn't give a skip time.\n");
+                    exit(1);
+                 }
+                 setBufTimeOffset((float)atof(argv[i]), false);
+                 break;
             case 'd':               /* duration to play for (unimplemented) */
             case 'e':               /* time to stop playing (unimplemented) */
-               fprintf(stderr, "-s, -d, -e options not yet implemented\n");
+               fprintf(stderr, "-d, -e options not yet implemented\n");
                exit(1);
                break;
             case 'f':     /* use file name arg instead of stdin as score */
