@@ -77,10 +77,7 @@ RVB::~RVB()
 	delete [] in;
 	// Dont delete memory for global arrays if insts are still active
 	if (check_users() == 0) {
-		for (int i = 0; i < 2; i++) {
-			for (int j = 0; j < 6; j++)
-				delete [] m_rvbData[i][j].Rvb_del;
-		}
+        uninit();
 	}
 }
 
@@ -134,6 +131,16 @@ int RVB::configure()
     alloc_delays();                     /* allocates memory for delays */
 	rvb_reset();
 	return 0;
+}
+
+void RVB::uninit()
+{
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 6; j++) {
+            delete [] m_rvbData[i][j].Rvb_del;
+            m_rvbData[i][j].Rvb_del = NULL;
+        }
+    }
 }
 
 /* ------------------------------------------------------------------ run --- */

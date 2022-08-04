@@ -27,6 +27,7 @@ protected:
 	void rvb_reset();
 	void doRun(double *, double *, long);	// was BASE::RVB()
 	void matrix_mix();
+    void uninit();
 private:
 	struct ReverbPatch {
 		int incount;
