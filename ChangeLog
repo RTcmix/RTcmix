@@ -1,6 +1,11 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2022-08-06  Douglas Scott <netdscott-at-netscape.net>
+	* Major parser extension to support class behavior on structs using new method declarations.
+	* Added "-s <skiptime>" argument to allow skipping into mixes.
+	* Bumped to 5.2.0 due to new parser features.
+
 2022-06-13  Douglas Scott <netdscott-at-netscape.net>
 	* Minor parser upgrade: Supports struct initializers.
 	* Some other code cleanup without visible effect.
