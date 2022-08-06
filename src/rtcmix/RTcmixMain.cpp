@@ -62,6 +62,7 @@ usage()
       "           -p NUM   set process priority to NUM (as root only)\n"
 #endif
       "           -D NAME  audio device name\n"
+      "           -S NUM   socket offset (for running in socket mode)\n"
 #ifdef NETAUDIO
       "           -k NUM   socket number (netplay)\n"
       "           -r NUM   remote host ip (or name for netplay)\n"

@@ -114,6 +114,7 @@ int RTcmix::runMainLoop(void)
 
 		rtcmix_debug(NULL, "runMainLoop():  calling startAudio()");
 		
+#ifndef EMBEDDED
 		if (RTcmix::bufTimeOffset > 0) {
             const FRAMETYPE bufOffset = (FRAMETYPE)(RTcmix::bufTimeOffset * sr());
 			RTPrintf("Skipping %f seconds (%llu frames)", RTcmix::bufTimeOffset, (unsigned long long)bufOffset);
@@ -131,7 +132,7 @@ int RTcmix::runMainLoop(void)
             RTPrintf("\n");
 			run_status = RT_GOOD;
 		}
-
+#endif
 		if (startAudio(inTraverse, doneTraverse, this) != 0) {
 			audioDone = true;
 			return -1;
