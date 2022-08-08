@@ -179,10 +179,6 @@ RTcmixMain::RTcmixMain() : RTcmix(false)
 RTcmixMain::RTcmixMain(int argc, char **argv, char **env) : RTcmix(false)
 #endif
 {
-#ifndef EMBEDDED
-   set_sig_handlers();
-#endif
-
 // FIXME: should consult a makefile variable to tell us whether we should
 // let dsoPath constructed at run time override SHAREDLIBDIR.
 
@@ -202,7 +198,9 @@ RTcmixMain::RTcmixMain(int argc, char **argv, char **env) : RTcmix(false)
 	init_options(true, NULL);		// 'true' indicates we were called from main
 	for (int i = 1; i <= MAXARGS; i++) xargv[i] = NULL;
 	xargc = 1;
+    setInteractive(true);           // this is always the default for embedded
 #else
+   set_sig_handlers();
    char *dsoPath = makeDSOPath(argv[0]);
    init_options(true, dsoPath);		// 'true' indicates we were called from main
    delete [] dsoPath;
@@ -227,6 +225,11 @@ RTcmixMain::RTcmixMain(int argc, char **argv, char **env) : RTcmix(false)
    ::rtprofile();               /* introduce real-time user-written routines */
 
    setbuf(stdout, NULL);        /*  Want to see stdout errors */
+}
+
+RTcmixMain::~RTcmixMain()
+{
+    // This might come in handy at some point.
 }
 
 void
@@ -403,146 +406,181 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
 
 }
 
+#ifdef OSC
+int
+RTcmixMain::runUsingOSC()
+{
+    int retcode;
+    pthread_t   serverThread;
+    rtcmix_debug("RTcmixMain", "creating OSC_Server() thread");
+    retcode = pthread_create(&serverThread, NULL, &RTcmixMain::OSC_Server, (void *) this);
+    if (retcode != 0) {
+        rterror("RTcmixMain", "OSC_Server() thread create failed\n");
+        goto Failed;
+    }
+    
+    /* Create scheduling thread. */
+    rtcmix_debug(NULL, "calling runMainLoop()");
+    retcode = runMainLoop();
+    if (retcode != 0) {
+        rterror("RTcmixMain", "runMainLoop() failed\n");
+        goto Failed;
+    }
+    else {
+        rtcmix_debug("RTcmixMain", "runMainLoop() returned");
+    }
+    
+    /* Join parsing thread. */
+    rtcmix_debug("RTcmixMain", "joining server thread");
+    retcode = pthread_join(serverThread, NULL);
+    if (retcode != 0) {
+        rterror("RTcmixMain", "OSC_Server() thread join failed\n");
+        goto Failed;
+    }
+    
+    /* Wait for audio thread. */
+    rtcmix_debug("RTcmixMain", "calling waitForMainLoop()");
+    retcode = waitForMainLoop();
+    if (retcode != 0) {
+        rterror("RTcmixMain", "waitForMailLoop() failed\n");
+        goto Failed;
+    }
+Failed:
+#ifndef EMBEDDED
+    if (!noParse)
+        destroy_parser();
+#endif
+    return retcode;
+}
+#endif
+
+int     RTcmixMain::runUsingSockit()
+{
+    int retcode;
+    pthread_t   serverThread;
+#ifndef EMBEDDED
+    /* Read an initialization score. */
+    if (!noParse) {
+        int status;
+        rtcmix_debug("RTcmixMain", "Parsing once ...");
+        status = ::parse_score(xargc, xargv, xenv);
+        if (status != 0)
+            exit(1);
+    }
+#endif // EMBEDDED
+    
+    /* Create parsing thread. */
+    rtcmix_debug("RTcmixMain", "creating sockit() thread");
+    retcode = pthread_create(&serverThread, NULL, &RTcmixMain::sockit, (void *) this);
+    if (retcode != 0) {
+        rterror("RTcmixMain", "sockit() thread create failed\n");
+        goto Failed;
+    }
+    
+    /* Create scheduling thread. */
+    rtcmix_debug("RTcmixMain", "calling runMainLoop()");
+    retcode = runMainLoop();
+    if (retcode != 0) {
+        rterror("RTcmixMain", "runMainLoop() failed\n");
+        goto Failed;
+    }
+    else {
+        rtcmix_debug("RTcmixMain", "runMainLoop() returned");
+    }
+    
+    /* Join parsing thread. */
+    rtcmix_debug("RTcmixMain", "joining sockit() thread");
+    retcode = pthread_join(serverThread, NULL);
+    if (retcode != 0) {
+        rterror(NULL, "sockit() thread join failed\n");
+        goto Failed;
+    }
+    
+    /* Wait for audio thread. */
+    rtcmix_debug("RTcmixMain", "calling waitForMainLoop()");
+    retcode = waitForMainLoop();
+    if (retcode != 0) {
+        rterror("RTcmixMain", "waitForMailLoop() failed\n");
+        goto Failed;
+    }
+Failed:
+#ifndef EMBEDDED
+    if (!noParse)
+        destroy_parser();
+#endif
+    return retcode;
+}
+
+#ifndef EMBEDDED
+
 void
 RTcmixMain::run()
 {
-   pthread_t   serverThread;
-   int retcode;
-   /* In interactive mode, we set up RTcmix to listen for score data
-      over a socket, and then parse this, schedule instruments, and play
-      them concurrently. The socket listening and parsing go in one
-      thread, and the scheduler and instrument code go in another.
+    /* In interactive mode, we set up RTcmix to listen for score data
+        over a socket, and then parse this, schedule instruments, and play
+        them concurrently. The socket listening and parsing go in one
+        thread, and the scheduler and instrument code go in another.
 
-      When not in interactive mode, RTcmix parses the score, schedules
-      all instruments, and then plays them -- in that order.
-   */
-   if (interactive()) {
-		rtcmix_advise(NULL, "interactive mode set\n");
+        When not in interactive mode, RTcmix parses the score, schedules
+        all instruments, and then plays them -- in that order.
+    */
+    if (interactive()) {
+        int retcode;
+         rtcmix_advise("RTcmixMain", "interactive mode set\n");
 #ifdef OSC
-       if (usingOSC()) {
-           rtcmix_debug(NULL, "creating OSC_Server() thread");
-           retcode = pthread_create(&serverThread, NULL, &RTcmixMain::OSC_Server, (void *) this);
-           if (retcode != 0) {
-               rterror(NULL, "OSC_Server() thread create failed\n");
-           }
-
-           /* Create scheduling thread. */
-           rtcmix_debug(NULL, "calling runMainLoop()");
-           retcode = runMainLoop();
-           if (retcode != 0) {
-              rterror(NULL, "runMainLoop() failed\n");
-           }
-           else {
-               rtcmix_debug(NULL, "runMainLoop() returned");
-           }
-    
-           /* Join parsing thread. */
-           rtcmix_debug(NULL, "joining server thread");
-           retcode = pthread_join(serverThread, NULL);
-           if (retcode != 0) {
-              rterror(NULL, "OSC_Server() thread join failed\n");
-           }
-    
-           /* Wait for audio thread. */
-           rtcmix_debug(NULL, "calling waitForMainLoop()");
-           retcode = waitForMainLoop();
-           if (retcode != 0) {
-              rterror(NULL, "waitForMailLoop() failed\n");
-           }
-#ifndef EMBEDDED
-          if (!noParse)
-              destroy_parser();
-#endif
-
-       }
-       else
+        if (usingOSC()) {
+            retcode = runUsingOSC();
+        }
+        else
 #endif  /* OSC */
-       {
-#ifndef EMBEDDED
-          /* Read an initialization score. */
-          if (!noParse) {
-             int status;
-             rtcmix_debug(NULL, "Parsing once ...");
-             status = ::parse_score(xargc, xargv, xenv);
-             if (status != 0)
-                exit(1);
-          }
-#endif // EMBEDDED
-    
-          /* Create parsing thread. */
-          rtcmix_debug(NULL, "creating sockit() thread");
-          retcode = pthread_create(&serverThread, NULL, &RTcmixMain::sockit, (void *) this);
-          if (retcode != 0) {
-             rterror(NULL, "sockit() thread create failed\n");
-          }
-    
-          /* Create scheduling thread. */
-          rtcmix_debug(NULL, "calling runMainLoop()");
-          retcode = runMainLoop();
-          if (retcode != 0) {
-             rterror(NULL, "runMainLoop() failed\n");
-          }
-          else {
-              rtcmix_debug(NULL, "runMainLoop() returned");
-          }
-    
-          /* Join parsing thread. */
-          rtcmix_debug(NULL, "joining sockit() thread");
-          retcode = pthread_join(serverThread, NULL);
-          if (retcode != 0) {
-             rterror(NULL, "sockit() thread join failed\n");
-          }
-    
-          /* Wait for audio thread. */
-          rtcmix_debug(NULL, "calling waitForMainLoop()");
-    	  retcode = waitForMainLoop();
-          if (retcode != 0) {
-             rterror(NULL, "waitForMailLoop() failed\n");
-          }
-    
-#ifndef EMBEDDED
-         if (!noParse)
-             destroy_parser();
-#endif
-     }
-  } else {      // not interactive
-#ifdef EMBEDDED
-		int status = 0;
-#else
-      int status = ::parse_score(xargc, xargv, xenv);
-	   if (parseOnly) {
-		   rtcmix_debug(NULL, "RTcmixMain::run: parse-only returned status %d", status);
-		   return;
-	   }
-#endif
+        {
+            retcode = runUsingSockit();
+        }
+    }
+    else      // not interactive
+    {
+        int status = ::parse_score(xargc, xargv, xenv);
+        if (parseOnly) {
+            rtcmix_debug("RTcmixMain", "run: parse-only returned status %d", status);
+            return;
+        }
+       if (status == 0) {
 #ifdef PYTHON
-      /* Have to reinstall this after running Python interpreter. (Why?) */
-	  set_sig_handlers();
+           /* Have to reinstall this after running Python interpreter. (Why?) */
+           set_sig_handlers();
 #endif
-      if (status == 0) {
 #ifdef LINUX
-//		 if (priority != 0)
-//			 if (setpriority(PRIO_PROCESS, 0, priority) != 0)
-//			 	perror("setpriority");
+ //         if (priority != 0)
+ //             if (setpriority(PRIO_PROCESS, 0, priority) != 0)
+ //                 perror("setpriority");
 #endif
-		 rtcmix_debug(NULL, "RTcmixMain::run: calling runMainLoop()");
-		  if ((status = runMainLoop()) == 0) {
-			 rtcmix_debug(NULL, "RTcmixMain::run: calling waitForMainLoop()");
-			 waitForMainLoop();
-		  }
-	  }
-      else
-         exit(status);
-
-#ifndef EMBEDDED
-      destroy_parser();		// DAS TODO: make this work?
-#endif
-   }
-
-#ifndef EMBEDDED
-   ::closesf_noexit();
-#endif
+           rtcmix_debug("RTcmixMain", "run: calling runMainLoop()");
+           if ((status = runMainLoop()) == 0) {
+              rtcmix_debug("RTcmixMain", "run: calling waitForMainLoop()");
+              waitForMainLoop();
+           }
+       }
+       else {
+           exit(status);
+       }
+        destroy_parser();        // DAS TODO: make this work?
+        ::closesf_noexit();
+    }
 }
+
+#else
+
+void
+RTcmixMain::run()
+{
+    rtcmix_debug("RTcmixMain", "run: calling runMainLoop()");
+    if (runMainLoop() == 0) {
+        rtcmix_debug("RTcmixMain", "run: calling waitForMainLoop()");
+        waitForMainLoop();
+    }
+}
+
+#endif
 
 /* ---------------------------------------------------- interrupt_handler --- */
 void
@@ -772,7 +810,7 @@ RTcmixMain::sockit(void *arg)
 		else if (strcmp(sinfo->name, "RTcmix_panic") == 0) {
 			int count = 30;
 			RTPrintf("RTcmix panic cmd received...\n");
-			run_status = RT_PANIC;	// Notify inTraverse()
+			panic();	// Notify inTraverse()
 			while (count--) {
 #ifdef linux
 				usleep(1000);
@@ -823,6 +861,7 @@ RTcmixMain::sockit(void *arg)
 }
 
 #ifdef EMBEDDED
+
 // BGG -- called by RTcmix_flushScore() in main.cpp (for the [flush] message)
 void
 RTcmixMain::resetQueueHeap()
@@ -830,7 +869,6 @@ RTcmixMain::resetQueueHeap()
 	rtcmix_advise(NULL, "Flushing all instrument queues");
 	run_status = RT_FLUSH;	// This gets reset in inTraverse()
 }
-
 
 // BGG mm -- this is the loading code for instrument development using rtcmix~
 // this was mainly copied from loader.c (disabled in rtcmix~) and is called
@@ -877,7 +915,7 @@ RTcmixMain::doload(char *dsoPath)
 		return 0;
     }
 
-#ifndef EMBEDDED
+#if 0
 // BGG -- this totally cause the maxmsp compile to stop
 	rtcmix_advise("loader", "Loaded %s functions from shared library:\n\t'%s'.\n", (profileLoaded == 3) ? "standard and RT" :
 		(profileLoaded == 2) ? "RT" : "standard", dsoPath);
@@ -891,4 +929,5 @@ RTcmixMain::unload()
 {
 	theDSO.unload();
 }
+
 #endif // EMBEDDED

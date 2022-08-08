@@ -53,9 +53,7 @@ int RTcmix::runMainLoop(void)
 {
 	Bool audio_configured = NO;
 
-#ifdef WBUG	
-	RTPrintf("ENTERING runMainLoop() FUNCTION *****\n");
-#endif
+    rtcmix_debug(NULL, "runMainLoop():  entering function");
 
 	// Initialize everything ... cause it's good practice
 	bufStartSamp = 0;  // current end sample for buffer
@@ -81,6 +79,8 @@ int RTcmix::runMainLoop(void)
 			audio_configured = YES;
 		}
 		::pthread_mutex_unlock(&audio_config_lock);
+#ifndef EMBEDDED
+        // This interactive mode is specifically the standalone one - not the embedded one.
 		if (interactive()) {
             int ret = 0;
 			if (run_status == RT_GOOD || run_status == RT_PANIC)
@@ -94,7 +94,8 @@ int RTcmix::runMainLoop(void)
 			audioDone = true;
 			return ret;
 		}
-        usleep(1000*100);   // no reason to run loop faster that 1 per 100 ms.
+#endif
+       usleep(1000*100);   // no reason to run loop faster that 1 per 100 ms.
 	}
 
 #ifndef EMBEDDED
@@ -104,7 +105,6 @@ int RTcmix::runMainLoop(void)
 	}
 #else
 	rtcmix_debug(NULL, "runMainLoop():  audio configured.");
-	setInteractive(true);
 #endif
 
 	// NOTE: audioin, aux and output buffers are zero'd during allocation
@@ -693,8 +693,10 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
         playEm = false;
     }
 
+    const bool instrumentQueueIsEmpty = rtHeap->getSize() == 0 && allQSize == 0;
+
 	if (!interactive()) {  // Ending condition
-		if ((rtHeap->getSize() == 0) && (allQSize == 0)) {
+		if (instrumentQueueIsEmpty) {
 #ifdef ALLBUG
 			printf("heapSize:  %ld\n", (long)rtHeap->getSize());
 			printf("rtQSize:  %ld\n", (long)rtQSize);
@@ -702,11 +704,16 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			printf("The end\n\n");
 #endif
 			playEm = false;
+#ifdef EMBEDDED
+            if (instrumentFound) {
+                notifyIsFinished(bufEndSamp);
+            }
+#endif
 		}
 	}
 	else {
 #ifdef EMBEDDED
-		if (instrumentFound && (rtHeap->getSize() == 0) && (allQSize == 0)) {
+		if (instrumentFound && instrumentQueueIsEmpty) {
 			notifyIsFinished(bufEndSamp);
 		}
 #endif
@@ -717,7 +724,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			panic = NO;
 		}
 		// DT_PANIC_MOD
-		if (panic && (rtHeap->getSize() == 0) && (allQSize == 0))
+		if (panic && instrumentQueueIsEmpty)
 			run_status = RT_GOOD;
 	}
 #ifdef WBUG

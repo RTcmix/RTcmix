@@ -70,14 +70,14 @@ public:
 
 	void printOn();
 	void printOff();
-	void panic();
+	static void panic();
 	void close();
 	virtual void run();	
 
 	// New public API
 
 	static bool interactive() { return rtInteractive; }
-    static void setInteractive(bool interactive) { rtInteractive = interactive; }
+    static void setInteractive(bool interactive) { printf("rtInteractive = %d\n", interactive); rtInteractive = interactive; }
     static bool usingOSC() { return rtUsingOSC; }
     static void setUseOSC(bool useOSC) { rtUsingOSC = useOSC; }
     static int bufsamps() { return sBufferFrameCount; }         // Replaces "RTBUFSAMPS"
@@ -179,8 +179,6 @@ protected:
 
 	// Cleanup methods
 	static void free_globals();
-	static void free_bus_config();
-	
 	
 	// Audio loop methods
 	
@@ -202,8 +200,8 @@ protected:
 	static float 	sSamplingRate;
 	
 	static int		rtInteractive;
-	static int              rtUsingOSC;
-        static int		rtsetparams_called;
+	static int      rtUsingOSC;
+    static int		rtsetparams_called;
 	static int		audioLoopStarted;
 	static int		audio_config;
 
@@ -234,8 +232,10 @@ private:
 	static int allocate_aux_buffer(short chan, int len);
 	static int allocate_out_buffer(short chan, int len);
 
-	// Cleanup routine.
+	// Cleanup routines.
 	static void free_buffers();
+    static void free_bus_config();
+    static void clearRtInstList();
 
 	static int registerDSOs(const char *dsoPaths);
 

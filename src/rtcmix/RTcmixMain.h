@@ -11,6 +11,7 @@ class RTcmixMain : public RTcmix {
 public:
 #ifdef EMBEDDED 
 	RTcmixMain();  // called from main.cpp
+    
 	// BGG -- for flushing Queue/Heap frpm flush_sched() (main.cpp)
 	void resetQueueHeap();
 	// BGG -- experimental dynloading of RTcmix insts in max/msp
@@ -20,7 +21,8 @@ public:
 #else
 	RTcmixMain(int argc, char **argv, char **env);	// called from main.cpp
 #endif
-	void			run();	
+    ~RTcmixMain();
+	void			run();
 
 protected:
 	// Initialization methods.
@@ -31,8 +33,10 @@ protected:
 
 	static void *	sockit(void *);
 #ifdef OSC
+    int             runUsingOSC();
 	static void *   OSC_Server(void *);
 #endif
+    int             runUsingSockit();
 private:
 	char *			makeDSOPath(const char *progPath);
 	static int 		xargc;	// local copy of arg count
@@ -42,13 +46,13 @@ private:
 	static int 		signal_handler_called;
 	static int		noParse;
 	static int		parseOnly;
-	#ifdef NETAUDIO
+#ifdef NETAUDIO
 	static int		netplay;     // for remote sound network playing
-	#endif
+#endif
 	/* for more than 1 socket, set by -s flag to CMIX as offset from MYPORT */
 	static int		socknew;
 #ifdef OSC
-        static lo_server_thread *osc_thread_handle;
+    static lo_server_thread *osc_thread_handle;
 #endif
 };
 

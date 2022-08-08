@@ -55,6 +55,12 @@ RTcmix::addrtInst(rt_item *rt_p)
 	return (0);
 }
 
+void
+RTcmix::clearRtInstList()
+{
+    rt_list = NULL;     // Ths does not leak memory because all the rt_items were statics
+}
+
 
 
 

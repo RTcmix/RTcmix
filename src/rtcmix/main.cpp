@@ -320,6 +320,11 @@ int RTcmix_setAudioBufferFormat(RTcmix_AudioFormat format, int nchans)
 	return SetEmbeddedCallbackAudioFormat(rtcmix_fmt, nchans);
 }
 
+void RTcmix_setInteractive(int interactive)
+{
+    globalApp->setInteractive(interactive != 0);
+}
+
 int RTcmix_runAudio(void *inAudioBuffer, void *outAudioBuffer, int nframes)
 {
 	return globalApp->runAudio(inAudioBuffer, outAudioBuffer, nframes);

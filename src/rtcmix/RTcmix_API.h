@@ -35,6 +35,8 @@ extern "C" {
 		AudioFormat_32BitFloat = 16				// single-precision float samples, scaled between -32767.0 and 32767.0
 	} RTcmix_AudioFormat;
 	int RTcmix_setAudioBufferFormat(RTcmix_AudioFormat format, int nchans);
+    // Set this to 0 to run non-interactively (i.e., parse the score completely first, then start running audio).
+    void RTcmix_setInteractive(int interactive);
 	// Call this to send and receive audio from RTcmix
 	int RTcmix_runAudio(void *inAudioBuffer, void *outAudioBuffer, int nframes);
 #endif

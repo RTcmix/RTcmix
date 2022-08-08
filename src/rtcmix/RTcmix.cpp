@@ -66,13 +66,8 @@ bool			RTcmix::runToOffset		= false;
 float   		RTcmix::bufTimeOffset	= 0.0;
 FRAMETYPE		RTcmix::bufStartSamp 	= 0;
 
-#ifdef EMBEDDED
 int				RTcmix::rtInteractive = 0;
-#else
-int				RTcmix::rtInteractive = 1; // keep the heap going for this object
-#endif
-
-int                             RTcmix::rtUsingOSC = 0;
+int             RTcmix::rtUsingOSC = 0;
 
 int				RTcmix::rtsetparams_called = 0; // will call at object instantiation, though
 int				RTcmix::audioLoopStarted = 0;
@@ -160,6 +155,7 @@ RTcmix::init_options(bool fromMain, const char *defaultDSOPath)
 		Option::exitOnError(true); // we do this no matter what is in config file
 #else
 		Option::exitOnError(false);
+        Option::print(6);
 #endif
         setInteractive(false);
 	}
@@ -227,6 +223,7 @@ RTcmix::free_globals()
 	free_buffers();
 	free_bus_config();
 	freefuncs();
+    clearRtInstList();
 	delete [] rtQueue;
 	rtQueue = NULL;
 	delete rtHeap;
@@ -319,12 +316,14 @@ RTcmix::RTcmix(bool dummy) {}
 
 RTcmix::~RTcmix()
 {
+    rtcmix_debug("~RTcmix", "shutting down and freeing memory");
 	run_status = RT_SHUTDOWN;
 	waitForMainLoop();	// This calls close()
 	free_globals();
 #ifdef EMBEDDED
 	destroy_parser();	// clean up symbols, etc
 #endif
+    rtcmix_debug("~RTcmix", "done");
 }
 
 //  The actual initialization method called by the imbedded constructors
@@ -339,6 +338,7 @@ RTcmix::init(float tsr, int tnchans, int bsize,
 	float p[3];
 	double pp[3];
 
+    rtcmix_debug("RTcmix::init", "entered");
 #ifdef SGI
    flush_all_underflows_to_zero();
 #endif
@@ -377,6 +377,7 @@ RTcmix::init(float tsr, int tnchans, int bsize,
 		// If we are not playing or recording from HW, we cannot be interactive
         setInteractive(false);
 	}
+    rtcmix_debug("RTcmix::init", "exited");
 }
 
 double RTcmix::offset(float *p, int n_args, double *pp)
