@@ -106,12 +106,6 @@ double dataset(float *p, int n_args, double *pp)
 		return rtOptionalThrow(SYSTEM_ERROR);
 	}
 
-	// OK, this is a new set that we will put in a new slot
-
-	g_currentDataset = set;
-
-	strcpy(g_dataset_names[g_currentDataset],name);
-
 	int npolesGuess = 0;
 	if(n_args>1)	/* if no npoles specified, it will be retrieved from */
 		npolesGuess= (int) p[1];	/* the header (if USE_HEADERS #defined) */
@@ -120,8 +114,7 @@ double dataset(float *p, int n_args, double *pp)
 	
 	int frms = (int) dataSet->open(name, npolesGuess, RTcmix::sr());
 	
-	if (frms < 0)
-	{
+	if (frms < 0) {
 		if (dataSet->getNPoles() == 0) {
 			::rterror("dataset",
 				"For this file, you must specify the correct value for npoles in p[1].");
@@ -132,6 +125,12 @@ double dataset(float *p, int n_args, double *pp)
 	::rtcmix_advise("dataset", "File has %d poles and %d frames.",
 			dataSet->getNPoles(), frms);
 	
+    // OK, now put put in a new slot
+
+    g_currentDataset = set;
+
+    strcpy(g_dataset_names[g_currentDataset],name);
+
 	// Add to dataset list.
 	g_datasets[g_currentDataset] = dataSet;
 

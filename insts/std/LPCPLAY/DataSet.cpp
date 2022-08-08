@@ -27,16 +27,14 @@ off_t
 DataSet::open(const char *fileName, int npoleGuess, float sampRate)
 {
     if ((_fdesc = ::open(fileName, O_RDONLY)) < 0) {
-		::rterror("dataset", "Can't open %s", fileName);
-		return -1;
+		return die("dataset", "Can't open %s", fileName);
     }
 	_nPoles = npoleGuess;	// in case we are not using headers
 	::rtcmix_advise("dataset", "Opened lpc dataset %s.", fileName);
 #ifdef USE_HEADERS
 	Bool isSwapped = NO;
 	if ((_lpHeaderSize = ::checkForHeader(_fdesc, &_nPoles, sampRate, &isSwapped)) < 0) {
-	    ::rterror("dataset", "Failed to check header");
-		return -1;
+	    return die("dataset", "Failed to check header");
 	}
 	_swapped = (isSwapped != 0);
 #else
@@ -60,8 +58,7 @@ DataSet::open(const char *fileName, int npoleGuess, float sampRate)
 		return _frameCount;
 	}
 	else {
-		::rterror("dataset", "Unable to stat dataset file.");
-		return -1;
+		return die("dataset", "Unable to stat dataset file.");
 	}
 }
 
