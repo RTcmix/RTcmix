@@ -34,6 +34,7 @@
 
 #include <unistd.h>
 #include <stdio.h>
+#include <assert.h>
 #include <ugens.h>
 #include <Instrument.h>
 #include <PField.h>
