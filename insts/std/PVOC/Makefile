@@ -13,7 +13,7 @@ ifeq ($(BUILDTYPE), STANDALONE)
 endif
 
 ifdef BUILD_FILTERS
-	FILTERS = libPVRandBend.so libPVRandBands.so libPVTransBend.so
+	FILTERS = libPVNewFilter.so libPVRandBend.so libPVRandBands.so libPVTransBend.so
 endif
 
 PROGS = $(NAME) lib$(NAME).so $(FILTERS)
@@ -37,6 +37,9 @@ ifeq ($(BUILDTYPE), STANDALONE)
 libPVFilterTest.so:	PVFilter.o PVFilterTest.o
 	$(CXX) $(SHARED_LDFLAGS) -o $@ PVFilter.o PVFilterTest.o setup.o
 
+libPVNewFilter.so:	PVFilter.o PVNewFilter.o
+	$(CXX) $(SHARED_LDFLAGS) -o $@ PVFilter.o PVNewFilter.o setup.o
+
 libPVRandBend.so:	PVFilter.o PVRandBend.o
 	$(CXX) $(SHARED_LDFLAGS) -o $@ PVFilter.o PVRandBend.o setup.o
 
@@ -56,6 +59,7 @@ install: dso_install
 dso_install: lib$(NAME).so $(FILTERS)
 	$(INSTALL) $(CURDIR)/lib$(NAME).so $(LIBDESTDIR)
 ifdef BUILD_FILTERS
+	$(INSTALL) $(CURDIR)/libPVNewFilter.so $(LIBDESTDIR)
 	$(INSTALL) $(CURDIR)/libPVRandBend.so $(LIBDESTDIR)
 	$(INSTALL) $(CURDIR)/libPVRandBands.so $(LIBDESTDIR)
 	$(INSTALL) $(CURDIR)/libPVTransBend.so $(LIBDESTDIR)
@@ -69,6 +73,7 @@ uninstall: dso_uninstall standalone_uninstall
 dso_uninstall:
 	$(RM) $(LIBDESTDIR)/lib$(NAME).so
 ifdef BUILD_FILTERS
+	$(RM) $(LIBDESTDIR)/libPVNewFilter.so
 	$(RM) $(LIBDESTDIR)/libPVRandBend.so
 	$(RM) $(LIBDESTDIR)/libPVRandBands.so
 	$(RM) $(LIBDESTDIR)/libPVTransBend.so
@@ -78,7 +83,7 @@ standalone_uninstall:
 	$(RM) $(DESTDIR)/$(NAME)
 
 clean:
-	$(RM) $(OBJS) $(PROGS) $(FILTERS) PVFilter.o PVFilterTest.o PVRandBend.o PVRandBands.o PVTransBend.o
+	$(RM) $(OBJS) $(PROGS) $(FILTERS) PVFilter.o PVFilterTest.o PVNewFilter.o PVRandBend.o PVRandBands.o PVTransBend.o
 
 cleanall: clean
 	$(RM) depend
