@@ -233,8 +233,9 @@ int PVOC::init(double *p, int n_args)
 
     if (obank) {
         rtcmix_advise("PVOC", "Using oscillator bank resynthesis");
-		initOscbank(N2, Np, R, _windowLen, _interpolation, P);
+        initOscbank(N2, Np, R, _windowLen, _interpolation, P);
     }
+	
 	// Factors for convert() and unconvert()
 	
 	_fundamental = (float) R / (N2 * 2);
@@ -243,6 +244,7 @@ int PVOC::init(double *p, int n_args)
 	_convertPhase = ::NewArray(N2 + 1);
 	_unconvertPhase = ::NewArray(N2 + 1);
 
+    rtcmix_advise("PVOC", "Running in %s mode, scaling factor %.3f, window len %d", obank ? "oscillator" : "IFFT", (float)_windowLen/_interpolation, _windowLen);
 	// All buffer allocation done in configure()
 	
 /*
@@ -257,11 +259,10 @@ int PVOC::init(double *p, int n_args)
 #ifdef debug
 	printf("_in: %d  _on: %d\n", _in, _on);
 #endif
+    
 	// Get pv filter if present
-
 	::GetFilter(&_pvFilter);
-	if (_pvFilter)
-		_pvFilter->ref();
+    RefCounted::ref(_pvFilter);
 
 	return nSamps();
 }
