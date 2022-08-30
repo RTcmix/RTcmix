@@ -983,11 +983,11 @@ Node *  NodeMemberAccess::doExct()
                        setSymbol(methodSymbol);
                        TPRINT("NodeMemberAccess: copying value from (mangled) method symbol '%s' to us\n", methodName);
                        copyValue(methodSymbol);
-                       TPRINT("NodeMemberAccess: store struct symbol for use during call");
+                       TPRINT("NodeMemberAccess: store struct symbol for use during call\n");
                        sMethodThisSymbol = objectSymbol;
                    }
                    else {
-                       minc_die("struct variable '%s' has no member or method '%s'", targetName, _memberName);
+                       minc_die("variable '%s' of type 'struct %s' has no member or method '%s'", targetName, theStruct->typeName(), _memberName);
                    }
                }
             }
@@ -1032,6 +1032,7 @@ void NodeCall::callMincFunctionFromNode(Node *functionNode)
                 call_builtin_function("print", sMincList, sMincListLen, &retval);
             }
             theFunction->handleThis(sMethodThisSymbol);
+            sMethodThisSymbol = NULL;
             /* The exp list is copied to the symbols for the function's arg list. */
             TPRINT("NodeCall: declaring all argument symbols in the function's scope\n");
             theFunction->copyArguments();

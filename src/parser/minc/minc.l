@@ -123,7 +123,7 @@ num   {dig}+
 <INCLUDE>[^ \t\n]+  { /* got the include file name */
             const char *includedFilename = yytext;
 #if DEBUG_INCLUDES
-            printf("including '%s'\n", includedFilename);
+            printf("\nincluding '%s'\n\n", includedFilename);
 #endif
 			if (include_stack_index >= MAX_INCLUDE_DEPTH) {
 				YY_FATAL_ERROR( "Includes nested too deeply");

@@ -536,7 +536,7 @@ RTcmixMIDIOutput *createMIDIOutputPort()
 {
     // We need rtsetparams in order to set the latency of the MIDI system.
     if (!RTcmix::rtsetparams_was_called()) {
-        fprintf(stderr, "You must call rtsetparams before setting up MIDI output");
+        fprintf(stderr, "You must call rtsetparams before setting up MIDI output\n");
         return NULL;
     }
     RTcmixMIDIOutput *midiport = new RTcmixMIDIOutput();

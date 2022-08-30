@@ -45,19 +45,20 @@ tempo(float p[], int n_args)
 	xtime[0] = rxtime[0] = accel[0] = prvbt = 0.;
 	for(m=0; m<npts; m++) {
 		dur = xtime[m+1] - xtime[m];
-		if(!dur) {
-			accel[m] = 0;
+		if (dur == 0.0f) {
+			accel[m] = 0.0f;
 			rxtime[m+1] = rxtime[m];
-			}
+        }
 		else 	{
-			accel[m] = (float)(pow((double)temp[m+1],TWO) - 
-					pow((double)temp[m],TWO))/
-					(2.*dur);
-			if(!accel[m]) rxtime[m+1] = dur/temp[m]+prvbt;
-				else rxtime[m+1] = (float)
-					(sqrt(pow((double)temp[m],TWO)+
+			accel[m] = (float)(pow((double)temp[m+1],TWO) - pow((double)temp[m],TWO))/(2.0f*dur);
+            if (accel[m] == 0.0f) {
+                rxtime[m+1] = dur/temp[m]+prvbt;
+            }
+            else {
+                rxtime[m+1] = (float) (sqrt(pow((double)temp[m],TWO)+
 					(double)(TWO* accel[m]*dur))-temp[m])/
 					accel[m] + prvbt;
+            }
 		}
 		prvbt = rxtime[m+1];
 	}
@@ -74,18 +75,22 @@ time_beat(float timein)
 	int m = 0;
 	float durp = 0;
 
-	if (timein < 0.0)
-		timein = 0.0;
+	if (timein < 0.0f)
+		timein = 0.0f;
 
 	if(!tset) return(timein);
 
-	if(timein) for(m=0; m<=npts; m++) {
-		if(timein > xtime[m] && timein <= xtime[m+1]) {
-			durp = timein-xtime[m];
-			break;
-		}
-	}
-	if(!accel[m]) return(durp/temp[m] + rxtime[m]);
+    if (timein > 0.0f) {
+        for(m=0; m<=npts; m++) {
+            if(timein > xtime[m] && timein <= xtime[m+1]) {
+                durp = timein-xtime[m];
+                break;
+            }
+        }
+    }
+    if (accel[m] == 0.0f) {
+        return(durp/temp[m] + rxtime[m]);
+    }
 	return(((float)sqrt(pow((double)temp[m],TWO)+ 
 		(double)(TWO * accel[m] * durp)) - temp[m])/
 		accel[m] + rxtime[m]);
@@ -98,9 +103,16 @@ beat_time(float beatin)    /* returns beats from times */
 	int m=0;
 	if(!tset) return(beatin);
 
-	if(beatin) for(m=0; m<=npts; m++) 
-		if(beatin > rxtime[m] && beatin <= rxtime[m+1]) break;
-	if(!accel[m]) return((beatin-rxtime[m])*temp[m] + xtime[m]);
+    if (beatin != 0.0f) {
+        for(m=0; m<=npts; m++) {
+            if (beatin > rxtime[m] && beatin <= rxtime[m+1]) {
+                break;
+            }
+        }
+    }
+    if (accel[m] == 0.0f) {
+        return((beatin-rxtime[m])*temp[m] + xtime[m]);
+    }
 	return(((float)pow((double)((beatin-rxtime[m]) * accel[m]+temp[m]),TWO)
 		-(float)pow((double)temp[m],TWO))/(TWO * accel[m]) + xtime[m]);
 }

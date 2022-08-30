@@ -175,6 +175,8 @@ MincFunction::handleThis(Symbol *symbolForThis)
         Node *nodeStructDecl = new NodeStructDecl(strsave("this"), structForThis->typeName());
         Node *declaredVarThis = nodeStructDecl->exct();
         declaredVarThis->copyValue(symbolForThis, NO);  // dont allow type override
+        DPRINT("MincFunction::handleThis: copying source symbol's value(s) into symbol for 'this'");
+        declaredVarThis->symbol()->value() = symbolForThis->value();
         delete nodeStructDecl;
     }
 }

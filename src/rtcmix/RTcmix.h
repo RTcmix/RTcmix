@@ -77,7 +77,7 @@ public:
 	// New public API
 
 	static bool interactive() { return rtInteractive; }
-    static void setInteractive(bool interactive) { printf("rtInteractive = %d\n", interactive); rtInteractive = interactive; }
+    static void setInteractive(bool interactive) { rtInteractive = interactive; }
     static bool usingOSC() { return rtUsingOSC; }
     static void setUseOSC(bool useOSC) { rtUsingOSC = useOSC; }
     static int bufsamps() { return sBufferFrameCount; }         // Replaces "RTBUFSAMPS"

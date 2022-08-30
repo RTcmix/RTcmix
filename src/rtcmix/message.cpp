@@ -187,14 +187,6 @@ rterror(const char *inst_name, const char *format, ...)
 		cpost(PREFIX "ERROR: %s", buf);
 #endif
 	}
-#if 0
-// allow embedded system to bail out of parser on all errorss
-    if (get_bool_option(kOptionBailOnError)) {
-        if (!rtsetparams_was_called())
-            closesf_noexit();
-        throw(SYSTEM_ERROR);
-    }
-#endif
 }
 
 /* ------------------------------------------------------------------ die --- */
