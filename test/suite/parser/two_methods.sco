@@ -1,17 +1,17 @@
-struct A {
+struct AStruct {
 	float _fMember,
 	method float firstMethod() { return this._fMember; },
 	method string secondMethod(float methodArg) { return "Foobar"; }
 };
 
-struct A a = { 11 };
+struct AStruct aVariable = { 11 };
 
-x = a.firstMethod();
+x = aVariable.firstMethod();
 
-if (x != 11) { printf("FAILED\n"); }
+if (x != 11) { exit("FAILED"); }
 
-y = a.secondMethod();
+y = aVariable.secondMethod(0);
 
-if (y != "Foobar") { printf("FAILED\n"); }
+if (y != "Foobar") { exit("FAILED"); }
 
 printf("SUCCEEDED\n");

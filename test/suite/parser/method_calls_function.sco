@@ -7,8 +7,12 @@ struct A {
 
 struct A a = { 11 };
 
+print(a);
+
 x = a.firstMethod();
 
-if (x != 11) { printf("FAILED\n"); }
+print(x);
+
+if (x != 1) { exit("FAILED"); }
 
 printf("SUCCEEDED\n");

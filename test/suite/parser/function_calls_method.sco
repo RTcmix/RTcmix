@@ -14,6 +14,6 @@ float aFunction(struct A aArg) {
 
 aFunction(a);
 
-if (x != 11) { printf("FAILED\n"); }
+if (x != 11) { exit("FAILED"); }
 
 printf("SUCCEEDED\n");
