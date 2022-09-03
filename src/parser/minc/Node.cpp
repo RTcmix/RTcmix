@@ -57,6 +57,8 @@
 extern "C" {
 	void yyset_lineno(int line_number);
 	int yyget_lineno(void);
+    int yy_get_include_index();
+    void yy_set_current_include_index(int idx);
 };
 
 /* builtin.cpp */
@@ -226,9 +228,10 @@ static int numNodes = 0;
 /* Tree nodes */
 
 Node::Node(OpKind op, NodeKind kind)
-	: kind(kind), op(op), lineno(yyget_lineno())
+	: kind(kind), op(op), lineno(yyget_lineno()), includeIndex(yy_get_include_index())
 {
 	TPRINT("Node::Node (%s) this=%p\n", classname(), this);
+    yy_set_current_include_index(includeIndex);
 #ifdef DEBUG_MEMORY
 	++numNodes;
 	TPRINT("[%d nodes in existence]\n", numNodes);
@@ -280,9 +283,8 @@ Node *	Node::exct()
 {
 	ENTER();
 	TPRINT("%s::exct() this=%p\n", classname(), this);
-	if (inFunctionCall() && lineno > 0) {
-		yyset_lineno(lineno);
-	}
+    yyset_lineno(lineno);
+    yy_set_current_include_index(includeIndex);
 	Node *outNode = doExct();	// this is redefined on all subclasses
     TPRINT("%s::exct() done: returning node %p of type %s\n", classname(), outNode, MincTypeName(outNode->dataType()));
 	return outNode;

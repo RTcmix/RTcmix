@@ -51,7 +51,13 @@ minc_warn(const char *msg, ...)
    vsnprintf(buf, BUFSIZE, msg, args);
    va_end(args);
 
-   rtcmix_warn("parser", "%s (near line %d)", buf, yyget_lineno());
+    const char *includedFile = yy_get_current_include_filename();
+    if (includedFile) {
+        rtcmix_warn("parser", "%s ('%s', near line %d)", buf, includedFile, yyget_lineno());
+    }
+    else {
+        rtcmix_warn("parser", "%s (near line %d)", buf, yyget_lineno());
+    }
 }
 
 void
@@ -64,7 +70,13 @@ minc_die(const char *msg, ...)
    vsnprintf(buf, BUFSIZE, msg, args);
    va_end(args);
 
-	rterror("parser", "%s (near line %d)", buf, yyget_lineno());
+    const char *includedFile = yy_get_current_include_filename();
+    if (includedFile) {
+        rterror("parser", "%s ('%s', near line %d)", buf, includedFile, yyget_lineno());
+    }
+    else {
+        rterror("parser", "%s (near line %d)", buf, yyget_lineno());
+    }
 
 	throw(MincParserError);
 }
@@ -79,22 +91,39 @@ minc_internal_error(const char *msg, ...)
    vsnprintf(buf, BUFSIZE, msg, args);
    va_end(args);
 
-	rterror("parser-program", "%s (near line %d)", buf, yyget_lineno());
-
+    const char *includedFile = yy_get_current_include_filename();
+    if (includedFile) {
+        rterror("parser-program", "%s ('%s', near line %d)", buf, includedFile, yyget_lineno());
+    }
+    else {
+        rterror("parser-program", "%s (near line %d)", buf, yyget_lineno());
+    }
 	throw(MincInternalError);
 }
 
 void
 yyerror(const char *msg)
 {
-	rterror("parser-yyerror", "near line %d: %s", yyget_lineno(), msg);
+    const char *includedFile = yy_get_current_include_filename();
+    if (includedFile) {
+        rterror("parser-yyerror", "'%s', near line %d: %s", includedFile, yyget_lineno(), msg);
+    }
+    else {
+        rterror("parser-yyerror", "near line %d: %s", yyget_lineno(), msg);
+    }
 	throw(MincParserError);
 }
 
 void
 yyfatalerror(const char *msg)
 {
-    rterror("parser-yyfatalerror", "near line %d: %s", yyget_lineno(), msg);
+    const char *includedFile = yy_get_current_include_filename();
+    if (includedFile) {
+        rterror("parser-yyfatalerror", "'%s', near line %d: %s", includedFile, yyget_lineno(), msg);
+    }
+    else {
+        rterror("parser-yyfatalerror", "near line %d: %s", yyget_lineno(), msg);
+    }
     throw(MincParserError);
 }
 

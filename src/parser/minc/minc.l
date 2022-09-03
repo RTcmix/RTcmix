@@ -17,9 +17,10 @@ extern void yyerror(const char *);
 extern void yyfatalerror(const char *);
 /* To allow includes of subfiles */
 #define MAX_INCLUDE_DEPTH 10
-struct Include { int saved_lineno; YY_BUFFER_STATE state; FILE *file; };
+struct Include { int saved_lineno; YY_BUFFER_STATE state; FILE *file; const char *fileName; };
 static Include include_stack[MAX_INCLUDE_DEPTH];
 static int include_stack_index = 0;
+static int current_include_index = 0;
 std::list<const char *> includedFilenames;
 #define YY_FATAL_ERROR(msg) yyfatalerror( msg )
 #ifdef EMBEDDED
@@ -46,7 +47,26 @@ extern "C" {
 void yy_clear_includes()
 {
     includedFilenames.clear();
-    include_stack_index = 0;
+    include_stack_index = current_include_index = 0;
+}
+/* returns include index based on score parse */
+int yy_get_include_index()
+{
+//    printf("yy_get_include_index: %d\n", include_stack_index);
+    return include_stack_index;
+}
+/* stores the include index associated with a score operation.  Used for error message display. */
+void yy_set_current_include_index(int idx)
+{
+    if (current_include_index != idx) {
+//        printf("yy_set_current_include_index: %d\n", idx);
+        current_include_index = idx;
+    }
+}
+/* retrieves the include filename for a score operation.  Used for error message display. */
+const char * yy_get_current_include_filename()
+{
+    return (current_include_index > 0) ? include_stack[current_include_index-1].fileName : NULL;
 }
 }
 
@@ -123,7 +143,7 @@ num   {dig}+
 <INCLUDE>[^ \t\n]+  { /* got the include file name */
             const char *includedFilename = yytext;
 #if DEBUG_INCLUDES
-            printf("\nincluding '%s'\n\n", includedFilename);
+            printf("\nincluding '%s' - depth %d\n\n", includedFilename, include_stack_index+1);
 #endif
 			if (include_stack_index >= MAX_INCLUDE_DEPTH) {
 				YY_FATAL_ERROR( "Includes nested too deeply");
@@ -155,9 +175,11 @@ num   {dig}+
                     YY_FATAL_ERROR(msg);
                 }
                 else {
-                    includedFilenames.push_back(strdup(includedFilename));
+                    const char *fileName = strdup(includedFilename);
+                    includedFilenames.push_back(fileName);
                     include_stack[include_stack_index].saved_lineno = yyget_lineno();
                     include_stack[include_stack_index].file = yyin;
+                    include_stack[include_stack_index].fileName = fileName;
                     include_stack[include_stack_index++].state = YY_CURRENT_BUFFER;
                     yyset_lineno(1);
                     yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
@@ -166,7 +188,14 @@ num   {dig}+
             BEGIN INIT;
 		}
 
-<<EOF>> {	if (--include_stack_index < 0)
+<<EOF>> {
+#if DEBUG_INCLUDES
+        if (include_stack_index > 0) {
+            printf("Popping out of a depth-%d include\n", include_stack_index);
+        }
+        current_include_index = 0;      // reset
+#endif
+        if (--include_stack_index < 0)
 			{
 				yyterminate();
 			}

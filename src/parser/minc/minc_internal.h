@@ -65,7 +65,7 @@ void minc_warn(const char *msg, ...);
 void minc_die(const char *msg, ...);
 void minc_internal_error(const char *msg, ...);
 extern "C" void yyerror(const char *msg);
-
+extern "C" const char *yy_get_current_include_filename();
 #define minc_try try
 #define minc_catch(actions) catch(...) { if (true) { actions } throw; }
 
