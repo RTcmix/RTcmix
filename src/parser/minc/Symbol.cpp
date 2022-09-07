@@ -63,7 +63,7 @@ Symbol::Symbol(const char *symName)
 Symbol::~Symbol()
 {
 #if defined(SYMBOL_DEBUG) || defined(DEBUG_SYM_MEMORY)
-//	rtcmix_print("\tSymbol::~Symbol() \"%s\" for scope %d (%p)\n", name, scope, this);
+    DPRINT("\tSymbol::~Symbol() \"%s\" scope %d (%p)\n", _name, scope, this);
 #endif
 	scope = -1;			// we assert on this elsewhere
 }
@@ -232,10 +232,10 @@ free_node(Symbol *p)
 #endif
 
 void
-Symbol::print()
+Symbol::print(const char *spacer)
 {
 #ifdef SYMBOL_DEBUG
-    DPRINT("Symbol %p: '%s', scope: %d, type: %s\n", this, name(), scope, dname(dataType()));
+    DPRINT("%sSymbol %p: '%s', scope: %d, type: %s\n", spacer, this, name(), scope, dname(dataType()));
 #endif
 }
 

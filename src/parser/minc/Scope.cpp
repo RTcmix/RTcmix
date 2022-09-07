@@ -13,9 +13,9 @@
 #include <vector>
 #include <string.h>
 
-#undef SYMBOL_DEBUG
+#undef SCOPE_DEBUG
 #undef DPRINT
-#ifdef SYMBOL_DEBUG
+#ifdef SCOPE_DEBUG
 #define DPRINT(...) rtcmix_print(__VA_ARGS__)
 #else
 #define DPRINT(...)
@@ -25,13 +25,13 @@
 
 class Scope : public RefCounted {
 public:
-    Scope(int inDepth) : _depth(inDepth) { memset(htab, 0, sizeof(htab)); }
+    Scope(int inDepth);
     Symbol *            install(const char *name);
     Symbol *            lookup(const char *name) const;
     int                 depth() const { return _depth; }
     StructType *        installStructType(const char *name);
     const StructType *  lookupStructType(const char *name) const;
-    void                dump();
+    void                dump(const char *spacer="");
 protected:
     virtual             ~Scope();
 private:
@@ -40,10 +40,18 @@ private:
     Symbol *                htab[HASHSIZE];   /* hash table */
 };
 
+Scope::Scope(int inDepth) : _depth(inDepth)
+{
+#ifdef SCOPE_DEBUG
+    DPRINT("Scope::Scope(%p) depth %d\n", this, _depth);
+#endif
+    memset(htab, 0, sizeof(htab));
+}
+
 Scope::~Scope()
 {
-#ifdef DEBUG_SYM_MEMORY
-    DPRINT("Scope::~Scope(%p)\n", this);
+#ifdef SCOPE_DEBUG
+    DPRINT("Scope::~Scope(%p) depth %d\n", this, _depth);
 #endif
     for (int s = 0; s < HASHSIZE; ++s) {
         for (Symbol *p = htab[s]; p != NULL; ) {
@@ -64,7 +72,7 @@ Scope::install(const char *name)
     p->scope = depth();
     htab[h] = p;
     
-#ifdef SYMBOL_DEBUG
+#ifdef SCOPE_DEBUG
     DPRINT("Scope::install (%p, '%s') => %p [scope %d]\n", this, name, p, p->scope);
 #endif
     return p;
@@ -102,17 +110,18 @@ const StructType *  Scope::lookupStructType(const char *name) const
 }
 
 void
-Scope::dump()
+Scope::dump(const char *spacer)
 {
     Symbol *p = NULL;
     for (int n = 0; n < HASHSIZE; ++n) {
         for (p = htab[n]; p != NULL; p = p->next)
-            p->print();
+            p->print(spacer);
     }
 }
 
 void clear_scope_stack(ScopeStack *stack)
 {
+    DPRINT("clear_scope_stack(%p)\n", stack);
     while (stack && !stack->empty()) {
         Scope *top = stack->back();
         stack->pop_back();
@@ -128,6 +137,7 @@ ScopeStack *ScopeManager::stack()
         sScopeStack = new std::vector<Scope *>;
         // We don't use push_scope() here because of the asserts.
         Scope *globalScope = new Scope(0);
+        DPRINT("ScopeManager::stack() => globalScope %p\n", globalScope);
         globalScope->ref();
         sScopeStack->push_back(globalScope);
     }
@@ -145,21 +155,21 @@ Scope * ScopeManager::currentScope() { return stack()->back(); }
 
 void ScopeManager::destroy()
 {
-    DPRINT("clearing stack %p\n", sScopeStack);
+    DPRINT("ScopeManager::destroy(): clearing global sScopeStack %p\n", sScopeStack);
     clear_scope_stack(sScopeStack);
     DPRINT("destroying stack %p\n", sScopeStack);
     delete sScopeStack;
     sScopeStack = NULL;
 }
 
-void ScopeManager::dump()
+void ScopeManager::dump(const char *spacer)
 {
     // Note: this one does not auto-create the scope
     DPRINT("ScopeStack %p:\n", sScopeStack);
     for (ScopeStack::iterator it2 = sScopeStack->begin(); it2 != sScopeStack->end(); ++it2) {
         Scope *scope = *it2;
-        DPRINT("    Scope %p [%d]:\n", scope, scope->depth());
-        scope->dump();
+        DPRINT("\tScope %p [%d]:\n", scope, scope->depth());
+        scope->dump(spacer);
     }
 }
 
@@ -249,7 +259,7 @@ lookupSymbol(const char *name, ScopeLookupType lookupType)
             foundLevel = stack->back()->depth();
         }
     }
-#ifdef SYMBOL_DEBUG
+#ifdef SCOPE_DEBUG
     if (p) {
         DPRINT("lookup ('%s', %s) => %p (scope %d, type %s)\n", name, typeString, p, foundLevel, MincTypeName(p->dataType()));
     }
@@ -375,11 +385,11 @@ void dump_symbols()
         DPRINT("CallStack %p:\n", sCallStack);
         for (CallStack::iterator it1 = sCallStack->begin(); it1 != sCallStack->end(); ++it1) {
             ScopeStack *stack = *it1;
-            DPRINT("  ScopeStack %p:\n", stack);
+            DPRINT("\tScopeStack %p:\n", stack);
             for (ScopeStack::iterator it2 = stack->begin(); it2 != stack->end(); ++it2) {
                 Scope *scope = *it2;
-                DPRINT("    Scope %p [%d]:\n", scope, scope->depth());
-                scope->dump();
+                DPRINT("\t\tScope %p [%d]:\n", scope, scope->depth());
+                scope->dump("\t\t\t");
             }
         }
     }
