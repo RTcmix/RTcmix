@@ -179,8 +179,6 @@ int is_float_list(const MincList *list);
 MincFloat *float_list_to_array(const MincList *list);
 MincList *array_to_float_list(const MincFloat *array, const int len);
 const char *MincTypeName(MincDataType type);
-void increment_score_line_offset(int offset);
-int get_score_line_offset();
 
 int hash(const char *c);
 int cmp(MincFloat f1, MincFloat f2);

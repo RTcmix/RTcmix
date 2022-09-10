@@ -38,6 +38,7 @@
 /* This file holds the intermediate tree representation as a linked set of Nodes. */
 
 #undef DEBUG
+#undef DEBUG_FILENAME_INCLUDES /* DAS - I use this for debugging error reporting */
 
 #include "debug.h"
 
@@ -57,8 +58,9 @@
 extern "C" {
 	void yyset_lineno(int line_number);
 	int yyget_lineno(void);
-    int yy_get_include_index();
-    void yy_set_current_include_index(int idx);
+    void yy_store_lineno(int line_number);
+    const char * yy_get_current_include_filename();
+    void yy_set_current_include_filename(const char *include_file);
 };
 
 /* builtin.cpp */
@@ -228,10 +230,9 @@ static int numNodes = 0;
 /* Tree nodes */
 
 Node::Node(OpKind op, NodeKind kind)
-	: kind(kind), op(op), lineno(yyget_lineno()), includeIndex(yy_get_include_index())
+	: kind(kind), op(op), lineno(yyget_lineno()), includeFilename(yy_get_current_include_filename())
 {
-	TPRINT("Node::Node (%s) this=%p\n", classname(), this);
-    yy_set_current_include_index(includeIndex);
+	TPRINT("Node::Node (%s) this=%p storing lineno %d, includefile '%s'\n", classname(), this, lineno, includeFilename);
 #ifdef DEBUG_MEMORY
 	++numNodes;
 	TPRINT("[%d nodes in existence]\n", numNodes);
@@ -282,11 +283,18 @@ void Node::print()
 Node *	Node::exct()
 {
 	ENTER();
-	TPRINT("%s::exct() this=%p\n", classname(), this);
-    yyset_lineno(lineno);
-    yy_set_current_include_index(includeIndex);
+    const char *savedIncludeFilename = includeFilename;
+#ifdef DEBUG_FILENAME_INCLUDES
+    printf("%s::exct(%p) setting current location to '%s', current_lineno to %d\n", classname(), this, includeFilename, lineno);
+#endif
+    yy_store_lineno(lineno);
+    yy_set_current_include_filename(includeFilename);
 	Node *outNode = doExct();	// this is redefined on all subclasses
-    TPRINT("%s::exct() done: returning node %p of type %s\n", classname(), outNode, MincTypeName(outNode->dataType()));
+    TPRINT("%s::exct(%p) done: returning node %p of type %s\n", classname(), this, outNode, MincTypeName(outNode->dataType()));
+#ifdef DEBUG_FILENAME_INCLUDES
+    printf("%s::exct(%p) restoring current location to '%s'\n", classname(), this, savedIncludeFilename);
+#endif
+    yy_set_current_include_filename(savedIncludeFilename);
 	return outNode;
 }
 

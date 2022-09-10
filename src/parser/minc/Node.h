@@ -75,7 +75,7 @@ public:
 	OpKind          op;
 	MincValue 		v;
 	int				lineno;         /* used for error statements */
-    int             includeIndex;   /* used for error statements */
+    const char *    includeFilename;   /* used for error statements */
 public:
 	Node(OpKind op, NodeKind kind);
 	virtual 			~Node();
