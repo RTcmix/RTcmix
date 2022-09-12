@@ -199,7 +199,7 @@ static const char *methodNameFromStructAndFunction(const char *structName, const
 {
     static char sMethodNameBuffer[128];
     snprintf(sMethodNameBuffer, 128, "#%s$$%s", functionName, structName);
-    return sMethodNameBuffer;
+    return strsave(sMethodNameBuffer);
 }
 
 static const char *nameFromMangledName(const char *mangledName)
@@ -877,7 +877,7 @@ Node *	NodeSubscriptRead::doExct()	// was exct_subscript_read()
             char stringChar[2];
             stringChar[1] = '\0';
             strncpy(stringChar, &theString[index], 1);
-            MincValue elem((MincString)strdup(stringChar));  // create new string value from the one character
+            MincValue elem((MincString)strsave(stringChar));  // create new string value from the one character
             this->setValue(elem);
         }
             break;

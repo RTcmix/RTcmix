@@ -190,7 +190,6 @@ num   {dig}+
                     YY_FATAL_ERROR(msg);
                 }
                 else {
-                    // We strdup this to allow == comparisons later, and to avoid multiple copies of these paths
                     const char *fileName = strdup(includedFilename);
                     includedFilenames.push_back(fileName);
                     include_stack[include_stack_index].saved_lineno = yyget_lineno();

@@ -82,11 +82,12 @@ Symbol *
 Scope::lookup(const char *name) const
 {
     Symbol *p = NULL;
-    
-    for (p = htab[hash(name)]; p != NULL; p = p->next)
-        if (name == p->name())
+    int hashIndex = hash(name);
+    for (p = htab[hashIndex]; p != NULL; p = p->next) {
+        if (name == p->name()) {
             break;
-    
+        }
+    }
     DPRINT("Scope::lookup (%p, '%s') [scope %d] => %p\n", this, name, depth(), p);
     return p;
 }
