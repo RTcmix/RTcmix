@@ -107,10 +107,10 @@ yyerror(const char *msg)
 {
     const char *includedFile = yy_get_current_include_filename();
     if (includedFile) {
-        rterror("parser-yyerror", "'%s', near line %d: %s", includedFile, yy_get_stored_lineno(), msg);
+        rterror("parser-yyerror", "'%s', near line %d: %s", includedFile, yyget_lineno(), msg);
     }
     else {
-        rterror("parser-yyerror", "near line %d: %s", yy_get_stored_lineno(), msg);
+        rterror("parser-yyerror", "near line %d: %s", yyget_lineno(), msg);
     }
 	throw(MincParserError);
 }
@@ -120,10 +120,10 @@ yyfatalerror(const char *msg)
 {
     const char *includedFile = yy_get_current_include_filename();
     if (includedFile) {
-        rterror("parser-yyfatalerror", "'%s', near line %d: %s", includedFile, yy_get_stored_lineno(), msg);
+        rterror("parser-yyfatalerror", "'%s', near line %d: %s", includedFile, yyget_lineno(), msg);
     }
     else {
-        rterror("parser-yyfatalerror", "near line %d: %s", yy_get_stored_lineno(), msg);
+        rterror("parser-yyfatalerror", "near line %d: %s", yyget_lineno(), msg);
     }
     throw(MincParserError);
 }

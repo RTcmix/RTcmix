@@ -248,15 +248,17 @@ lookupSymbol(const char *name, ScopeLookupType lookupType)
     else if (lookupType == GlobalLevel) {
         typeString = "GlobalLevel";
         // Global scope only
-        if ((p = stack->front()->lookup(name)) != NULL) {
-            foundLevel = stack->front()->depth();
+        Scope *globalScope = stack->front();
+        if ((p = globalScope->lookup(name)) != NULL) {
+            foundLevel = globalScope->depth();
         }
     }
     else if (lookupType == ThisLevel) {
         typeString = "ThisLevel";
         // Current scope only
-        if ((p = stack->back()->lookup(name)) != NULL) {
-            foundLevel = stack->back()->depth();
+        Scope *currentScope = stack->back();
+        if ((p = currentScope->lookup(name)) != NULL) {
+            foundLevel = currentScope->depth();
         }
     }
 #ifdef SCOPE_DEBUG

@@ -216,7 +216,7 @@ void    MincStruct::print()
         }
         member = next;
     }
-    RTPrintf("\n");
+//    RTPrintf("\n");
 }
 
 void    MincMap::print()
