@@ -173,11 +173,15 @@ MincFunction::handleThis(Symbol *symbolForThis)
     if (symbolForThis) {
         MincStruct *structForThis = (MincStruct *) symbolForThis->value();
         Node *nodeStructDecl = new NodeStructDecl(strsave("this"), structForThis->typeName());
+        DPRINT("MincFunction::handleThis: declaring symbol for 'this'\n");
         Node *declaredVarThis = nodeStructDecl->exct();
         declaredVarThis->copyValue(symbolForThis, NO);  // dont allow type override
-        DPRINT("MincFunction::handleThis: copying source symbol's value(s) into symbol for 'this'");
+        DPRINT("MincFunction::handleThis: copying source symbol's value(s) into symbol for 'this'\n");
         declaredVarThis->symbol()->value() = symbolForThis->value();
         delete nodeStructDecl;
+    }
+    else {
+        DPRINT("MincFunction::handleThis: symbolForThis is NULL\n");
     }
 }
 

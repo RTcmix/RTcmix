@@ -31,14 +31,14 @@ tempo(float p[], int n_args)
 		tset = 0;
 		return -1.0;
 	}
-
-	tset = 1;
-	for(m=0;m<TLEN;m++) xtime[m]=temp[m]=rxtime[m]=accel[m]=0;
+    for(m=0;m<TLEN;m++) { xtime[m]=temp[m]=rxtime[m]=accel[m]=0; }
 	for(m=0,npts=1; m<TLEN; m += 2, npts++) {
 		if((m) && (m >= n_args)) break;
 		xtime[npts] = p[m];
 		temp[npts] = p[m+1]/BASIS;
-		}
+        if (temp[npts] == 0.0) { return die("tempo", "tempo value cannot be zero - did you reverse your arguments?"); }
+    }
+    tset = 1;
 	rxtime[npts] = xtime[npts] = .999999e+10;
 	temp[npts] = temp[npts-1];
 	temp[0] = temp[1];

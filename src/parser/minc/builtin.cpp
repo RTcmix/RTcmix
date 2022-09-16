@@ -700,7 +700,7 @@ _minc_contains(const MincValue args[], const int nargs)
 }
 
 /* ------------------------------------------------------------------ type -- */
-/* Print the object type of the argument: float, string, handle, list.
+/* Print the object type of the argument: float, string, handle, list, mincfunction, struct.
 */
 MincString
 _minc_type(const MincValue args[], const int nargs)
@@ -709,7 +709,7 @@ _minc_type(const MincValue args[], const int nargs)
       minc_warn("type: must have one argument");
       return NULL;
    }
-   return _make_type_string(args[0].dataType() );
+   return _make_type_string(args[0].dataType());
 }
 
 /* ------------------------------------------------------------------ tostring -- */
