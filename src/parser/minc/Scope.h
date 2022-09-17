@@ -24,7 +24,7 @@ public:
     static void setStack(ScopeStack *stack);
     static Scope *globalScope();
     static Scope *currentScope();
-    static void dump();
+    static void dump(const char *spacer="");
     static void destroy();
 };
 

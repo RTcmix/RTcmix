@@ -27,7 +27,7 @@ public:
     
     Symbol *            getStructMember(const char *memberName);
     
-    void                print();
+    void                print(const char *spacer="");
     
     Symbol *next;                 /* next entry on hash chain */
     int scope;

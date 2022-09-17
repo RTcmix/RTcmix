@@ -38,6 +38,7 @@
 /* This file holds the intermediate tree representation as a linked set of Nodes. */
 
 #undef DEBUG
+#undef DEBUG_FILENAME_INCLUDES /* DAS - I use this for debugging error reporting */
 
 #include "debug.h"
 
@@ -57,6 +58,9 @@
 extern "C" {
 	void yyset_lineno(int line_number);
 	int yyget_lineno(void);
+    void yy_store_lineno(int line_number);
+    const char * yy_get_current_include_filename();
+    void yy_set_current_include_filename(const char *include_file);
 };
 
 /* builtin.cpp */
@@ -195,7 +199,7 @@ static const char *methodNameFromStructAndFunction(const char *structName, const
 {
     static char sMethodNameBuffer[128];
     snprintf(sMethodNameBuffer, 128, "#%s$$%s", functionName, structName);
-    return sMethodNameBuffer;
+    return strsave(sMethodNameBuffer);
 }
 
 static const char *nameFromMangledName(const char *mangledName)
@@ -226,9 +230,9 @@ static int numNodes = 0;
 /* Tree nodes */
 
 Node::Node(OpKind op, NodeKind kind)
-	: kind(kind), op(op), lineno(yyget_lineno())
+	: kind(kind), op(op), lineno(yyget_lineno()), includeFilename(yy_get_current_include_filename())
 {
-	TPRINT("Node::Node (%s) this=%p\n", classname(), this);
+	TPRINT("Node::Node (%s) this=%p storing lineno %d, includefile '%s'\n", classname(), this, lineno, includeFilename);
 #ifdef DEBUG_MEMORY
 	++numNodes;
 	TPRINT("[%d nodes in existence]\n", numNodes);
@@ -279,12 +283,18 @@ void Node::print()
 Node *	Node::exct()
 {
 	ENTER();
-	TPRINT("%s::exct() this=%p\n", classname(), this);
-	if (inFunctionCall() && lineno > 0) {
-		yyset_lineno(lineno);
-	}
+    const char *savedIncludeFilename = includeFilename;
+#ifdef DEBUG_FILENAME_INCLUDES
+    printf("%s::exct(%p) setting current location to '%s', current_lineno to %d\n", classname(), this, includeFilename, lineno);
+#endif
+    yy_store_lineno(lineno);
+    yy_set_current_include_filename(includeFilename);
 	Node *outNode = doExct();	// this is redefined on all subclasses
-    TPRINT("%s::exct() done: returning node %p of type %s\n", classname(), outNode, MincTypeName(outNode->dataType()));
+    TPRINT("%s::exct(%p) done: returning node %p of type %s\n", classname(), this, outNode, MincTypeName(outNode->dataType()));
+#ifdef DEBUG_FILENAME_INCLUDES
+    printf("%s::exct(%p) restoring current location to '%s'\n", classname(), this, savedIncludeFilename);
+#endif
+    yy_set_current_include_filename(savedIncludeFilename);
 	return outNode;
 }
 
@@ -867,7 +877,7 @@ Node *	NodeSubscriptRead::doExct()	// was exct_subscript_read()
             char stringChar[2];
             stringChar[1] = '\0';
             strncpy(stringChar, &theString[index], 1);
-            MincValue elem((MincString)strdup(stringChar));  // create new string value from the one character
+            MincValue elem((MincString)strsave(stringChar));  // create new string value from the one character
             this->setValue(elem);
         }
             break;
@@ -983,11 +993,11 @@ Node *  NodeMemberAccess::doExct()
                        setSymbol(methodSymbol);
                        TPRINT("NodeMemberAccess: copying value from (mangled) method symbol '%s' to us\n", methodName);
                        copyValue(methodSymbol);
-                       TPRINT("NodeMemberAccess: store struct symbol for use during call");
+                       TPRINT("NodeMemberAccess: save sMethodThisSymbol %p (%s) for use during call\n", objectSymbol, targetName);
                        sMethodThisSymbol = objectSymbol;
                    }
                    else {
-                       minc_die("struct variable '%s' has no member or method '%s'", targetName, _memberName);
+                       minc_die("variable '%s' of type 'struct %s' has no member or method '%s'", targetName, theStruct->typeName(), _memberName);
                    }
                }
             }
@@ -1032,6 +1042,10 @@ void NodeCall::callMincFunctionFromNode(Node *functionNode)
                 call_builtin_function("print", sMincList, sMincListLen, &retval);
             }
             theFunction->handleThis(sMethodThisSymbol);
+            if (sMethodThisSymbol != NULL) {
+                TPRINT("NodeCall: clearing sMethodThisSymbol %p\n", sMethodThisSymbol);
+                sMethodThisSymbol = NULL;
+            }
             /* The exp list is copied to the symbols for the function's arg list. */
             TPRINT("NodeCall: declaring all argument symbols in the function's scope\n");
             theFunction->copyArguments();

@@ -457,10 +457,10 @@ arg: TOK_FLOAT_DECL id      { MPRINT("arg");
                                     $$ = new NodeDecl($2, MincHandleType); }
     | TOK_LIST_DECL id      { MPRINT("arg");
                                     $$ = new NodeDecl($2, MincListType); }
-    | TOK_MAP_DECL id      { MPRINT("arg");
+    | TOK_MAP_DECL id       { MPRINT("arg");
                                     $$ = new NodeDecl($2, MincMapType); }
-    | structname id         { MPRINT("arg: structname");
-                                    $$ = new NodeStructDecl($2, $1); }
+    | TOK_STRUCT_DECL id id { MPRINT("arg: structname");
+                                    $$ = new NodeStructDecl($3, $2); }
     | TOK_MFUNC_DECL id      { MPRINT("arg: mfunction");
                                     $$ = new NodeDecl($2, MincFunctionType); }
     ;

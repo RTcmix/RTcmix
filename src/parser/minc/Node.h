@@ -74,7 +74,8 @@ public:
 	MincDataType    _type;
 	OpKind          op;
 	MincValue 		v;
-	int				lineno;		/* used for error statements */
+	int				lineno;         /* used for error statements */
+    const char *    includeFilename;   /* used for error statements */
 public:
 	Node(OpKind op, NodeKind kind);
 	virtual 			~Node();

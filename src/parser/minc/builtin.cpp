@@ -24,6 +24,7 @@
 /* builtin function prototypes */
 static MincFloat _minc_print(const MincValue args[], const int nargs);
 static MincFloat _minc_printf(const MincValue args[], const int nargs);
+static MincFloat _minc_error(const MincValue args[], const int nargs);
 static MincFloat _minc_len(const MincValue args[], const int nargs);
 static MincFloat _minc_interp(const MincValue args[], const int nargs);
 static MincFloat _minc_index(const MincValue args[], const int nargs);
@@ -45,6 +46,7 @@ static struct _builtins {
 } builtin_funcs[] = {
    { "print",     _minc_print,   NULL },
    { "printf",    _minc_printf,  NULL },
+   { "error",     _minc_error,   NULL },
    { "len",       _minc_len,     NULL },
    { "interp",    _minc_interp,  NULL },
    { "index",     _minc_index,   NULL },
@@ -214,7 +216,7 @@ void    MincStruct::print()
         }
         member = next;
     }
-    RTPrintf("\n");
+//    RTPrintf("\n");
 }
 
 void    MincMap::print()
@@ -511,6 +513,13 @@ err:
 }
 #endif // EMBEDDED
 
+MincFloat
+_minc_error(const MincValue args[], const int nargs)
+{
+    MincString p = (MincString) args[0];
+    minc_die("%s", p);
+    return -1.0;
+}
 
 /* ------------------------------------------------------------------- len -- */
 /* Print the length of the argument.  This is useful for getting the number
@@ -691,7 +700,7 @@ _minc_contains(const MincValue args[], const int nargs)
 }
 
 /* ------------------------------------------------------------------ type -- */
-/* Print the object type of the argument: float, string, handle, list.
+/* Print the object type of the argument: float, string, handle, list, mincfunction, struct.
 */
 MincString
 _minc_type(const MincValue args[], const int nargs)
@@ -700,7 +709,7 @@ _minc_type(const MincValue args[], const int nargs)
       minc_warn("type: must have one argument");
       return NULL;
    }
-   return _make_type_string(args[0].dataType() );
+   return _make_type_string(args[0].dataType());
 }
 
 /* ------------------------------------------------------------------ tostring -- */
