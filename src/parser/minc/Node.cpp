@@ -1002,7 +1002,7 @@ Node *  NodeMemberAccess::doExct()
                }
             }
             else {
-                minc_die("struct variable %s' is NULL", targetName);
+                minc_die("struct variable '%s' is NULL", targetName);
             }
         }
             break;
@@ -1245,6 +1245,14 @@ Node *	NodeAnd::doExct()
 	return this;
 }
 
+// returns true if both are null or strings are identical
+// Logic: if both are null, true.  If both are not  null, compare.  Else false;
+
+inline bool same(MincString s1, MincString s2)
+{
+    return (s1 == s2) ? true : (s1 != NULL && s2 != NULL) ? strcmp(s1, s2) == 0 : false;
+}
+
 Node *	NodeRelation::doExct()		// was exct_relation()
 {
 	ENTER();
@@ -1267,7 +1275,7 @@ Node *	NodeRelation::doExct()		// was exct_relation()
 						this->value() = 0.0;
 					break;
 				case MincStringType:
-					if (strcmp((MincString)v0, (MincString)v1) == 0)
+					if (same((MincString)v0, (MincString)v1))
 						this->value() = 1.0;
 					else
 						this->value() = 0.0;
@@ -1286,7 +1294,7 @@ Node *	NodeRelation::doExct()		// was exct_relation()
 						this->value() = 1.0;
 					break;
 				case MincStringType:
-					if (strcmp((MincString)v0, (MincString)v1) == 0)
+                    if (same((MincString)v0, (MincString)v1))
 						this->value() = 0.0;
 					else
 						this->value() = 1.0;
@@ -1816,7 +1824,7 @@ push_list()
 {
 	ENTER();
    if (list_stack_ptr >= MAXSTACK)
-      minc_die("stack overflow: too many nested function calls");
+      minc_die("stack overflow: too many nested list levels or function calls");
    list_stack[list_stack_ptr] = sMincList;
    list_len_stack[list_stack_ptr++] = sMincListLen;
    sMincList = new MincValue[MAXDISPARGS];
