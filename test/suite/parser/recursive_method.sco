@@ -20,4 +20,10 @@ oo._ii = createInner();
 
 oo.setOuterF();
 
+if (oo._of != 11) { 
+	printf("FAILED\n");
+	exit(1);
+}
+
+printf("SUCCEEDED\n");
 
