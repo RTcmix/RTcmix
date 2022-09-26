@@ -512,7 +512,7 @@ funcdef: funcname fargl fblock	{ MPRINT("funcdef");
 
 methoddef: methodname fargl fblock    { MPRINT("methoddef");
                                     decrFunctionLevel();
-                                    $$ = new NodeFuncDef($1, $2, $3);
+                                    $$ = new NodeMethodDef($1, $2, $3);
                                 }
     ;
 

@@ -88,7 +88,8 @@ static int list_len_stack[MAXSTACK];
 static int list_stack_ptr;
 
 static StructType *sNewStructType;  // struct currently being defined
-static Symbol *sMethodThisSymbol;   // non-null if calling struct method
+
+static std::vector<Symbol *> sMethodThisSymbols;
 
 static int sArgListLen;		// number of arguments passed to a user-declared function
 static int sArgListIndex;	// used to walk passed-in args for user-declared functions
@@ -115,6 +116,7 @@ void clear_tree_state()
 		list_len_stack[n] = 0;
 	}
 	list_stack_ptr = 0;
+    sMethodThisSymbols.clear();
 	inCalledFunctionArgList = false;
 	sCalledFunctions.clear();
 	sFunctionCallDepth = 0;
@@ -232,10 +234,10 @@ static int numNodes = 0;
 Node::Node(OpKind op, NodeKind kind)
 	: kind(kind), op(op), lineno(yyget_lineno()), includeFilename(yy_get_current_include_filename())
 {
-	TPRINT("Node::Node (%s) this=%p storing lineno %d, includefile '%s'\n", classname(), this, lineno, includeFilename);
+	NPRINT("Node::Node (%s) this=%p storing lineno %d, includefile '%s'\n", classname(), this, lineno, includeFilename);
 #ifdef DEBUG_MEMORY
 	++numNodes;
-	TPRINT("[%d nodes in existence]\n", numNodes);
+    NPRINT("[%d nodes in existence]\n", numNodes);
 #endif
     u.number = 0.0;     // this should zero out the union.
 }
@@ -243,9 +245,9 @@ Node::Node(OpKind op, NodeKind kind)
 Node::~Node()
 {
 #ifdef DEBUG_MEMORY
-	TPRINT("entering ~Node (%s) this=%p\n", classname(), this);
+    NPRINT("entering ~Node (%s) this=%p\n", classname(), this);
 	--numNodes;
-	TPRINT("[%d nodes remaining]\n", numNodes);
+    NPRINT("[%d nodes remaining]\n", numNodes);
 #endif
 }
 
@@ -318,8 +320,10 @@ Node::copyValue(Node *source, bool allowTypeOverwrite)
         }
     }
     value() = source->value();
+#ifdef DEBUG
     TPRINT("\tthis: ");
     print();
+#endif
     return this;
 }
 
@@ -338,8 +342,10 @@ Node::copyValue(Symbol *source, bool allowTypeOverwrite)
         }
     }
     value() = source->value();
+#ifdef DEBUG
     TPRINT("\tthis: ");
     print();
+#endif
     return this;
 }
 
@@ -993,8 +999,8 @@ Node *  NodeMemberAccess::doExct()
                        setSymbol(methodSymbol);
                        TPRINT("NodeMemberAccess: copying value from (mangled) method symbol '%s' to us\n", methodName);
                        copyValue(methodSymbol);
-                       TPRINT("NodeMemberAccess: save sMethodThisSymbol %p (%s) for use during call\n", objectSymbol, targetName);
-                       sMethodThisSymbol = objectSymbol;
+                       TPRINT("NodeMemberAccess: XXX pushing object 'this' symbol %p (%s) for use during call\n", objectSymbol, targetName);
+                       sMethodThisSymbols.push_back(objectSymbol);
                    }
                    else {
                        minc_die("variable '%s' of type 'struct %s' has no member or method '%s'", targetName, theStruct->typeName(), _memberName);
@@ -1028,7 +1034,7 @@ void NodeCall::callMincFunctionFromNode(Node *functionNode)
     // Retrieve the workings of the function from its Symbol (stored there by FuncDef)
     MincFunction *theFunction = (MincFunction *)functionNode->value();
     if (theFunction) {
-        TPRINT("NodeCall: theFunction = %p -- dropping in\n", theFunction);
+        TPRINT("NodeCall::callMincFunctionFromNode: theFunction = %p -- dropping in\n", theFunction);
         push_function_stack();
         push_scope();           // move into function-body scope
         int savedLineNo=0, savedScope=0, savedCallDepth=0;
@@ -1041,11 +1047,8 @@ void NodeCall::callMincFunctionFromNode(Node *functionNode)
                 MincValue retval;
                 call_builtin_function("print", sMincList, sMincListLen, &retval);
             }
-            theFunction->handleThis(sMethodThisSymbol);
-            if (sMethodThisSymbol != NULL) {
-                TPRINT("NodeCall: clearing sMethodThisSymbol %p\n", sMethodThisSymbol);
-                sMethodThisSymbol = NULL;
-            }
+            // Create a symbol for 'this' within the function's scope if this is a method.
+            theFunction->handleThis(sMethodThisSymbols);
             /* The exp list is copied to the symbols for the function's arg list. */
             TPRINT("NodeCall: declaring all argument symbols in the function's scope\n");
             theFunction->copyArguments();
@@ -1086,7 +1089,7 @@ void NodeCall::callListFunction(const char *functionName)
 {
     MincValue retval;
     MincValue *newarglist = new MincValue[sMincListLen+1];
-    newarglist[0] = sMethodThisSymbol->value();
+    newarglist[0] = sMethodThisSymbols.back()->value();
     for (int n=0; n<sMincListLen; ++n) {
         newarglist[n+1] = newarglist[n];
     }
@@ -1125,8 +1128,9 @@ void NodeCall::callBuiltinFunction(const char *functionName)
 Node *	NodeCall::doExct()
 {
     ENTER();
+    TPRINT("NodeCall: Func: node %p (child 0)\n", child(0));
     Node *calledFunction = child(0)->exct();         /* lookup target */
-    TPRINT("NodeCall: Func: node %p (child 0)\n", calledFunction);
+    TPRINT("NodeCall: returned calledFunction %p\n", calledFunction);
 	push_list();
     TPRINT("NodeCall: Args: list node %p (child 1)\n", child(1));
     child(1)->exct();    // execute arg expression list (stored on this NodeCall)
@@ -1810,12 +1814,13 @@ Node *    NodeMethodDecl::doExct()
 Node *	NodeFuncDef::doExct()
 {
 	// Look up symbol for function, and bind the function's "guts" to it via a MincFunction.
-	TPRINT("NodeFuncDef(%p): executing lookup/install node %p (child 0)\n", this, child(0));
+	TPRINT(" (%p): executing lookup/install node %p (child 0)\n", this, child(0));
 	child(0)->exct();
 	assert(child(0)->symbol() != NULL);
     // Note: arglist and body stored inside MincFunction.  This is how we store the behavior
-    // of a function on its symbol for re-use.
-	child(0)->symbol()->value() = MincValue(new MincFunction(child(1), child(2)));
+    // of a function/method on its symbol for re-use.  Creating with MincFunction::Method causes it to
+    // expect to find a symbol for 'this'.
+	child(0)->symbol()->value() = MincValue(new MincFunction(child(1), child(2), _isMethod ? MincFunction::Method : MincFunction::Standalone));
 	return this;
 }
 
@@ -1823,12 +1828,13 @@ static void
 push_list()
 {
 	ENTER();
-   if (list_stack_ptr >= MAXSTACK)
+    if (list_stack_ptr >= MAXSTACK) {
       minc_die("stack overflow: too many nested list levels or function calls");
+    }
    list_stack[list_stack_ptr] = sMincList;
    list_len_stack[list_stack_ptr++] = sMincListLen;
    sMincList = new MincValue[MAXDISPARGS];
-   TPRINT("push_list: sMincList=%p at stack level %d, len %d\n", sMincList, list_stack_ptr, sMincListLen);
+   TPRINT("push_list: sMincList=%p at new stack level %d, len %d\n", sMincList, list_stack_ptr, sMincListLen);
    sMincListLen = 0;
 }
 
@@ -1836,14 +1842,14 @@ push_list()
 static void
 pop_list()
 {
-	ENTER();
-   TPRINT("pop_list: sMincList=%p\n", sMincList);
-   delete [] sMincList;
-   if (list_stack_ptr == 0)
-      minc_die("stack underflow");
-   sMincList = list_stack[--list_stack_ptr];
-   sMincListLen = list_len_stack[list_stack_ptr];
-	TPRINT("pop_list: now at sMincList=%p, stack level %d, len %d\n", sMincList, list_stack_ptr, sMincListLen);
+    ENTER();
+    TPRINT("pop_list: sMincList=%p\n", sMincList);
+    delete [] sMincList;
+    if (list_stack_ptr == 0)
+        minc_die("stack underflow");
+    sMincList = list_stack[--list_stack_ptr];
+    sMincListLen = list_len_stack[list_stack_ptr];
+    TPRINT("pop_list: now at sMincList=%p, stack level %d, len %d\n", sMincList, list_stack_ptr, sMincListLen);
 }
 
 static void

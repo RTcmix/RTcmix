@@ -77,10 +77,15 @@ protected:
 
 class Node;
 
+
 class MincFunction : public MincObject, public RefCounted {
 public:
-    MincFunction(Node *argumentList, Node *functionBody);
-    void    handleThis(Symbol *symbolForThis);
+    enum Type {
+        Standalone  = 0x10,
+        Method      = 0x20
+    };
+    MincFunction(Node *argumentList, Node *functionBody, MincFunction::Type type=MincFunction::Standalone);
+    void    handleThis(std::vector<Symbol *> &symbolStack);
     void    copyArguments();
     Node *  execute();
 protected:
@@ -88,6 +93,7 @@ protected:
 private:
     Node *  _argumentList;
     Node *  _functionBody;
+    MincFunction::Type _type;
 };
 
 class MincValue {

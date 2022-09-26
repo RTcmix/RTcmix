@@ -309,7 +309,7 @@ void push_function_stack()
         sCallStack = new CallStack;
     }
     ScopeStack *stack = ScopeManager::stack();
-    DPRINT("\tpushing stack %p\n", stack);
+    DPRINT("\tpushing ScopeStack %p\n", stack);
     sCallStack->push_back(stack);
     ScopeStack *newStack = new ScopeStack;
     Scope *globalScope = stack->front();

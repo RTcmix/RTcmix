@@ -153,8 +153,8 @@ Symbol * MincStruct::lookupMember(const char *name)
 /* ========================================================================== */
 /* MincFunction */
 
-MincFunction::MincFunction(Node *argumentList, Node *functionBody)
-    : _argumentList(argumentList), _functionBody(functionBody)
+MincFunction::MincFunction(Node *argumentList, Node *functionBody, MincFunction::Type type)
+    : _argumentList(argumentList), _functionBody(functionBody), _type(type)
 {
     ENTER();
 }
@@ -167,21 +167,24 @@ MincFunction::~MincFunction()
 }
 
 void
-MincFunction::handleThis(Symbol *symbolForThis)
+MincFunction::handleThis(std::vector<Symbol *> &symbolStack)
 {
-    // If NULL, it means this is a non-method function and has no 'this' argument
-    if (symbolForThis) {
-        MincStruct *structForThis = (MincStruct *) symbolForThis->value();
-        Node *nodeStructDecl = new NodeStructDecl(strsave("this"), structForThis->typeName());
-        DPRINT("MincFunction::handleThis: declaring symbol for 'this'\n");
-        Node *declaredVarThis = nodeStructDecl->exct();
-        declaredVarThis->copyValue(symbolForThis, NO);  // dont allow type override
-        DPRINT("MincFunction::handleThis: copying source symbol's value(s) into symbol for 'this'\n");
-        declaredVarThis->symbol()->value() = symbolForThis->value();
-        delete nodeStructDecl;
-    }
-    else {
-        DPRINT("MincFunction::handleThis: symbolForThis is NULL\n");
+    if (_type == Method) {
+        Symbol *symbolForThis = (symbolStack.empty()) ? NULL : symbolStack.back();
+        if (symbolForThis) {
+            symbolStack.pop_back();     // remove symbol once it is used
+            MincStruct *structForThis = (MincStruct *) symbolForThis->value();
+            Node *nodeStructDecl = new NodeStructDecl(strsave("this"), structForThis->typeName());
+            DPRINT("MincFunction::handleThis: declaring symbol for 'this' from called object '%s'\n", symbolForThis->name());
+            Node *declaredVarThis = nodeStructDecl->exct();
+            declaredVarThis->copyValue(symbolForThis, NO);  // dont allow type override
+            DPRINT("MincFunction::handleThis: copying source symbol's value(s) into symbol for 'this'\n");
+            declaredVarThis->symbol()->value() = symbolForThis->value();
+            delete nodeStructDecl;
+        }
+        else {
+            DPRINT("MincFunction::handleThis: symbolForThis is NULL\n");    // This will generate an error later
+        }
     }
 }
 

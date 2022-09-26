@@ -12,7 +12,7 @@
 #include "minc_internal.h"
 #include "MincValue.h"
 
-// NODE_DEBUG enables logging of Node creation
+// NODE_DEBUG enables logging of Node creation and destruction
 #undef NODE_DEBUG
 
 #ifdef NODE_DEBUG
@@ -43,6 +43,7 @@ typedef enum {
     eNodeMemberDecl,
     eNodeStructDef,
 	eNodeFuncDef,
+    eNodeMethodDef,
 	eNodeArgList,
 	eNodeArgListElem,
 	eNodeRet,
@@ -356,11 +357,26 @@ protected:
 class NodeFuncDef : public Node3Children
 {
 public:
-	NodeFuncDef(Node *funcDecl, Node *argList, Node *funcBody) : Node3Children(OpFree, eNodeFuncDef, funcDecl, argList, funcBody) {
+	NodeFuncDef(Node *funcDecl, Node *argList, Node *funcBody) : Node3Children(OpFree, eNodeFuncDef, funcDecl, argList, funcBody), _isMethod(false) {
 		NPRINT("NodeFuncDef(%p, %p, %p) => %p\n", funcDecl, argList, funcBody, this);
 	}
 protected:
+    NodeFuncDef(Node *funcDecl, Node *argList, Node *funcBody, NodeKind kind) : Node3Children(OpFree, kind, funcDecl, argList, funcBody), _isMethod(kind==eNodeMethodDef) {}
 	virtual Node*		doExct();
+    bool                _isMethod;
+};
+
+// Method definition node
+//    funcDecl Lookup node
+//    argList  NodeArgList (argument symbol decls)
+//    funcBody NodeFuncBodySeq function body (statements), which returns value
+
+class NodeMethodDef : public NodeFuncDef
+{
+public:
+    NodeMethodDef(Node *funcDecl, Node *argList, Node *funcBody) : NodeFuncDef(funcDecl, argList, funcBody, eNodeMethodDef) {
+        NPRINT("NodeMethodDef(%p, %p, %p) => %p\n", funcDecl, argList, funcBody, this);
+    }
 };
 
 // Function call node

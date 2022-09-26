@@ -86,6 +86,7 @@ src/rtcmix/MIX
 src/rtcmix/PMIX
 src/rtcmix/PYMIX
 test/coreaudioprobe/coreaudioprobe
+test/suite/function_scores/*
 test/suite/load_test.sco
 test/suite/sockettest
 test/suite/stresstest
