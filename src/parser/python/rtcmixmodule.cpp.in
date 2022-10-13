@@ -19,24 +19,21 @@
    which wraps an RTcmix Handle.  Some RTcmix functions return a
    Handle to the script.
 
-   The code here is based on the previous RTcmix python extension,
-   the example code in "xxmodule.c" in the Python distribution, and
-   the skpoint.c module code in skencil-0.6.16, a GPL'd drawing
-   program largely written in Python.
                                                 John Gibson, 7/4/04
+
+   Revised for python3 by Aaron Stepp and John Gibson, September 2022
 */
 
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#if defined(PY_MAJOR_VERSION) && PY_VERSION_HEX < 0x02010000
-#error "******** You need Python 2.1 or greater ********"
+#if defined(PY_MAJOR_VERSION) && PY_VERSION_HEX < 0x03080000
+#error "******** You need Python 3.8 or greater ********"
 #endif
 
 #include <rtcmix_types.h>
 #include <PField.h>
 #include <utils.h>
-#include <stdlib.h>
 #include <math.h>
-#include <string.h>
 #include "../../include/maxdispargs.h"
 #include "../../rtcmix/prototypes.h"
 #include "../../rtcmix/RTcmix.h"
@@ -52,13 +49,49 @@ typedef struct {
    Handle handle;
 } OpaqueObject;
 
-//staticforward PyTypeObject OpaqueType;
-extern PyTypeObject OpaqueType;
+// forward declarations
+static void Opaque_dealloc(OpaqueObject *self);
+static PyObject *Opaque_getattr(OpaqueObject *self, const char *name);
+static int Opaque_setattr(OpaqueObject *self, const char *name, PyObject *obj);
+static PyObject *Opaque_add(PyObject *a, PyObject *b);
+static PyObject *Opaque_subtract(PyObject *a, PyObject *b);
+static PyObject *Opaque_multiply(PyObject *a, PyObject *b);
+static PyObject *Opaque_divide(PyObject *a, PyObject *b);
+static PyObject *Opaque_remainder(PyObject *a, PyObject *b);
+static PyObject *Opaque_power(PyObject *a, PyObject *b, PyObject *c);
+static PyObject *Opaque_neg(PyObject *a);
+static PyObject *Opaque_not_implemented(void);
 
-//#define OpaqueObject_Check(obj) ((obj)->ob_type == &OpaqueType)
+static PyNumberMethods Opaque_as_number = {
+	.nb_add = (binaryfunc) Opaque_add,
+   .nb_subtract = (binaryfunc) Opaque_subtract,
+   .nb_multiply = (binaryfunc) Opaque_multiply,
+	.nb_remainder = (binaryfunc) Opaque_remainder,
+	.nb_divmod = (binaryfunc) Opaque_divide,
+	.nb_power = (ternaryfunc) Opaque_power,
+	.nb_negative = (unaryfunc) Opaque_neg,
+	.nb_positive = (unaryfunc) Opaque_not_implemented,
+	.nb_absolute = (unaryfunc) Opaque_not_implemented,
+};
+
+static PyTypeObject OpaqueType = {
+   PyVarObject_HEAD_INIT(NULL, 0)
+	.tp_name = "rtcmix.Opaque",
+   .tp_doc = PyDoc_STR("Handle objects"),
+	.tp_basicsize = sizeof(OpaqueObject),
+	.tp_itemsize = 0,
+   .tp_flags = Py_TPFLAGS_BASETYPE,		// was Py_TPFLAGS_CHECKTYPES
+	//.tp_new = PyType_GenericNew,
+	.tp_dealloc = (destructor) Opaque_dealloc,
+   .tp_getattr = (getattrfunc) Opaque_getattr,
+   .tp_setattr = (setattrfunc) Opaque_setattr,
+	.tp_as_number = &Opaque_as_number,
+};
+
+
 inline bool OpaqueObject_Check(PyObject *obj)
 {
-   return (obj->ob_type == &OpaqueType);
+   return (Py_TYPE(obj)	== &OpaqueType);
 }
 
 static OpaqueObject *newOpaqueObject(PyObject *arg)
@@ -124,6 +157,7 @@ static PField *PFieldFromPyObject(PyObject *obj)
    This is NOT the place to list rtcmix functions (see _rtcmix_methods below).
 */
 
+#ifdef NOTYET
 static PyObject *Opaque_type(OpaqueObject *self, PyObject *args)
 {
    const char *str = NULL;
@@ -140,13 +174,14 @@ static PyObject *Opaque_type(OpaqueObject *self, PyObject *args)
       str = "List";
    else
       str = "(invalid)";
-   return PyString_FromString(str);
+   return PyUnicode_FromString(str);
 }
 
 static PyMethodDef Opaque_methods[] = {
    {"type", (PyCFunction) Opaque_type, METH_VARARGS},
    {NULL, NULL}      // sentinel
 };
+#endif //NOTYET
 
 static PyObject *Opaque_getattr(OpaqueObject *self, const char *name)
 {
@@ -157,7 +192,9 @@ static PyObject *Opaque_getattr(OpaqueObject *self, const char *name)
          return obj;
       }
    }
-   return Py_FindMethod(Opaque_methods, (PyObject *) self, (char *) name);
+//FIXME: shouldn't we still do FindMethod and fall back to GenericGetAttr if not found?
+   //return Py_FindMethod(Opaque_methods, (PyObject *) self, (char *) name);
+   return PyObject_GenericGetAttr((PyObject *) self, PyUnicode_FromString(name));
 }
 
 static int Opaque_setattr(OpaqueObject *self, const char *name, PyObject *obj)
@@ -343,81 +380,6 @@ Opaque_not_implemented(void)
 }
 
 
-static PyNumberMethods Opaque_as_number = {
-   (binaryfunc) Opaque_add,                  // nb_add
-   (binaryfunc) Opaque_subtract,             // nb_subtract
-   (binaryfunc) Opaque_multiply,             // nb_multiply
-   (binaryfunc) Opaque_divide,               // nb_divide
-   (binaryfunc) Opaque_remainder,            // nb_remainder
-   (binaryfunc) Opaque_not_implemented,      // nb_divmod
-   (ternaryfunc) Opaque_power,               // nb_power
-   (unaryfunc) Opaque_neg,                   // nb_negative
-   (unaryfunc) Opaque_not_implemented,       // nb_positive
-   (unaryfunc) Opaque_not_implemented,       // nb_absolute
-   (inquiry) Opaque_not_implemented,         // nb_nonzero
-   (unaryfunc) 0,                            // nb_invert
-   (binaryfunc) 0,                           // nb_lshift
-   (binaryfunc) 0,                           // nb_rshift
-   (binaryfunc) 0,                           // nb_and
-   (binaryfunc) 0,                           // nb_xor
-   (binaryfunc) 0,                           // nb_or
-   0,                                        // nb_coerce
-   (unaryfunc) 0,                            // nb_int
-   (unaryfunc) 0,                            // nb_long
-   (unaryfunc) 0,                            // nb_float
-   (unaryfunc) 0,                            // nb_oct
-   (unaryfunc) 0,                            // nb_hex
-};
-
-//statichere PyTypeObject OpaqueType = {
-PyTypeObject OpaqueType = {
-   /* The ob_type field must be initialized in the module init function
-      to be portable to Windows without using C++.
-   */
-   PyObject_HEAD_INIT(NULL) 0,   // ob_size
-   "rtcmixmodule.Opaque",        // tp_name
-   sizeof(OpaqueObject),         // tp_basicsize
-   0,                            // tp_itemsize
-   // methods
-   (destructor) Opaque_dealloc,  // tp_dealloc
-   0,                            // tp_print
-   (getattrfunc) Opaque_getattr, // tp_getattr
-   (setattrfunc) Opaque_setattr, // tp_setattr
-   0,                            // tp_compare
-   0,                            // tp_repr
-   &Opaque_as_number,            // tp_as_number
-   0,                            // tp_as_sequence
-   0,                            // tp_as_mapping
-   0,                            // tp_hash
-   0,                            // tp_call
-   0,                            // tp_str
-   0,                            // tp_getattro
-   0,                            // tp_setattro
-   0,                            // tp_as_buffer
-   Py_TPFLAGS_CHECKTYPES,        // tp_flags
-   0,                            // tp_doc
-   0,                            // tp_traverse
-   0,                            // tp_clear
-   0,                            // tp_richcompare
-   0,                            // tp_weaklistoffset
-   0,                            // tp_iter
-   0,                            // tp_iternext
-   0,                            // tp_methods
-   0,                            // tp_members
-   0,                            // tp_getset
-   0,                            // tp_base
-   0,                            // tp_dict
-   0,                            // tp_descr_get
-   0,                            // tp_descr_set
-   0,                            // tp_dictoffset
-   0,                            // tp_init
-   0,                            // tp_alloc
-   0,                            // tp_new
-   0,                            // tp_free
-   0,                            // tp_is_gc
-};
-
-
 // -- rtcmix module -----------------------------------------------------------
 
 static Arg * append_list_to_arglist(const char *funcname, PyObject *obj, Arg *inArgs, int *pNumArgs)
@@ -450,10 +412,12 @@ static Arg * append_list_to_arglist(const char *funcname, PyObject *obj, Arg *in
          item = PyList_GET_ITEM(obj, i);
       if (PyNumber_Check(item))
          newArgs[n] = PyFloat_AsDouble(item);
-      else if (PyString_Check(item)) {
+      else if (PyUnicode_Check(item)) {
 // FIXME: leak -- not necessary, because StringPField dups string?
-         char *str = strdup(PyString_AS_STRING(obj));
+			PyObject *bytes = PyUnicode_AsUTF8String(obj);
+         char *str = strdup(PyBytes_AsString(bytes));
          newArgs[n] = str;
+			Py_DECREF(bytes);
       }
       else if (OpaqueObject_Check(item)) {
          Handle handle = HandleFromPyObject(item);
@@ -480,8 +444,8 @@ static PyObject *_call_dispatch(PyObject *args, const char *funcname)
 
    int nargs = PyTuple_Size(args);
    if (nargs > MAXDISPARGS) {
-      char buf[128];
-      sprintf(buf, "too many arguments to '%s'", funcname);
+      char buf[256];
+      snprintf(buf, 256, "too many arguments to '%s'", funcname);
       PyErr_SetString(PyExc_TypeError, buf);
       return NULL;
    }
@@ -495,7 +459,7 @@ static PyObject *_call_dispatch(PyObject *args, const char *funcname)
       PyObject *obj = PyTuple_GET_ITEM(args, i);
       if (OpaqueObject_Check(obj)) {
          Handle handle = HandleFromPyObject(obj);
-         if (handle->type != PFieldType && handle->type != InstrumentPtrType) {
+         if (handle->type != PFieldType && handle->type != InstrumentPtrType && handle->type != ListType) {
             PyErr_SetString(PyExc_TypeError, "invalid RTcmix Handle type");
             return NULL;
          }
@@ -508,12 +472,15 @@ static PyObject *_call_dispatch(PyObject *args, const char *funcname)
          printf("%d: %8f\n", i, val);
 #endif
       }
-      else if (PyString_Check(obj)) {
+      else if (PyUnicode_Check(obj)) {
          // dup the string, because we'll kill interpreter before
          // insts have run.
 // FIXME: leak -- not necessary, because StringPField dups string?
-         char *str = strdup(PyString_AS_STRING(obj));
+// FIXME: or is it _AsASCIIString or _AsLatin1String, etc.?
+			PyObject *bytes = PyUnicode_AsUTF8String(obj);
+         char *str = strdup(PyBytes_AsString(bytes));
          rtcmixargs[i] = str;
+			Py_DECREF(bytes);
 #ifdef DEBUG
          printf("%d: \"%s\"\n", i, str);
 #endif
@@ -575,8 +542,8 @@ static PyObject *_call_dispatch(PyObject *args, const char *funcname)
          }
       }
       else {
-         char buf[128];
-         sprintf(buf, "invalid argument type to '%s' (arg %d)", funcname, i);
+         char buf[256];
+         snprintf(buf, 256, "invalid argument type to '%s' (arg %d)", funcname, i);
          PyErr_SetString(PyExc_TypeError, buf);
          return NULL;
       }
@@ -595,7 +562,7 @@ static PyObject *_call_dispatch(PyObject *args, const char *funcname)
             retobj = PyFloat_FromDouble(retval);
             break;
          case StringType:
-            retobj = PyString_FromString(retval);
+            retobj = PyUnicode_FromString(retval);
             break;
          case HandleType:
             {
