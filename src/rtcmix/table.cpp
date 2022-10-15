@@ -22,6 +22,7 @@
 #include "utils.h"
 #include <ugens.h>		// for warn, die
 #include <maxdispargs.h>
+#include <limits.h>
 
 // Functions for creating and modifying double arrays.  These can be passed
 // from a script to RTcmix functions that can accept them.  Much of this code
