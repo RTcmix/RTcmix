@@ -37,6 +37,8 @@ class Notifier {
 public:
 	Notifier(Notifiable *inTarget, int inIndex) : mTarget(inTarget), mIndex(inIndex) {}
 	void notify() { mTarget->notify(mIndex); }
+protected:
+    int getIndex() const { return mIndex; }
 #ifndef THREAD_DEBUG
 private:
 #endif
@@ -54,7 +56,8 @@ public:
 	inline void wake();
 protected:
 	virtual void	run();
-	Task *			getATask() { return mTaskProvider->getTask(); }
+	Task *			getATask() { return mTaskProvider->getSingleTask(); }
+    Task *          getAllTasks() { return mTaskProvider->getTaskList(); }
 private:
 	bool			mStopping;
 	TaskProvider *	mTaskProvider;
@@ -64,40 +67,69 @@ private:
 inline void TaskThread::wake()
 {
 #ifdef THREAD_DEBUG
-	//	printf("TaskThread::wake(%p): posting for Task %p\n", this, mTask);
+	printf("TaskThread::wake: thread %d posting for Task %p\n", getIndex(), mTask);
 #endif
 	mSema.post();
 }
 
+#undef TASK_TIME_DEBUG
+#ifdef TASK_TIME_DEBUG
+#include <mach/mach_time.h>
+#endif
+
 void TaskThread::run()
 {
 #ifdef THREAD_DEBUG
-	printf("TaskThread %p running\n", this);
+    int tIndex = getIndex();
+	printf("TaskThread %d running\n", tIndex);
 #endif
 	do {
 #ifdef THREAD_DEBUG
-		printf("TaskThread %d sleeping...\n", mIndex);
+		printf("TaskThread %d sleeping...\n", tIndex);
 #endif
 		mSema.wait();
 #ifdef THREAD_DEBUG
-		printf("TaskThread %d woke up -- running task loop\n", mIndex);
+		printf("TaskThread %d woke up -- running task loop\n", tIndex);
 #endif
-		Task *task;
-		while ((task = getATask()) != NULL) {
+#ifdef TASK_TIME_DEBUG
+        const uint64_t startTime = mach_absolute_time();
+        bool taskWasRun = false;
+#endif
+        Task *task = getAllTasks();
+		while (task != NULL) {
+#ifdef TASK_TIME_DEBUG
+            taskWasRun = true;
+#endif
 #ifdef THREAD_DEBUG
-            printf("TaskThread %d running task %p...\n", mIndex, task);
+            printf("TaskThread %d running task %p...\n", tIndex, task);
 #endif
 			task->run();
 #ifdef THREAD_DEBUG
-            printf("TaskThread %d task %p done\n", mIndex, task);
+            printf("TaskThread %d task %p done\n", tIndex, task);
 #endif
+            Task *next = task->next();
 			delete task;
+            task = next;
 		}
+#ifdef TASK_TIME_DEBUG
+        if (taskWasRun) {
+            const uint64_t endTime = mach_absolute_time();
+            // Time elapsed in Mach time units.
+            const uint64_t elapsedMTU = endTime - startTime;
+
+            // Get information for converting from MTU to nanoseconds
+            mach_timebase_info_data_t info;
+            mach_timebase_info(&info);
+            // Get elapsed time in nanoseconds:
+            const double elapsedNS = (double)elapsedMTU * (double)info.numer / (double)info.denom;
+            printf("TaskThread %d loop done in %.5f ms\n", getIndex(), elapsedNS*1.0e-06);
+        }
+#endif
 		notify();
 	}
 	while (!mStopping);
 #ifdef THREAD_DEBUG
-	printf("TaskThread %p exiting\n", this);
+	printf("TaskThread %d exiting\n", tIndex);
 #endif
 }
 
@@ -158,36 +190,35 @@ TaskManagerImpl::~TaskManagerImpl() { delete mThreadPool; }
 void TaskManagerImpl::addTask(Task *inTask)
 {
 #ifdef DEBUG
-	printf("TaskManagerImpl::addTask: adding task %p\n", inTask);
+	printf("TaskManagerImpl::addTask: adding task %p to linked list\n", inTask);
 #endif
-#if 0
-	// Each new task is put in front of the previous one
-	if (mTaskHead == NULL)
-		mTaskTail = mTaskHead = inTask;
-	else {
-		mTaskTail->next() = inTask;
-		mTaskTail = inTask;
-	}
-#else
 	// Each new task is put behind the previous one
 	inTask->next() = mTaskHead;
 	mTaskHead = inTask;
-#endif
 }
 
-Task * TaskManagerImpl::getTask()
+Task * TaskManagerImpl::getSingleTask()
 {
 	Task *task = mTaskStack.pop_atomic();
 #ifdef DEBUG
-	printf("TaskManagerImpl::getTask: returning task %p\n", task);
+	printf("TaskManagerImpl::getSingleTask: returning task %p from stack\n", task);
 #endif
 	return task;
+}
+
+Task *  TaskManagerImpl::getTaskList()
+{
+    Task *tList = mTaskStack.pop_all();
+#ifdef DEBUG
+    printf("TaskManagerImpl::getTaskList: returning task list %p from stack\n", tList);
+#endif
+    return tList;
 }
 
 void TaskManagerImpl::startAndWait()
 {
 #ifdef DEBUG
-	printf("TaskManagerImpl::startAndWait waiting on ThreadPool...\n");
+	printf("TaskManagerImpl::startAndWait pushing tasks onto stack\n");
 #endif
 	int taskCount = 0;
 	// Push entire reversed linked list into stack
@@ -197,6 +228,9 @@ void TaskManagerImpl::startAndWait()
 		t = next;
 	}
 	mTaskHead = mTaskTail = NULL;
+#ifdef DEBUG
+    printf("TaskManagerImpl::startAndWait waiting on ThreadPool for %d tasks...\n", taskCount);
+#endif
 	mThreadPool->startAndWait(taskCount);
 #ifdef DEBUG
 	printf("TaskManagerImpl::startAndWait done\n");

@@ -34,7 +34,8 @@ private:
 class TaskProvider {
 public:
     virtual ~TaskProvider() {}
-	virtual Task *	getTask() = 0;
+	virtual Task *	getSingleTask() = 0;
+    virtual Task *  getTaskList() = 0;
 };
 
 template <typename Object, typename Ret, Ret (Object::*Method)()>
@@ -89,7 +90,8 @@ class TaskManagerImpl : public TaskProvider
 public:
 	TaskManagerImpl();
 	virtual ~TaskManagerImpl();
-	virtual Task *	getTask();
+	virtual Task *	getSingleTask();
+    virtual Task *  getTaskList();
 	void	addTask(Task *inTask);
 	void	startAndWait();
 private:

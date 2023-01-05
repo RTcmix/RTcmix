@@ -390,17 +390,16 @@ int Instrument::rtbaddout(BUFTYPE samps[], int length)
 void Instrument::addout(BusType bus_type, int bus)
 {
    int      endframe, src_chan, buses;
-   short    *bus_list;
+   short    *bus_list, sbus = (short) bus;
 
    assert(bus >= 0 && bus < RTcmix::getBusCount());
 
 	if (bus_type != BUS_NONE_OUT) {
 
 	   bus_list = _busSlot->getBusList(bus_type, &buses);
-
 	   src_chan = -1;
 	   for (int i = 0; i < buses; i++) {
-		  if (bus_list[i] == bus) {
+		  if (bus_list[i] == sbus) {    // short compare here saves CPU!
 			 src_chan = i;
 			 break;
 		  }

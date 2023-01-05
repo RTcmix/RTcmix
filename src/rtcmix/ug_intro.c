@@ -52,6 +52,7 @@ ug_intro()
 	UG_INTRO_DOUBLE_RETURN("bus_link", bus_link);
 	UG_INTRO_DOUBLE_RETURN("getPFval", getPFval);
     UG_INTRO_DOUBLE_RETURN("stringtofloat", m_stringtofloat);
+    UG_INTRO_DOUBLE_RETURN("stringcontains", m_stringcontains);
 	UG_INTRO("makegen", makegen);
 	UG_INTRO("open",m_open);
 	UG_INTRO("peakoff",peak_off);

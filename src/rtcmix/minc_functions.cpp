@@ -644,6 +644,7 @@ extern "C" {
 	double m_pickwrand(const Arg args[], const int nargs);
 	double get_time(); // returns number of seconds that have elapsed
     double m_stringtofloat(const Arg args[], const int nargs);
+    double m_stringcontains(const Arg args[], const int nargs);
 }
 
 #include "PField.h"
@@ -825,6 +826,16 @@ double m_stringtofloat(const Arg args[], const int nargs)
     return (found == EOF) ? 0.0 : value;
 }
 
+double m_stringcontains(const Arg args[], const int nargs)
+{
+    if (nargs != 2 || !args[0].isType(StringType) || !args[1].isType(StringType)) {
+        die("stringcontains", "Usage: stringcontains(some_string, find_this_string");
+        RTExit(PARAM_ERROR);
+    }
+    const char *stringToScan = (const char *)args[0];
+    const char *stringToFind = (const char *)args[1];
+    return (strstr(stringToScan, stringToFind) != NULL) ? 1.0 : 0.0;
+}
 
 #ifdef DOUGS_CODE
 
