@@ -57,7 +57,6 @@ public:
 protected:
 	virtual void	run();
 	Task *			getATask() { return mTaskProvider->getSingleTask(); }
-    Task *          getAllTasks() { return mTaskProvider->getTaskList(); }
 private:
 	bool			mStopping;
 	TaskProvider *	mTaskProvider;
@@ -67,7 +66,7 @@ private:
 inline void TaskThread::wake()
 {
 #ifdef THREAD_DEBUG
-	printf("TaskThread::wake: thread %d posting for Task %p\n", getIndex(), mTask);
+	printf("TaskThread::wake: thread %d posting for Task\n", getIndex());
 #endif
 	mSema.post();
 }
@@ -95,8 +94,8 @@ void TaskThread::run()
         const uint64_t startTime = mach_absolute_time();
         bool taskWasRun = false;
 #endif
-        Task *task = getAllTasks();
-		while (task != NULL) {
+        Task *task;
+        while ((task = getATask()) != NULL) {
 #ifdef TASK_TIME_DEBUG
             taskWasRun = true;
 #endif
@@ -107,9 +106,6 @@ void TaskThread::run()
 #ifdef THREAD_DEBUG
             printf("TaskThread %d task %p done\n", tIndex, task);
 #endif
-            Task *next = task->next();
-			delete task;
-            task = next;
 		}
 #ifdef TASK_TIME_DEBUG
         if (taskWasRun) {
@@ -204,15 +200,6 @@ Task * TaskManagerImpl::getSingleTask()
 	printf("TaskManagerImpl::getSingleTask: returning task %p from stack\n", task);
 #endif
 	return task;
-}
-
-Task *  TaskManagerImpl::getTaskList()
-{
-    Task *tList = mTaskStack.pop_all();
-#ifdef DEBUG
-    printf("TaskManagerImpl::getTaskList: returning task list %p from stack\n", tList);
-#endif
-    return tList;
 }
 
 void TaskManagerImpl::startAndWait()

@@ -3,9 +3,6 @@
 
 #ifdef MACOSX
 #include <libkern/OSAtomic.h>
-//#if MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_4
-//#include <CoreServices/CoreServices.h>
-//#endif
 #elif defined(LINUX)
 template <class T>
 static bool	compare_and_swap(T *oldvalue, T *newvalue, T **pvalue);
@@ -115,23 +112,15 @@ public:
 		}
 		return reversed.mHead;
 	}
-	
+
 	static bool	compare_and_swap(T *oldvalue, T *newvalue, T **pvalue)
 	{
 #ifdef MACOSX
-#if __LP64__
 		return ::OSAtomicCompareAndSwap64Barrier(int64_t(oldvalue), int64_t(newvalue), (int64_t *)pvalue);
-#elif MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_4
-		return ::OSAtomicCompareAndSwap32Barrier(int32_t(oldvalue), int32_t(newvalue), (int32_t *)pvalue);
-#else
-		return ::CompareAndSwap(UInt32(oldvalue), UInt32(newvalue), (UInt32 *)pvalue);
-#endif	
-#else	// MACOSX
-#if (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) > 40100
+#elif (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) > 40100
 		return __sync_bool_compare_and_swap(pvalue, oldvalue, newvalue);
 #else
 		#error WE NEED AN ATOMIC COMPARE AND SWAP OPERATOR HERE
-#endif
 #endif	// MACOSX
 	}
 	
@@ -140,7 +129,7 @@ protected:
 };
 
 #ifdef MACOSX
-#if ((MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5))
+
 #include <libkern/OSAtomic.h>
 
 class CAAtomicStack {
@@ -192,12 +181,6 @@ private:
 	OSQueueHead		mHead;
 	ssize_t			mNextPtrOffset;
 };
-
-#else
-
-#define TAtomicStack2 TAtomicStack
-
-#endif // MAC_OS_X_VERSION_MAX_ALLOWED
 
 #endif	// MACOSX
 
