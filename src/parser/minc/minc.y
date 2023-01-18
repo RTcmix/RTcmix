@@ -611,18 +611,102 @@ static Node * parseArgumentQuery(const char *text, int *pOutErr)
 #endif
 }
 
+static Node * parseListArgument(const char *text, int *pOutErr)
+{
+    Node *listNode = NULL;
+    Node *listElem = new NodeEmptyListElem();
+    ++text;         // get past open brace
+    bool done = false;
+    try {
+        bool isNumber = false;      // until proven otherwise
+        bool firstSign = false;     // watch for extra '-'
+        int elemIndex = 0;          // start of text for each element
+        for (int n = 0; !done; ++n) {
+            switch (text[n]) {
+            case '-':
+                if (isNumber && !firstSign) {
+                    minc_warn("Malformed list argument ignored");
+                    throw 1;
+                }
+                firstSign = true;
+                break;
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+            case '.':
+                isNumber = true;
+                break;
+            case '}':
+                done = true;
+                // fall through
+            case ',':
+                firstSign = false;      // clear this
+                if (isNumber) {
+                    double f = atof(&text[elemIndex]);
+                    listElem = new NodeListElem(listElem, new NodeConstf(f));
+                }
+                else {
+                    // Make copy so we can edit it.
+                    char *vcopy = strdup(&text[elemIndex]);
+                    char *term = strchr(vcopy, ',');
+                    if (!term) term = strchr(vcopy, '}');
+                    if (!term) {
+                        minc_warn("Malformed list argument ignored");
+                        free(vcopy);
+                        throw 1;
+                    }
+                    *term = '\0';
+                    if (strlen(vcopy) > 0) {
+                        // strsave the list argument before adding to node
+                        listElem = new NodeListElem(listElem, new NodeString(strsave(vcopy)));
+                    }
+                    free(vcopy);
+                }
+                // Advance the index
+                elemIndex = n + 1;
+                break;
+            case '\0':
+                minc_warn("Malformed list argument ignored");
+                throw 1;
+                break;
+            default:
+                isNumber = false;
+                break;
+            }
+        }
+        listNode = new NodeList(listElem);
+    } catch (int &ii) {
+        delete listElem;
+        *pOutErr = 1;
+    }
+    return listNode;
+}
+
 static Node * parseScoreArgument(const char *text, int *pOutErr)
 {
 #ifndef EMBEDDED
     const char *token = strsave(text + 1);    // strip off '$'
     const char *value = lookup_token(token, true);        // returns NULL with warning
     if (value != NULL) {
-        // We store this as a number constant if it can be coaxed into a number,
-        // else we store this as a string constant.
+        // Value can be a list (e.g., "{1,2,3}"), a float, or a string
+        
+        // Check first for a list
+        if (value[0] == '{') {
+            Node *n = parseListArgument(value, pOutErr);
+            return (n) ? n : new NodeNoop();
+        }
+        // Check to see if it can be coaxed into a number,
         int i, is_number = 1;
         for(i = 0; value[i] != '\0'; ++i) {
             if ('-' == value[i] && i == 0)
-            continue;    // allow initial sign
+                continue;    // allow initial sign
             if (! (isdigit(value[i]) || '.' == value[i]) ) {
                 is_number = 0;
                 break;
@@ -632,6 +716,7 @@ static Node * parseScoreArgument(const char *text, int *pOutErr)
             double f = atof(value);
             return new NodeConstf(f);
         }
+        // else we store this as a string constant.
         else {
             // Strip off extra "" if present
             if (value[0] == '"' && value[strlen(value)-1] == '"') {
