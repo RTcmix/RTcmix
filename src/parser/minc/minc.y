@@ -619,7 +619,7 @@ static Node * parseListArgument(const char *text, int *pOutErr)
     bool done = false;
     try {
         bool isNumber = false;      // until proven otherwise
-        bool firstSign = false;     // watch for extra '-'
+        bool firstSign = true;     // watch for extra '-'
         int elemIndex = 0;          // start of text for each element
         for (int n = 0; !done; ++n) {
             switch (text[n]) {
@@ -628,7 +628,7 @@ static Node * parseListArgument(const char *text, int *pOutErr)
                     minc_warn("Malformed list argument ignored");
                     throw 1;
                 }
-                firstSign = true;
+                firstSign = false;
                 break;
             case '0':
             case '1':
@@ -647,7 +647,7 @@ static Node * parseListArgument(const char *text, int *pOutErr)
                 done = true;
                 // fall through
             case ',':
-                firstSign = false;      // clear this
+                firstSign = true;      // clear this
                 if (isNumber) {
                     double f = atof(&text[elemIndex]);
                     listElem = new NodeListElem(listElem, new NodeConstf(f));
