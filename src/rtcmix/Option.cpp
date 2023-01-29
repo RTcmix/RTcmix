@@ -641,7 +641,7 @@ void set_double_option(const char *option_name, double value)
 	else if (!strcmp(option_name, kOptionBufferCount))
 		Option::bufferCount((int)value);
 	else if (!strcmp(option_name, kOptionPrint))
-		Option::print(value != 0.0);
+		Option::print((int)value);
     else if (!strcmp(option_name, kOptionParserWarnings))
         Option::parserWarnings((int)value);
 	else if (!strcmp(option_name, kOptionMuteThreshold))
