@@ -39,6 +39,7 @@ enum ParamType {
 	OSC_INPORT,
     PRINT,
     PRINT_LIST_LIMIT,
+    PARSER_WARNINGS,
     MUTE_THRESHOLD,
 	DEVICE,
 	INDEVICE,
@@ -81,6 +82,7 @@ static Param _param_list[] = {
 	{ kOptionOSCInPort, OSC_INPORT, false},
 	{ kOptionPrint, PRINT, false},
     { kOptionPrintListLimit, PRINT_LIST_LIMIT, false},
+    { kOptionParserWarnings, PARSER_WARNINGS, false},
 	{ kOptionMuteThreshold, MUTE_THRESHOLD, false},
 
 	// string options
@@ -281,6 +283,10 @@ static int _set_key_value_option(const char *key, const char *sval,
 			status = _str_to_int(sval, ival);
 			Option::print(ival);
 			break;
+        case PARSER_WARNINGS:
+            status = _str_to_int(sval, ival);
+            Option::parserWarnings(ival);
+            break;
 		case MUTE_THRESHOLD:
 			status = _str_to_double(sval, dval);
 			Option::muteThreshold(dval);

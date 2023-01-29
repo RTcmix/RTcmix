@@ -82,6 +82,7 @@
 #define MAX_OUTPUT_DEVICES 3
 
 #define DEFAULT_PRINT_LIST_LIMIT 16
+#define DEFAULT_PARSER_WARNINGS 0
 
 // Option names.  These are the keys that appear in the .rtcmixrc file.
 // They're also the <option_name> used with the get_*_option C functions.
@@ -105,6 +106,7 @@
 #define kOptionOSCInPort        "osc_inport"
 #define kOptionPrint            "print"
 #define kOptionPrintListLimit    "print_list_limit"
+#define kOptionParserWarnings   "parser_warnings"
 #define kOptionMuteThreshold	"mute_threshold"
 
 // string options
@@ -193,6 +195,9 @@ public:
 	static int print() { return _print; }
 	static int print(int setIt) { _print = setIt; return _print; }
 
+    static unsigned parserWarnings() { return _parserWarnings; }
+    static unsigned parserWarnings(unsigned setIt) { _parserWarnings = setIt; return _parserWarnings; }
+
     static int printListLimit() { return _printListLimit; }
     static int printListLimit(int setIt) { _printListLimit = setIt; return _printListLimit; }
 
@@ -256,6 +261,7 @@ private:
 	static int _oscInPort;
 	static int _print;
     static int _printListLimit;
+    static unsigned _parserWarnings;
 	static double _muteThreshold;
 
 	// string options

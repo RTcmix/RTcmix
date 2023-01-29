@@ -45,7 +45,7 @@ int Option::_print = MMP_PRINTALL; // default print everthing for regular RTcmix
 #endif
 
 int Option::_printListLimit = DEFAULT_PRINT_LIST_LIMIT;
-
+unsigned Option::_parserWarnings = DEFAULT_PARSER_WARNINGS;
 
 char Option::_device[DEVICE_MAX];
 char Option::_inDevice[DEVICE_MAX];
@@ -77,6 +77,7 @@ void Option::init()
 	_print = MMP_PRINTALL; // default print everthing for regular RTcmix
 #endif
     _printListLimit = DEFAULT_PRINT_LIST_LIMIT;
+    _parserWarnings = DEFAULT_PARSER_WARNINGS;
 	_bufferFrames = DEFAULT_BUFFER_FRAMES;
 	_bufferCount = DEFAULT_BUFFER_COUNT;
 	_oscInPort = DEFAULT_OSC_INPORT;
@@ -624,6 +625,8 @@ double get_double_option(const char *option_name)
 		return Option::bufferCount();
 	else if (!strcmp(option_name, kOptionPrint))
 		return Option::print();
+    else if (!strcmp(option_name, kOptionParserWarnings))
+        return Option::parserWarnings();
 	else if (!strcmp(option_name, kOptionMuteThreshold))
 		return Option::muteThreshold();
 
@@ -638,7 +641,9 @@ void set_double_option(const char *option_name, double value)
 	else if (!strcmp(option_name, kOptionBufferCount))
 		Option::bufferCount((int)value);
 	else if (!strcmp(option_name, kOptionPrint))
-		Option::print(value);
+		Option::print(value != 0.0);
+    else if (!strcmp(option_name, kOptionParserWarnings))
+        Option::parserWarnings((int)value);
 	else if (!strcmp(option_name, kOptionMuteThreshold))
 		Option::muteThreshold(value);
 	else
