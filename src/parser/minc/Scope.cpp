@@ -10,6 +10,7 @@
 #include "RefCounted.h"
 #include "Symbol.h"
 #include "minc_internal.h"
+#include "Option.h"
 #include <vector>
 #include <string.h>
 
@@ -69,7 +70,7 @@ Scope::install(const char *name)
     Symbol *p = Symbol::create(name);
     int h = hash(name);        // TODO: FINISH COMBINING THIS INTO SYMBOL CREATOR
     p->next = htab[h];
-    p->scope = depth();
+    p->_scope = depth();
     htab[h] = p;
     
 #ifdef SCOPE_DEBUG
@@ -286,6 +287,10 @@ Symbol * lookupOrAutodeclare(const char *name, Bool inFunctionCall)
         sym = lookupSymbol(name, AnyLevel);
         if (sym) {
             DPRINT("\tfound it\n");
+            // lookupOrAutodeclare is only used for lvalues, so we know we're going to modify this
+            if (inFunctionCall && sym->scope() == 0 && Option::parserWarnings() > 1) {
+                minc_advise("Careful -- modifying global variable '%s' within a function", name);
+            }
         }
         else {
             DPRINT("\tnot found - installing %s\n", inFunctionCall ? "at current scope" : "at global scope");

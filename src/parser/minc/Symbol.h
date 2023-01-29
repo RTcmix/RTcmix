@@ -22,7 +22,8 @@ public:
     MincDataType        dataType() const { return v.dataType(); }
     const MincValue&    value() const { return v; }
     MincValue&          value() { return v; }
-    const char *        name() { return _name; }    
+    const char *        name() const { return _name; }
+    int                 scope() const { return _scope; }
     Symbol *            copyValue(Node *, bool allowTypeOverwrite=true);
     
     Symbol *            getStructMember(const char *memberName);
@@ -30,7 +31,7 @@ public:
     void                print(const char *spacer="");
     
     Symbol *next;                 /* next entry on hash chain */
-    int scope;
+    int _scope;
 protected:
     Symbol(const char *name);
     const char *_name;          /* symbol name */

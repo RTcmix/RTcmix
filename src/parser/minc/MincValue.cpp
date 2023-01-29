@@ -118,7 +118,7 @@ Symbol * MincStruct::addMember(const char *name, const MincValue &value, int sco
     Symbol *memberSym = Symbol::create(name);
     DPRINT("MincStruct::addMember(member '%s', type %s) => symbol %p\n", name, MincTypeName(value.dataType()), memberSym);
     memberSym->value() = value;     // initialize member value
-    memberSym->scope = scope;
+    memberSym->_scope = scope;
 #if ALLOW_RECURSIVE_STRUCT_INIT     /* this causes a crash if a struct contains a struct which contains a... */
     if (structType) {
         // Recursively initialize a struct member within a struct.

@@ -332,7 +332,7 @@ Node *
 Node::copyValue(Symbol *source, bool allowTypeOverwrite)
 {
     TPRINT("Node::copyValue(this=%p, Symbol=%p)\n", this, source);
-    assert(source->scope != -1);    // we accessed a variable after leaving its scope!
+    assert(source->scope() != -1);    // we accessed a variable after leaving its scope!
     if (dataType() != MincVoidType && source->dataType() != dataType()) {
         if (allowTypeOverwrite) {
             minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
@@ -1670,7 +1670,7 @@ Node *	NodeDecl::doExct()
 		sym->value() = MincValue(this->_type);
 	}
 	else {
-		if (sym->scope == current_scope()) {
+		if (sym->scope() == current_scope()) {
 			if (inCalledFunctionArgList) {
 				minc_die("%s(): argument variable '%s' already used", sCalledFunctions.back(), _symbolName);
 			}
@@ -1738,7 +1738,7 @@ Node *    NodeStructDecl::doExct()
             sym->initAsStruct(structType, initList);
         }
         else {
-            if (sym->scope == current_scope()) {
+            if (sym->scope() == current_scope()) {
                 if (inCalledFunctionArgList) {
                     minc_die("%s(): argument variable '%s' already used", sCalledFunctions.back(), _symbolName);
                 }

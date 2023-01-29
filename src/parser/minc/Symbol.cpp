@@ -49,7 +49,7 @@ Symbol *	Symbol::create(const char *name)
 }
 
 Symbol::Symbol(const char *symName)
-    : next(NULL), scope(-1), _name(symName)
+    : next(NULL), _scope(-1), _name(symName)
 {
 #ifdef NOTYET
 	defined = offset = 0;
@@ -63,9 +63,9 @@ Symbol::Symbol(const char *symName)
 Symbol::~Symbol()
 {
 #if defined(SYMBOL_DEBUG) || defined(DEBUG_SYM_MEMORY)
-    DPRINT("\tSymbol::~Symbol() \"%s\" scope %d (%p)\n", _name, scope, this);
+    DPRINT("\tSymbol::~Symbol() \"%s\" scope %d (%p)\n", _name, scope(), this);
 #endif
-	scope = -1;			// we assert on this elsewhere
+	_scope = -1;			// we assert on this elsewhere
 }
 
 // Returns symbol for a struct's member, if present
@@ -89,7 +89,7 @@ Symbol::copyValue(Node *source, bool allowTypeOverwrite)
         return this;
     }
 #endif
-    assert(scope != -1);    // we accessed a variable after leaving its scope!
+    assert(_scope != -1);    // we accessed a variable after leaving its scope!
     if (dataType() != MincVoidType && source->dataType() != dataType()) {
         if (allowTypeOverwrite) {
             minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
@@ -127,11 +127,11 @@ public:
                 if (memberValue.dataType() != type) {
                     minc_die("struct member '%s' initialized with a %s but needs a %s", memberName, MincTypeName(memberValue.dataType()), MincTypeName(type));
                 }
-                mstruct->addMember(memberName, memberValue, _root->scope, structTypename);
+                mstruct->addMember(memberName, memberValue, _root->scope(), structTypename);
             }
             else {
                 // Initialize with default value for type
-                mstruct->addMember(memberName, MincValue(type), _root->scope, structTypename);
+                mstruct->addMember(memberName, MincValue(type), _root->scope(), structTypename);
             }
         }
     }
@@ -235,7 +235,7 @@ void
 Symbol::print(const char *spacer)
 {
 #ifdef SYMBOL_DEBUG
-    DPRINT("%sSymbol %p: '%s', scope: %d, type: %s\n", spacer, this, name(), scope, dname(dataType()));
+    DPRINT("%sSymbol %p: '%s', scope: %d, type: %s\n", spacer, this, name(), scope(), dname(dataType()));
 #endif
 }
 
