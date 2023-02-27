@@ -123,6 +123,10 @@ call_external_function(const char *funcname, const MincValue arglist[],
 					return PARAM_ERROR;
 				rtcmixargs = newargs;
 				numArgs = argCount;
+                if (numArgs > MAXDISPARGS) {
+                    minc_die("Too many list arguments generated for RTcmix function %s()", funcname);
+                    return PARAM_ERROR;
+                }
 			}
 			// If list contains only floats, convert and pass it along.
 			else {
