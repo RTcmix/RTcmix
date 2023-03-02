@@ -198,18 +198,18 @@ RTcmix::init_globals()
       ToOutPlayList[i] = -1;    /* The playback order for AUX buses */
       ToAuxPlayList[i] =-1;     /* The playback order for AUX buses */
    }
-
+#ifndef EMBEDDED
 	max_input_fds = sysconf(_SC_OPEN_MAX);
 	if (max_input_fds == -1)	// call failed
 		max_input_fds = 128;		// what we used to hardcode
 	else
 		max_input_fds -= RESERVE_INPUT_FDS;
-
+#else
 	// BGGx -- the above doesn't work for rtcmix~ on Big Sur and
 	// following OSes.  I'm reverting to our older hard-coded number,
 	// which seems to work fine
 	max_input_fds = 128;
-	
+#endif
 	inputFileTable = new InputFile[max_input_fds];
 	last_input_index = -1;
 	
