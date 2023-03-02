@@ -13,6 +13,8 @@ functest5.sco \
 func_with_undef_struct_arg.sco \
 if_else_scope.sco \
 include_at_line7.sco \
+list_compare.sco \
+list_large_index.sco \
 maptest2.sco \
 maptest3.sco \
 maptest4.sco \
