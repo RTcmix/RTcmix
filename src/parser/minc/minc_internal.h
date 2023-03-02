@@ -183,6 +183,30 @@ const char *MincTypeName(MincDataType type);
 int hash(const char *c);
 int cmp(MincFloat f1, MincFloat f2);
 
+// returns true if both are null or strings are identical
+// Logic: if both are null, true.  If both are not  null, compare.  Else false;
+
+inline bool same(MincString s1, MincString s2)
+{
+    return (s1 == s2) ? true : (s1 != NULL && s2 != NULL) ? strcmp(s1, s2) == 0 : false;
+}
+
+inline bool bigger(MincString s1, MincString s2)
+{
+    return (s1 == s2) ? false :
+                        (s1 != NULL && s2 != NULL) ?
+                            strcmp(s1, s2) > 0 :
+                                (s1 != NULL) ? true : false;
+}
+
+inline bool smaller(MincString s1, MincString s2)
+{
+    return (s1 == s2) ? false :
+                        (s1 != NULL && s2 != NULL) ?
+                            strcmp(s1, s2) < 0 :
+                                (s1 == NULL) ? true : false;
+}
+
 char *emalloc(long nbytes);
 void efree(void *mem);
 

@@ -182,7 +182,9 @@ static const char *s_OpKinds[] = {
 	"<",
 	">",
 	"<=",
-	">="
+	">=",
+    "++",
+    "--"
 };
 
 static const char *printNodeKind(NodeKind k)
@@ -1249,126 +1251,46 @@ Node *	NodeAnd::doExct()
 	return this;
 }
 
-// returns true if both are null or strings are identical
-// Logic: if both are null, true.  If both are not  null, compare.  Else false;
-
-inline bool same(MincString s1, MincString s2)
-{
-    return (s1 == s2) ? true : (s1 != NULL && s2 != NULL) ? strcmp(s1, s2) == 0 : false;
-}
-
 Node *	NodeRelation::doExct()		// was exct_relation()
 {
 	ENTER();
 	MincValue& v0 = child(0)->exct()->value();
 	MincValue& v1 = child(1)->exct()->value();
 	
-	if (v0.dataType() != v1.dataType()) {
-		minc_warn("operator %s: attempt to compare variables having different types - returning false", printOpKind(this->op));
-		this->value() = 0.0;
-		return this;
-	}
-	
-	switch (this->op) {
-		case OpEqual:
-			switch (v0.dataType()) {
-				case MincFloatType:
-					if (cmp((MincFloat)v0, (MincFloat)v1) == 0)
-						this->value() = 1.0;
-					else
-						this->value() = 0.0;
-					break;
-				case MincStringType:
-					if (same((MincString)v0, (MincString)v1))
-						this->value() = 1.0;
-					else
-						this->value() = 0.0;
-					break;
-				default:
-					goto unsupported_type;
-					break;
-			}
-			break;
-		case OpNotEqual:
-			switch (v0.dataType()) {
-				case MincFloatType:
-					if (cmp((MincFloat)v0, (MincFloat)v1) == 0)
-						this->value() = 0.0;
-					else
-						this->value() = 1.0;
-					break;
-				case MincStringType:
-                    if (same((MincString)v0, (MincString)v1))
-						this->value() = 0.0;
-					else
-						this->value() = 1.0;
-					break;
-				default:
-					goto unsupported_type;
-					break;
-			}
-			break;
-		case OpLess:
-			switch (v0.dataType()) {
-				case MincFloatType:
-					if (cmp((MincFloat)v0, (MincFloat)v1) == -1)
-						this->value() = 1.0;
-					else
-						this->value() = 0.0;
-					break;
-				default:
-					goto unsupported_type;
-					break;
-			}
-			break;
-		case OpGreater:
-			switch (v0.dataType()) {
-				case MincFloatType:
-					if (cmp((MincFloat)v0, (MincFloat)v1) == 1)
-						this->value() = 1.0;
-					else
-						this->value() = 0.0;
-					break;
-				default:
-					goto unsupported_type;
-					break;
-			}
-			break;
-		case OpLessEqual:
-			switch (v0.dataType()) {
-				case MincFloatType:
-					if (cmp((MincFloat)v0, (MincFloat)v1) <= 0)
-						this->value() = 1.0;
-					else
-						this->value() = 0.0;
-					break;
-				default:
-					goto unsupported_type;
-					break;
-			}
-			break;
-		case OpGreaterEqual:
-			switch (v0.dataType()) {
-				case MincFloatType:
-					if (cmp((MincFloat)v0, (MincFloat)v1) >= 0)
-						this->value() = 1.0;
-					else
-						this->value() = 0.0;
-					break;
-				default:
-					goto unsupported_type;
-					break;
-			}
-			break;
-		default:
-			minc_internal_error("exct: tried to execute invalid NodeRelation");
-			break;
-	}
+    try {
+        switch (this->op) {
+            case OpEqual:
+                this->value() = (v0 == v1) ? 1.0 : 0.0;
+                break;
+            case OpNotEqual:
+                this->value() = (v0 != v1) ? 1.0 : 0.0;
+                break;
+            case OpLess:
+                this->value() = (v0 < v1) ? 1.0 : 0.0;
+                break;
+            case OpGreater:
+                this->value() = (v0 > v1) ? 1.0 : 0.0;
+                break;
+            case OpLessEqual:
+                this->value() = (v0 <= v1) ? 1.0 : 0.0;
+                break;
+            case OpGreaterEqual:
+                this->value() = (v0 >= v1) ? 1.0 : 0.0;
+                break;
+            default:
+                minc_internal_error("exct: tried to execute invalid NodeRelation");
+                break;
+        }
+    }
+    catch (NonmatchingTypeException &e) {
+        minc_warn("operator %s: attempt to compare variables having different types - returning false", printOpKind(this->op));
+        this->value() = 0.0;
+    }
+    catch (InvalidTypeException &e) {
+        minc_warn("operator %s: cannot compare variables of this type - returning false", printOpKind(this->op));
+        this->value() = 0.0;
+    }
 	return this;
-unsupported_type:
-    minc_warn("operator %s: cannot compare variables of this type - returning false", printOpKind(this->op));
-    this->value() = 0.0;
-    return this;
 }
 
 Node *	NodeOp::doExct()

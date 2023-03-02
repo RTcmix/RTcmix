@@ -64,6 +64,74 @@ MincList::resize(int newLen)
     delete [] oldList;
 }
 
+bool
+MincList::operator == (const MincList &rhs)
+{
+    if (len != rhs.len) {
+        return false;   // different lengths always unequal
+    }
+    else if (len == 0 && rhs.len == 0) {
+        return true;    // empty lists always equal
+    }
+    bool same = false;
+    for (int i = 0; i < len; ++i) {
+        same = (data[i] == rhs.data[i]);
+        if (!same) {
+            return false;
+        }
+    }
+    return same;
+}
+
+bool
+MincList::operator < (const MincList &rhs)
+{
+    if (len > rhs.len) {
+        return false;   // shorter always less
+    }
+    else if (len < rhs.len) {
+        return true;
+    }
+    // At this point, lengths are equal
+    bool isLess = false;
+    int i = 0;
+    for (; i < len-1; ++i) {
+        isLess = (data[i] < rhs.data[i]);
+        if (isLess) {
+            return true;
+        }
+        else if (data[i] > rhs.data[i]) {
+            return false;
+        }
+    }
+    // last pair must be <
+    return (data[i] < rhs.data[i]);
+}
+
+bool
+MincList::operator > (const MincList &rhs)
+{
+    if (len > rhs.len) {
+        return true;
+    }
+    else if (len < rhs.len) {
+        return false;
+    }
+    // At this point, lengths are equal
+    bool isGreater = false;
+    int i = 0;
+    for (; i < len-1; ++i) {
+        isGreater = (data[i] > rhs.data[i]);
+        if (isGreater) {
+            return true;
+        }
+        else if (data[i] < rhs.data[i]) {
+            return false;
+        }
+    }
+    return (data[i] > rhs.data[i]);
+}
+
 MincMap::MincMap()
 {
 #ifdef DEBUG_MEMORY
@@ -86,7 +154,7 @@ bool MincMap::contains(const MincValue &element)
 bool
 MincMap::MincValueCmp::operator()(const MincValue& lhs, const MincValue& rhs) const
 {
-    return lhs.rawValue() < rhs.rawValue();
+    return lhs < rhs;
 }
 
 #define ThrowIf(exp, excp) if (exp) { throw excp; }
@@ -520,14 +588,22 @@ MincValue& MincValue::operator[] (const MincValue &index)
 
 bool MincValue::operator == (const MincValue &rhs) const
 {
-    ThrowIf(rhs.type != this->type, NonmatchingTypeException("attempt to compare variables having different types"));
+    ThrowIf(rhs.type != this->type, NonmatchingTypeException("Attempt to compare variables having different types"));
     switch (type) {
         case MincFloatType:
             return cmp(_u.number, rhs._u.number) == 0;
         case MincStringType:
-            return strcmp(_u.string, rhs._u.string) == 0;
-        default:
-            throw InvalidTypeException("can't compare this type of object");
+            return same(_u.string, rhs._u.string);
+        case MincHandleType:
+        case MincFunctionType:
+            return (rawValue() == rhs.rawValue());
+        case MincListType:
+            return (_u.list == NULL || rhs._u.list == NULL) ?
+                _u.list == rhs._u.list : *_u.list == *rhs._u.list;
+        case MincMapType:
+        case MincStructType:
+       default:
+            throw InvalidTypeException("Can't compare objects of this type");
     }
 }
 
@@ -538,16 +614,50 @@ bool MincValue::operator != (const MincValue &rhs) const
 
 bool MincValue::operator < (const MincValue &rhs) const
 {
-    ThrowIf(rhs.type != this->type, NonmatchingTypeException("attempt to compare variables having different types"));
-    ThrowIf(this->type != MincFloatType, InvalidTypeException("can't compare this type of object"));
-    return cmp(_u.number, rhs._u.number) == -1;
+    if (rhs.type != this->type) {
+        return rawValue() < rhs.rawValue();
+    }
+    switch (type) {
+        case MincFloatType:
+            return cmp(_u.number, rhs._u.number) == -1;
+        case MincStringType:
+            return smaller(_u.string, rhs._u.string);
+        case MincHandleType:
+        case MincFunctionType:
+            return rawValue() < rhs.rawValue();
+        case MincListType:
+            // This logic handles either side being NULL
+            return (_u.list == NULL && rhs._u.list == NULL) ? false :
+                (_u.list == NULL) ? true : (rhs._u.list == NULL) ? false : *_u.list < *rhs._u.list;
+        case MincMapType:
+        case MincStructType:
+       default:
+            throw InvalidTypeException("Can't compare objects of this type");
+    }
 }
 
 bool MincValue::operator > (const MincValue &rhs) const
 {
-    ThrowIf(rhs.type != this->type, NonmatchingTypeException("attempt to compare variables having different types"));
-    ThrowIf(this->type != MincFloatType, InvalidTypeException("can't compare this type of object"));
-    return cmp(_u.number, rhs._u.number) == 1;
+    if (rhs.type != this->type) {
+        return (rawValue() > rhs.rawValue());
+    }
+    switch (type) {
+        case MincFloatType:
+            return cmp(_u.number, rhs._u.number) == 1;
+        case MincStringType:
+            return bigger(_u.string, rhs._u.string);
+        case MincHandleType:
+        case MincFunctionType:
+            return (rawValue() > rhs.rawValue());
+        case MincListType:
+            // This logic handles either side being NULL
+            return (_u.list == NULL && rhs._u.list == NULL) ? false :
+                (_u.list == NULL) ? false : (rhs._u.list == NULL) ? true : *_u.list > *rhs._u.list;
+        case MincMapType:
+        case MincStructType:
+       default:
+            throw InvalidTypeException("Can't compare objects of this type");
+    }
 }
 
 bool MincValue::operator <= (const MincValue &rhs) const

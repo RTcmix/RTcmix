@@ -25,6 +25,9 @@ class MincList : public MincObject, public RefCounted
 public:
     MincList(int len=0);
     void resize(int newLen);
+    bool operator == (const MincList &rhs);
+    bool operator < (const MincList &rhs);
+    bool operator > (const MincList &rhs);
     int len;                /* number of MincValue's in <data> array */
     MincValue *data;
 protected:
