@@ -19,6 +19,8 @@ extern "C" {
     double pvinput(const Arg args[], const int nargs);
     double pvgetbincount(const Arg args[], const int nargs);
     double pvgetframerate(const Arg args[], const int nargs);
+    Handle pvgetframeamps(const Arg args[], const int nargs);
+    Handle pvgetframefreqs(const Arg args[], const int nargs);
     Handle pvgetframe(const Arg args[], const int nargs);
     Handle pvgetbin(const Arg args[], const int nargs);
 }
@@ -108,16 +110,16 @@ static Handle mkusage()
 }
 
 Handle
-pvgetframe(const Arg arglist[], const int nargs)
+pvgetframeamps(const Arg arglist[], const int nargs)
 {
     if (gPvocFD == -1) {
-        ::rterror("pvgetframe", "You haven't opened a PVOC data file yet");
+        ::rterror("pvgetframeamps", "You haven't opened a PVOC data file yet");
         rtOptionalThrow(CONFIGURATION_ERROR);
         return NULL;
     }
     double frameToRead = (double)arglist[0];
     if (frameToRead > gPvocFrameCount-1.0) {
-        rtcmix_warn("pvgetframe", "Limiting frame number to %f", gPvocFrameCount-1.0);
+        rtcmix_warn("pvgetframeamps", "Limiting frame number to %f", gPvocFrameCount-1.0);
         frameToRead = gPvocFrameCount-1.0;
     }
     else if (frameToRead < 0.0) {
@@ -130,7 +132,7 @@ pvgetframe(const Arg arglist[], const int nargs)
     // frequency.  We read entire frame, but only extract the gain bins here.
     
     if (lseek(gPvocFD, read_offset, SEEK_SET) == -1) {
-        ::rterror("pvgetframe", "Failed to seek in data file");
+        ::rterror("pvgetframeamps", "Failed to seek in data file");
         rtOptionalThrow(FILE_ERROR);
         return NULL;
     }
@@ -161,6 +163,66 @@ pvgetframe(const Arg arglist[], const int nargs)
 }
 
 Handle
+pvgetframefreqs(const Arg arglist[], const int nargs)
+{
+    if (gPvocFD == -1) {
+        ::rterror("pvgetframefreqs", "You haven't opened a PVOC data file yet");
+        rtOptionalThrow(CONFIGURATION_ERROR);
+        return NULL;
+    }
+    double frameToRead = (double)arglist[0];
+    if (frameToRead > gPvocFrameCount-1.0) {
+        rtcmix_warn("pvgetframefreqs", "Limiting frame number to %f", gPvocFrameCount-1.0);
+        frameToRead = gPvocFrameCount-1.0;
+    }
+    else if (frameToRead < 0.0) {
+        return mkusage();
+    }
+    // Offset to just past first float amp value in bin
+    const int read_offset = gPvocDataOffset + (int)sizeof(float) + ((int)frameToRead * (gPvocBinsPerFrame * kBinSizeInBytes));
+    const int pitchBins = gPvocBinsPerFrame;    // only want pitches
+    
+    // In PVOC datafiles, each frame consists of a float gain followed by a float
+    // frequency.  We read entire frame, but only extract the frequency bins here.
+    
+    if (lseek(gPvocFD, read_offset, SEEK_SET) == -1) {
+        ::rterror("pvgetframefreqs", "Failed to seek in data file");
+        rtOptionalThrow(FILE_ERROR);
+        return NULL;
+    }
+    float *totalframe = new float[gPvocBinsPerFrame*2];
+    float *nextframe = new float[gPvocBinsPerFrame*2];
+
+    // Create Array
+    
+    Array *outPitches = (Array *)malloc(sizeof(Array));
+    outPitches->len = pitchBins;
+    outPitches->data = (double *)malloc(pitchBins * sizeof(double));
+
+    read(gPvocFD, totalframe, gPvocBinsPerFrame*kBinSizeInBytes);
+    read(gPvocFD, nextframe, gPvocBinsPerFrame*kBinSizeInBytes);
+
+    double frac = frameToRead - (int)frameToRead;
+    for (int bin = 0; bin < gPvocBinsPerFrame; ++bin) {
+        float binVal = totalframe[bin*2];
+        float nextBinVal = nextframe[bin*2];
+        if (gPvocNeedsSwap) { byte_reverse4(&binVal); byte_reverse4(&nextBinVal); }
+        outPitches->data[bin] = binVal + frac * (nextBinVal - binVal);
+    }
+    delete [] totalframe;
+    delete [] nextframe;
+    
+    // Wrap Array in Handle, and return.  This will return a 'list' to MinC.
+    return createArrayHandle(outPitches);
+}
+
+Handle
+pvgetframe(const Arg arglist[], const int nargs)
+{
+    return pvgetframeamps(arglist, nargs);
+}
+
+Handle
 pvgetbin(const Arg arglist[], const int nargs)
 {
     if (gPvocFD == -1) {
@@ -188,25 +250,27 @@ pvgetbin(const Arg arglist[], const int nargs)
         return NULL;
     }
     
-    // Create Array with length to hold an amp for each frame in the datafile
+    // Create Array with length to hold an amp/freq pair for each frame in the datafile
     
-    Array *outGains = (Array *)malloc(sizeof(Array));
-    outGains->len = gPvocFrameCount;
-    outGains->data = (double *)malloc(gPvocFrameCount * sizeof(double));
+    Array *outValues = (Array *)malloc(sizeof(Array));
+    outValues->len = gPvocFrameCount*2;
+    outValues->data = (double *)malloc(outValues->len * sizeof(double));
 
     // How much we skip to get to the binToRead'th amplitude in each new frame.
-    // This is the size of each frame minus the size of the float we read for the previous frame.
-    int skipBytes = (gPvocBinsPerFrame * kBinSizeInBytes) - sizeof(float);
-    // read amp bin, skip to next frame, read next amp bin, repeat
+    // This is the size of each frame minus the size of the floats we read for the previous frame.
+    int skipBytes = (gPvocBinsPerFrame * kBinSizeInBytes) - kBinSizeInBytes;
+    // read amp and freq bin, skip to next frame, read next amp bin and freq bin, repeat
     for (int frame = 0; frame < gPvocFrameCount; ++frame) {
-        float binamp = 0.0f;
+        float binamp = 0.0f, binfreq = 0.0f;
         read(gPvocFD, &binamp, sizeof(float));
-        if (gPvocNeedsSwap) { byte_reverse4(&binamp); }
-//        printf("gain[%d] for frame %d: %.6f\n", (int)binToRead, frame, binamp);
-        outGains->data[frame] = binamp;
+        read(gPvocFD, &binfreq, sizeof(float));
+        if (gPvocNeedsSwap) { byte_reverse4(&binamp); byte_reverse4(&binfreq); }
+        printf("gain[%d] freq[%d] for frame %d: %.6f\t%.4f\n", (int)binToRead, (int)binToRead, frame, binamp, binfreq);
+        outValues->data[frame*2] = binamp;
+        outValues->data[(frame*2)+1] = binfreq;
         if (lseek(gPvocFD, skipBytes, SEEK_CUR) == -1) {
-            free(outGains->data);
-            free(outGains);
+            free(outValues->data);
+            free(outValues);
             ::rterror("pvgetbin", "Failed to seek in data file");
             rtOptionalThrow(FILE_ERROR);
             return NULL;
@@ -214,5 +278,5 @@ pvgetbin(const Arg arglist[], const int nargs)
     }
     
     // Wrap Array in Handle, and return.  This will return a 'list' to MinC.
-    return createArrayHandle(outGains);
+    return createArrayHandle(outValues);
 }
