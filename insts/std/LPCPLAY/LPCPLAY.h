@@ -88,9 +88,13 @@ private:
 	float	_risetime, _decaytime;				// enveloping
 
 	// These are set and used within LPCPLAY.
+    double  _actualWeight;
 	double	_pitch;
+    double  _lastPitch;
 	double	_transposition;
 	bool	_voiced;
+    bool    _usesFrameTranspositions;
+    bool    _useTranspositionAsPitch;
 	float	_evals[5];
 	double	*_pchvals;						// pitch table
 	float	*_noisvals;						// signal arrays

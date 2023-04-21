@@ -1,6 +1,9 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2023-04-21	Douglas Scott <netdscott-at-netscape.net>
+	* Fixed major bugs in LPCPLAY dynamic pitch pfield behavior.
+
 2022-08-06  Douglas Scott <netdscott-at-netscape.net>
 	* Major parser extension to support class behavior on structs using new method declarations.
 	* Added "-s <skiptime>" argument to allow skipping into mixes.

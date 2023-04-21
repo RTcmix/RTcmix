@@ -164,6 +164,8 @@ LPCPLAY::LPCPLAY() : LPCINST("LPCPLAY"), _pchvals(NULL), _noisvals(NULL)
 	_phs = 0.0;
 	_datafields = LPCPLAY_bw + 1; /* number of fields before pitch curves */
 	_voiced = true;		// default state
+    _usesFrameTranspositions = false;
+    _useTranspositionAsPitch = false;
 	for (int i=0; i<9; i++)
 		_rsnetc[i]=0;
 	_arrayLen = 0;
@@ -211,11 +213,6 @@ int LPCPLAY::localInit(double p[], int n_args)
 		return die("LPCPLAY",
 				   "p[0]=starting time, p[1]=duration, p[2]=amp, p[3]=pitch, p[4]=frame1, p[5]=frame2, [ p[6]=warp, p[7]=resoncf, p[8]=resonbw, [ p9--> pitchcurves ] ]\n");
 
-   /* Store pfields in variables, to allow for easy pfield renumbering.
-      You should retain the RTcmix numbering convention for the first
-      4 pfields: outskip, inskip, dur, amp; or, for instruments that 
-      take no input: outskip, dur, amp.
-   */
 	float outskip = p[0];
 	float ldur = p[1];
 	_amp = p[LPCPLAY_amp];
@@ -264,23 +261,23 @@ int LPCPLAY::localInit(double p[], int n_args)
 	// Pitch table
 	_pchvals = new double[lpcFrameCount];
 
-	// Finish the initialization
-	
 	evset(SR, getdur(), _risetime, _decaytime, ENV_SLOT, _evals);
 
+    // Read the pitch values out of data set into _pchvals array
 	_lpcFrames = lpcFrameCount;
 	_lpcFrame1 = startLPCFrame;
 	for (i = startLPCFrame; i <= endLPCFrame; ++i) {
 		float findex = i;
 		if (_dataSet->getFrame(findex, _coeffs) < 0)
 			break;
-		_pchvals[i - startLPCFrame] = (_coeffs[PITCH] ? _coeffs[PITCH] : kDefaultFrequency);
+		_pchvals[i - startLPCFrame] = (_coeffs[PITCH] != 0.0 ? _coeffs[PITCH] : kDefaultFrequency);
 		/* just in case I am using datasets with no pitch value
 			stored */
 	}
-	float actualweight = weight(startLPCFrame, endLPCFrame, _thresh);
-	if (actualweight == 0.0)
-		actualweight = kDefaultFrequency;
+    _actualWeight = weight(startLPCFrame, endLPCFrame, _thresh);
+	if (_actualWeight == 0.0)
+        _actualWeight = kDefaultFrequency;
+    
 	// Transpose relative amount using input with +-0.01 == +-1 semitone
     if (ABS(_pitch) < 1.0) {
 		_transposition = pow(2.0,(_pitch/.12));
@@ -288,53 +285,68 @@ int LPCPLAY::localInit(double p[], int n_args)
     }
 	// Transpose relative amount using input as new center in hz
     else if (_pitch > 20) {
-		_transposition = _pitch/actualweight;
-        rtcmix_advise("LPCPLAY", "p[3] will transpose output by %.2fHz/%.2fHz", _pitch, actualweight);
+		_transposition = _pitch/_actualWeight;
+        rtcmix_advise("LPCPLAY", "p[3] will transpose output by %.2fHz/%.2fHz", _pitch, _actualWeight);
     }
 	// Transpose using input as new center in octave pt p.c.
     else if (_pitch > 0) {
-		_transposition = cpspch(_pitch)/actualweight;
-        rtcmix_advise("LPCPLAY", "p[3] will transpose output by %.2f octave pt pc", _pitch);
+		_transposition = cpspch(_pitch)/_actualWeight;
+        rtcmix_advise("LPCPLAY", "p[3] will transpose output to %.2f octave pt pc", _pitch);
     }
     else if (_pitch < -20) {
 		_transposition = -_pitch;  /* flat pitch in hz */
         rtcmix_advise("LPCPLAY", "p[3] will be used as flat pitch of %.2f Hz", _transposition);
+        _useTranspositionAsPitch = true;
     }
-    else {
+    else {  // pitch is <= -1.0 and < -20.0 (negative PCH)
 		_transposition = cpspch(-_pitch);  /* flat pitch in octave pt */
-        rtcmix_advise("LPCPLAY", "p[3] will be used as flat pitch of %.2f Hz", _transposition);
+        rtcmix_advise("LPCPLAY", "p[3] will be used as flat pitch of %.2f Hz (%.2f pch)", _transposition, -_pitch);
+        _useTranspositionAsPitch = true;
     }
-	if (n_args <= _datafields /* && _pitch > 0 */) {
-		rtcmix_advise("LPCPLAY", "Overall transp factor: %f, weighted av. pitch = %g Hz",
-			   _transposition, actualweight);
-		if (_maxdev) 
-			readjust(_maxdev,_pchvals,startLPCFrame,endLPCFrame,_thresh,actualweight);
-		for (i=startLPCFrame; i<=endLPCFrame; ++i) {
-			_pchvals[i - startLPCFrame] *= _transposition;
-		}
+    _lastPitch = _pitch;
+    
+	if (n_args <= _datafields) {
+        if (!_useTranspositionAsPitch) {
+            rtcmix_advise("LPCPLAY", "Overall transp factor: %f, weighted av. pitch = %g Hz", _transposition, _actualWeight);
+            if (_maxdev != 0.0) {
+                readjust(_maxdev,_pchvals,startLPCFrame,endLPCFrame,_thresh,_actualWeight);
+            }
+            for (i=startLPCFrame; i<=endLPCFrame; ++i) {
+                _pchvals[i - startLPCFrame] *= _transposition;
+            }
+        }
 	}
 	else {
+        if (((n_args - _datafields) % 2) != 0) {
+            return die("LPCPLAY", "Frame/transposition values must be specified in pairs");
+        }
 		int lastfr=_lpcFrame1;
-		float transp, lasttr=_transposition;
-        rtcmix_advise("LPCPLAY", "LPCPLAY: %d frame/transposition pairs", (int)((n_args - _datafields + 1) / 2));
-		for (int nn = _datafields-1; nn < n_args; nn+=2) {
-			if (ABS(p[nn+1]) < 1.) {
-				transp = pow(2.0,(p[nn+1]/.12));
+		double transp, lasttr=_transposition;
+        rtcmix_advise("LPCPLAY", "%d frame/transposition pairs", (int)((n_args - _datafields) / 2));
+		for (int nn = _datafields; nn < n_args; nn+=2) {
+            int pframe = (int)p[nn];
+            double ptransp = p[nn+1];
+			if (ABS(ptransp) < 1.) {
+				transp = pow(2.0,(ptransp/.12));
 			}
 			else {
-				transp = cpspch(ABS(p[nn+1])) / weight((float)lastfr,(p[nn]+1.),_thresh);
+				transp = cpspch(ABS(ptransp)) / weight((float)lastfr,(pframe+1.),_thresh);
 			}
-			float tranincr=(transp-lasttr)/(p[nn]-lastfr);
+#ifdef debug
+            printf("frame %d transp: %g\n", pframe, transp);
+#endif
+			double tranincr=(transp-lasttr)/double(pframe-lastfr);
 			transp=lasttr;
-			for (i=lastfr;i<(int)p[nn];i++) {
-				_pchvals[i-_lpcFrame1]*=transp;
-				transp+=tranincr;
+			for (i=lastfr; i<pframe; i++) {
+				_pchvals[i-_lpcFrame1] *= transp;
+				transp += tranincr;
 			}
-			lastfr = (int) p[nn];
+			lastfr = pframe;
 			lasttr = transp;
 		}
+        _usesFrameTranspositions = true;    // need this during run-time
         // Don't do this trailing part if we are not using _transposition as a factor!
-		if (_pitch > 0 && p[n_args-2] < (float) endLPCFrame) {
+		if (_pitch > 0.0 && p[n_args-2] < (float) endLPCFrame) {
 			/* if last frame in couplets wasn't last frame in batch,
 			   use base value from there to the end */
 			for (i=lastfr; i<endLPCFrame; ++i)
@@ -342,11 +354,7 @@ int LPCPLAY::localInit(double p[], int n_args)
 		}
 	}
 	tableset(SR, getdur(), lpcFrameCount, _tblvals);
-//	actualweight = weight(startLPCFrame,endLPCFrame,_thresh);
-//	float actualcps = cpspch(ABS(_pitch));
-	
-	/* note, dont use this feature unless pitch is specified in p[3]*/
-	
+
 	_sineFun = floc(SINE_SLOT);
 	_reson_is_on = (p[LPCPLAY_cf] != 0.0) ? true : false;
 	_cf_fact = p[LPCPLAY_cf];
@@ -421,64 +429,95 @@ int LPCPLAY::run()
 		if (_autoCorrect)
 			stabilize(_coeffs, _nPoles);
         
-        float buzamp = getVoicedAmp(_coeffs[THRESH]);
+        double buzamp = getVoicedAmp(_coeffs[THRESH]);
         _voiced = (buzamp > _highthresh);
 
         // equal power handoff between buzz and noise
-        const float amp_pi_over2 = buzamp * PI * 0.5;
-        buzamp = sinf(amp_pi_over2);
-		float noisamp = cosf(amp_pi_over2) * _randamp;
+        const double amp_pi_over2 = buzamp * PI * 0.5;
+        buzamp = sin(amp_pi_over2);
+		float noisamp = cos(amp_pi_over2) * _randamp;
         
 		_ampmlt = _amp * _coeffs[RESIDAMP];
         // Silence any frame with amp below requested threshold
 		if (_coeffs[RMSAMP] < _cutoff)
 			_ampmlt = 0;
+        
+        // Get cps for this frame from possibly-modified pitch table.
 		float cps = tablei(currentOutFrame,_pchvals,_tblvals);
-		float newpch = cps;
-
-		// If input pitch was specified as -X.YZ, use _transposition as actual pitch
-		if ((_pitch < 0) && (ABS(_pitch) >= 1))
-			newpch = _transposition;
-
+		float newcps = cps;
+        
+        // If instrument is using dynamic pitch field, only allow if they did not specify
+        // frame-based pitch information.
+        if (_pitch != _lastPitch && !_usesFrameTranspositions) {
+            double transpFactor = 1.0;
+            if (ABS(_pitch) < 1.0) {
+                transpFactor = pow(2.0,(_pitch/.12));
+            }
+            else if (_pitch > 20) {
+                transpFactor = _pitch/_actualWeight;
+            }
+            else if (_pitch > 0) {
+                transpFactor = cpspch(_pitch)/_actualWeight;
+            }
+            else if (_pitch < -20 && _useTranspositionAsPitch) {
+                // If input pitch was specified as -Herz, use as actual pitch
+                newcps = -_pitch;  /* flat pitch in hz */
+            }
+            else if (_useTranspositionAsPitch) {
+                // If input pitch was specified as -X.YZ, use as actual pitch
+                newcps = cpspch(-_pitch);  /* flat pitch in octave pt */
+            }
+            if (!_useTranspositionAsPitch && transpFactor != _transposition) {
+                double transpAdjust = transpFactor / _transposition;
+                newcps *= transpAdjust;
+            }
+#if defined(debug)
+            printf("\t_pitch %g, cps %g, transpFactor %g, newcps %g\n", _pitch, cps, transpFactor, newcps);
+#endif
+        }
+        else if (_useTranspositionAsPitch) {
+			newcps = _transposition;
+        }
+        _lastPitch = _pitch;
 		if (_reson_is_on) {
 			/* If _cf_fact is greater than 20, treat as absolute freq.
 			   Else treat as factor.
 			   If _bw_fact is greater than 20, treat as absolute freq.
 			   Else treat as factor (i.e., cf * factor == bw).
 			*/
-			float cf = (_cf_fact < 20.0) ? _cf_fact*cps : _cf_fact;
+			float cf = (_cf_fact < 20.0) ? _cf_fact * cps : _cf_fact;
 			float bw = (_bw_fact < 20.0) ? cf * _bw_fact : _bw_fact;
 			rszset(SR, cf, bw, 1., _rsnetc);
 #ifdef debug
 			printf("\tcf %g bw %g cps %g\n", cf, bw,cps);
 #endif
 		}
-		float si = newpch * _magic;
-
-		float *cpoint = _coeffs + 4;
-		
 		if (_warpFactor != 0.0) {
 			float warp = (_warpFactor > 1.) ? .0001 : _warpFactor;
-			_ampmlt *= _warpPole.set(warp, cpoint, _nPoles);
+			_ampmlt *= _warpPole.set(warp, &_coeffs[4], _nPoles);
 		}
 		if (_hnfactor < 1.0) {
-			buzamp *= _hnfactor;	/* compensate for gain increase */
+			buzamp *= _hnfactor;	/* compensate for gain change */
 		}
-		float hn = (_hnfactor <= 1.0) ? (int)(_hnfactor*_srd2/newpch)-2 : _hnfactor;
-		_counter = int(((float)SR/(newpch * _perperiod) ) * .5);
+        else {
+            buzamp /= _hnfactor;    /* compensate for gain increase */
+        }
+		float hn = (_hnfactor <= 1.0) ? (int)(_hnfactor*_srd2/newcps)-2 : _hnfactor;
+		_counter = int(((float)SR/(newcps * _perperiod) ) * .5);
 		_counter = (_counter > (nSamps() - currentOutFrame)) ? nSamps() - currentOutFrame : _counter;
 #ifdef debug
-        printf("\tthis=%p: fr: %.2f err: %.5f bzamp: %g noisamp: %g newpch: %g _counter: %d\n",
-		 	   this, _lpcFrameno,_coeffs[THRESH],_ampmlt*buzamp,_ampmlt*noisamp,newpch,_counter);
+        printf("\tthis=%p: fr: %.2f err: %.5f bzamp: %g noisamp: %g newcps: %g _counter: %d\n",
+		 	   this, _lpcFrameno,_coeffs[THRESH],_ampmlt*buzamp,_ampmlt*noisamp,newcps,_counter);
 #endif
         if (_counter <= 0)
 			break;
 		// Catch extreme pitches which generate array overruns
 		else if (_counter > _arrayLen) {
-			rtcmix_warn("LPCPLAY", "Counter exceeded array size -- limiting.  Frame pitch: %f", newpch);
+			rtcmix_warn("LPCPLAY", "Counter exceeded array size -- limiting.  Frame pitch: %f", newcps);
 			_counter = _arrayLen;
 		}
 
+        const float si = newcps * _magic;
 		bbuzz(_ampmlt*buzamp,si,hn,_sineFun,&_phs,_buzvals,_counter);
 #ifdef debug2
 		printf("\t _buzvals[0] = %g\n", _buzvals[0]);
@@ -490,30 +529,33 @@ int LPCPLAY::run()
 		for (int loc=0; loc<_counter; loc++) {
 			_buzvals[loc] += _noisvals[loc];	/* add voiced and unvoiced */
 		}
+        
+        // Run N-pole filter, either warped or normal depending on settings
 		if (_warpFactor != 0.0) {
-			float warp = (_warpFactor > 1.) ? shift(_coeffs[PITCH],newpch,(float)SR) : _warpFactor;
+			float warp = (_warpFactor > 1.) ? shift(_coeffs[PITCH],newcps,(float)SR) : _warpFactor;
 #ifdef debug
-			printf("\t pch: %f newpch: %f warp: %f\n",_coeffs[PITCH], newpch, warp);
+			printf("\t pch: %f newcps: %f warp: %f\n",_coeffs[PITCH], newcps, warp);
 #endif
 			/*************
 			warp = ABS(warp) > .2 ? SIGN(warp) * .15 : warp;
 			***************/
-			_warpPole.run(_buzvals, warp, cpoint, _alpvals, _counter);
+			_warpPole.run(_buzvals, warp, &_coeffs[4], _alpvals, _counter);
 		}
 		else
 		{
-			ballpole(_buzvals,&_jcount,_nPoles,_past,cpoint,_alpvals,_counter);
+			ballpole(_buzvals,&_jcount,_nPoles,_past,&_coeffs[4],_alpvals,_counter);
 		}
 #ifdef debug
 		{ float maxamp=0; for (int x=0;x<_counter;x++) { if (ABS(_alpvals[x]) > ABS(maxamp)) maxamp = _alpvals[x]; }
 			printf("\t maxamp = %.4f\n", maxamp);
 		}
 #endif
-		if (_reson_is_on)
+        // Apply optional reson filter
+        if (_reson_is_on) {
 			bresonz(_alpvals,_rsnetc,_alpvals,_counter);
-
+        }
+        
 		// Apply envelope last
-
 		float envelope = evp(currentOutFrame,_envFun,_envFun,_evals);
 		bmultf(_alpvals, envelope, _counter);
 
@@ -624,8 +666,7 @@ LPCPLAY::readjust(float maxdev, double *pchval,
 	dev = deviation(firstframe,lastframe,weight,thresh);
 	if (!dev)
 		dev=.0001;
-	if (maxdev)
-	{
+	if (maxdev) {
 		// If negative, use as factor to multiply orig deviation
 		if (maxdev < 0)
 			maxdev = dev * -maxdev;
@@ -797,7 +838,7 @@ int LPCIN::run()
 			stabilize(_coeffs, _nPoles);
 
 		_ampmlt = _amp * _coeffs[RESIDAMP] / 10000.0;	// XXX normalize this!
-		float newpch = (_coeffs[PITCH] > 0.0) ? _coeffs[PITCH] : 64.0;
+		float newcps = (_coeffs[PITCH] > 0.0) ? _coeffs[PITCH] : 64.0;
 
 		if (_coeffs[RMSAMP] < _cutoff)
 			_ampmlt = 0;
@@ -812,15 +853,13 @@ int LPCIN::run()
 			/* printf("%f %f %f %f\n",_cf_fact*cps,
 				_bw_fact*_cf_fact*cps,_cf_fact,_bw_fact,cps); */
 		}
-
-		float *cpoint = _coeffs + 4;
 		
 		if (_warpFactor != 0.0)
 		{
 			float warp = (_warpFactor > 1.) ? .0001 : _warpFactor;
-			_ampmlt *= _warpPole.set(warp, cpoint, _nPoles);
+			_ampmlt *= _warpPole.set(warp, &_coeffs[4], _nPoles);
 		}
-		_counter = int(((float)SR/(newpch * /*_perperiod*/ 1.0) ) * .5);
+		_counter = int(((float)SR/(newcps * /*_perperiod*/ 1.0) ) * .5);
 //		_counter = (RTBUFSAMPS < MAXVALS) ? RTBUFSAMPS : MAXVALS;
 //		_counter = (_counter > (nSamps() - currentFrame())) ? nSamps() - currentFrame() : _counter;
 		_counter = min(_counter, framesToRun() - n);
@@ -837,19 +876,18 @@ int LPCIN::run()
 		printf("\t _buzvals[0] = %g\n", _buzvals[0]);
 #endif
 		if (_warpFactor) {
-//			float warp = (_warpFactor > 1.) ? shift(_coeffs[PITCH],newpch,(float)SR) : _warpFactor;
+//			float warp = (_warpFactor > 1.) ? shift(_coeffs[PITCH],newcps,(float)SR) : _warpFactor;
 			float warp = _warpFactor;
 #ifdef debug
-			printf("\tpch: %f newpch: %f d: %f\n",_coeffs[PITCH], newpch, warp);
+			printf("\tpch: %f newcps: %f d: %f\n",_coeffs[PITCH], newcps, warp);
 #endif
 			/*************
 			warp = ABS(warp) > .2 ? SIGN(warp) * .15 : warp;
 			***************/
-			_warpPole.run(_buzvals, warp, cpoint, _alpvals, _counter);
+			_warpPole.run(_buzvals, warp, &_coeffs[4], _alpvals, _counter);
 		}
-		else
-		{
-			ballpole(_buzvals,&_jcount,_nPoles,_past,cpoint,_alpvals,_counter);
+		else {
+			ballpole(_buzvals,&_jcount,_nPoles,_past,&_coeffs[4],_alpvals,_counter);
 		}
 #ifdef debug2
 		{ int x; float maxamp=0; for (x=0;x<_counter;x++) { if (ABS(_alpvals[x]) > ABS(maxamp)) maxamp = _alpvals[x]; }
@@ -872,8 +910,7 @@ int LPCIN::run()
 		increment(sampsToAdd);
 	}
 	// Handle case where last synthesized block extended beyond framesToRun()
-	if (n > framesToRun())
-	{
+	if (n > framesToRun()) {
 		_leftOver = n - framesToRun();
 		_savedOffset = _counter - _leftOver;
 #ifdef debug2
