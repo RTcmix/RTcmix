@@ -448,7 +448,7 @@ int LPCPLAY::run()
         
         // If instrument is using dynamic pitch field, only allow if they did not specify
         // frame-based pitch information.
-        if (_pitch != _lastPitch && !_usesFrameTranspositions) {
+        if (!_usesFrameTranspositions) {
             double transpFactor = 1.0;
             if (ABS(_pitch) < 1.0) {
                 transpFactor = pow(2.0,(_pitch/.12));
@@ -471,13 +471,15 @@ int LPCPLAY::run()
                 double transpAdjust = transpFactor / _transposition;
                 newcps *= transpAdjust;
             }
+        }
+        else {
+            if (_useTranspositionAsPitch) {
+                newcps = _transposition;
+            }
+        }
 #if defined(debug)
-            printf("\t_pitch %g, cps %g, transpFactor %g, newcps %g\n", _pitch, cps, transpFactor, newcps);
+            printf("\tframe %g: _pitch %g, cps %g, _transposition %g, newcps %g\n", _lpcFrameno, _pitch, cps, _transposition, newcps);
 #endif
-        }
-        else if (_useTranspositionAsPitch) {
-			newcps = _transposition;
-        }
         _lastPitch = _pitch;
 		if (_reson_is_on) {
 			/* If _cf_fact is greater than 20, treat as absolute freq.
