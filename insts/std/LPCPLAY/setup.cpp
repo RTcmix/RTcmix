@@ -9,19 +9,19 @@
 #include "DataSet.h"
 #include <RTcmix.h>
 
-static double lowthresh, highthresh;
+#define THRESH_UNSET (-1)
+
+static double lowthresh = THRESH_UNSET, highthresh = THRESH_UNSET;
 static float maxdev;	// lpcplay, set from outside
 static float perperiod = 1.0;	// lpcplay, set from outside
 static float cutoff;	// amp cutoff level, lpcplay, set via lpcstuff
 static float hnfactor = 1.0;	// harmonic count multiplier, set via lpcstuff
-static float thresh, randamp, unvoiced_rate;
+static float randamp, unvoiced_rate;
 static float risetime, decaytime;	// enveloping; set externally
 static bool  autoCorrect = false;	// whether to stabilize each frame as it runs
 static float sourceDuration = 0.0;  // duration of source used to create LPC frames (passed in)
 
 static const int maxDataSets = 64;
-
-#define THRESH_UNSET (-1)
 
 // For right now, datasets are created each time they are needed and are
 //	not shared.
@@ -43,21 +43,19 @@ int GetDataSet(DataSet **ppDataSet)
 int 
 GetLPCStuff(double *pHiThresh,
 			double *pLowThresh,
-			float *pThresh,
 			float *pRandamp,
 			bool *pUnvoiced_rate,
 			float *pRisetime, float *pDecaytime,
 			float *pAmpcutoff,
             float *pSourceDuration)
 {
-	// Set these here if not already set.
+	// Set these here if not already set -- but this should now be impossible.
 	if (highthresh == THRESH_UNSET)
-		highthresh = thresh + 0.000001;
+		highthresh = 1.0;
 	if (lowthresh == THRESH_UNSET)
-		lowthresh = thresh;
+		lowthresh = 0.0;
 	*pHiThresh = highthresh;
 	*pLowThresh = lowthresh;
-	*pThresh = thresh;
 	*pRandamp = randamp;
 	*pUnvoiced_rate = unvoiced_rate;
 	*pRisetime = risetime;
@@ -142,19 +140,21 @@ double dataset(float *p, int n_args, double *pp)
 double lpcstuff(float *p, int n_args)
 /* p0=thresh, p1=random amp, p2=unvoiced rate p3= rise, p4= dec, p5=thresh cutof, p6=source duration*/
 {
-        risetime=.01; decaytime=.1;
-        if(n_args>0) thresh=p[0];
-        if(n_args>1) randamp=p[1];
-        if(n_args>2) unvoiced_rate=p[2];
-        if(n_args>3) risetime=p[3];
-        if(n_args>4) decaytime=p[4];
-        if(n_args>5) cutoff = p[5]; else cutoff = 0;
-        if(n_args>6) sourceDuration = p[6]; else sourceDuration = 0.0;
+        risetime=.01f; decaytime=.1f;
+        if (n_args>0) {
+            highthresh=p[0];
+            lowthresh = std::max(0.0, p[0]-0.0001);
+        }
+        if (n_args>1) randamp=p[1];
+        if (n_args>2) unvoiced_rate=p[2];
+        if (n_args>3) risetime=p[3];
+        if (n_args>4) decaytime=p[4];
+        if (n_args>5) cutoff = p[5]; else cutoff = 0;
+        if (n_args>6) sourceDuration = p[6]; else sourceDuration = 0.0;
         ::rtcmix_advise("lpcstuff", "Adjusting settings for %s.",g_dataset_names[g_currentDataset]);
         ::rtcmix_advise("lpcstuff", "Thresh: %g  Randamp: %g  EnvRise: %g  EnvDecay: %g",
-			   thresh,randamp, risetime, decaytime);
-#ifdef WHEN_UNVOICED_RATE_WORKING
-        if(unvoiced_rate == 1) {
+                        highthresh,randamp, risetime, decaytime);
+        if (unvoiced_rate == 1) {
             if (sourceDuration > 0.0)
                 ::rtcmix_advise("lpcstuff", "Unvoiced frames played at normal rate.");
             else {
@@ -164,14 +164,9 @@ double lpcstuff(float *p, int n_args)
                 return rtOptionalThrow(PARAM_ERROR);
             }
         }
-        else
+        else {
 			::rtcmix_advise("lpcstuff", "Unvoiced frames played at same rate as voiced 'uns.");
-#else
-        if(unvoiced_rate == 1) {
-			::rtcmix_advise("lpcstuff", "Unvoiced rate option not yet working.");
-			unvoiced_rate = 0;
-		}
-#endif
+        }
 	return 0;
 }
 
@@ -216,6 +211,9 @@ double setdevfactor(float *p, int n_args)
 extern int BRADSSTUPIDUNVOICEDFLAG;
 #endif
 
+// Set the threshold below which the frame will be 100% voiced, and the threshold above which
+// the frame will be 100% unvoiced.  This needs to be reset after each call to lpcstuff()
+
 double
 set_thresh(float *p, int n_args)
 {
@@ -226,12 +224,11 @@ set_thresh(float *p, int n_args)
 #endif
 
 	if(p[1] <= p[0]) {
-		::rterror("set_thresh", "upper thresh must be >= lower!");
+		::rterror("set_thresh", "upper thresh must be > lower!");
         return rtOptionalThrow(PARAM_ERROR);
 	}
 	lowthresh = p[0];
 	highthresh = p[1];
-	thresh = highthresh;
 	::rtcmix_advise("set_thresh",
 		   "lower error threshold: %0.6f  upper error threshold: %0.6f",
 			p[0], p[1]);
@@ -289,8 +286,8 @@ int LPCprofile()
 	pp[0]=ENV_SLOT; pp[1]=7; pp[2]=512; pp[3]=0; pp[4]=512; pp[5]=1;
 	makegen(p,6,pp);
 	maxdev=0;
-	lowthresh = 0;
-	highthresh = 1;
+    lowthresh = THRESH_UNSET;
+    highthresh = THRESH_UNSET;
 	LPCprof_called = 1;
 	return 0;
 }

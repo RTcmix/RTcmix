@@ -50,9 +50,10 @@ LPCINST::WarpFilter::set(float d, float *c, int npoles)
 {
 	_npoles = npoles;			// Store this
 	
-    for (int m=1; m<npoles; m++)
+    for (int m=1; m<npoles; m++) {
 		c[m] += d * c[m-1];
-    float cl = 1./(1. - d * c[npoles-1]);
+    }
+    double cl = 1./(1. - d * c[npoles-1]);
     _cq = cl * (1. - d * d);	// Store this magic number :-)
     return cl;
 }
@@ -86,7 +87,6 @@ LPCINST::WarpFilter::run(float *sig, float d, float * const c, float *out, int o
 extern int GetDataSet(DataSet **);
 
 extern int GetLPCStuff(double *hithresh, double *lowthresh,
-					   float *thresh,
 					   float *randamp,
 					   bool *unvoiced_rate,
 					   float *risetime, float *decaytime,
@@ -213,10 +213,11 @@ int LPCPLAY::localInit(double p[], int n_args)
 		return die("LPCPLAY",
 				   "p[0]=starting time, p[1]=duration, p[2]=amp, p[3]=pitch, p[4]=frame1, p[5]=frame2, [ p[6]=warp, p[7]=resoncf, p[8]=resonbw, [ p9--> pitchcurves ] ]\n");
 
-	float outskip = p[0];
-	float ldur = p[1];
+	float outskip = (float)p[0];
+	float duration = (float)p[1];
 	_amp = p[LPCPLAY_amp];
 	_pitch = p[LPCPLAY_pitch];
+    _warpFactor = p[LPCPLAY_warp];    // defaults to 0
 
 	int startLPCFrame = (int) p[LPCPLAY_firstframe];
 	int endLPCFrame = (int) p[LPCPLAY_lastframe];
@@ -224,8 +225,6 @@ int LPCPLAY::localInit(double p[], int n_args)
 
 	if (lpcFrameCount <= 0)
 		return die("LPCPLAY", "Ending frame must be > starting frame.");
-
-	_warpFactor = p[LPCPLAY_warp];	// defaults to 0
 
 	// Duration can be calculated from frame count
 
@@ -245,7 +244,6 @@ int LPCPLAY::localInit(double p[], int n_args)
 	
 	GetLPCStuff(&_highthresh,
 				&_lowthresh,
-				&_thresh,
 				&_randamp,
 				&_unvoiced_rate,
 				&_risetime, 
@@ -303,13 +301,12 @@ int LPCPLAY::localInit(double p[], int n_args)
         rtcmix_advise("LPCPLAY", "p[3] will be used as flat pitch of %.2f Hz (%.2f pch)", _transposition, -_pitch);
         _useTranspositionAsPitch = true;
     }
-    _lastPitch = _pitch;
     
 	if (n_args <= _datafields) {
         if (!_useTranspositionAsPitch) {
             rtcmix_advise("LPCPLAY", "Overall transp factor: %f, weighted av. pitch = %g Hz", _transposition, _actualWeight);
             if (_maxdev != 0.0) {
-                readjust(_maxdev,_pchvals,startLPCFrame,endLPCFrame,_thresh,_actualWeight);
+                readjust(_maxdev,_pchvals,startLPCFrame,endLPCFrame,_highthresh,_actualWeight);
             }
             for (i=startLPCFrame; i<=endLPCFrame; ++i) {
                 _pchvals[i - startLPCFrame] *= _transposition;
@@ -330,7 +327,7 @@ int LPCPLAY::localInit(double p[], int n_args)
 				transp = pow(2.0,(ptransp/.12));
 			}
 			else {
-				transp = cpspch(ABS(ptransp)) / weight((float)lastfr,(pframe+1.),_thresh);
+				transp = cpspch(ABS(ptransp)) / weight((float)lastfr,(pframe+1.),_highthresh);
 			}
 #ifdef debug
             printf("frame %d transp: %g\n", pframe, transp);
@@ -379,7 +376,7 @@ int LPCPLAY::run()
     printf("\nLPCPLAY::run(this=%p): current frame %d\n", this, currentFrame());
 #endif
 
-    const int totalOutFrames = nSamps();
+    const int totalAudioFrames = nSamps();
     
 	// Samples may have been left over from end of previous run's block
 	if (_leftOver > 0) {
@@ -443,7 +440,7 @@ int LPCPLAY::run()
 			_ampmlt = 0;
         
         // Get cps for this frame from possibly-modified pitch table.
-		float cps = tablei(currentOutFrame,_pchvals,_tblvals);
+		float cps = tablei(currentAudioFrame,_pchvals,_tblvals);
 		float newcps = cps;
         
         // If instrument is using dynamic pitch field, only allow if they did not specify
@@ -480,7 +477,6 @@ int LPCPLAY::run()
 #if defined(debug)
             printf("\tframe %g: _pitch %g, cps %g, _transposition %g, newcps %g\n", _lpcFrameno, _pitch, cps, _transposition, newcps);
 #endif
-        _lastPitch = _pitch;
 		if (_reson_is_on) {
 			/* If _cf_fact is greater than 20, treat as absolute freq.
 			   Else treat as factor.
@@ -506,7 +502,7 @@ int LPCPLAY::run()
         }
 		float hn = (_hnfactor <= 1.0) ? (int)(_hnfactor*_srd2/newcps)-2 : _hnfactor;
 		_counter = int(((float)SR/(newcps * _perperiod) ) * .5);
-		_counter = (_counter > (nSamps() - currentOutFrame)) ? nSamps() - currentOutFrame : _counter;
+		_counter = (_counter > (nSamps() - currentAudioFrame)) ? nSamps() - currentAudioFrame : _counter;
 #ifdef debug
         printf("\tthis=%p: fr: %.2f err: %.5f bzamp: %g noisamp: %g newcps: %g _counter: %d\n",
 		 	   this, _lpcFrameno,_coeffs[THRESH],_ampmlt*buzamp,_ampmlt*noisamp,newcps,_counter);
@@ -558,7 +554,7 @@ int LPCPLAY::run()
         }
         
 		// Apply envelope last
-		float envelope = evp(currentOutFrame,_envFun,_envFun,_evals);
+		float envelope = evp(currentAudioFrame,_envFun,_envFun,_evals);
 		bmultf(_alpvals, envelope, _counter);
 
 		int sampsToAdd = min(_counter, framesToRun() - n);
@@ -745,7 +741,6 @@ int LPCIN::localInit(double p[], int n_args)
 
 	GetLPCStuff(&ddummy1,
 				&ddummy2,
-				&dummy1,
 				&dummy2,
 				&bdummy,
 				&dummy3, 

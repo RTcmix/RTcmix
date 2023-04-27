@@ -83,14 +83,13 @@ private:
 	float	_maxdev;
 	float	_perperiod;
 	float	_hnfactor;							// harmonic count multiplier
-	float	_thresh, _randamp;
+	float	_randamp;
 	bool	_unvoiced_rate;
 	float	_risetime, _decaytime;				// enveloping
 
 	// These are set and used within LPCPLAY.
     double  _actualWeight;
 	double	_pitch;
-    double  _lastPitch;
 	double	_transposition;
 	bool	_voiced;
     bool    _usesFrameTranspositions;
