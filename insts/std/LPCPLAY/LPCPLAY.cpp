@@ -84,6 +84,81 @@ LPCINST::WarpFilter::run(float *sig, float d, float * const c, float *out, int o
 	_outold = outold;
 }
 
+inline bool inRange(double val, double low, double hi) {
+    return val >= low && val <= hi;
+}
+
+void fixOctaves(double *pchvals, int frameCount, float _lowthresh, float _highthresh)
+{
+    double prevPch = 0;
+    for (int fr = 0; fr < frameCount; ++fr) {
+        double pch = pchvals[fr];
+        printf("fixOctaves: pch[%d]: %.1f ", fr, pch);
+        // Find overshot pitches an octave too high
+        if (inRange(pch, prevPch * 1.9, prevPch * 2.1)) {
+            pchvals[fr] = pch * 0.5;
+            printf("-> down octave to %.1f\n", pchvals[fr]);
+        }
+        // Find undershot pitches an octave too low
+        else if (inRange(pch, prevPch * 0.45, prevPch * 0.55)) {
+            pchvals[fr] = pch * 2.0;
+            printf("-> up octave to %.1f\n", pchvals[fr]);
+        }
+        else {
+            printf("\n");
+        }
+        prevPch = pchvals[fr];
+    }
+}
+
+void fixGaps(double *pchvals, int frameCount, float _lowthresh, float _highthresh)
+{
+    double prevPch = 0;
+    double variance = 0.8;
+    int count = 0;
+    for (int fr = 0; fr < frameCount; ++fr) {
+        double pch = pchvals[fr];
+        printf("fixGaps: pch[%d]: %.1f ", fr, pch);
+        // Well-behaved pitch value
+        if (inRange(pch, prevPch*variance, prevPch/variance)) {
+            ++count;
+            printf("%d non-gap values\n", count);
+        }
+        // Pitch has changed too much - search forward for frame in the same range
+        else if (count >= 3) {
+            printf("gap value after %d others\n", count);
+            for (int future=fr; future<frameCount; ++future) {
+                double fpch = pchvals[future];
+                if (inRange(fpch, pch*variance, pch/variance)) {
+                    printf("found target bridging value %.1f at index %d", fpch, future);
+                    for (int n = fr; n <= future; ++n) {
+                        pchvals[n] = prevPch + ((double)n/future) * (fpch - pch);
+                    }
+                    prevPch = fpch;
+                    fr = future;    // jump forward to begin search from here
+                    break;
+                }
+            }
+        }
+        else {
+            printf("\n");
+        }
+    }
+}
+
+
+void smooth(double *pchvals, int frameCount, float _lowthresh, float _highthresh)
+{
+    double prevPch = pchvals[0];
+    for (int fr = 0; fr < frameCount; ++fr) {
+        double pch = pchvals[fr];
+        double spch = (0.5 * pch) + (0.5 * prevPch);
+        prevPch = pchvals[fr] = spch;
+    }
+}
+
+
+
 extern int GetDataSet(DataSet **);
 
 extern int GetLPCStuff(double *hithresh, double *lowthresh,
@@ -213,8 +288,8 @@ int LPCPLAY::localInit(double p[], int n_args)
 		return die("LPCPLAY",
 				   "p[0]=starting time, p[1]=duration, p[2]=amp, p[3]=pitch, p[4]=frame1, p[5]=frame2, [ p[6]=warp, p[7]=resoncf, p[8]=resonbw, [ p9--> pitchcurves ] ]\n");
 
-	float outskip = (float)p[0];
-	float duration = (float)p[1];
+    double outskip = (float)p[0];
+	double duration = (float)p[1];
 	_amp = p[LPCPLAY_amp];
 	_pitch = p[LPCPLAY_pitch];
     _warpFactor = p[LPCPLAY_warp];    // defaults to 0
@@ -225,17 +300,6 @@ int LPCPLAY::localInit(double p[], int n_args)
 
 	if (lpcFrameCount <= 0)
 		return die("LPCPLAY", "Ending frame must be > starting frame.");
-
-	// Duration can be calculated from frame count
-
-	const float defaultFrameRate = 112.0;
-
-	ldur = (ldur > 0.) ? ldur : (lpcFrameCount/defaultFrameRate);
-
-   /* Tell scheduler when to start this inst. 
-   */
-	if (rtsetoutput(outskip, ldur, this) == -1)
-		return DONT_SCHEDULE;
 
 	_envFun = floc(ENV_SLOT);
 	sbrrand(1);
@@ -259,23 +323,64 @@ int LPCPLAY::localInit(double p[], int n_args)
 	// Pitch table
 	_pchvals = new double[lpcFrameCount];
 
-	evset(SR, getdur(), _risetime, _decaytime, ENV_SLOT, _evals);
-
     // Read the pitch values out of data set into _pchvals array
 	_lpcFrames = lpcFrameCount;
 	_lpcFrame1 = startLPCFrame;
+    int unvoicedCount = 0;
 	for (i = startLPCFrame; i <= endLPCFrame; ++i) {
-		float findex = i;
-		if (_dataSet->getFrame(findex, _coeffs) < 0)
+		double dindex = i;
+		if (_dataSet->getFrame(dindex, _coeffs) < 0)
 			break;
+        /* This is just in case I am using datasets with no pitch value stored */
 		_pchvals[i - startLPCFrame] = (_coeffs[PITCH] != 0.0 ? _coeffs[PITCH] : kDefaultFrequency);
-		/* just in case I am using datasets with no pitch value
-			stored */
+        if (_coeffs[THRESH] > _highthresh) {
+            ++unvoicedCount;
+        }
 	}
-    _actualWeight = weight(startLPCFrame, endLPCFrame, _thresh);
+    fixOctaves(_pchvals, lpcFrameCount, _lowthresh, _highthresh);
+    fixGaps(_pchvals, lpcFrameCount, _lowthresh, _highthresh);
+    smooth(_pchvals, lpcFrameCount, _lowthresh, _highthresh);
+    
+    _actualWeight = weight(startLPCFrame, endLPCFrame, _highthresh);
 	if (_actualWeight == 0.0)
         _actualWeight = kDefaultFrequency;
     
+    const float defaultFrameRate = 220.5;   // DAS changed from 112, which was the original rate in cmix
+    // User specified duration, so calculate LPC frame increments
+    if (duration > 0.) {
+        if (_unvoiced_rate) {
+            _unvoicedFrameIncrement = defaultFrameRate/SR;
+            // If unvoiced frames move at default rate, remaining voiced frames need to move at an adjusted rate
+            // to result in the same total length of output.
+            int voicedCount = lpcFrameCount - unvoicedCount;
+#ifdef debug
+            printf("%d unvoiced frames, %d voiced\n", unvoicedCount, voicedCount);
+#endif
+            double voicedFrameRate = ((double)voicedCount)/(duration - (unvoicedCount/defaultFrameRate));
+            _voicedFrameIncrement = voicedFrameRate/SR;
+#ifdef debug
+            printf("unvoiced fr incr: %.8f, voiced fr incr: %.8f\n", _unvoicedFrameIncrement, _voicedFrameIncrement);
+#endif
+        }
+        else {
+            _unvoicedFrameIncrement = _voicedFrameIncrement = 0.0;  // unused in this mode
+        }
+    }
+    else {
+        // User wants default frame rate
+        duration = lpcFrameCount/defaultFrameRate;
+    }
+
+   /* Tell scheduler when to start this inst. This also stores dur and nsamps.
+   */
+    if (rtsetoutput((float)outskip, (float)duration, this) == -1)
+        return DONT_SCHEDULE;
+
+    // Set up amp envelope if any
+    evset(SR, (float)duration, _risetime, _decaytime, ENV_SLOT, _evals);
+    
+    // Pitch pfield magic - interpret based on range.
+
 	// Transpose relative amount using input with +-0.01 == +-1 semitone
     if (ABS(_pitch) < 1.0) {
 		_transposition = pow(2.0,(_pitch/.12));
@@ -405,15 +510,24 @@ int LPCPLAY::run()
 		_cf_fact = p[LPCPLAY_cf];
 		_bw_fact = p[LPCPLAY_bw];
         
-        const int currentOutFrame = currentFrame();
-		
-        /* if unvoiced, set to normal rate */
-		if (_unvoiced_rate && !_voiced) {
-			++_lpcFrameno;
-		}
-		else {
-			_lpcFrameno = _lpcFrame1 + ((float)(currentOutFrame)/totalOutFrames) * _lpcFrames;
-		}
+        const int currentAudioFrame = currentFrame();
+
+        if (!_unvoiced_rate) {
+            // Walk the LPC frames as a fraction of total audio progress
+            const double audioFraction = (double)currentAudioFrame/totalAudioFrames;
+            _lpcFrameno = _lpcFrame1 + (audioFraction * _lpcFrames);
+        }
+        else {
+            // Increment LPCdata fractional indices
+            if (!_voiced) {
+                /* if prev frame was unvoiced and unvoiced is running at regular rate, handle that */
+               _lpcFrameno += _unvoicedFrameIncrement*_counter;
+            }
+            else {
+                _lpcFrameno += _voicedFrameIncrement*_counter;
+            }
+        }
+        
         // We lock the data set here only because we dont want reentrant calls from parallel LPCPLAY calls.
         _dataSet->lock();
         if (_dataSet->getFrame(_lpcFrameno,_coeffs) == -1) {
@@ -422,13 +536,16 @@ int LPCPLAY::run()
 			break;
         }
         _dataSet->unlock();
-		// If requested, stabilize this frame before using
+
+        // If requested, stabilize this frame before using
 		if (_autoCorrect)
 			stabilize(_coeffs, _nPoles);
         
         double buzamp = getVoicedAmp(_coeffs[THRESH]);
-        _voiced = (buzamp > _highthresh);
-
+        _voiced = (_coeffs[THRESH] <= _highthresh);
+#ifdef debug
+        printf("\taudio frame: %d _counter: %d _lpcFrameno: %.2f voiced: %d ratio: %.9f\n", currentAudioFrame, _counter, _lpcFrameno, _voiced, _lpcFrameno/currentAudioFrame);
+#endif
         // equal power handoff between buzz and noise
         const double amp_pi_over2 = buzamp * PI * 0.5;
         buzamp = sin(amp_pi_over2);
@@ -439,6 +556,10 @@ int LPCPLAY::run()
 		if (_coeffs[RMSAMP] < _cutoff)
 			_ampmlt = 0;
         
+#ifdef debug
+        printf("\tERR: %.5f lothresh: %.3f hithresh: %.3f %sbuzamp: %.3f noisamp: %.3f\n",
+               _coeffs[THRESH], _lowthresh, _highthresh, (_lowthresh < _coeffs[THRESH] && _coeffs[THRESH] < _highthresh) ? "MIX: " : "", buzamp, noisamp);
+#endif
         // Get cps for this frame from possibly-modified pitch table.
 		float cps = tablei(currentAudioFrame,_pchvals,_tblvals);
 		float newcps = cps;
@@ -611,7 +732,7 @@ LPCPLAY::weight(float frame1, float frame2, float thresh)
     float xweight = 0.0;
     float sum = 0.0f;
 	for (int i=(int)frame1; i<(int)frame2; i++) {
-    	_dataSet->getFrame((float)i, c);
+    	_dataSet->getFrame((double)i, c);
     	if ((c[THRESH] <= thresh) || (thresh < 0.)) {
             xweight += c[RMSAMP];
             sum += (c[PITCH] * c[RMSAMP]);
@@ -628,7 +749,7 @@ LPCPLAY::deviation(float frame1, float frame2, float weight, float thresh)
 	float diff,xweight,sum,dev;
 	xweight = sum = 0.001;
 	for (j=0,diff=0,i=(int)frame1; i<(int)frame2; i++) {
-		_dataSet->getFrame((float)i, c);
+		_dataSet->getFrame((double)i, c);
 		if ((c[THRESH] <= thresh) || (thresh < 0.)) {
 			sum += ((ABS((c[PITCH] - weight))) * c[RMSAMP]);
 			xweight +=  c[RMSAMP];

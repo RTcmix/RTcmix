@@ -82,11 +82,13 @@ buffers.cpp \
 bus_config.cpp \
 checkInsts.cpp \
 dispatch.cpp \
+DataSet.cpp \
 filter.cpp \
 Instrument.cpp \
 intraverse.cpp \
 loader.cpp \
 lfo.cpp \
+LPCReader.cpp \
 message.cpp \
 minc_info.cpp \
 minc_functions.cpp \

@@ -43,6 +43,7 @@ ug_intro()
     UG_INTRO_HANDLE_RETURN("pvgetframe", pvgetframe);
     UG_INTRO_HANDLE_RETURN("pvgetframeamps", pvgetframeamps);
     UG_INTRO_HANDLE_RETURN("pvgetframefreqs", pvgetframefreqs);
+    UG_INTRO_HANDLE_RETURN("lpcgetpitches", lpcgetpitches);
     UG_INTRO_HANDLE_RETURN("pvgetbin", pvgetbin);
 	UG_INTRO_DOUBLE_RETURN("filedur", filedur);
 	UG_INTRO_DOUBLE_RETURN("filechans", filechans);

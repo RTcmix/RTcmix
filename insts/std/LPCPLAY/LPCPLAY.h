@@ -39,7 +39,8 @@ protected:
 	// These are set and used within subclasses.
 	double	_amp;
 	int		_nPoles;
-	float	_lpcFrames, _lpcFrameno;
+    float	_lpcFrames;
+    double  _lpcFrameno;
 	int		_lpcFrame1;
 	double	_ampmlt;
 	double	_warpFactor;
@@ -91,6 +92,8 @@ private:
     double  _actualWeight;
 	double	_pitch;
 	double	_transposition;
+    double  _voicedFrameIncrement;
+    double  _unvoicedFrameIncrement;
 	bool	_voiced;
     bool    _usesFrameTranspositions;
     bool    _useTranspositionAsPitch;

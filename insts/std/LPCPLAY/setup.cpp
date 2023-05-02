@@ -106,7 +106,7 @@ double dataset(float *p, int n_args, double *pp)
 
 	int npolesGuess = 0;
 	if(n_args>1)	/* if no npoles specified, it will be retrieved from */
-		npolesGuess= (int) p[1];	/* the header (if USE_HEADERS #defined) */
+		npolesGuess= (int) p[1];	/* the header */
 
 	DataSet *dataSet = new DataSet;
 	
