@@ -7,7 +7,7 @@
 #include <sys/stat.h>	// for stat for getFrame()
 #include <fcntl.h>
 #include <byte_routines.h>
-#include "lp.h"
+#include "lpcdefs.h"
 
 DataSet::DataSet()
 	: _nPoles(0), _frameCount(0), _fdesc(-1), _lpHeaderSize(0), 
@@ -31,17 +31,11 @@ DataSet::open(const char *fileName, int npoleGuess, float sampRate)
     }
 	_nPoles = npoleGuess;	// in case we are not using headers
 	::rtcmix_advise("dataset", "Opened lpc dataset %s.", fileName);
-#ifdef USE_HEADERS
 	Bool isSwapped = NO;
 	if ((_lpHeaderSize = ::checkForHeader(_fdesc, &_nPoles, sampRate, &isSwapped)) < 0) {
 	    return die("dataset", "Failed to check header");
 	}
 	_swapped = (isSwapped != 0);
-#else
-	if (!_nPoles) {
-		return -1;
-	}
-#endif /* USE_HEADERS */
 
 	allocArray(_nPoles);
 
@@ -63,11 +57,11 @@ DataSet::open(const char *fileName, int npoleGuess, float sampRate)
 }
 
 int
-DataSet::getFrame(float frameno, float *pCoeffs)
+DataSet::getFrame(double frameno, float *pCoeffs)
 {
 	int i,j;
 	int frame = (int)frameno;
-	float fraction = frameno - (float)frame;
+	double fraction = frameno - (double)frame;
 	if (!((frame >= _oldframe) && (frame < _endframe))) {
 		int bytesRead, framesRead = _fprec;
     	if (::lseek(_fdesc, _lpHeaderSize+(frame*_bpframe), 0) == -1)

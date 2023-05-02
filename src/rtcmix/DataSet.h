@@ -10,7 +10,7 @@ public:
 	off_t	open(const char *fileName, int npoleGuess, float sampRate);
 	int getNPoles() const { return _nPoles; }
 	off_t getFrameCount() const { return _frameCount; }
-	int	getFrame(float frameno, float *pCoeffs);
+	int	getFrame(double frameno, float *pCoeffs);
 protected:
 	~DataSet();
 	void	allocArray(int nPoles);
