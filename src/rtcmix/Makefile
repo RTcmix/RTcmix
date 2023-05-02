@@ -36,6 +36,7 @@ getsample.c \
 infile.c \
 io.c \
 load_utils.c \
+lpcheader.c \
 merror.c \
 minout.c \
 m_system.c \

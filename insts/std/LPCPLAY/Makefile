@@ -5,9 +5,9 @@ NAME = LPCPLAY
 CURDIR = $(CMIXDIR)/insts/std/$(NAME)
 
 # NOTE: Using lib versions for some now -- optimize them!
-LPCPLAY_O = setup.o shift.o buzz.o bmultf.o lpcheader.o rand.o stabilize.o Complex.o
+LPCPLAY_O = setup.o shift.o buzz.o bmultf.o rand.o stabilize.o Complex.o
 
-HEADERS = lp.h setup.h lpcheader.h
+HEADERS = lp.h setup.h
 
 OBJS = $(NAME).o $(LPCPLAY_O)
 
