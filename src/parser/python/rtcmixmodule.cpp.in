@@ -481,7 +481,7 @@ static PyObject *_call_dispatch(PyObject *args, const char *funcname)
    int nargs = PyTuple_Size(args);
    if (nargs > MAXDISPARGS) {
       char buf[128];
-      sprintf(buf, "too many arguments to '%s'", funcname);
+      snprintf(buf, 128, "too many arguments to '%s'", funcname);
       PyErr_SetString(PyExc_TypeError, buf);
       return NULL;
    }
@@ -576,7 +576,7 @@ static PyObject *_call_dispatch(PyObject *args, const char *funcname)
       }
       else {
          char buf[128];
-         sprintf(buf, "invalid argument type to '%s' (arg %d)", funcname, i);
+         snprintf(buf, 128, "invalid argument type to '%s' (arg %d)", funcname, i);
          PyErr_SetString(PyExc_TypeError, buf);
          return NULL;
       }
