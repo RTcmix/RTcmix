@@ -13,6 +13,9 @@ double setdevfactor(float *p, int n_args);
 double set_thresh(float *p, int n_args);
 double set_hnfactor(float *p, int n_args);
 double use_autocorrect(float *p, int n_args);
+double use_fix_pitch_octaves(float *p, int n_args);
+double use_fix_pitch_gaps(float *p, int n_args);
+double use_pitch_smoothing(float *p, int n_args);
 }
 
 #endif	//	 _SETUP_H_

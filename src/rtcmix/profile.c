@@ -26,6 +26,9 @@ profile()
 	UG_INTRO("set_thresh",set_thresh);
 	UG_INTRO("set_hnfactor",set_hnfactor);
 	UG_INTRO("autocorrect",use_autocorrect);
+    UG_INTRO("fix_pitch_octaves",use_fix_pitch_octaves);
+    UG_INTRO("fix_pitch_gaps",use_fix_pitch_gaps);
+    UG_INTRO("pitch_smoothing",use_pitch_smoothing);
 
 #ifndef USE_MMOVE
 	// from MOVE/PLACE

@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <byte_routines.h>
 #include "lpcdefs.h"
+#include "lpcheader.h"
 
 DataSet::DataSet()
 	: _nPoles(0), _frameCount(0), _fdesc(-1), _lpHeaderSize(0), 

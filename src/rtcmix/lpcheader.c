@@ -5,7 +5,7 @@
 #include <ugens.h>
 #include <byte_routines.h>
 #include <rt_types.h>
-#include "lp.h"
+#include "lpcdefs.h"
 #include "lpcheader.h"
 
 LPHEADER analheader;

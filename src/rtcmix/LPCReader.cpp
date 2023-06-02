@@ -18,6 +18,11 @@ extern "C" {
     Handle lpcgetpitches(const Arg args[], const int nargs);
 }
 
+// lpcgetpitches(first_frame, last_frame [, err_threshold)
+// Load the pitch values from the LPC dataset into a list object.
+// Any frame whose error value equals or exceeds err_threshold will have its pitch set to zero.
+// This allows you to get a list of "valid" pitches for the given threshold.
+
 Handle lpcgetpitches(const Arg args[], const int nargs)
 {
     DataSet *lpcdata = NULL;
@@ -47,6 +52,9 @@ Handle lpcgetpitches(const Arg args[], const int nargs)
         rtOptionalThrow(CONFIGURATION_ERROR);
         return NULL;
     }
+    // If no threshold entered, pass all frame pitch values.
+
+    float errThreshold = (nargs < 3) ? 1.0 : (float)args[2];
     
     int framesToRead = lastFrame - firstFrame + 1;
 
@@ -58,9 +66,10 @@ Handle lpcgetpitches(const Arg args[], const int nargs)
     for (int i = firstFrame; i <= lastFrame; ++i) {
         if (lpcdata->getFrame((double) i, coeffs) < 0)
             break;
-        outPitches->data[i-firstFrame] = coeffs[PITCH];
+        outPitches->data[i-firstFrame] = (coeffs[THRESH] < errThreshold) ? coeffs[PITCH] : 0.0;
     }
-
+    rtcmix_advise("lpcgetpitches", "Returning list of %d pitches", framesToRead);
+    
     // Wrap Array in Handle, and return.  This will return a 'list' to MinC.
     return createArrayHandle(outPitches);
 }

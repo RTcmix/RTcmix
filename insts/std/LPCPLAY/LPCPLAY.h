@@ -89,7 +89,7 @@ private:
 	float	_risetime, _decaytime;				// enveloping
 
 	// These are set and used within LPCPLAY.
-    double  _actualWeight;
+    float   _actualWeight;
 	double	_pitch;
 	double	_transposition;
     double  _voicedFrameIncrement;

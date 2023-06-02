@@ -20,7 +20,6 @@ extern "C" {
 double shift(float, float, float);
 void bmultf(float *array, float mult, int number);
 int stabilize(float *array, int npoles);
-int checkForHeader(int afd, int *nPoles, float sr, Bool *pSwapped);
 
 /* temporary until compiler bug fixed */
 void l_srrand(unsigned x);

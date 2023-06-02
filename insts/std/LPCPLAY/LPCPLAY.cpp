@@ -88,51 +88,58 @@ inline bool inRange(double val, double low, double hi) {
     return val >= low && val <= hi;
 }
 
-void fixOctaves(double *pchvals, int frameCount, float _lowthresh, float _highthresh)
+static void fixOctaves(double *pchvals, int frameCount, int framesToSkip, float targetFrequency)
 {
-    double prevPch = 0;
-    for (int fr = 0; fr < frameCount; ++fr) {
+    double prevPch = targetFrequency;
+    for (int fr = framesToSkip; fr < frameCount; ++fr) {
         double pch = pchvals[fr];
         printf("fixOctaves: pch[%d]: %.1f ", fr, pch);
         // Find overshot pitches an octave too high
         if (inRange(pch, prevPch * 1.9, prevPch * 2.1)) {
             pchvals[fr] = pch * 0.5;
             printf("-> down octave to %.1f\n", pchvals[fr]);
+            prevPch = pchvals[fr];
         }
         // Find undershot pitches an octave too low
-        else if (inRange(pch, prevPch * 0.45, prevPch * 0.55)) {
+        else if (inRange(pch, prevPch * 0.4, prevPch * 0.6)) {
             pchvals[fr] = pch * 2.0;
             printf("-> up octave to %.1f\n", pchvals[fr]);
+            prevPch = pchvals[fr];
         }
         else {
-            printf("\n");
+            printf("prev pitch %.1f so no change\n", prevPch);
+            // Don't include this pitch in the average if it is not in the target range
+            if (targetFrequency == 0.0 || inRange(pch, targetFrequency * 0.9, targetFrequency * 1.1)) {
+                prevPch = pch;
+            }
         }
-        prevPch = pchvals[fr];
     }
 }
 
-void fixGaps(double *pchvals, int frameCount, float _lowthresh, float _highthresh)
+static void fixGaps(double *pchvals, int frameCount, int framesToSkip, float targetFrequency)
 {
-    double prevPch = 0;
-    double variance = 0.8;
+    double prevPch = targetFrequency;
+    double variance = 0.9;
     int count = 0;
-    for (int fr = 0; fr < frameCount; ++fr) {
+    for (int fr = framesToSkip; fr < frameCount; ++fr) {
         double pch = pchvals[fr];
         printf("fixGaps: pch[%d]: %.1f ", fr, pch);
         // Well-behaved pitch value
         if (inRange(pch, prevPch*variance, prevPch/variance)) {
             ++count;
             printf("%d non-gap values\n", count);
+            prevPch = pch;
         }
         // Pitch has changed too much - search forward for frame in the same range
         else if (count >= 3) {
             printf("gap value after %d others\n", count);
+            count = 0;
             for (int future=fr; future<frameCount; ++future) {
                 double fpch = pchvals[future];
-                if (inRange(fpch, pch*variance, pch/variance)) {
-                    printf("found target bridging value %.1f at index %d", fpch, future);
+                if (inRange(fpch, prevPch*variance, prevPch/variance)) {
+                    printf("\tfound target bridging value %.1f at index %d\n", fpch, future);
                     for (int n = fr; n <= future; ++n) {
-                        pchvals[n] = prevPch + ((double)n/future) * (fpch - pch);
+                        pchvals[n] = prevPch + ((double)(n-fr)/(future-fr)) * (fpch - pch);
                     }
                     prevPch = fpch;
                     fr = future;    // jump forward to begin search from here
@@ -146,18 +153,14 @@ void fixGaps(double *pchvals, int frameCount, float _lowthresh, float _highthres
     }
 }
 
-
-void smooth(double *pchvals, int frameCount, float _lowthresh, float _highthresh)
+static void smooth(double *pchvals, int frameCount, int framesToSkip, float factor)
 {
-    double prevPch = pchvals[0];
-    for (int fr = 0; fr < frameCount; ++fr) {
-        double pch = pchvals[fr];
-        double spch = (0.5 * pch) + (0.5 * prevPch);
-        prevPch = pchvals[fr] = spch;
+    double past = pchvals[0];
+    for (int fr = framesToSkip; fr < frameCount; ++fr) {
+        past = ((1.0-factor) * pchvals[fr]) + (factor * past);
+        pchvals[fr] = past;
     }
 }
-
-
 
 extern int GetDataSet(DataSet **);
 
@@ -171,7 +174,10 @@ extern int GetLPCStuff(double *hithresh, double *lowthresh,
 extern int GetConfiguration(float *maxdev,
 							float *perperiod,
 							float *hnfactor,
-							bool *autocorrect);
+							bool *autocorrect,
+                            float *pitch_fix_octave,
+                            bool *fix_gaps,
+                            float *smoothingFactor);
 
 LPCINST::LPCINST(const char *name)
 	: _dataSet(NULL), _alpvals(NULL), _buzvals(NULL), _functionName(name)
@@ -221,6 +227,9 @@ int LPCINST::init(double p[], int n_args)
 	
 	for (int i=0; i<_nPoles*2; i++) _past[i] = 0;
 
+#ifdef debug
+    printf("LPCINST::init(this=%p): nSamps=%d\n", this, (int)nSamps());
+#endif
 	return nSamps();
 }
 
@@ -314,11 +323,17 @@ int LPCPLAY::localInit(double p[], int n_args)
 				&_decaytime,
 				&_cutoff,
                 &_sourceDuration);
-					   
+			
+    float pitchFixOctave, smoothingFactor;
+    bool fixPitchGaps = false;
+    
 	GetConfiguration(&_maxdev,
 					 &_perperiod,
 					 &_hnfactor,
-					 &_autoCorrect);
+					 &_autoCorrect,
+                     &pitchFixOctave,
+                     &fixPitchGaps,
+                     &smoothingFactor);
 	
 	// Pitch table
 	_pchvals = new double[lpcFrameCount];
@@ -326,22 +341,40 @@ int LPCPLAY::localInit(double p[], int n_args)
     // Read the pitch values out of data set into _pchvals array
 	_lpcFrames = lpcFrameCount;
 	_lpcFrame1 = startLPCFrame;
-    int unvoicedCount = 0;
+    int unvoicedCount = 0, initialUnvoicedCount = 0;
+    bool firstVoicedFound = false;
 	for (i = startLPCFrame; i <= endLPCFrame; ++i) {
 		double dindex = i;
 		if (_dataSet->getFrame(dindex, _coeffs) < 0)
 			break;
         /* This is just in case I am using datasets with no pitch value stored */
 		_pchvals[i - startLPCFrame] = (_coeffs[PITCH] != 0.0 ? _coeffs[PITCH] : kDefaultFrequency);
+        
         if (_coeffs[THRESH] > _highthresh) {
             ++unvoicedCount;
+            // Count initial set of unvoiced - preprocessors will skip these
+            if (!firstVoicedFound) {
+                ++initialUnvoicedCount;
+            }
+        }
+        else {
+            firstVoicedFound = true;
         }
 	}
-    fixOctaves(_pchvals, lpcFrameCount, _lowthresh, _highthresh);
-    fixGaps(_pchvals, lpcFrameCount, _lowthresh, _highthresh);
-    smooth(_pchvals, lpcFrameCount, _lowthresh, _highthresh);
-    
-    _actualWeight = weight(startLPCFrame, endLPCFrame, _highthresh);
+    // This pitch preprocessors operate on just the pitches in frames specified by LPCPLAY.
+    if (pitchFixOctave != -1.0) {
+        rtcmix_advise("LPCPLAY", "Fixing octaves");
+        ::fixOctaves(_pchvals, lpcFrameCount, initialUnvoicedCount, pitchFixOctave);
+    }
+    if (fixPitchGaps) {
+        rtcmix_advise("LPCPLAY", "Fixing pitch gaps");
+        ::fixGaps(_pchvals, lpcFrameCount, initialUnvoicedCount, pitchFixOctave);
+    }
+    if (smoothingFactor != 0.0) {
+        rtcmix_advise("LPCPLAY", "Smoothing pitch curve");
+       ::smooth(_pchvals, lpcFrameCount, initialUnvoicedCount, smoothingFactor);
+    }
+    _actualWeight = weight(startLPCFrame, endLPCFrame, (float)_highthresh);
 	if (_actualWeight == 0.0)
         _actualWeight = kDefaultFrequency;
     
@@ -481,14 +514,14 @@ int LPCPLAY::run()
     printf("\nLPCPLAY::run(this=%p): current frame %d\n", this, currentFrame());
 #endif
 
-    const int totalAudioFrames = nSamps();
+    const int totalAudioFrames = nSamps();  // only used as denominator of a fraction
     
 	// Samples may have been left over from end of previous run's block
 	if (_leftOver > 0) {
 		int toAdd = min(_leftOver, framesToRun());
 #ifdef debug
-        printf("this=%p: using %d leftover samps starting at offset %d\n",
-			   this, _leftOver, _savedOffset);
+        printf("   this=%p: using %d/%d leftover samps starting at offset %d\n",
+			   this, toAdd, _leftOver, _savedOffset);
 #endif
 		rtbaddout(&_alpvals[_savedOffset], toAdd);
 		increment(toAdd);
@@ -497,9 +530,6 @@ int LPCPLAY::run()
 		_savedOffset += toAdd;
 	}
 	
-	/* framesToRun() returns the number of sample frames -- 1 sample for each
-	  channel -- that we have to write during this scheduler time slice.
-	*/
 	for (; n < framesToRun(); n += _counter) {
 		double p[12];
 		update(p, 12);
@@ -544,7 +574,7 @@ int LPCPLAY::run()
         double buzamp = getVoicedAmp(_coeffs[THRESH]);
         _voiced = (_coeffs[THRESH] <= _highthresh);
 #ifdef debug
-        printf("\taudio frame: %d _counter: %d _lpcFrameno: %.2f voiced: %d ratio: %.9f\n", currentAudioFrame, _counter, _lpcFrameno, _voiced, _lpcFrameno/currentAudioFrame);
+        printf("\n\tcurrentAudioFrame: %d _lpcFrameno: %.2f voiced: %d ratio: %.9f\n", currentAudioFrame, _lpcFrameno, _voiced, _lpcFrameno/currentAudioFrame);
 #endif
         // equal power handoff between buzz and noise
         const double amp_pi_over2 = buzamp * PI * 0.5;
@@ -596,7 +626,7 @@ int LPCPLAY::run()
             }
         }
 #if defined(debug)
-            printf("\tframe %g: _pitch %g, cps %g, _transposition %g, newcps %g\n", _lpcFrameno, _pitch, cps, _transposition, newcps);
+        printf("\tframe %g: _pitch %g, cps %g, _transposition %g, newcps %g\n", _lpcFrameno, _pitch, cps, _transposition, newcps);
 #endif
 		if (_reson_is_on) {
 			/* If _cf_fact is greater than 20, treat as absolute freq.
@@ -607,7 +637,7 @@ int LPCPLAY::run()
 			float cf = (_cf_fact < 20.0) ? _cf_fact * cps : _cf_fact;
 			float bw = (_bw_fact < 20.0) ? cf * _bw_fact : _bw_fact;
 			rszset(SR, cf, bw, 1., _rsnetc);
-#ifdef debug
+#ifdef debug2
 			printf("\tcf %g bw %g cps %g\n", cf, bw,cps);
 #endif
 		}
@@ -623,13 +653,18 @@ int LPCPLAY::run()
         }
 		float hn = (_hnfactor <= 1.0) ? (int)(_hnfactor*_srd2/newcps)-2 : _hnfactor;
 		_counter = int(((float)SR/(newcps * _perperiod) ) * .5);
-		_counter = (_counter > (nSamps() - currentAudioFrame)) ? nSamps() - currentAudioFrame : _counter;
+        int remaining = nSamps() - currentAudioFrame;
+		_counter = (_counter > remaining) ? remaining : _counter;
 #ifdef debug
-        printf("\tthis=%p: fr: %.2f err: %.5f bzamp: %g noisamp: %g newcps: %g _counter: %d\n",
-		 	   this, _lpcFrameno,_coeffs[THRESH],_ampmlt*buzamp,_ampmlt*noisamp,newcps,_counter);
+        printf("\tfr: %.2f err: %.5f bzamp: %.5f noisamp: %.5f newcps: %g _counter: %d remaining: %d\n",
+		 	   _lpcFrameno,_coeffs[THRESH],_ampmlt*buzamp,_ampmlt*noisamp,newcps,_counter,remaining);
 #endif
-        if (_counter <= 0)
+        if (_counter <= 0) {
+            if (remaining > 0) {
+                rtcmix_warn("LPCPLAY", "Counter <= 0!! Frame pitch: %f, %d remaining audio frames", newcps, remaining);
+            }
 			break;
+        }
 		// Catch extreme pitches which generate array overruns
 		else if (_counter > _arrayLen) {
 			rtcmix_warn("LPCPLAY", "Counter exceeded array size -- limiting.  Frame pitch: %f", newcps);
@@ -652,7 +687,7 @@ int LPCPLAY::run()
         // Run N-pole filter, either warped or normal depending on settings
 		if (_warpFactor != 0.0) {
 			float warp = (_warpFactor > 1.) ? shift(_coeffs[PITCH],newcps,(float)SR) : _warpFactor;
-#ifdef debug
+#ifdef debug2
 			printf("\t pch: %f newcps: %f warp: %f\n",_coeffs[PITCH], newcps, warp);
 #endif
 			/*************
@@ -664,7 +699,7 @@ int LPCPLAY::run()
 		{
 			ballpole(_buzvals,&_jcount,_nPoles,_past,&_coeffs[4],_alpvals,_counter);
 		}
-#ifdef debug
+#ifdef debug2
 		{ float maxamp=0; for (int x=0;x<_counter;x++) { if (ABS(_alpvals[x]) > ABS(maxamp)) maxamp = _alpvals[x]; }
 			printf("\t maxamp = %.4f\n", maxamp);
 		}
@@ -685,16 +720,18 @@ int LPCPLAY::run()
 		
 		/* Keep track of how many sample frames this instrument has generated. */
 		increment(sampsToAdd);
+#ifdef debug
+        printf("\tend of loop: n = %d\n", n);
+#endif
 	}
 	// Handle case where last synthesized block extended beyond framesToRun()
 	if (n > framesToRun()) {
 		_leftOver = n - framesToRun();
 		_savedOffset = _counter - _leftOver;
-#ifdef debug2
+#ifdef debug
 		printf("saving %d samples left over at offset %d\n", _leftOver, _savedOffset);
 #endif
 	}
-
 	return framesToRun();
 }
 
@@ -713,8 +750,9 @@ LPCPLAY::SetupArrays(int frameCount)
 double
 LPCPLAY::getVoicedAmp(float err)
 {
-	double sqerr = ::sqrt((double) err);
-	double amp = 1.0 - ((sqerr - _lowthresh) / (_highthresh - _lowthresh));
+//	double sqerr = ::sqrt((double) err);
+//	double amp = 1.0 - ((sqerr - _lowthresh) / (_highthresh - _lowthresh));
+    double amp = 1.0 - ((err - _lowthresh) / (_highthresh - _lowthresh));
 	amp = (amp < 0.0) ? 0.0 : (amp > 1.0) ? 1.0 : amp;
 
 #ifdef EMBEDDED
@@ -850,14 +888,14 @@ int LPCIN::localInit(double p[], int n_args)
 					   	
 	_warpFactor = p[LPCIN_warp];	// defaults to 0
 
-	_reson_is_on = p[LPCIN_cf] ? true : false;
+	_reson_is_on = p[LPCIN_cf] != 0.0 ? true : false;
 	_cf_fact = p[LPCIN_cf];
 	_bw_fact = p[LPCIN_bw];
 
 	// Pull all the current configuration information out of the environment.
 	
 	double ddummy1, ddummy2;
-	float dummy1, dummy2, dummy3, dummy4;
+	float dummy1, dummy2, dummy3, dummy4, dummy5;
 	bool bdummy;
 
 	GetLPCStuff(&ddummy1,
@@ -872,7 +910,10 @@ int LPCIN::localInit(double p[], int n_args)
 	GetConfiguration(&dummy1,
 					 &dummy2,
 					 &dummy3,
-					 &_autoCorrect);	// All we use is auto-correct here
+					 &_autoCorrect,    // All we use is auto-correct here
+                     &dummy4,
+                     &bdummy,
+                     &dummy5);
 
 	// Duration can be calculated from frame count
 
@@ -912,7 +953,7 @@ int LPCIN::run()
 	if (_leftOver > 0)
 	{
 		int toAdd = min(_leftOver, framesToRun());
-#ifdef debug2
+#ifdef debug
 		printf("using %d leftover samps starting at offset %d\n",
 			   _leftOver, _savedOffset);
 #endif
@@ -993,7 +1034,7 @@ int LPCIN::run()
 #ifdef debug2
 		printf("\t _buzvals[0] = %g\n", _buzvals[0]);
 #endif
-		if (_warpFactor) {
+		if (_warpFactor != 0.0) {
 //			float warp = (_warpFactor > 1.) ? shift(_coeffs[PITCH],newcps,(float)SR) : _warpFactor;
 			float warp = _warpFactor;
 #ifdef debug
@@ -1031,7 +1072,7 @@ int LPCIN::run()
 	if (n > framesToRun()) {
 		_leftOver = n - framesToRun();
 		_savedOffset = _counter - _leftOver;
-#ifdef debug2
+#ifdef debug
 		printf("saving %d samples left over at offset %d\n", _leftOver, _savedOffset);
 #endif
 	}
