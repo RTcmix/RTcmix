@@ -236,23 +236,12 @@ double setdevfactor(float *p, int n_args)
 		return -maxdev;
 }
 
-#ifdef EMBEDDED
-// BGG -- see BGGx note in LPCPLAY.cpp
-extern int BRADSSTUPIDUNVOICEDFLAG;
-#endif
-
 // Set the threshold below which the frame will be 100% voiced, and the threshold above which
 // the frame will be 100% unvoiced.  This needs to be reset after each call to lpcstuff()
 
 double
 set_thresh(float *p, int n_args)
 {
-#ifdef EMBEDDED
-// BGG --  see BGGx note in LPCPLAY.cpp. I just want plain unvoiced sound!
-	if (p[0] == -1.0) BRADSSTUPIDUNVOICEDFLAG = 1;
-	else BRADSSTUPIDUNVOICEDFLAG = 0;
-#endif
-
 	if(p[1] <= p[0]) {
 		::rterror("set_thresh", "upper thresh must be > lower!");
         return rtOptionalThrow(PARAM_ERROR);

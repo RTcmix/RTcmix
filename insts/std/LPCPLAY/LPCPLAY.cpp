@@ -275,20 +275,6 @@ LPCPLAY::~LPCPLAY()
    call warn() with a message.
 */
 
-/* BGGx
-	I need to go back and fix this.  I believe I can just use the class
-	variable (presently named "CLASSBRADSSTUPIDUNVOICEDFLAG") but not sure.
-	right now I'm just putting in the EMBEDDED #ifdefs and don't want
-	to refactor this entire tangled mess o' code.
-
-	The issue is that I could NOT get unvoiced frames to work, no matter
-	what I did to set the threshold, etc.  I inserted this total hack to
-	make it work.  This code is in desparate need of refactoring.
-*/
-#ifdef EMBEDDED
-int BRADSSTUPIDUNVOICEDFLAG; // set in setup.cpp (set_thresh())
-#endif
-
 int LPCPLAY::localInit(double p[], int n_args)
 {
    int i;
@@ -495,11 +481,6 @@ int LPCPLAY::localInit(double p[], int n_args)
 	_cf_fact = p[LPCPLAY_cf];
 	_bw_fact = p[LPCPLAY_bw];
 	_lpcFrameno = _lpcFrame1;	/* in case first frame is unvoiced */
-
-#ifdef EMBEDDED
-// see note above
-	CLASSBRADSSTUPIDUNVOICEDFLAG = BRADSSTUPIDUNVOICEDFLAG;
-#endif
 
 	return 0;
 }
@@ -754,11 +735,6 @@ LPCPLAY::getVoicedAmp(float err)
 //	double amp = 1.0 - ((sqerr - _lowthresh) / (_highthresh - _lowthresh));
     double amp = 1.0 - ((err - _lowthresh) / (_highthresh - _lowthresh));
 	amp = (amp < 0.0) ? 0.0 : (amp > 1.0) ? 1.0 : amp;
-
-#ifdef EMBEDDED
-// see note above
-	if (CLASSBRADSSTUPIDUNVOICEDFLAG == 1) amp = 0.0;
-#endif
 
 	return amp;
 }
