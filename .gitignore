@@ -21,6 +21,8 @@ bin
 bin/*
 lib
 lib/*
+minclude
+minclude/*
 shlib
 shlib/*
 scores
