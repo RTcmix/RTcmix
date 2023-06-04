@@ -568,19 +568,19 @@ RTcmixMain::run()
     }
 }
 
-#else
+#else   /* EMBEDDED */
 
 void
 RTcmixMain::run()
 {
-    rtcmix_debug("RTcmixMain", "run: calling runMainLoop()");
+    rtcmix_debug("RTcmixMain::run", "calling runMainLoop()");
     if (runMainLoop() == 0) {
-        rtcmix_debug("RTcmixMain", "run: calling waitForMainLoop()");
+        rtcmix_debug("RTcmixMain::run", "calling waitForMainLoop()");
         waitForMainLoop();
     }
 }
 
-#endif
+#endif  /* EMBEDDED */
 
 /* ---------------------------------------------------- interrupt_handler --- */
 void

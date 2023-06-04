@@ -418,7 +418,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			
 			Iptr = rtQueue[busq].pop(&rtQchunkStart);  // get next instrument off queue
 #ifdef IBUG
-            printf("Iptr 0x%x popped from rtQueue %d at rtQchunkStart %d\n", Iptr, busq, rtQchunkStart);
+            printf("Iptr %p popped from rtQueue %d at rtQchunkStart %lld\n", Iptr, busq, rtQchunkStart);
 #endif			
 			Iptr->set_ichunkstart(rtQchunkStart);
 
