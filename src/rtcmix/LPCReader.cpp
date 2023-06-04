@@ -25,8 +25,10 @@ extern "C" {
 
 Handle lpcgetpitches(const Arg args[], const int nargs)
 {
+    ::rterror("lpcgetpitches", "Not fully implemented yet");
+    return NULL;
     DataSet *lpcdata = NULL;
-    GetDataSet(&lpcdata);
+//    GetDataSet(&lpcdata);
     if (lpcdata == NULL) {
         ::rterror("lpcgetpitches", "You haven't opened an LPCdata file yet");
         rtOptionalThrow(CONFIGURATION_ERROR);
