@@ -40,6 +40,8 @@ inline int min(int x, int y) { return (x < y) ? x : y; }
 #undef debug
 #undef debug2   /* super detailed */
 
+#define OLD_VOICED_CHECK     /* code from pre April 2023 */
+
 LPCINST::WarpFilter::WarpFilter() : _outold(0.0f)
 {
 	for (int i=0; i<MAXPOLES*2; i++) _past[i] = 0;
@@ -551,15 +553,14 @@ int LPCPLAY::run()
         // If requested, stabilize this frame before using
 		if (_autoCorrect)
 			stabilize(_coeffs, _nPoles);
-        
-        double buzamp = getVoicedAmp(_coeffs[THRESH]);
-        _voiced = (_coeffs[THRESH] <= _highthresh);
+        double voicedAmp = getVoicedAmp(_coeffs[THRESH]);
+        _voiced = (voicedAmp > _highthresh);
 #ifdef debug
-        printf("\n\tcurrentAudioFrame: %d _lpcFrameno: %.2f voiced: %d ratio: %.9f\n", currentAudioFrame, _lpcFrameno, _voiced, _lpcFrameno/currentAudioFrame);
+        printf("\n\tcurrentAudioFrame: %d _lpcFrameno: %.2f ratio: %.9f\n", currentAudioFrame, _lpcFrameno, _lpcFrameno/currentAudioFrame);
 #endif
         // equal power handoff between buzz and noise
-        const double amp_pi_over2 = buzamp * PI * 0.5;
-        buzamp = sin(amp_pi_over2);
+        const double amp_pi_over2 = voicedAmp * PI * 0.5;
+        double buzamp = sin(amp_pi_over2);
 		float noisamp = cos(amp_pi_over2) * _randamp;
         
 		_ampmlt = _amp * _coeffs[RESIDAMP];
@@ -568,8 +569,8 @@ int LPCPLAY::run()
 			_ampmlt = 0;
         
 #ifdef debug
-        printf("\tERR: %.5f lothresh: %.3f hithresh: %.3f %sbuzamp: %.3f noisamp: %.3f\n",
-               _coeffs[THRESH], _lowthresh, _highthresh, (_lowthresh < _coeffs[THRESH] && _coeffs[THRESH] < _highthresh) ? "MIX: " : "", buzamp, noisamp);
+        printf("\tERR: %.5f lothresh: %.5f hithresh: %.5f voicedAmp: %.5f voiced: %d %sbuzamp: %.3f noisamp: %.3f\n",
+               _coeffs[THRESH], _lowthresh, _highthresh, voicedAmp, _voiced, (_lowthresh < _coeffs[THRESH] && _coeffs[THRESH] < _highthresh) ? "MIX: " : "", buzamp, noisamp);
 #endif
         // Get cps for this frame from possibly-modified pitch table.
 		float cps = tablei(currentAudioFrame,_pchvals,_tblvals);
@@ -728,14 +729,14 @@ LPCPLAY::SetupArrays(int frameCount)
 	_arrayLen = siglen;
 }
 
+// Returns voiced amp in range 0.0 to 1.0, based on error
+
 double
 LPCPLAY::getVoicedAmp(float err)
 {
-//	double sqerr = ::sqrt((double) err);
-//	double amp = 1.0 - ((sqerr - _lowthresh) / (_highthresh - _lowthresh));
-    double amp = 1.0 - ((err - _lowthresh) / (_highthresh - _lowthresh));
-	amp = (amp < 0.0) ? 0.0 : (amp > 1.0) ? 1.0 : amp;
-
+    double sqerr = ::sqrt((double) err);
+    double amp = 1.0 - ((sqerr - _lowthresh) / (_highthresh - _lowthresh));
+    amp = (amp < 0.0) ? 0.0 : (amp > 1.0) ? 1.0 : amp;
 	return amp;
 }
 

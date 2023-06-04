@@ -170,8 +170,10 @@ double lpcstuff(float *p, int n_args)
         risetime=.01f; decaytime=.1f;
         resetPitchPreprocessing();
         if (n_args>0) {
-            highthresh=p[0];
-            lowthresh = std::max(0.0, p[0]-0.0001);
+            // high thresh must be > than lowthresh, which must be > 0
+            float thresh=std::max(0.0f, p[0]);
+            lowthresh = thresh;
+            highthresh = thresh + 0.00001;
         }
         if (n_args>1) randamp=p[1];
         if (n_args>2) unvoiced_rate=p[2];
@@ -185,14 +187,18 @@ double lpcstuff(float *p, int n_args)
         ::rtcmix_advise("lpcstuff", "Thresh: %g  Randamp: %g  EnvRise: %g  EnvDecay: %g",
                         highthresh,randamp, risetime, decaytime);
         if (unvoiced_rate == 1) {
+#ifdef FAIL_IF_DURATION_MISSING     /* not necessary in current code */
             if (sourceDuration > 0.0)
+#endif
                 ::rtcmix_advise("lpcstuff", "Unvoiced frames played at normal rate.");
+#ifdef FAIL_IF_DURATION_MISSING     /* not necessary in current code */
             else {
                 ::rterror("lpcstuff",
                           "To play unvoiced frames at normal rate, you must specify the original source duration in p[6]");
                 unvoiced_rate = 0;
                 return rtOptionalThrow(PARAM_ERROR);
             }
+#endif
         }
         else {
 			::rtcmix_advise("lpcstuff", "Unvoiced frames played at same rate as voiced 'uns.");
