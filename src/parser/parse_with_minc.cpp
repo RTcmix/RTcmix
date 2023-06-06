@@ -23,7 +23,7 @@ extern "C" {
     extern int yyparse();
     extern int check_new_arg(const char *); /* Defined in minc/args.cpp */
     static int run_parser(const char *caller);
-    int RTcmix_parseScore(char *thebuf, int buflen);
+    int embedded_parse_score(const char *caller, char *thebuf, int buflen);
 }
 
 extern int yydebug;
@@ -142,13 +142,15 @@ parse_score(int argc, char *argv[], char **env)
 
 #else
 
-// BGG mm -- set this to accept a buffer from max/msp
-int RTcmix_parseScore(char *theBuf, int buflen)
+/* ---------------------------------------------------------- embedded_parse_score --- */
+/* This is called by RTcmix_parseScore() from main.cpp */
+
+int embedded_parse_score(const char *caller, char *theBuf, int buflen)
 {
     YY_BUFFER_STATE buffer = yy_scan_bytes(theBuf, buflen);
     reset_parser();
     preserveSymbols(true);
-    return run_parser("RTcmix_parseScore");
+    return run_parser(caller);
 }
     
 #endif

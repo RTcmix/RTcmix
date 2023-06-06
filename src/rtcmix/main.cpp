@@ -238,6 +238,25 @@ int RTcmix_resetAudio(float sr, int nchans, int vecsize, int recording)
 	return status;
 }
 
+// This is now the entry point into the parser code, so all the RTcmix_XXX methods
+// can be defined in this file.
+
+extern "C" int embedded_parse_score(const char *caller, char *thebuf, int buflen);
+
+// BGG mm -- set this to accept a buffer from max/msp or other embedded systems
+
+int RTcmix_parseScore(char *theBuf, int buflen)
+{
+    int status = embedded_parse_score("RTcmix_parseScore", theBuf, buflen);
+#if defined(EMBEDDEDAUDIO)
+    if (!globalApp->interactive() && status != 0) {
+        // If there was an error, flush messages.
+        checkForPrint();
+    }
+#endif
+    return status;
+}
+
 #ifdef IOS
 
 int RTcmix_startAudio()

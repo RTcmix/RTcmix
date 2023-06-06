@@ -673,6 +673,7 @@ int RTcmix::startAudio(AudioDeviceCallback renderCallback, AudioDeviceCallback d
 			audioDevice->close();
 			return -1;
 		}
+        rtcmix_debug(NULL, "RTcmix::startAudio finished");
 		return 0;	// Playing, thru HW and/or to FILE.
 	}
 	rtcmix_warn(NULL, "Audio device was NULL or not open");
