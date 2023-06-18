@@ -2,7 +2,7 @@
 // See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
 // the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 
-#include <Option.h>
+#include <RTOption.h>
 #include <RTcmixOSC.h>
 #include <RTOscPField.h>
 #include <stdio.h>
@@ -44,7 +44,7 @@ RTcmixOSC *createOSCServer()
 
 int RTcmixOSC::init()
 {
-	const int portnum = Option::oscInPort();
+	const int portnum = RTOption::oscInPort();
 #if DEBUG > 0
 	printf("Requested OSC input port: \"%d\"\n", portnum);
 #endif

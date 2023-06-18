@@ -32,7 +32,7 @@
 #include <Ougens.h>
 #include <Instrument.h>
 #include <PField.h>
-#include <Option.h>	// fastUpdate
+#include <RTOption.h>	// fastUpdate
 #include "IINOISE.h"
 #include <rt.h>
 #include <rtdefs.h>
@@ -60,7 +60,7 @@ IINOISE::~IINOISE()
 
 void IINOISE::initamp(float dur, double p[], int ampindex, int ampgenslot)
 {
-	fastUpdate = Option::fastUpdate();
+	fastUpdate = RTOption::fastUpdate();
 	if (fastUpdate) {
 		// Prefer PField table, otherwise makegen
 		int tablen = 0;

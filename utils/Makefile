@@ -9,7 +9,7 @@ HISTOBJ = fft.o hist.o
 SYSOBJS = $(SRCDIR)/rtcmix/printsf.o $(SRCDIR)/rtcmix/check_byte_order.o \
 	$(AUDIODIR)/sndlibsupport.o
 PLAY_HDRS = ../src/audio/sndlibsupport.h ../src/audio/AudioDevice.h
-OPTION_O = ../src/rtcmix/Option.o
+OPTION_O = ../src/rtcmix/RTOption.o
 LIBCONF = ../src/conf/libconf.a
 
 # MIDI libraries for SETUP program

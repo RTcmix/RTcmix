@@ -95,7 +95,6 @@ minc_info.cpp \
 minc_functions.cpp \
 DataFile.cpp \
 MMPrint.cpp \
-Option.cpp \
 PFBusData.cpp \
 PField.cpp \
 PFieldSet.cpp \
@@ -104,6 +103,7 @@ Random.cpp \
 RawDataFile.cpp \
 RefCounted.cpp \
 RTcmix.cpp \
+RTOption.cpp \
 InputFile.cpp \
 rtcmix_types.cpp \
 rtcmix_wrappers.cpp \
@@ -363,7 +363,7 @@ intraverse.o: intraverse.cpp
 MMPrint.o: MMPrint.cpp MMPrint.h
 	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c $< -o $@
 
-Option.o: Option.cpp Option.h
+RTOption.o: RTOption.cpp RTOption.h
 	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c $< -o $@
 
 PFBusData.o: PFBusData.cpp PFBusData.h

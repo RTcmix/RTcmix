@@ -9,7 +9,6 @@
 #include <string.h>
 #include <ctype.h>
 #include <rtcmix_types.h>
-#include <Option.h>
 #include <PField.h>
 #include <utils.h>	// in ../../rtcmix
 #include <RTcmixOSC.h>
