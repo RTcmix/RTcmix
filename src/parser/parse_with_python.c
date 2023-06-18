@@ -8,7 +8,7 @@
 #include <assert.h>
 #include <Python.h>
 #include "rtcmix_parse.h"
-#include <Option.h>
+#include <RTOption.h>
 
 #ifdef PYEXT_INIT
 extern void initrtcmix(void);		/* defined in rtcmixmodule.cpp */

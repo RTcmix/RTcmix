@@ -8,7 +8,7 @@
 
 #include <assert.h>
 #include <limits.h>        // PATH_MAX
-#include "Option.h"
+#include "RTOption.h"
 #include <Config.h>
 #include <string.h>
 #include "ugens.h"
@@ -20,45 +20,45 @@ using namespace std;
 #define DSOPATH_MAX  PATH_MAX * 2
 #define OSCHOST_MAX  128
 
-bool Option::_audio = true;
-bool Option::_play = true;
-bool Option::_record = false;
-bool Option::_clobber = false;
-bool Option::_reportClipping = true;
-bool Option::_checkPeaks = true;
-bool Option::_exitOnError = false;	// we override this in main.cpp for standalone
-bool Option::_bailOnError = false;
-bool Option::_autoLoad = false;
-bool Option::_fastUpdate = false;
-bool Option::_requireSampleRate = true;
+bool RTOption::_audio = true;
+bool RTOption::_play = true;
+bool RTOption::_record = false;
+bool RTOption::_clobber = false;
+bool RTOption::_reportClipping = true;
+bool RTOption::_checkPeaks = true;
+bool RTOption::_exitOnError = false;	// we override this in main.cpp for standalone
+bool RTOption::_bailOnError = false;
+bool RTOption::_autoLoad = false;
+bool RTOption::_fastUpdate = false;
+bool RTOption::_requireSampleRate = true;
 
-double Option::_bufferFrames = DEFAULT_BUFFER_FRAMES;
-int Option::_bufferCount = DEFAULT_BUFFER_COUNT;
-int Option::_oscInPort = DEFAULT_OSC_INPORT;
-double Option::_muteThreshold = DEFAULT_MUTE_THRESHOLD;
+double RTOption::_bufferFrames = DEFAULT_BUFFER_FRAMES;
+int RTOption::_bufferCount = DEFAULT_BUFFER_COUNT;
+int RTOption::_oscInPort = DEFAULT_OSC_INPORT;
+double RTOption::_muteThreshold = DEFAULT_MUTE_THRESHOLD;
 
 // BGG see ugens.h for levels
 #ifdef EMBEDDED
-int Option::_print = MMP_RTERRORS; // basic level for max/msp
+int RTOption::_print = MMP_RTERRORS; // basic level for max/msp
 #else
-int Option::_print = MMP_PRINTALL; // default print everthing for regular RTcmix
+int RTOption::_print = MMP_PRINTALL; // default print everthing for regular RTcmix
 #endif
 
-int Option::_printListLimit = DEFAULT_PRINT_LIST_LIMIT;
-unsigned Option::_parserWarnings = DEFAULT_PARSER_WARNINGS;
+int RTOption::_printListLimit = DEFAULT_PRINT_LIST_LIMIT;
+unsigned RTOption::_parserWarnings = DEFAULT_PARSER_WARNINGS;
 
-char Option::_device[DEVICE_MAX];
-char Option::_inDevice[DEVICE_MAX];
-char Option::_outDevice[MAX_OUTPUT_DEVICES][DEVICE_MAX];
-char Option::_midiInDevice[DEVICE_MAX];
-char Option::_midiOutDevice[DEVICE_MAX];
-char Option::_oscHost[OSCHOST_MAX];
-char Option::_dsoPath[DSOPATH_MAX];
-char Option::_homeDir[PATH_MAX];
-char Option::_rcName[PATH_MAX];
+char RTOption::_device[DEVICE_MAX];
+char RTOption::_inDevice[DEVICE_MAX];
+char RTOption::_outDevice[MAX_OUTPUT_DEVICES][DEVICE_MAX];
+char RTOption::_midiInDevice[DEVICE_MAX];
+char RTOption::_midiOutDevice[DEVICE_MAX];
+char RTOption::_oscHost[OSCHOST_MAX];
+char RTOption::_dsoPath[DSOPATH_MAX];
+char RTOption::_homeDir[PATH_MAX];
+char RTOption::_rcName[PATH_MAX];
 
 
-void Option::init()
+void RTOption::init()
 {
 	// Set everything to defaults
 	_audio = true;
@@ -116,11 +116,11 @@ void Option::init()
 
 /* Read configuration file <fileName>, which is probably the full path name
    of the user's .rtcmixrc file, and copy the settings in the file to the
-   Option object.  Return 0 if successful, or if the file doesn't exist.
+   RTOption object.  Return 0 if successful, or if the file doesn't exist.
    Return -1 if there is a problem reading the file (such as insufficient
    privileges).
 */
-int Option::readConfigFile(const char *fileName)
+int RTOption::readConfigFile(const char *fileName)
 {
 	const char *key;
 	Config conf;
@@ -330,7 +330,7 @@ int Option::readConfigFile(const char *fileName)
 #include <stdio.h>
 #include <errno.h>
 
-int Option::writeConfigFile(const char *fileName)
+int RTOption::writeConfigFile(const char *fileName)
 {
 	if (fileName == NULL || fileName[0] == 0) {
 		fprintf(stderr, "Config file name is NULL or empty.\n");
@@ -424,56 +424,56 @@ int Option::writeConfigFile(const char *fileName)
 
 // String option setting methods
 
-char *Option::device(const char *devName)
+char *RTOption::device(const char *devName)
 {
 	strncpy(_device, devName, DEVICE_MAX);
 	_device[DEVICE_MAX - 1] = 0;
 	return _device;
 }
 
-char *Option::inDevice(const char *devName)
+char *RTOption::inDevice(const char *devName)
 {
 	strncpy(_inDevice, devName, DEVICE_MAX);
 	_inDevice[DEVICE_MAX - 1] = 0;
 	return _inDevice;
 }
 
-char *Option::outDevice(const char *devName, int devIndex)
+char *RTOption::outDevice(const char *devName, int devIndex)
 {
 	strncpy(_outDevice[devIndex], devName, DEVICE_MAX);
 	_outDevice[devIndex][DEVICE_MAX - 1] = 0;
 	return _outDevice[devIndex];
 }
 
-char *Option::midiInDevice(const char *devName)
+char *RTOption::midiInDevice(const char *devName)
 {
 	strncpy(_midiInDevice, devName, DEVICE_MAX);
 	_midiInDevice[DEVICE_MAX - 1] = 0;
 	return _midiInDevice;
 }
 
-char *Option::midiOutDevice(const char *devName)
+char *RTOption::midiOutDevice(const char *devName)
 {
 	strncpy(_midiOutDevice, devName, DEVICE_MAX);
 	_midiOutDevice[DEVICE_MAX - 1] = 0;
 	return _midiOutDevice;
 }
 
-char *Option::oscHost(const char *oscHost)
+char *RTOption::oscHost(const char *oscHost)
 {
 	strncpy(_oscHost, oscHost, OSCHOST_MAX);
 	_oscHost[OSCHOST_MAX - 1] = 0;
 	return _oscHost;
 }
 
-char *Option::dsoPath(const char *pathName)
+char *RTOption::dsoPath(const char *pathName)
 {
 	strncpy(_dsoPath, pathName, DSOPATH_MAX);
 	_dsoPath[DSOPATH_MAX - 1] = 0;
 	return _dsoPath;
 }
 
-char *Option::dsoPathPrepend(const char *pathName)
+char *RTOption::dsoPathPrepend(const char *pathName)
 {
 	char *str = new char[strlen(pathName) + 1 + strlen(_dsoPath) + 1];
 	strcpy(str, pathName);
@@ -487,7 +487,7 @@ char *Option::dsoPathPrepend(const char *pathName)
 	return _dsoPath;
 }
 
-char *Option::dsoPathAppend(const char *pathName)
+char *RTOption::dsoPathAppend(const char *pathName)
 {
 	char *str = new char[strlen(_dsoPath) + 1 + strlen(pathName) + 1];
 	strcpy(str, _dsoPath);
@@ -500,14 +500,14 @@ char *Option::dsoPathAppend(const char *pathName)
 	return _dsoPath;
 }
 
-char *Option::rcName(const char *rcName)
+char *RTOption::rcName(const char *rcName)
 {
 	strncpy(_rcName, rcName, PATH_MAX);
 	_rcName[PATH_MAX - 1] = 0;
 	return _rcName;
 }
 
-void Option::dump()
+void RTOption::dump()
 {
 #ifndef EMBEDDED
 	cout << kOptionAudio << ": " << _audio << endl;
@@ -539,7 +539,7 @@ void Option::dump()
 #endif // EMBEDDED
 }
 
-void Option::reportError(const char *format, const char *msg1, const char *msg2)
+void RTOption::reportError(const char *format, const char *msg1, const char *msg2)
 {
 	char buf[1024];
 	snprintf(buf, 1024, format, msg1, msg2);
@@ -552,38 +552,38 @@ void Option::reportError(const char *format, const char *msg1, const char *msg2)
 
 int get_print_option()
 {
-	return Option::print();
+	return RTOption::print();
 }
 
 char *get_dsopath_option()
 {
-	return Option::dsoPath();
+	return RTOption::dsoPath();
 }
 
 int get_bool_option(const char *option_name)
 {
 	if (!strcmp(option_name, kOptionReportClipping))
-		return (int) Option::reportClipping();
+		return (int) RTOption::reportClipping();
 	else if (!strcmp(option_name, kOptionCheckPeaks))
-		return (int) Option::checkPeaks();
+		return (int) RTOption::checkPeaks();
 	else if (!strcmp(option_name, kOptionClobber))
-		return (int) Option::clobber();
+		return (int) RTOption::clobber();
 	else if (!strcmp(option_name, kOptionAudio))
-		return (int) Option::audio();
+		return (int) RTOption::audio();
 	else if (!strcmp(option_name, kOptionPlay))
-		return (int) Option::play();
+		return (int) RTOption::play();
 	else if (!strcmp(option_name, kOptionRecord))
-		return (int) Option::record();
+		return (int) RTOption::record();
 	else if (!strcmp(option_name, kOptionExitOnError))
-		return (int) Option::exitOnError();
+		return (int) RTOption::exitOnError();
     else if (!strcmp(option_name, kOptionBailOnError))
-        return (int) Option::bailOnError();
+        return (int) RTOption::bailOnError();
 	else if (!strcmp(option_name, kOptionAutoLoad))
-		return (int) Option::autoLoad();
+		return (int) RTOption::autoLoad();
 	else if (!strcmp(option_name, kOptionFastUpdate))
-		return (int) Option::fastUpdate();
+		return (int) RTOption::fastUpdate();
 	else if (!strcmp(option_name, kOptionRequireSampleRate))
-		return (int) Option::requireSampleRate();
+		return (int) RTOption::requireSampleRate();
 
 	assert(0 && "unsupported option name");		// program error
 	return 0;
@@ -592,27 +592,27 @@ int get_bool_option(const char *option_name)
 void set_bool_option(const char *option_name, int value)
 {
 	if (!strcmp(option_name, kOptionReportClipping))
-		Option::reportClipping((bool) value);
+		RTOption::reportClipping((bool) value);
 	else if (!strcmp(option_name, kOptionCheckPeaks))
-		Option::checkPeaks((bool) value);
+		RTOption::checkPeaks((bool) value);
 	else if (!strcmp(option_name, kOptionClobber))
-		Option::clobber((bool) value);
+		RTOption::clobber((bool) value);
 	else if (!strcmp(option_name, kOptionAudio))
-		Option::audio((bool) value);
+		RTOption::audio((bool) value);
 	else if (!strcmp(option_name, kOptionPlay))
-		Option::play((bool) value);
+		RTOption::play((bool) value);
 	else if (!strcmp(option_name, kOptionRecord))
-		Option::record((bool) value);
+		RTOption::record((bool) value);
 	else if (!strcmp(option_name, kOptionExitOnError))
-		Option::exitOnError((bool) value);
+		RTOption::exitOnError((bool) value);
     else if (!strcmp(option_name, kOptionBailOnError))
-        Option::bailOnError((bool) value);
+        RTOption::bailOnError((bool) value);
 	else if (!strcmp(option_name, kOptionAutoLoad))
-		Option::autoLoad((bool) value);
+		RTOption::autoLoad((bool) value);
 	else if (!strcmp(option_name, kOptionFastUpdate))
-		Option::fastUpdate((bool) value);
+		RTOption::fastUpdate((bool) value);
 	else if (!strcmp(option_name, kOptionRequireSampleRate))
-		Option::requireSampleRate((bool) value);
+		RTOption::requireSampleRate((bool) value);
 	else
 		assert(0 && "unsupported option name");
 }
@@ -620,15 +620,15 @@ void set_bool_option(const char *option_name, int value)
 double get_double_option(const char *option_name)
 {
 	if (!strcmp(option_name, kOptionBufferFrames))
-		return Option::bufferFrames();
+		return RTOption::bufferFrames();
 	else if (!strcmp(option_name, kOptionBufferCount))
-		return Option::bufferCount();
+		return RTOption::bufferCount();
 	else if (!strcmp(option_name, kOptionPrint))
-		return Option::print();
+		return RTOption::print();
     else if (!strcmp(option_name, kOptionParserWarnings))
-        return Option::parserWarnings();
+        return RTOption::parserWarnings();
 	else if (!strcmp(option_name, kOptionMuteThreshold))
-		return Option::muteThreshold();
+		return RTOption::muteThreshold();
 
 	assert(0 && "unsupported option name");
 	return 0;
@@ -637,15 +637,15 @@ double get_double_option(const char *option_name)
 void set_double_option(const char *option_name, double value)
 {
 	if (!strcmp(option_name, kOptionBufferFrames))
-		Option::bufferFrames(value);
+		RTOption::bufferFrames(value);
 	else if (!strcmp(option_name, kOptionBufferCount))
-		Option::bufferCount((int)value);
+		RTOption::bufferCount((int)value);
 	else if (!strcmp(option_name, kOptionPrint))
-		Option::print((int)value);
+		RTOption::print((int)value);
     else if (!strcmp(option_name, kOptionParserWarnings))
-        Option::parserWarnings((int)value);
+        RTOption::parserWarnings((int)value);
 	else if (!strcmp(option_name, kOptionMuteThreshold))
-		Option::muteThreshold(value);
+		RTOption::muteThreshold(value);
 	else
 		assert(0 && "unsupported option name");
 }
@@ -653,17 +653,17 @@ void set_double_option(const char *option_name, double value)
 char *get_string_option(const char *option_name)
 {
 	if (!strcmp(option_name, kOptionDevice))
-		return Option::device();
+		return RTOption::device();
 	else if (!strcmp(option_name, kOptionInDevice))
-		return Option::inDevice();
+		return RTOption::inDevice();
 	else if (!strcmp(option_name, kOptionOutDevice))
-		return Option::outDevice();
+		return RTOption::outDevice();
 	else if (!strcmp(option_name, kOptionOutDevice2))
-		return Option::outDevice(1);
+		return RTOption::outDevice(1);
 	else if (!strcmp(option_name, kOptionOutDevice3))
-		return Option::outDevice(2);
+		return RTOption::outDevice(2);
 	else if (!strcmp(option_name, kOptionDSOPath))
-		return Option::dsoPath();
+		return RTOption::dsoPath();
 
 	assert(0 && "unsupported option name");
 	return 0;
@@ -672,17 +672,17 @@ char *get_string_option(const char *option_name)
 void set_string_option(const char *option_name, const char *value)
 {
 	if (!strcmp(option_name, kOptionDevice))
-		Option::device(value);
+		RTOption::device(value);
 	else if (!strcmp(option_name, kOptionInDevice))
-		Option::inDevice(value);
+		RTOption::inDevice(value);
 	else if (!strcmp(option_name, kOptionOutDevice))
-		Option::outDevice(value);
+		RTOption::outDevice(value);
 	else if (!strcmp(option_name, kOptionOutDevice2))
-		Option::outDevice(value, 1);
+		RTOption::outDevice(value, 1);
 	else if (!strcmp(option_name, kOptionOutDevice3))
-		Option::outDevice(value, 2);
+		RTOption::outDevice(value, 2);
 	else if (!strcmp(option_name, kOptionDSOPath))
-		Option::dsoPath(value);
+		RTOption::dsoPath(value);
 	else
 		assert(0 && "unsupported option name");
 }
@@ -690,6 +690,6 @@ void set_string_option(const char *option_name, const char *value)
 // This is so we can call dump from within GDB.
 void option_dump()
 {
-	Option::dump();
+	RTOption::dump();
 }
 

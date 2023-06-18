@@ -9,7 +9,7 @@
 #include <spray.h>
 #include <sfheader.h>
 #include <maxdispargs.h>
-#include <Option.h>
+#include <RTOption.h>
 #include "prototypes.h"
 
 #define ARRAY_SIZE 256

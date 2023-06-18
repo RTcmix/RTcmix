@@ -11,7 +11,7 @@
 #include "prototypes.h"
 #include <ug_intro.h>
 #include <string.h>
-#include <Option.h>
+#include <RTOption.h>
 
 #define WARN_DUPLICATES
 
@@ -89,7 +89,7 @@ RTcmix::addfunc(
    this_node->func_label = func_label;
    this_node->legacy = legacy;
 
-    bool autoload = Option::autoLoad();
+    bool autoload = RTOption::autoLoad();
    /* Place new node at tail of list.  Warn if this function name is already
       in list.
    */
@@ -158,7 +158,7 @@ RTcmix::printargs(const char *funcname, const Arg arglist[], const int nargs)
    int i;
    Arg arg;
 
-   if (Option::print() >= MMP_PRINTALL) {
+   if (RTOption::print() >= MMP_PRINTALL) {
       RTPrintf("============================\n");
       RTPrintfCat("%s:  ", funcname);
       for (i = 0; i < nargs; i++) {

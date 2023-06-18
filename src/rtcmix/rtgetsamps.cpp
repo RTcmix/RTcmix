@@ -14,13 +14,13 @@
 #include "rtdefs.h"
 #include <AudioDevice.h>
 #include <ugens.h>
-#include "Option.h"
+#include "RTOption.h"
 
 /* ----------------------------------------------------------- rtgetsamps --- */
 void
 RTcmix::rtgetsamps(AudioDevice *inputDevice)
 {
-	assert(Option::record() == true);
+	assert(RTOption::record() == true);
 
 	if (inputDevice->getFrames(audioin_buffer, bufsamps()) < 0)
 	{

@@ -39,7 +39,7 @@
 #include <assert.h>
 #include <ugens.h>
 #include <PField.h>
-#include <Option.h>     // for fastUpdate
+#include <RTOption.h>     // for fastUpdate
 #include "TRANS.h"
 #include <rt.h>
 
@@ -93,7 +93,7 @@ TRANS::~TRANS()
 
 void TRANS::initamp(float dur, double p[], int ampindex, int ampgenslot)
 {
-   fastUpdate = Option::fastUpdate();
+   fastUpdate = RTOption::fastUpdate();
    if (fastUpdate) {
       // Prefer PField table, otherwise makegen
       int tablen = 0;

@@ -14,7 +14,7 @@
 #include "AudioDevice.h"
 #include "audio_devices.h"
 #include "rtdefs.h"
-#include <Option.h>
+#include <RTOption.h>
 
 
 /* The syntax of rtoutput is expanded when using sndlib:
@@ -331,7 +331,7 @@ RTcmix::rtoutput(float p[], int n_args, double pp[])
 
    // If user has chosen to turn off audio playback, we delete
    // the device that might have been created during rtsetparams().
-   if (!Option::record() && !Option::play()) {
+   if (!RTOption::record() && !RTOption::play()) {
        delete audioDevice;
 	   audioDevice = NULL;
    }

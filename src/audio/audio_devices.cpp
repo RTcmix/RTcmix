@@ -13,7 +13,7 @@
 #include <ugens.h>
 #include <prototypes.h>
 #include <assert.h>
-#include <Option.h>
+#include <RTOption.h>
 
 #include "AudioDevice.h"
 #include "AudioFileDevice.h"
@@ -38,29 +38,29 @@ char globalNetworkPath[128];			// Set by Minc/setnetplay.c
 #ifdef UNUSED
 static const char *get_audio_device_name()
 {
-	if (strlen(Option::inDevice()) || strlen(Option::outDevice()))
+	if (strlen(RTOption::inDevice()) || strlen(RTOption::outDevice()))
 		return NULL;
-	if (strlen(Option::device()))
-		return Option::device();
+	if (strlen(RTOption::device()))
+		return RTOption::device();
 	return NULL;
 }
 #endif
 
 static const char *get_audio_indevice_name()
 {
-	if (strlen(Option::inDevice()))
-		return Option::inDevice();
-	else if (strlen(Option::device()))
-		return Option::device();
+	if (strlen(RTOption::inDevice()))
+		return RTOption::inDevice();
+	else if (strlen(RTOption::device()))
+		return RTOption::device();
 	return NULL;
 }
 
 static const char *get_audio_outdevice_name(int devIndex)
 {
-	if (strlen(Option::outDevice(devIndex)))
-		return Option::outDevice(devIndex);
-	else if (devIndex == 0 && strlen(Option::device()))
-		return Option::device();
+	if (strlen(RTOption::outDevice(devIndex)))
+		return RTOption::outDevice(devIndex);
+	else if (devIndex == 0 && strlen(RTOption::device()))
+		return RTOption::device();
 	return NULL;
 }
 
@@ -91,16 +91,16 @@ create_audio_devices(int record, int play, int chans, float *ioSrate, int *buffe
 	int audioFormat = NATIVE_FLOAT_FMT | MUS_NON_INTERLEAVED;
 	device->setFrameFormat(audioFormat, chans);
 	
-	double muteThreshold = Option::muteThreshold();
+	double muteThreshold = RTOption::muteThreshold();
 	if (muteThreshold > 0.0)
 		device->setMuteThreshold(muteThreshold);
 
 	int openMode = (record && play) ? AudioDevice::RecordPlayback
 				   : (record) ? AudioDevice::Record
 				   : AudioDevice::Playback;
-	if (Option::checkPeaks())
+	if (RTOption::checkPeaks())
 		openMode |= AudioDevice::CheckPeaks;
-	if (Option::reportClipping())
+	if (RTOption::reportClipping())
 		openMode |= AudioDevice::ReportClipping;
 
 #if DEBUG > 0
@@ -165,8 +165,8 @@ create_audio_file_device(AudioDevice *inDevice,
 	// Here is the logic for opening the file device.  We do this all in
 	// advance now, rather than over and over during rtwritesamps().
 
-	const bool recording = Option::record();
-	const bool playing = Option::play();
+	const bool recording = RTOption::record();
+	const bool playing = RTOption::play();
 	const bool fileIsRawFloats = IS_FLOAT_FORMAT(sample_format) && !normalize_output_floats;
 	
 	int openMode = AudioFileDevice::Playback;
@@ -174,7 +174,7 @@ create_audio_file_device(AudioDevice *inDevice,
 		openMode |= AudioDevice::Passive;		// Don't run thread for file device.
 	if (!fileIsRawFloats || (check_peaks && !playing))
 		openMode |= AudioDevice::CheckPeaks;	// Dont check peaks if HW already doing so.
-	if (Option::reportClipping() && !playing)
+	if (RTOption::reportClipping() && !playing)
 		openMode |= AudioDevice::ReportClipping;	// Ditto for reporting of clipping
 
 #if DEBUG > 0
@@ -247,7 +247,7 @@ create_audio_file_device(AudioDevice *inDevice,
 		}
 	}
 
-	if (Option::print()) {
+	if (RTOption::print()) {
 		 printf("Output file set for writing:\n");
 		 printf("      name:  %s\n", outfilename);
 		 printf("      type:  %s\n", mus_header_type_name(header_type));

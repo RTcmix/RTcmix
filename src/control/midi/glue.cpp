@@ -7,7 +7,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <rtcmix_types.h>
-#include <Option.h>
+#include <RTOption.h>
 #include <PField.h>
 #include <utils.h>	// in ../../rtcmix
 #include "RTcmixMIDI.h"
@@ -143,7 +143,7 @@ static void
 _read_config()
 {
 #ifdef NOTYET
-	char *names = strdup(Option::midiCntlNames());
+	char *names = strdup(RTOption::midiCntlNames());
 	char *p, buf[128];
 	int i = 0;
 	int j = 0;

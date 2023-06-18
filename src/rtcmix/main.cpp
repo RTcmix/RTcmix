@@ -95,13 +95,13 @@ main(int argc, char *argv[], char **env)
 
 #else // EMBEDDED
 
-#include "Option.h"
+#include "RTOption.h"
 
 static RTcmixMain *globalApp;
 
 void RTcmix_setPrintLevel(int level)
 {
-	Option::print(level);
+	RTOption::print(level);
 }
 
 /* ----------------------------------------------------------- RTcmix_init --- */

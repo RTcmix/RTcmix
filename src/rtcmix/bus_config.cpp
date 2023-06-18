@@ -15,7 +15,7 @@
 #include "prototypes.h"
 #include "InputFile.h"
 #include <lock.h>
-#include <Option.h>
+#include <RTOption.h>
   
 //#define PRINTPLAY
 //#define DEBUG
@@ -607,7 +607,7 @@ RTcmix::get_bus_config(const char *inst_name)
    index = get_last_input_index();
    /* Otherwise grab from audio device, if active */
    if (index == -1) {
-	 if (Option::record() && Option::play())
+	 if (RTOption::record() && RTOption::play())
 	   in_chans = NCHANS;
 	 else
 	   in_chans = 0;

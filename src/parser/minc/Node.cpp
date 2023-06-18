@@ -47,7 +47,7 @@
 #include "Scope.h"
 #include "Symbol.h"
 #include "handle.h"
-#include <Option.h>
+#include <RTOption.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1043,7 +1043,7 @@ void NodeCall::callMincFunctionFromNode(Node *functionNode)
         Node * temp = NULL;
         try {
             // This replicates the argument-printing mechanism used by compiled-in functions.
-            if (Option::print() >= MMP_PRINTS) {
+            if (RTOption::print() >= MMP_PRINTS) {
                 RTPrintf("============================\n");
                 RTPrintfCat("%s: ", nameFromMangledName(sCalledFunctions.back()));
                 MincValue retval;

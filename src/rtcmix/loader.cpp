@@ -3,7 +3,7 @@
 #include <string.h>
 #include "globals.h"
 #include <ugens.h>
-#include <Option.h>
+#include <RTOption.h>
 
 #include "DynamicLib.h"
 

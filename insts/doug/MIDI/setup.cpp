@@ -5,7 +5,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <Option.h>
+#include <RTOption.h>
 #include "../../../src/rtcmix/DynamicLib.h"
 #include <RTMIDIOutput.h>
 #include <ugens.h>
@@ -25,7 +25,7 @@ setup_midi(float *p, int n_args)
 {
 #ifndef EMBEDDED
     char loadPath[1024];
-    const char *dsoPath = Option::dsoPath();
+    const char *dsoPath = RTOption::dsoPath();
     if (strlen(dsoPath) == 0) {
         dsoPath = SHAREDLIBDIR;
     }

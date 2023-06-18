@@ -43,7 +43,7 @@
 #include <sys/time.h>
 #include <sys/times.h>
 #include <string.h>
-#include <Option.h>
+#include <RTOption.h>
 
 
 /* Used to determine if we should swap endian-ness */

@@ -19,7 +19,7 @@
 #include <rtdefs.h>
 #include <prototypes.h>
 #include <ugens.h>
-#include <Option.h>
+#include <RTOption.h>
 #ifdef MAXMSP
 // BGG -- this is how you print to the console.app now in max/msp
 extern void cpost(const char *fmt, ...);

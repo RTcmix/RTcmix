@@ -41,7 +41,7 @@
 #include <PFieldSet.h>
 #include <rt.h>
 #include <rtdefs.h>
-#include <Option.h>
+#include <RTOption.h>
 #include <MMPrint.h>
 #include "CHAIN.h"
 
@@ -79,7 +79,7 @@ int  CHAIN::setup(PFieldSet *inPFields)
 		// Instruments are referenced once when created.  Because CHAIN is the sole owner,
 		// we do not do another reference.
 	}
-	if (Option::print() >= MMP_PRINTALL) {
+	if (RTOption::print() >= MMP_PRINTALL) {
 
 		RTPrintfCat("Instrument chain: ");
 		for (std::vector<Instrument *>::iterator it = mInstVector.begin(); it != mInstVector.end(); ++it) {

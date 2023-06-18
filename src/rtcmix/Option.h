@@ -2,26 +2,26 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-#ifndef _OPTION_H_
-#define _OPTION_H_ 1
+#ifndef _RTOPTION_H_
+#define _RTOPTION_H_ 1
 
 /* Class for storing all our run-time options.
 
    The class is static, containing only static members and methods.  To 
    use from C++, refer to the method you want with the class name prefix:
 
-      if (Option::print())
+      if (RTOption::print())
          print some stuff
 
    From C code, you must use the get* and set* functions at the bottom
    of this file.
 
-   You must call Option::init() early in main() so that some data members
+   You must call RTOption::init() early in main() so that some data members
    will be initialized.
 
    ---
 
-   To add new options, you need to edit Option.cpp/h and set_option.cpp.
+   To add new options, you need to edit RTOption.cpp/h and set_option.cpp.
    Please add your option after the existing ones of the same type (bool,
    number or string), so that each block of changes has all the options
    in the same order.  This makes it easier to find things.
@@ -32,28 +32,28 @@
 
    2. Add static accessor definitions for a bool, number or string option
       below.  Note that (only) the string setter function must be declared
-      here and defined in Option.cpp (search for "String option setting
+      here and defined in RTOption.cpp (search for "String option setting
       methods").  Numbers can be int or double.
 
    3. Add a private static member variable to hold the option state, below.
 
-   4. Initialize the static member variable at the top of Option.cpp.
-      Strings must be initialized instead in the init method, in Option.cpp.
+   4. Initialize the static member variable at the top of RTOption.cpp.
+      Strings must be initialized instead in the init method, in RTOption.cpp.
 
-   5. Add code to Option::readConfigFile (Option.cpp) for your option.
+   5. Add code to RTOption::readConfigFile (RTOption.cpp) for your option.
       Keep bool, number and string options separate, as they are now.
 
-   6. Add code to Option::writeConfigFile (Option.cpp) for your option.
+   6. Add code to RTOption::writeConfigFile (RTOption.cpp) for your option.
 
-   7. Add a line to Option::dump() (Option.cpp).
+   7. Add a line to RTOption::dump() (RTOption.cpp).
 
    8. If your option would need to be read/written from a C file, add it
       to the appropriate get_* and set_* C functions at the bottom of 
-      Option.cpp.
+      RTOption.cpp.
 
    9. Add a symbol to the ParamType enum at the top of set_option.cpp.
       Please keep all items in set_option.cpp in the same order that
-      they appear in Option.cpp/h, for ease of maintenance.
+      they appear in RTOption.cpp/h, for ease of maintenance.
 
   10. Below this enum, add an entry to the _param_list array.
 
@@ -125,10 +125,10 @@
 
 #ifdef __cplusplus
 
-class Option {
+class RTOption {
 public:
-	Option() {};
-	~Option() {};
+	RTOption() {};
+	~RTOption() {};
 
 	// must call this to initialize string members
 	static void init();
@@ -297,4 +297,4 @@ void option_dump(void);
 } // extern "C"
 #endif
 
-#endif /* _OPTION_H_ */
+#endif /* _RTOPTION_H_ */

@@ -7,7 +7,7 @@
 #include <rtcmix_types.h>
 #include <PField.h>
 #include "DataFile.h"
-#include <Option.h>		// for clobber
+#include <RTOption.h>		// for clobber
 #include "utils.h"
 #include <ugens.h>		// for warn, die
 
@@ -104,7 +104,7 @@ makemonitor(const Arg args[], const int nargs)
 			}
 		}
 
-		monitor = new DataFileWriterPField(innerpf, filename, Option::clobber(),
+		monitor = new DataFileWriterPField(innerpf, filename, RTOption::clobber(),
 									resetval, filerate, formatcode, false);
 
 	}

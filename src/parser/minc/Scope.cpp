@@ -10,7 +10,7 @@
 #include "RefCounted.h"
 #include "Symbol.h"
 #include "minc_internal.h"
-#include "Option.h"
+#include "RTOption.h"
 #include <vector>
 #include <string.h>
 
@@ -288,7 +288,7 @@ Symbol * lookupOrAutodeclare(const char *name, Bool inFunctionCall)
         if (sym) {
             DPRINT("\tfound it\n");
             // lookupOrAutodeclare is only used for lvalues, so we know we're going to modify this
-            if (inFunctionCall && sym->scope() == 0 && Option::parserWarnings() > 1) {
+            if (inFunctionCall && sym->scope() == 0 && RTOption::parserWarnings() > 1) {
                 minc_advise("Careful -- modifying global variable '%s' within a function", name);
             }
         }

@@ -10,7 +10,7 @@
 #include "rtcmix_parse.h"
 #include <ugens.h>
 #include "rtdefs.h"
-#include <Option.h>
+#include <RTOption.h>
 
 typedef struct yy_buffer_state * YY_BUFFER_STATE;
 #if BISON_VERSION >= 3 || !defined(MACOSX)

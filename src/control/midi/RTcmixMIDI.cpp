@@ -9,7 +9,7 @@
 #include <string.h>
 #include <limits.h>
 #include <assert.h>
-#include <Option.h>
+#include <RTOption.h>
 #include <RTcmix.h>
 
 #define DEBUG 0
@@ -91,7 +91,7 @@ int RTcmixMIDIInput::init()
 	Pm_Initialize();
 
 	int id = 0;
-	const char *devname = Option::midiInDevice();
+	const char *devname = RTOption::midiInDevice();
 #if DEBUG
 	printf("Requested MIDI input device: \"%s\"\n", devname);
 #endif
@@ -380,7 +380,7 @@ int RTcmixMIDIOutput::init()
 {
     Pm_Initialize();
     
-    const char *devname = Option::midiOutDevice();
+    const char *devname = RTOption::midiOutDevice();
 #if DEBUG
     printf("Requested MIDI output device: \"%s\"\n", devname);
 #endif

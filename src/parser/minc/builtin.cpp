@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <Option.h>
+#include <RTOption.h>
 #include <ugens.h>
 #include <rtdefs.h>
 
@@ -156,7 +156,7 @@ _do_print(const MincValue args[], const int nargs)
 			  MincList *list = (MincList *)args[i];
 			if (list != NULL) {
 				RTPrintfCat("[");
-                unsigned printLimit = (unsigned)Option::printListLimit();
+                unsigned printLimit = (unsigned)RTOption::printListLimit();
                 if (printLimit < list->len) {
                     _do_print(list->data, printLimit);
                     RTPrintfCat(", ...]%s", delimiter);

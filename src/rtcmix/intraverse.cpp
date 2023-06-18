@@ -15,7 +15,7 @@
 #include "rtdefs.h"
 #include <AudioDevice.h>
 #include <Instrument.h>
-#include <Option.h>
+#include <RTOption.h>
 #include <bus.h>
 #include "BusSlot.h"
 #include "dbug.h"
@@ -67,7 +67,7 @@ int RTcmix::runMainLoop(void)
 	// Wait for the ok to go ahead
 	::pthread_mutex_lock(&audio_config_lock);
 	if (!audio_config) {
-		if (Option::print())
+		if (RTOption::print())
 			RTPrintf("runMainLoop():  waiting for audio_config . . .\n");
 	}
 	::pthread_mutex_unlock(&audio_config_lock);
@@ -100,7 +100,7 @@ int RTcmix::runMainLoop(void)
 
 #ifndef EMBEDDED
 	if (audio_configured && interactive()) {
-		if (Option::print())
+		if (RTOption::print())
 			RTPrintf("runMainLoop():  audio configured.\n");
 	}
 #else
@@ -751,11 +751,11 @@ bool RTcmix::doneTraverse(AudioDevice *device, void *arg)
 #endif
     callStopCallbacks();
 #ifndef EMBEDDED
-	if (Option::print())
+	if (RTOption::print())
 		RTPrintf("\nclosing...\n");
 	RTPrintf("Output duration: %.2f seconds\n", bufEndSamp / sr());
 	rtreportstats(device);
-	if (Option::print())
+	if (RTOption::print())
 		RTPrintf("\n");
 #endif
 	audioDone = true;	// This signals waitForMainLoop()

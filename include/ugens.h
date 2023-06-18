@@ -235,7 +235,7 @@ void rtcmix_advise(const char *inst_name, const char *format, ...);
 void rtcmix_warn(const char *inst_name, const char *format, ...);
 void rterror(const char *inst_name, const char *format, ...);
 void rtcmix_print(const char *format, ...);
-/* returns DONT_SCHEDULE if !Option::exitOnError() */
+/* returns DONT_SCHEDULE if !RTOption::exitOnError() */
 int die(const char *inst_name, const char *format, ...);
 RTCmixStatus rtOptionalThrow(RTCmixStatus status);
 

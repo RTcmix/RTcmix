@@ -13,7 +13,7 @@
 
 #include "RTcmixMain.h"
 #include <AudioDevice.h>
-#include <Option.h>
+#include <RTOption.h>
 #include "version.h"
 #include <ugens.h>
 #include <ug_intro.h>
@@ -215,7 +215,7 @@ RTcmixMain::RTcmixMain(int argc, char **argv, char **env) : RTcmix(false)
 	RTPrintf("--------> %s %s <--------\n",
 			RTCMIX_NAME, RTCMIX_VERSION);
 #else
-	if (Option::print())
+	if (RTOption::print())
 	   RTPrintf("--------> %s %s (%s) <--------\n",
              RTCMIX_NAME, RTCMIX_VERSION, argv[0]);
 #endif
@@ -267,14 +267,14 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
             case 'i':               /* for separate parseit thread */
                setInteractive(true);
                audio_config = 0;
-               Option::exitOnError(false);  /* we cannot simply quit when in interactive mode */
+               RTOption::exitOnError(false);  /* we cannot simply quit when in interactive mode */
                break;
             case 'o':
 #ifdef OSC
                 setInteractive(true);
                 setUseOSC(true);
                 audio_config = 0;
-                Option::exitOnError(false);
+                RTOption::exitOnError(false);
 #else
                  fprintf(stderr, "This build does not include OSC support\n");
                  exit(1);
@@ -287,10 +287,10 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                parseOnly = 1;		/* parser testing */
                break;
             case 'Q':               /* really quiet */
-               Option::reportClipping(false);
-               Option::checkPeaks(false); /* (then fall through) */
+               RTOption::reportClipping(false);
+               RTOption::checkPeaks(false); /* (then fall through) */
             case 'q':               /* quiet */
-               Option::print(0);
+               RTOption::print(0);
                break;
             case 'v':               /* verbosity */
                if (++i >= argc) {
@@ -302,7 +302,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                   fprintf(stderr, "Print level must be between %d and %d.\n", MMP_FATAL, MMP_DEBUG);
                   printlevel = MMP_DEBUG;
                }
-				Option::print(printlevel);
+				RTOption::print(printlevel);
                break;
 #ifdef LINUX
             case 'p':
@@ -318,7 +318,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                   fprintf(stderr, "You didn't give an audio device name.\n");
                   exit(1);
                }
-               Option::device(argv[i]);
+               RTOption::device(argv[i]);
                break;
 #ifdef NETAUDIO
             case 'r':               /* set up for network playing */
@@ -732,7 +732,7 @@ RTcmixMain::sockit(void *arg)
 		pthread_mutex_lock(&audio_config_lock);
 		if (!audio_config) {
 #ifndef EMBEDDED
-		  if (Option::print())
+		  if (RTOption::print())
               RTPrintf("RTcmixMain::sockit():  no-parse mode, so waiting for audio_config . . . \n");
 #endif
 		}
@@ -785,7 +785,7 @@ RTcmixMain::sockit(void *arg)
             }
         }
 		if (audio_configured && interactive()) {
-			if (Option::print())
+			if (RTOption::print())
                 RTPrintf("RTcmixMain::sockit(): audio configured.\n");
 		}
 	  }

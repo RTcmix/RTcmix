@@ -14,7 +14,7 @@
 #include "rtcmix_types.h"
 #include <PField.h>
 #include <ugens.h>		// for warn, die
-#include <Option.h>
+#include <RTOption.h>
 
 #include "DynamicLib.h"
 
@@ -58,7 +58,7 @@ makeconnection(const Arg args[], const int nargs)
 #ifndef EMBEDDED
 	const char *selector = (const char *) args[0];
 	char loadPath[1024];
-	const char *dsoPath = Option::dsoPath();
+	const char *dsoPath = RTOption::dsoPath();
 	if (strlen(dsoPath) == 0)
 		dsoPath = SHAREDLIBDIR;
 	sprintf(loadPath, "%s/lib%sconn.so", dsoPath, selector);

@@ -26,7 +26,7 @@
 #include "InputFile.h"
 #include <ugens.h>
 #include <RTcmix.h>
-#include <Option.h>
+#include <RTOption.h>
 #include "utils.h"
 #include <ug_intro.h>
 #include <AudioDevice.h>
@@ -145,30 +145,30 @@ void
 RTcmix::init_options(bool fromMain, const char *defaultDSOPath)
 {
 	rtcmix_debug(NULL, "RTcmix::init_options entered");
-	Option::init();
+	RTOption::init();
 	if (defaultDSOPath && defaultDSOPath[0])
-		Option::dsoPathPrepend(defaultDSOPath);
+		RTOption::dsoPathPrepend(defaultDSOPath);
 	
 	if (fromMain) {
 #ifndef EMBEDDED
-		Option::readConfigFile(Option::rcName());
-		Option::exitOnError(true); // we do this no matter what is in config file
+		RTOption::readConfigFile(RTOption::rcName());
+		RTOption::exitOnError(true); // we do this no matter what is in config file
 #else
-		Option::exitOnError(false);
-        Option::print(6);
+		RTOption::exitOnError(false);
+        RTOption::print(6);
 #endif
         setInteractive(false);
 	}
 	else {
 		setSR(44100.0); // what the heck...
-		Option::print(0);
-		Option::reportClipping(false);
+		RTOption::print(0);
+		RTOption::reportClipping(false);
 	}
 	
-	setRTBUFSAMPS((int) Option::bufferFrames());  /* modifiable with rtsetparams */
+	setRTBUFSAMPS((int) RTOption::bufferFrames());  /* modifiable with rtsetparams */
 
-	if (Option::autoLoad()) {
-		const char *dsoPath = Option::dsoPath();
+	if (RTOption::autoLoad()) {
+		const char *dsoPath = RTOption::dsoPath();
 		if (strlen(dsoPath) == 0)
 			registerDSOs(SHAREDLIBDIR);
 		else
@@ -368,7 +368,7 @@ RTcmix::init(float tsr, int tnchans, int bsize,
 	nargs = 3;
 	rtsetparams(p, nargs, pp);
 
-	if (Option::play() || Option::record()) {
+	if (RTOption::play() || RTOption::record()) {
 		int retcode = runMainLoop();
 		if (retcode != 0)
 			fprintf(stderr, "runMainLoop() failed\n");
@@ -540,8 +540,8 @@ RTcmix::cmdval(const char *name, int n_args, const char* p0, ...)
 
 void RTcmix::printOn()
 {
-	Option::print(MMP_PRINTALL);
-	Option::reportClipping(true);
+	RTOption::print(MMP_PRINTALL);
+	RTOption::reportClipping(true);
 
 	/* Banner */
 	char tbuf[128];
@@ -551,8 +551,8 @@ void RTcmix::printOn()
 
 void RTcmix::printOff()
 {
-	Option::print(MMP_FATAL);
-	Option::reportClipping(false);
+	RTOption::print(MMP_FATAL);
+	RTOption::reportClipping(false);
 }
 
 void RTcmix::panic()
@@ -567,7 +567,7 @@ void RTcmix::panic()
 void RTcmix::run()
 {
 	int retcode;
-	if (!Option::play() && !Option::record() && rtfileit == 1) {
+	if (!RTOption::play() && !RTOption::record() && rtfileit == 1) {
 		/* Create scheduling/audio thread. */
 		rtcmix_debug(NULL, "RTcmix::run calling runMainLoop()");
 		retcode = runMainLoop();

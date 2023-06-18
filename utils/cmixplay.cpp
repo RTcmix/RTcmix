@@ -24,7 +24,7 @@
 #include <sndlibsupport.h>
 #include <AudioDevice.h>
 #include <audio_devices.h>
-#include "../src/rtcmix/Option.h"
+#include "../src/rtcmix/RTOption.h"
 
 
 #define PROGNAME  "cmixplay"
@@ -1025,11 +1025,11 @@ main(int argc, char *argv[])
    if (argc < 2)
       usage();
 
-   Option::init();
-   Option::readConfigFile(Option::rcName());
+   RTOption::init();
+   RTOption::readConfigFile(RTOption::rcName());
 
    file_name = NULL;
-   device_name = Option::device();
+   device_name = RTOption::device();
 	requested_bufframes = 0;
    force = autopause = false;
    print_time = print_file_info = print_warnings = true;
@@ -1141,7 +1141,7 @@ main(int argc, char *argv[])
    }
 
    if (requested_bufframes <= 0)
-   	requested_bufframes = Option::bufferFrames();
+   	requested_bufframes = RTOption::bufferFrames();
 
    // Set up terminal to handle hotkey input.
    if (hotkeys) {

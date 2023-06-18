@@ -4,11 +4,11 @@
 */
 // The set_option function, called from a script, lets the user override
 // default options (and those stored in the .rtcmixrc file).  The options
-// are kept in the <options> object.  See Option.h for advice on how to add
+// are kept in the <options> object.  See RTOption.h for advice on how to add
 // new options.
 //
 // Please keep the items created in the steps above in the same order that they
-// appear in Option.h -- makes this file easier to maintain.
+// appear in RTOption.h -- makes this file easier to maintain.
 //
 // -JGG, 6/30/04, rev. 4/10/05
 
@@ -19,7 +19,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
-#include <Option.h>
+#include <RTOption.h>
 
 enum ParamType {
 	AUDIO,
@@ -61,7 +61,7 @@ struct Param {
 
 static Param _param_list[] = {
 	// These are key=value option strings.  Please list these in the order in 
-	// which they appear in Option.h, to make it easier to compare.
+	// which they appear in RTOption.h, to make it easier to compare.
 
 	// bool options
 	{ kOptionAudio, AUDIO, false},
@@ -164,15 +164,15 @@ static int _set_full_duplex(const bool full_duplex,
 #endif
 
 	if (full_duplex)
-		Option::record(true);
+		RTOption::record(true);
 	else {
 		// If not play, then record.
-		bool state = Option::record() && !Option::play();
-		Option::record(state);
+		bool state = RTOption::record() && !RTOption::play();
+		RTOption::record(state);
 	}
 	// Same check as above, for record.
 #ifndef EMBEDDED
-	if (Option::record() && rtsetparams_called)
+	if (RTOption::record() && rtsetparams_called)
 		return die("set_option",
 					"Turn on record BEFORE calling rtsetparams.");
 #endif
@@ -206,51 +206,51 @@ static int _set_key_value_option(const char *key, const char *sval,
 
 		case AUDIO:
 			status = _str_to_bool(sval, bval);
-			Option::audio(bval);
+			RTOption::audio(bval);
 			break;
 		case PLAY:
 			status = _str_to_bool(sval, bval);
-			Option::play(bval);
+			RTOption::play(bval);
 			break;
 		case RECORD:
 			status = _str_to_bool(sval, bval);
-			Option::record(bval);
+			RTOption::record(bval);
 #ifndef EMBEDDED
-			if (Option::record() && rtsetparams_called)
+			if (RTOption::record() && rtsetparams_called)
 				return die("set_option",
 							"Turn on record BEFORE calling rtsetparams.");
 #endif
 			break;
 		case CLOBBER:
 			status = _str_to_bool(sval, bval);
-			Option::clobber(bval);
+			RTOption::clobber(bval);
 			break;
 		case REPORT_CLIPPING:
 			status = _str_to_bool(sval, bval);
-			Option::reportClipping(bval);
+			RTOption::reportClipping(bval);
 			break;
 		case CHECK_PEAKS:
 			status = _str_to_bool(sval, bval);
-			Option::checkPeaks(bval);
+			RTOption::checkPeaks(bval);
 			break;
 		case EXIT_ON_ERROR:
 			status = _str_to_bool(sval, bval);
-			Option::exitOnError(bval);
+			RTOption::exitOnError(bval);
 			break;
 		case AUTO_LOAD:
 			status = _str_to_bool(sval, bval);
-			Option::autoLoad(bval);
+			RTOption::autoLoad(bval);
 			break;
 		case FAST_UPDATE:
 			status = _str_to_bool(sval, bval);
-			Option::fastUpdate(bval);
+			RTOption::fastUpdate(bval);
 			if (bval)
 				rtcmix_warn("set_option", "With \"%s\" on, certain instruments run "
 					"faster at the expense of reduced capabilities.\n", key);
 			break;
 		case REQUIRE_SAMPLE_RATE:
 			status = _str_to_bool(sval, bval);
-			Option::requireSampleRate(bval);
+			RTOption::requireSampleRate(bval);
 			break;
 
 		// number options
@@ -260,7 +260,7 @@ static int _set_key_value_option(const char *key, const char *sval,
 			if (status == 0) {
 				if (ival <= 0)
 					return die("set_option", "\"%s\" value must be > 0", key);
-				Option::bufferFrames(ival);
+				RTOption::bufferFrames(ival);
 			}
 			break;
 		case BUFFER_COUNT:
@@ -268,7 +268,7 @@ static int _set_key_value_option(const char *key, const char *sval,
 			if (status == 0) {
 				if (ival <= 0)
 					return die("set_option", "\"%s\" value must be > 0", key);
-				Option::bufferCount(ival);
+				RTOption::bufferCount(ival);
 			}
 			break;
 		case OSC_INPORT:
@@ -276,47 +276,47 @@ static int _set_key_value_option(const char *key, const char *sval,
 			if (status == 0) {
 				if (ival <= 0)
 					return die("set_option", "\"%s\" value must be > 0", key);
-				Option::oscInPort(ival);
+				RTOption::oscInPort(ival);
 			}
 			break;
 		case PRINT:
 			status = _str_to_int(sval, ival);
-			Option::print(ival);
+			RTOption::print(ival);
 			break;
         case PARSER_WARNINGS:
             status = _str_to_int(sval, ival);
-            Option::parserWarnings(ival);
+            RTOption::parserWarnings(ival);
             break;
 		case MUTE_THRESHOLD:
 			status = _str_to_double(sval, dval);
-			Option::muteThreshold(dval);
+			RTOption::muteThreshold(dval);
 			break;
 
 		// string options
 
 		case DEVICE:
-			Option::device(sval);
+			RTOption::device(sval);
 			break;
 		case INDEVICE:
-			Option::inDevice(sval);
+			RTOption::inDevice(sval);
 			break;
 		case OUTDEVICE:
-			Option::outDevice(sval);
+			RTOption::outDevice(sval);
 			break;
 		case MIDI_INDEVICE:
-			Option::midiInDevice(sval);
+			RTOption::midiInDevice(sval);
 			break;
 		case MIDI_OUTDEVICE:
-			Option::midiOutDevice(sval);
+			RTOption::midiOutDevice(sval);
 			break;
 		case OSC_HOST:
-			Option::oscHost(sval);
+			RTOption::oscHost(sval);
 			break;
 		case DSOPATH:
-			Option::dsoPath(sval);
+			RTOption::dsoPath(sval);
 			break;
 		case RCNAME:
-			Option::rcName(sval);
+			RTOption::rcName(sval);
 			break;
 		default:
 			break;
@@ -346,25 +346,25 @@ static int _set_value_option(const char *sval, const bool rtsetparams_called)
 
 	switch (type) {
 		case AUDIO:
-			Option::play(bval);
+			RTOption::play(bval);
 			break;
 		case RECORD:
-			Option::record(bval);
+			RTOption::record(bval);
 #ifndef EMBEDDED
-            if (Option::record() && rtsetparams_called) {
+            if (RTOption::record() && rtsetparams_called) {
 				die("set_option", "Turn on record BEFORE calling rtsetparams.");
                 throw CONFIGURATION_ERROR;
             }
 #endif
 			break;
 		case CLOBBER:
-			Option::clobber(bval);
+			RTOption::clobber(bval);
 			break;
 		case REPORT_CLIPPING:
-			Option::reportClipping(bval);
+			RTOption::reportClipping(bval);
 			break;
 		case CHECK_PEAKS:
-			Option::checkPeaks(bval);
+			RTOption::checkPeaks(bval);
 			break;
 		case FULL_DUPLEX:
 			if (_set_full_duplex(bval, rtsetparams_called) == -1)

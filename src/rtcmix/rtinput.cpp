@@ -18,7 +18,7 @@
 #include <errno.h>
 #include <sndlibsupport.h>
 #include <rtdefs.h>
-#include <Option.h>
+#include <RTOption.h>
 #include "audio_devices.h"
 #include "InputFile.h"
 #ifdef LINUX
@@ -333,24 +333,24 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 			if (rtsetparams_was_called()) {
 				// If audio *playback* was disabled, but there is a request for
 				// input audio, create the audio input device here.
-				if (!audioDevice && !Option::play()) {
+				if (!audioDevice && !RTOption::play()) {
 					int nframes = bufsamps();
                     srate = sr();
 					if ((audioDevice = create_audio_devices(true, false,
 											 NCHANS, &srate, &nframes,
-											 Option::bufferCount())) == NULL)
+											 RTOption::bufferCount())) == NULL)
 					{
 						set_record = false;
                         status = AUDIO_ERROR;
                         goto Error;
 					}
-					Option::record(true);
+					RTOption::record(true);
                     setSR(srate);
 					setRTBUFSAMPS(nframes);
 					rtcmix_advise("Input audio set",  "%g sampling rate, %d channels\n", sr(), NCHANS);
 				}
 				// If record disabled during rtsetparams(), we cannot force it on here.
-				else if (!Option::record()) {
+				else if (!RTOption::record()) {
 					rterror("rtinput", "Audio already configured for playback only via rtsetparams()\n\t\tAdd set_option(\"record=true\") at top of score");
 					set_record = false;
                     status = CONFIGURATION_ERROR;
@@ -359,7 +359,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 //			}
 //			else {
 //				// This allows rtinput("AUDIO") to turn on record XXX NO LONGER SUPPORTED - MUST CALL rtsetparams FIRST - DAS
-//				Option::record(1);
+//				RTOption::record(1);
 //				set_record = true;	// DAS I had set this to false -- WHY?
 //			}
                 fd = 1;  /* we don't use this; set to 1 so rtsetinput() will work */
