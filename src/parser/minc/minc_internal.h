@@ -15,6 +15,7 @@
 #include "utils.h"
 #include "RefCounted.h"
 #include <vector>
+#include <string.h>
 
 #ifdef DEBUG
    #define DPRINT(...) rtcmix_print(__VA_ARGS__)

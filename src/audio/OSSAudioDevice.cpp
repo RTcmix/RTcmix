@@ -27,9 +27,8 @@
 #define PRINT1 if (0) printf
 #endif
 
-// BGG Michael Gogins fix for ALSA
-#include "../config.h"
-#ifdef HAVE_LIBASOUND
+// BGG Michael Gogins fix for ALSA (modified by DAS)
+#if defined(ALSA)
 #warning "Checking for ALSA version compatibility..."
 #include <alsa/version.h>
 // To fix: SOUND_PCM_WRITE_CHANNELS_is_obsolete_use_SNDCTL_DSP_CHANNELS_instead
