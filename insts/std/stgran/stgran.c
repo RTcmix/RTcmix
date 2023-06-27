@@ -169,7 +169,7 @@ prob(double low, double mid, double high, double tight)
 
 
 double
-stgran(float p[], int n_args)
+stgran(float p[], int n_args, double *pp)
 {
    int inchans, outchans, inchan;
    float indur, outdur, insk, outsk;

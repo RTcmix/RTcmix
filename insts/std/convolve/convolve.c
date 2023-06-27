@@ -60,7 +60,7 @@ This program performs fast convolution via the FFT.
 
 
 double 
-convolve(float p[], int n_args)
+convolve(float p[], int n_args, double *pp)
 {
   float 	*sbuf[2],  		/* array for input and FFT */
   		*tbuf[2],  		/* array for overlap-adding output */
@@ -459,7 +459,7 @@ cmixputfloat(
       p[2] = table values	
 */
 double 
-setwindow(float p[], int n_args)
+setwindow(float p[], int n_args, double *pp)
 {
 	int number = p[0];
 
@@ -478,7 +478,7 @@ setwindow(float p[], int n_args)
       p[2] = table values	
 */
 double
-setwarp(float p[], int n_args)
+setwarp(float p[], int n_args, double *pp)
 {
 	int number = p[0];
 
@@ -495,7 +495,7 @@ setwarp(float p[], int n_args)
       p[1] = current inskip
 */
 double
-getwarp(float p[], int n_args)
+getwarp(float p[], int n_args, double *pp)
 {
 	int number,insamp;
 	float newskip;
@@ -513,7 +513,7 @@ getwarp(float p[], int n_args)
       p[2] = table values	
 */
 double
-setrange(float p[], int n_args)
+setrange(float p[], int n_args, double *pp)
 {
 	int number = p[0];
 
@@ -530,7 +530,7 @@ setrange(float p[], int n_args)
       p[1] = current inskip
 */
 double
-getrange(float p[], int n_args)
+getrange(float p[], int n_args, double *pp)
 {
 	int number,insamp;
 	float range;
@@ -549,7 +549,7 @@ getrange(float p[], int n_args)
       p[2] = table values	
 */
 double
-setring(float p[], int n_args)
+setring(float p[], int n_args, double *pp)
 {
 	int number = p[0];
 
@@ -566,7 +566,7 @@ setring(float p[], int n_args)
       p[1] = current inskip
 */
 double
-getring(float p[], int n_args)
+getring(float p[], int n_args, double *pp)
 {
 	int number;
 	long insamp;
@@ -585,7 +585,7 @@ getring(float p[], int n_args)
       p[1] = table values	
 */
 double
-setdry(float p[], int n_args)
+setdry(float p[], int n_args, double *pp)
 {
 	rtcmix_advise("convolve", "Creating dry table.");
 	tableset(SR(), p[0],SIZE,drytabs);
@@ -599,7 +599,7 @@ setdry(float p[], int n_args)
       p[0] current inskip
 */
 double
-getdry(float p[], int n_args)
+getdry(float p[], int n_args, double *pp)
 {
 	int number;
 	long insamp;

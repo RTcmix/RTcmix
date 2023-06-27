@@ -11,10 +11,6 @@
 
 #define BUFSIZE 1024
 
-#ifndef vsnprintf
-#define vsnprintf(str, sz, fmt, args)  vsprintf(str, fmt, args)
-#endif
-
 // BGG -- these in message.c.  Maybe just #include <ugens.h>?
 extern void rtcmix_advise(const char *inst_name, const char *format, ...);
 extern void rtcmix_warn(const char *inst_name, const char *format, ...);

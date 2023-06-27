@@ -43,11 +43,11 @@ struct gen {
 
 
 #ifndef SOUND
-extern int (*addoutpointer[NFILES])();
-extern int (*layoutpointer[NFILES])();
-extern int (*wipeoutpointer[NFILES])();
-extern int (*getinpointer[NFILES])();
-extern int (*bwipeoutpointer[NFILES])();
+extern int (*addoutpointer[NFILES])(float *, int);
+extern int (*layoutpointer[NFILES])(float *, int *, int);
+extern int (*wipeoutpointer[NFILES])(float *, int);
+extern int (*getinpointer[NFILES])(float *, int);
+extern int (*bwipeoutpointer[NFILES])(float *, int, int);
 
 #define ADDOUT(x,y)  (*addoutpointer[y])(x,y)
 #define LAYOUT(x,l,y)  (*layoutpointer[y])(x,l,y)
@@ -76,7 +76,7 @@ double makegen(float [], int, double []);
 double *floc(int);
 int fsize(int);
 
-extern int (*getsample)();
+extern int (*getsample)(double, float *, int);
 #define GETSAMPLE (*getsample)
 
 float allpass(float, float *);
@@ -272,7 +272,7 @@ void addLegacyfunc(const char *label, double (*func_ptr)(float *, int, double *)
 #else
 #define UG_INTRO(flabel, func) \
    { \
-      extern double func(); \
+      extern double func(float *, int, double *); \
       addLegacyfunc(flabel, (double (*)(float *, int, double *)) func); \
    }
 #endif	/* __cplusplus */

@@ -15,7 +15,7 @@ extern SFHEADER      sfdesc[NFILES];
         target number, return to <increment>, then do it over and over,
         creating an upward sawtooth wave.) [optional]
 */
-double numtest(float p[], int n_args)
+double numtest(float p[], int n_args, double *pp)
 {
 	int	i, nsamps;
 	float	num0, num1, startnum0, startnum1, endnum0, endnum1, increment;

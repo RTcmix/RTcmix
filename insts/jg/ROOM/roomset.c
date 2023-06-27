@@ -206,7 +206,7 @@ space(float dim[],          /* first 4 args: arrays of 2 elements */
       p9 = seed  [optional]
 */
 double
-roomset(float p[], int n_args)
+roomset(float p[], int n_args, double *pp)
 {
    if (n_args < 9)
       die("roomset", "Not enough args.");

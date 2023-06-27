@@ -30,7 +30,7 @@ get_timeset(float timepts[], float xvals[], float yvals[])
 
 /* -------------------------------------------------------------- timeset --- */
 double
-timeset(float p[], int n_args)
+timeset(float p[], int n_args, double *pp)
 {
    if (_ntimes < TIME_ARRAY_SIZE) {
       _timepts[_ntimes] = p[0];
