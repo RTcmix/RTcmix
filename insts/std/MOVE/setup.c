@@ -98,7 +98,7 @@ get_setup_params(double Dimensions[],       /* array of 5 elements */
    tion factor, between 0 (total absorption) and 10 (total reflection).   
 */
 double
-m_space(float p[], int n_args)
+m_space(float p[], int n_args, double *pp)
 {
    if (n_args < 7) {
       die("space", "Not enough arguments");
@@ -127,7 +127,7 @@ m_space(float p[], int n_args)
    syntax: mikes(mikeAngle, pattern)
 */
 double
-mikes(float p[], int n_args)
+mikes(float p[], int n_args, double *pp)
 {
    _MikeAngle = p[0] * PI / 180.0;  /* convert to rads */
    _MikePatternFactor = (p[1] <= 1.0) ? p[1] : 1.0;
@@ -143,7 +143,7 @@ mikes(float p[], int n_args)
 /* to turn off mike usage in order to use binaural filters
 */
 double
-mikes_off(float p[], int n_args)
+mikes_off(float p[], int n_args, double *pp)
 {
    rtcmix_advise("mikes", "Microphone usage turned off.");
    _UseMikes = 0;
@@ -163,7 +163,7 @@ mikes_off(float p[], int n_args)
    contain matrix vals.
 */
 double
-oldmatrix(float p[], int n_args)
+oldmatrix(float p[], int n_args, double *pp)
 {
    int   i, j;
    float amp, val;
@@ -188,7 +188,7 @@ oldmatrix(float p[], int n_args)
 }
 
 double
-matrix(float p[], int n_args)
+matrix(float p[], int n_args, double *pp)
 {
    int   i, j;
    float amp;

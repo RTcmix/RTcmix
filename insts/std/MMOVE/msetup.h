@@ -20,12 +20,12 @@ void decrement_users();
 int check_users();
 
 extern "C" {
-double mm_space(float p[], int);
-double m_mikes(float p[], int);
-double m_mikes_off(float p[], int);
-double m_oldmatrix(float p[], int);
-double m_matrix(float p[], int);
-double m_set_attenuation_params(float p[], int);
+double mm_space(float p[], int, double *);
+double m_mikes(float p[], int, double *);
+double m_mikes_off(float p[], int, double *);
+double m_oldmatrix(float p[], int, double *);
+double m_matrix(float p[], int, double *);
+double m_set_attenuation_params(float p[], int, double *);
 }
 
 #endif	// _MSETUP_H_
