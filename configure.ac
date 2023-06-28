@@ -8,7 +8,7 @@
 # from the configure process, but we don't, at least for now.
 # -JGG, 7/29/04
 
-AC_INIT(RTcmix, 4.0)
+AC_INIT([RTcmix],[4.0])
 AC_CONFIG_SRCDIR(src/rtcmix/main.cpp)
 
 CMIXDIR=`pwd`
@@ -37,6 +37,17 @@ case "$host" in
 esac
 AC_SUBST(ARCH)
 
+# Feed the right arch flags to Xcode for MouseWindow, DisplayWindow
+# and to the Python build system for macOS. Note that clang does
+# not understand "aarch64", so we use "arm64".
+AS_CASE([$host_cpu],
+	[i386], [BUILD_ARCH=i386],
+	[x86_64], [BUILD_ARCH=x86_64],
+	[arm64], [BUILD_ARCH=arm64],
+	[aarch64], [BUILD_ARCH=arm64],
+	[AC_MSG_ERROR("No support for CPU $host_cpu")]
+)
+AC_SUBST([BUILD_ARCH])
 
 # Standard program, library and header checks ----------------------------------
 
@@ -49,7 +60,8 @@ AC_PATH_X
 AC_SUBST(x_libraries)
 
 # Check for header files.
-AC_HEADER_STDC
+# Recent autoconf says we don't need to check STDC headers any more,
+# and AC_HEADER_STDC is now obsolete.
 AC_CHECK_HEADERS(fcntl.h float.h limits.h mach/mach.h netdb.h netinet/in.h \
 stddef.h stdint.h stdlib.h string.h strings.h sys/file.h sys/ioctl.h \
 sys/param.h sys/socket.h sys/time.h termios.h unistd.h values.h)
@@ -118,7 +130,7 @@ CFLAGS="$TMP_CFLAGS"
 # Gather user requests
 WANTS_64BIT=""
 AC_ARG_WITH(64bit,
-   AC_HELP_STRING([--with-64bit], [build 64-bit version]),
+   AS_HELP_STRING([--with-64bit], [build 64-bit version]),
    [if test "$withval" != "no"; then
       if test "$CAN_BUILD_64BIT" = "no"; then
          AC_MSG_ERROR([Don't know how to build a 64-bit object.])
@@ -130,7 +142,7 @@ AC_ARG_WITH(64bit,
 )
 WANTS_32BIT=""
 AC_ARG_WITH(32bit,
-   AC_HELP_STRING([--with-32bit], [build 32-bit version]),
+   AS_HELP_STRING([--with-32bit], [build 32-bit version]),
    [if test "$withval" != "no"; then
       if test "$CAN_BUILD_32BIT" = "no"; then
          AC_MSG_ERROR([Don't know how to build a 32-bit object.])
@@ -183,17 +195,6 @@ AC_SUBST(PICFLAGS)
 ARCH_BITFLAGS="$ARCH_64BIT $ARCH_32BIT"
 AC_SUBST(ARCH_BITFLAGS)
 
-# Feed the right arch flags to Xcode for MouseWindow, DisplayWindow
-BUILD_ARCH=""
-if test "$ARCH" = "MACOSX"; then  # this trips up slack 10.2, so don't bother
-   if test "$WITH_32BIT" = "true"; then
-      BUILD_ARCH+="i386"
-   fi
-   if test "$WITH_64BIT" = "true"; then
-      BUILD_ARCH+="x86_64"
-   fi
-fi
-AC_SUBST(BUILD_ARCH)
 #############################################################################
 
 # Enable running instruments on different processors
@@ -201,8 +202,7 @@ MULTI_THREAD_SUPPORT=FALSE                # disable by default
 THREAD_COUNT=2                            # default number of threads
 WITH_MULTI_THREAD="false"                 # just for summary display below
 AC_ARG_WITH(multithread,
-   AC_HELP_STRING([--with-multithread=THREADCOUNT],
-         [build multi-threaded RTcmix on Linux or OS X 10.6 or later (THREADCOUNT optional, default=2)]),
+   AS_HELP_STRING([--with-multithread=THREADCOUNT], [build multi-threaded RTcmix on Linux or OS X 10.6 or later (THREADCOUNT optional, default=2)]),
 	[if test "$ARCH" != "MACOSX" && test "$ARCH" != "LINUX"; then
       AC_MSG_ERROR([Can't build multi-threaded version unless on Linux, or OS X 10.6 or later.])
 	fi]
@@ -226,7 +226,7 @@ fi
 AUDIODRIVER=AUTO                          # default
 WITH_ALSA="false"                         # just for summary display below
 AC_ARG_WITH(alsa,
-   AC_HELP_STRING([--with-alsa], [use ALSA audio driver]),
+   AS_HELP_STRING([--with-alsa], [use ALSA audio driver]),
    [if test "$withval" != "no"; then
       AUDIODRIVER=ALSA              # this is ignored on irrelevant platforms
       WITH_ALSA="true"
@@ -240,8 +240,7 @@ PERL_IN_LOCAL=FALSE
 PERL=perl                                 # default perl name
 WITH_PERL="false"                         # just for summary display below
 AC_ARG_WITH(perl,
-   AC_HELP_STRING([--with-perl=PATH],
-         [build Perl-enabled RTcmix (PCMIX) (PATH optional)]),
+   AS_HELP_STRING([--with-perl=PATH], [build Perl-enabled RTcmix (PCMIX) (PATH optional)]),
    [if test "$withval" != "no"; then
       if test "$withval" != "yes"; then
          PERL="$withval"                  # the path to perl
@@ -262,8 +261,7 @@ PYTHON_SUPPORT=FALSE                      # disable by default
 PYTHON=python                             # default python name
 WITH_PYTHON="false"                       # just for summary display below
 AC_ARG_WITH(python,
-   AC_HELP_STRING([--with-python=PATH],
-         [build Python-enabled RTcmix (PYCMIX) (PATH optional)]),
+   AS_HELP_STRING([--with-python=PATH], [build Python-enabled RTcmix (PYCMIX) (PATH optional)]),
    [if test "$withval" != "no"; then
       if test "$withval" != "yes"; then
          PYTHON="$withval"                # the path to python
@@ -278,7 +276,7 @@ AC_SUBST(PYTHON)
 # Documentation options
 HTMLDESTDIR="$CMIXDIR"/docs/html          # default location
 AC_ARG_WITH(docdir,
-   AC_HELP_STRING([--with-docdir=PATH], [put documentation in this directory]),
+   AS_HELP_STRING([--with-docdir=PATH], [put documentation in this directory]),
    [if test "$withval" != "no" && test "$withval" != "yes"; then
       AC_SUBST(HTMLDESTDIR, ["$withval"/html]),
    fi]
@@ -289,7 +287,7 @@ AC_SUBST(HTMLDESTDIR)
 NPLAY_SUPPORT=FALSE                       # default
 WITH_NPLAY="false"                        # just for summary display below
 AC_ARG_WITH(netplay,
-   AC_HELP_STRING([--with-netplay], [support NetPlay]),
+   AS_HELP_STRING([--with-netplay], [support NetPlay]),
    [if test "$withval" != "no"; then
       NPLAY_SUPPORT=TRUE
       WITH_NPLAY="true"
@@ -301,7 +299,7 @@ AC_SUBST(NPLAY_SUPPORT)
 JACK_SUPPORT=FALSE                        # default
 WITH_JACK="false"                         # just for summary display below
 AC_ARG_WITH(jack,
-   AC_HELP_STRING([--with-jack], [support JACK]),
+   AS_HELP_STRING([--with-jack], [support JACK]),
    [if test "$withval" != "no"; then
       JACK_SUPPORT=TRUE
       WITH_JACK="true"
@@ -313,7 +311,7 @@ AC_SUBST(JACK_SUPPORT)
 FFTW_SUPPORT=FALSE                        # default
 WITH_FFTW="false"                         # just for summary display below
 AC_ARG_WITH(fftw,
-   AC_HELP_STRING([--with-fftw], [use FFTW (alternative FFT library)]),
+   AS_HELP_STRING([--with-fftw], [use FFTW (alternative FFT library)]),
    [if test "$withval" != "no"; then
       FFTW_SUPPORT=TRUE
       WITH_FFTW="true"
@@ -325,7 +323,7 @@ AC_SUBST(FFTW_SUPPORT)
 OSC_SUPPORT=FALSE                         # default
 WITH_OSC="false"                          # just for summary display below
 AC_ARG_WITH(osc,
-   AC_HELP_STRING([--with-osc], [support OSC (Open Sound Control)]),
+   AS_HELP_STRING([--with-osc],[support OSC (Open Sound Control)]),
    [if test "$withval" != "no"; then
       OSC_SUPPORT=TRUE
       WITH_OSC="true"
@@ -401,7 +399,7 @@ fi
 
 
 # Write output files -----------------------------------------------------------
-AC_CONFIG_HEADER(config.h)
+AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES(makefile.conf)
 AC_CONFIG_FILES(defs.conf)
 AC_OUTPUT
@@ -410,9 +408,9 @@ AC_OUTPUT
 echo
 echo "Summary..."
 if test "$WITH_64BIT" = "true"; then
-echo "  " Building 64-bit binaries
+echo "  " Building 64-bit binaries for "$BUILD_ARCH"
 elif test "$WITH_32BIT" = "true"; then
-echo "  " Building 32-bit binaries
+echo "  " Building 32-bit binaries for "$BUILD_ARCH"
 fi
 echo "  " Build with multi-threaded support..................... : $WITH_MULTI_THREAD
 echo "  " Build with Perl support............................... : $WITH_PERL
