@@ -443,10 +443,10 @@ PYMIX: $(MAIN_OBJS) $(PY_O) $(LIBS) $(PROFILE_O)
 ifeq ($(PYTHON_SUPPORT), TRUE)
 	$(CXX) $(CXXFLAGS) -o PYMIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) \
 		$(PY_O) -L. $(LDFLAGS) $(PYEXT) $(PYTHONLIBS) $(SYS_LDFLAGS)
-	ifeq ($(ARCH),MACOSX)
+  ifeq ($(ARCH),MACOSX)
 		/bin/sh ../parser/python/fix_libpython_path.sh $(PYTHON)
 		/usr/bin/codesign --force -s - PYMIX
-	endif
+  endif
 else
 	@echo "You haven't configured with PYTHON_SUPPORT!"
 endif
