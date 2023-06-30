@@ -258,7 +258,7 @@ AC_SUBST(PERL)
 
 # Python options
 PYTHON_SUPPORT=FALSE                      # disable by default
-PYTHON=python                             # default python name
+PYTHON=python3                            # default python name
 WITH_PYTHON="false"                       # just for summary display below
 AC_ARG_WITH(python,
    AS_HELP_STRING([--with-python=PATH], [build Python-enabled RTcmix (PYCMIX) (PATH optional)]),
@@ -330,13 +330,8 @@ AC_ARG_WITH(osc,
    fi]
 )
 AC_SUBST(OSC_SUPPORT)
-# LIBGSL options
-AC_CHECK_LIB(m,main)
-AC_CHECK_LIB(gslcblas,main)
-AC_CHECK_LIB(gsl,main)
 
 #AC_SUBST(WITH_VAL, "$withval")    # for debugging this script
-
 
 # Check for typedefs, structures, and compiler characteristics.
 AC_C_BIGENDIAN
