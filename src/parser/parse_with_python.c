@@ -10,9 +10,9 @@
 #include "rtcmix_parse.h"
 #include <RTOption.h>
 
-#ifdef PYEXT_INIT
-extern void initrtcmix(void);		/* defined in rtcmixmodule.cpp */
-#endif
+//#ifdef PYEXT_INIT
+extern PyObject *PyInit_rtcmix(void);		/* defined in rtcmixmodule.cpp */
+//#endif
 
 /* ========================================================================== */
 /* These functions called when running interactively, from the PYRTcmix object.
@@ -68,17 +68,33 @@ parse_score(int argc, char *argv[], char **env)
 
 	assert(argc <= MAXARGS);
 
-	Py_SetProgramName(argv[0]);
+	wchar_t *program = Py_DecodeLocale(argv[0], NULL);
+	if (program == NULL) {
+		fprintf(stderr, "Can't find name of program invoking python\n");
+		return -1;
+	}
+	Py_SetProgramName(program);
+
+	PyImport_AppendInittab("rtcmix", &PyInit_rtcmix);
 
 	/* Init Python interpreter.  If this fails, it won't return. */
 	Py_Initialize();
 
 	/* Define sys.argv in Python. */
-	PySys_SetArgv(argc, argv);
+	wchar_t **_argv = PyMem_RawMalloc(sizeof(wchar_t *) *argc);
+	for (int i = 0; i < argc; i++) {
+		wchar_t *arg = Py_DecodeLocale(argv[i], NULL);
+		_argv[i] = arg;
+	}
+	PySys_SetArgv(argc, _argv);
 
-	/* If we're linking statically to extension module, init it */
 #ifdef PYEXT_INIT
-	initrtcmix();
+	/* If we're linking statically to extension module, init it */
+/*
+	PyObject *m = PyInit_rtcmix();
+	if (m == NULL)
+		return -1;
+*/
 #endif
 
 	if (_script == NULL)
@@ -92,8 +108,15 @@ parse_score(int argc, char *argv[], char **env)
 	   Actually, it turns out that this doesn't help, at least for 
 	   Python 2.x, so we have to reinstall our SIGINT handler in main().
 	*/
-	Py_Finalize();				/* any errors ignored internally */
+	if (Py_FinalizeEx() < 0) {				/* any errors ignored internally */
+		fprintf(stderr, "Failure while killing the Python interpreter.\n");
+		return -1;
+	}
 
+	for (int i = 0; i < argc; i++)
+		PyMem_RawFree(_argv[i]);
+	PyMem_RawFree(_argv);
+	PyMem_RawFree(program);
 	return 0;
 }
 
