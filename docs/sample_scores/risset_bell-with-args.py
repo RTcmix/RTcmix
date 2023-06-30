@@ -25,7 +25,7 @@ if numargs > 1:
 	if numargs > 2:
 		base_incr = float(sys.argv[2])
 
-#print_off()
+print_off()
 
 # Set to 1 to write a sound file (if processor too slow for rt playback).
 writeit = 0
