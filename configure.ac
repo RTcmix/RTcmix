@@ -258,7 +258,7 @@ AC_SUBST(PERL)
 
 # Python options
 PYTHON_SUPPORT=FALSE                      # disable by default
-PYTHON=python                             # default python name
+PYTHON=python3                            # default python name
 WITH_PYTHON="false"                       # just for summary display below
 AC_ARG_WITH(python,
    AS_HELP_STRING([--with-python=PATH], [build Python-enabled RTcmix (PYCMIX) (PATH optional)]),
