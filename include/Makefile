@@ -54,6 +54,7 @@ cleanall:
 	$(RM) PField.h
 	$(RM) PFieldSet.h
 	$(RM) Random.h
+	$(RM) RawDataFile.h
 	$(RM) RTsockfuncs.h
 	$(RM) RTOption.h
 	$(RM) sockdefs.h
