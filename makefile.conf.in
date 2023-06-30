@@ -85,7 +85,7 @@ ifeq ($(ARCH),MACOSX)
   CXX = c++ -Wno-deprecated
   LD = ld
   MAKE = make
-  INSTALL = cp -f
+  INSTALL = ditto
   RANLIB = ranlib
   SHELL = /bin/sh
   # Optional but rare override for the maximum number of supported audio
