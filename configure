@@ -5025,7 +5025,7 @@ fi
 
 # Python options
 PYTHON_SUPPORT=FALSE                      # disable by default
-PYTHON=python                             # default python name
+PYTHON=python3                            # default python name
 WITH_PYTHON="false"                       # just for summary display below
 
 # Check whether --with-python was given.
@@ -5122,130 +5122,8 @@ then :
 fi
 
 
-# LIBGSL options
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for main in -lm" >&5
-printf %s "checking for main in -lm... " >&6; }
-if test ${ac_cv_lib_m_main+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lm  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main (void)
-{
-return main ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_m_main=yes
-else $as_nop
-  ac_cv_lib_m_main=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_m_main" >&5
-printf "%s\n" "$ac_cv_lib_m_main" >&6; }
-if test "x$ac_cv_lib_m_main" = xyes
-then :
-  printf "%s\n" "#define HAVE_LIBM 1" >>confdefs.h
-
-  LIBS="-lm $LIBS"
-
-fi
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for main in -lgslcblas" >&5
-printf %s "checking for main in -lgslcblas... " >&6; }
-if test ${ac_cv_lib_gslcblas_main+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lgslcblas  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main (void)
-{
-return main ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_gslcblas_main=yes
-else $as_nop
-  ac_cv_lib_gslcblas_main=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_gslcblas_main" >&5
-printf "%s\n" "$ac_cv_lib_gslcblas_main" >&6; }
-if test "x$ac_cv_lib_gslcblas_main" = xyes
-then :
-  printf "%s\n" "#define HAVE_LIBGSLCBLAS 1" >>confdefs.h
-
-  LIBS="-lgslcblas $LIBS"
-
-fi
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for main in -lgsl" >&5
-printf %s "checking for main in -lgsl... " >&6; }
-if test ${ac_cv_lib_gsl_main+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lgsl  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main (void)
-{
-return main ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_gsl_main=yes
-else $as_nop
-  ac_cv_lib_gsl_main=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_gsl_main" >&5
-printf "%s\n" "$ac_cv_lib_gsl_main" >&6; }
-if test "x$ac_cv_lib_gsl_main" = xyes
-then :
-  printf "%s\n" "#define HAVE_LIBGSL 1" >>confdefs.h
-
-  LIBS="-lgsl $LIBS"
-
-fi
-
 
 #AC_SUBST(WITH_VAL, "$withval")    # for debugging this script
-
 
 # Check for typedefs, structures, and compiler characteristics.
  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether byte ordering is bigendian" >&5
