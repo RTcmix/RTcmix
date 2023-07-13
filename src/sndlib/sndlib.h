@@ -238,7 +238,7 @@ enum {MUS_NEXT, MUS_AIFC, MUS_RIFF, MUS_BICSF, MUS_NIST, MUS_INRS, MUS_ESPS, MUS
       MUS_MIDI_SAMPLE_DUMP, MUS_DIAMONDWARE, MUS_REALAUDIO, MUS_ADF, MUS_SBSTUDIOII, MUS_DELUSION,
       MUS_FARANDOLE, MUS_SAMPLE_DUMP, MUS_ULTRATRACKER, MUS_YAMAHA_SY85, MUS_YAMAHA_TX16, MUS_DIGIPLAYER,
       MUS_COVOX, MUS_SPL, MUS_AVI, MUS_OMF, MUS_QUICKTIME, MUS_ASF, MUS_YAMAHA_SY99, MUS_KURZWEIL_2000,
-      MUS_AIFF, MUS_PAF, MUS_CSL, MUS_FILE_SAMP, MUS_PVF};
+      MUS_AIFF, MUS_PAF, MUS_CSL, MUS_FILE_SAMP, MUS_PVF, MUS_CAFF};
 
 #define MUS_HEADER_TYPE_OK(n) (((n) > MUS_UNSUPPORTED) && ((n) <= MUS_PVF))
 
@@ -530,6 +530,7 @@ void mus_bdouble_to_char            PROTO((unsigned char *j, double x));
 void mus_ldouble_to_char            PROTO((unsigned char *j, double x));
 unsigned int mus_char_to_ubint      PROTO((const unsigned char *inp));
 unsigned int mus_char_to_ulint      PROTO((const unsigned char *inp));
+unsigned long long mus_char_to_ublonglong PROTO((const unsigned char *inp));
 
 int mus_iclamp                      PROTO((int lo, int val, int hi));
 MusFloat mus_fclamp                 PROTO((MusFloat lo, MusFloat val, MusFloat hi));

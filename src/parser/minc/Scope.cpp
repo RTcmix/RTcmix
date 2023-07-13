@@ -388,6 +388,7 @@ lookupStructType(const char *typeName, ScopeLookupType lookupType)
 
 void dump_symbols()
 {
+#ifdef SCOPE_DEBUG
     DPRINT("---- SYMBOL DUMP ----\n");
     if (sCallStack != NULL) {
         DPRINT("CallStack %p:\n", sCallStack);
@@ -403,5 +404,6 @@ void dump_symbols()
     }
     ScopeManager::dump();
     DPRINT("---- END ----\n");
+#endif  /* SCOPE_DEBUG */
 }
 
