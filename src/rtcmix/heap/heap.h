@@ -79,6 +79,8 @@ public:
 	RTQueue() {}
 	~RTQueue();
 	void push(Instrument*, FRAMETYPE);
+    void pushUnsorted(Instrument*, FRAMETYPE);
+    void sort();
 	Instrument *pop(FRAMETYPE *pChunkStart);
 	FRAMETYPE nextChunk();
 	// Return the number of elements on the RTQueue

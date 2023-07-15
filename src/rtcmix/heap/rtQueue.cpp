@@ -34,6 +34,20 @@ void RTQueue::push(Instrument *inInst, FRAMETYPE chunkstart)
 	inInst->ref();
 }
 
+// Push an element onto RTQueue, unsorted
+
+void RTQueue::pushUnsorted(Instrument *inInst, FRAMETYPE chunkstart)
+{
+    Element element(chunkstart, inInst);
+    mInstrumentList.push_back(element);
+    inInst->ref();
+}
+
+void RTQueue::sort()
+{
+    std::sort(mInstrumentList.begin(), mInstrumentList.end(), sortElems);
+}
+
 // Pop an element of the top of the RTQueue
 
 Instrument *	RTQueue::pop(FRAMETYPE *pChunkStart)

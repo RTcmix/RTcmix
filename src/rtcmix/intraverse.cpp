@@ -492,6 +492,8 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			printf("Re-queuing instruments\n");
 #endif
 		}
+        // Iterate instrument list, either pushing elements back onto rtQueues
+        // or destroying them.  rtQueue is unsorted until all pushes are complete.
 		for (vector<Instrument *>::iterator it = instruments.begin(); it != instruments.end(); ++it) {
 			Iptr = *it;
 			int chunksamps = Iptr->framesToRun();
@@ -505,7 +507,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 #ifdef IBUG
                 printf("re queueing inst %p on rtQueue %d\n", Iptr, busq);
 #endif
-				rtQueue[busq].push(Iptr,rtQchunkStart+chunksamps);   // put back onto queue
+				rtQueue[busq].pushUnsorted(Iptr,rtQchunkStart+chunksamps);   // put back onto queue
 			}
 			else {
 				iBus = Iptr->getBusSlot();
@@ -531,6 +533,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
             printf("Iteration done==========\n\n");
 #endif
 		} // end while() [Play elements on queue (insert back in if needed)] -----------
+        rtQueue[busq].sort();
 		instruments.clear();
 	}  // end while (!aux_pb_done) --------------------------------------------------
 
