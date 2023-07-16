@@ -96,6 +96,7 @@
 #define kOptionCheckPeaks       "check_peaks"
 #define kOptionExitOnError      "exit_on_error"
 #define kOptionBailOnError      "bail_on_error"
+#define kOptionBailOnParserWarning "bail_on_parser_warning"
 #define kOptionAutoLoad         "auto_load"
 #define kOptionFastUpdate       "fast_update"
 #define kOptionRequireSampleRate	"require_sample_rate"
@@ -165,6 +166,10 @@ public:
     static bool bailOnError() { return _bailOnError; }
     static bool bailOnError(const bool setIt) { _bailOnError = setIt;
         return _bailOnError; }
+
+    static bool bailOnParserWarning() { return _bailOnParserWarning; }
+    static bool bailOnParserWarning(const bool setIt) { _bailOnParserWarning = setIt;
+        return _bailOnParserWarning; }
 
 	static bool autoLoad() { return _autoLoad; }
 	static bool autoLoad(const bool setIt) { _autoLoad = setIt;
@@ -251,6 +256,7 @@ private:
 	static bool _checkPeaks;
 	static bool _exitOnError;
     static bool _bailOnError;
+    static bool _bailOnParserWarning;
 	static bool _autoLoad;
 	static bool _fastUpdate;
 	static bool _requireSampleRate;

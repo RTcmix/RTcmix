@@ -8,6 +8,7 @@
 #include "rename.h"
 #include "minc_internal.h"
 #include "minc_defs.h"
+#include <RTOption.h>
 
 #define BUFSIZE 1024
 
@@ -54,6 +55,9 @@ minc_warn(const char *msg, ...)
     }
     else {
         rtcmix_warn("parser", "%s (near line %d)", buf, yy_get_stored_lineno());
+    }
+    if (RTOption::bailOnParserWarning()) {
+        throw(MincParserError);
     }
 }
 

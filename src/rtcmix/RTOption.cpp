@@ -28,6 +28,7 @@ bool RTOption::_reportClipping = true;
 bool RTOption::_checkPeaks = true;
 bool RTOption::_exitOnError = false;	// we override this in main.cpp for standalone
 bool RTOption::_bailOnError = false;
+bool RTOption::_bailOnParserWarning = false;
 bool RTOption::_autoLoad = false;
 bool RTOption::_fastUpdate = false;
 bool RTOption::_requireSampleRate = true;
@@ -578,6 +579,8 @@ int get_bool_option(const char *option_name)
 		return (int) RTOption::exitOnError();
     else if (!strcmp(option_name, kOptionBailOnError))
         return (int) RTOption::bailOnError();
+    else if (!strcmp(option_name, kOptionBailOnParserWarning))
+        return (int) RTOption::bailOnParserWarning();
 	else if (!strcmp(option_name, kOptionAutoLoad))
 		return (int) RTOption::autoLoad();
 	else if (!strcmp(option_name, kOptionFastUpdate))
@@ -607,6 +610,8 @@ void set_bool_option(const char *option_name, int value)
 		RTOption::exitOnError((bool) value);
     else if (!strcmp(option_name, kOptionBailOnError))
         RTOption::bailOnError((bool) value);
+    else if (!strcmp(option_name, kOptionBailOnParserWarning))
+        RTOption::bailOnParserWarning((bool) value);
 	else if (!strcmp(option_name, kOptionAutoLoad))
 		RTOption::autoLoad((bool) value);
 	else if (!strcmp(option_name, kOptionFastUpdate))

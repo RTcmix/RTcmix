@@ -102,7 +102,7 @@ RTcmix::addfunc(
 #ifdef WARN_DUPLICATES
       if (strcmp(cur_node->func_label, this_node->func_label) == 0) {
          if (!autoload)
-             rtcmix_warn("addfunc", "Function '%s' already introduced",
+             rtcmix_advise("addfunc", "Function '%s' already introduced",
                   this_node->func_label);
           delete this_node;
          return;

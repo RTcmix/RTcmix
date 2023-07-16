@@ -31,6 +31,7 @@ enum ParamType {
 	FULL_DUPLEX,
 	EXIT_ON_ERROR,
     BAIL_ON_ERROR,
+    BAIL_ON_PARSER_WARNING,
 	AUTO_LOAD,
 	FAST_UPDATE,
 	REQUIRE_SAMPLE_RATE,
@@ -72,6 +73,7 @@ static Param _param_list[] = {
 	{ kOptionCheckPeaks, CHECK_PEAKS, false},
 	{ kOptionExitOnError, EXIT_ON_ERROR, false},
     { kOptionBailOnError, BAIL_ON_ERROR, false},
+    { kOptionBailOnParserWarning, BAIL_ON_PARSER_WARNING, false},
 	{ kOptionAutoLoad, AUTO_LOAD, false},
 	{ kOptionFastUpdate, FAST_UPDATE, false},
 	{ kOptionRequireSampleRate, REQUIRE_SAMPLE_RATE, true},
@@ -237,6 +239,14 @@ static int _set_key_value_option(const char *key, const char *sval,
 			status = _str_to_bool(sval, bval);
 			RTOption::exitOnError(bval);
 			break;
+        case BAIL_ON_ERROR:
+            status = _str_to_bool(sval, bval);
+            RTOption::bailOnError(bval);
+            break;
+        case BAIL_ON_PARSER_WARNING:
+            status = _str_to_bool(sval, bval);
+            RTOption::bailOnParserWarning(bval);
+            break;
 		case AUTO_LOAD:
 			status = _str_to_bool(sval, bval);
 			RTOption::autoLoad(bval);
