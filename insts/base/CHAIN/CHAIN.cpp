@@ -50,12 +50,14 @@ CHAIN::CHAIN()
 {
 }
 
+void unrefInstrument(Instrument *i)
+{
+    i->unref();
+}
+
 CHAIN::~CHAIN()
 {
-	for (std::vector<Instrument *>::iterator it = mInstVector.begin(); it != mInstVector.end(); ++it) {
-		Instrument *inst = *it;
-		inst->unref();
-	}
+    std::for_each(mInstVector.begin(), mInstVector.end(), unrefInstrument);
 }
 
 int  CHAIN::setup(PFieldSet *inPFields)
