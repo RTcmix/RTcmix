@@ -4,22 +4,10 @@
 #ifndef _UGENS_H_ 
 #define _UGENS_H_ 1
 
-#define	UG_NSIZ	7	/*  Max len of UG name	*/
-#define NAMESIZE 128    /* Max size of file name */
-#define	UG_NULL	(struct ug_item *)0
-
 #include <sys/types.h>
 #include <rt_types.h>
 
 #define NFILES       12       /* maximum number of opened files */
-
-struct	ug_item	{
-	struct	ug_item	*ug_next;
-	double 	(*ug_ptr)();	/*  Pointer to the function	*/
-	char	*ug_name;
-};
-
-typedef	struct ug_item	ug_t;
 
 #ifdef __cplusplus
 extern "C" {

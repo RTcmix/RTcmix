@@ -49,7 +49,7 @@ static FRAMETYPE bufEndSamp;
 static int startupBufCount = 0;
 static bool audioDone = true;   // set to false in runMainLoop
 
-int RTcmix::runMainLoop(void)
+int RTcmix::runMainLoop()
 {
 	Bool audio_configured = NO;
 
@@ -186,16 +186,17 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		return (rtsendzeros(device, false) == 0) ? true : false;
 	}
 
-	if (interactive() && run_status == RT_PANIC)
-		panic = YES;
+    if (interactive() && run_status == RT_PANIC) {
+        panic = YES;
+    }
 #ifdef EMBEDDED
-	else if (interactive() && run_status == RT_FLUSH) {
-		resetHeapAndQueue();
-		rtsendzeros(device, false);
-		run_status = RT_GOOD;
-		notifyIsFinished(bufEndSamp);
-		return true;
-	}
+        else if (interactive() && run_status == RT_FLUSH) {
+            resetHeapAndQueue();
+            rtsendzeros(device, false);
+            run_status = RT_GOOD;
+            notifyIsFinished(bufEndSamp);
+            return true;
+        }
 #endif
 
 	// Pop elements off rtHeap and insert into rtQueue +++++++++++++++++++++

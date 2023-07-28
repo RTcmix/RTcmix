@@ -186,14 +186,14 @@ static Handle mkusage()
 }
 
 extern "C" {
-	Handle makeinstrument(const Arg args[], const int nargs);
+	Handle makeinstrument(const Arg args[], int nargs);
 }
 
 // makeinstrument():  Create an instrument and return it as a handle.  Do not configure or schedule the instrument.
 // This is specifically for use with the CHAIN instrument.
 
 Handle
-makeinstrument(const Arg arglist[], const int nargs)
+makeinstrument(const Arg arglist[], int nargs)
 {
 	if (nargs < 4) {
 		return mkusage();

@@ -29,7 +29,7 @@ typedef struct _func {
 } RTcmixFunction;
 
 struct FunctionEntry {
-	FunctionEntry(const char *fname, const char *dsoPath);
+	FunctionEntry(const char *fname, const char *dso_path);
 	~FunctionEntry();
 	char *funcName;
 	char *dsoPath;
@@ -97,8 +97,7 @@ RTcmix::addfunc(
       _func_list = this_node;
       return;
    }
-   cur_node = _func_list;
-   for ( ; cur_node->next; cur_node = cur_node->next) {
+   for (cur_node = _func_list; cur_node->next != NULL; cur_node = cur_node->next) {
 #ifdef WARN_DUPLICATES
       if (strcmp(cur_node->func_label, this_node->func_label) == 0) {
          if (!autoload)

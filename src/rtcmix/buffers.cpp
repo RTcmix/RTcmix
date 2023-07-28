@@ -16,26 +16,6 @@
 
 /* #define NDEBUG */     /* define to disable asserts */
 
-
-/* -------------------------------------- copy_interleaved_buf_to_one_buf --- */
-/* Copy the specified channel of an interleaved buffer to a one-channel
-   buffer. Buffers must be of same type (e.g., float).
-*/
-void
-copy_interleaved_buf_to_one_buf(
-      BufPtr         dest,            /* buffer containing one chan */
-      const BufPtr   src,             /* interleaved buffer */
-      int            src_chans,       /* chans in interleaved buffer */
-      int            src_chan,        /* channel to copy from */
-      int            dest_frames)     /* frames in destination buffer */
-{
-   int   i, j;
-
-   for (i = 0, j = src_chan; i < dest_frames; i++, j += src_chans)
-      dest[i] = src[j];
-}
-
-
 /* -------------------------------------- copy_one_buf_to_interleaved_buf --- */
 /* Copy a one-channel buffer into the specified channel of an interleaved
    buffer. Buffers must be of same type (e.g., float).

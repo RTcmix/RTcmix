@@ -31,7 +31,7 @@ get_dso_path(double pfield, char dsoPath[])
     if (strchr(str, '/'))
 		strcpy(dsoPath, str);
     /* if name does not start with "lib", add prefix and suffix */
-    else if (strncmp(str, "lib", 3))
+    else if (strncmp(str, "lib", 3) != 0)
 		sprintf(dsoPath, "%s/lib%s.so", directory, str);
     /* otherwise just prepend directory and use as is */
     else

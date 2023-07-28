@@ -248,7 +248,7 @@ int Instrument::configure(int bufsamps)
 // This is the virtual function that derived classes override.  We supply a
 // default base class version because not all subclasses need/use this method.
 
-int Instrument::configure(void)
+int Instrument::configure()
 {
 	return 0;	// 0 is success, -1 is failure.
 }
