@@ -14,8 +14,8 @@
 #include <vector>
 #include <string.h>
 
-#undef SCOPE_DEBUG
-#undef DPRINT
+//#undef SCOPE_DEBUG
+//#undef DPRINT
 #ifdef SCOPE_DEBUG
 #define DPRINT(...) rtcmix_print(__VA_ARGS__)
 #else
@@ -74,7 +74,7 @@ Scope::install(const char *name)
     htab[h] = p;
     
 #ifdef SCOPE_DEBUG
-    DPRINT("Scope::install (%p, '%s') => %p [scope %d]\n", this, name, p, p->scope);
+    DPRINT("Scope::install (%p, '%s') => %p [scope %d]\n", this, name, p, p->scope());
 #endif
     return p;
 }

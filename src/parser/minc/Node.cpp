@@ -226,7 +226,7 @@ static const char *nameFromMangledName(const char *mangledName)
 static void push_list(void);
 static void pop_list(void);
 
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_NODE_MEMORY
 static int numNodes = 0;
 #endif
 
@@ -237,7 +237,7 @@ Node::Node(OpKind op, NodeKind kind)
 	: kind(kind), op(op), lineno(yyget_lineno()), includeFilename(yy_get_current_include_filename())
 {
 	NPRINT("Node::Node (%s) this=%p storing lineno %d, includefile '%s'\n", classname(), this, lineno, includeFilename);
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_NODE_MEMORY
 	++numNodes;
     NPRINT("[%d nodes in existence]\n", numNodes);
 #endif
@@ -246,7 +246,7 @@ Node::Node(OpKind op, NodeKind kind)
 
 Node::~Node()
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_NODE_MEMORY
     NPRINT("entering ~Node (%s) this=%p\n", classname(), this);
 	--numNodes;
     NPRINT("[%d nodes remaining]\n", numNodes);
