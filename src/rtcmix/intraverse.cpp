@@ -123,6 +123,7 @@ int RTcmix::runMainLoop()
 			while (bufStartSamp < bufOffset) {
                 if (inTraverse(audioDevice, this) == false) {
                     audioDone = true;
+                    rtcmix_debug(NULL, "runMainLoop():  exiting with -1");
                     return -1;    // Signal caller not to wait.
                 }
 				if (dot++ % dotskip == 0) {
@@ -135,7 +136,8 @@ int RTcmix::runMainLoop()
 #endif
 		if (startAudio(inTraverse, doneTraverse, this) != 0) {
 			audioDone = true;
-			return -1;
+            rtcmix_debug(NULL, "runMainLoop():  exiting with -1");
+            return -1;
 		}
 		rtcmix_debug(NULL, "runMainLoop():  exiting function");
 		return 0;	// Playing, thru HW and/or to FILE.
@@ -183,7 +185,11 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	// in the inTraverse init code.
 	
 	if (startupBufCount-- > 0) {
-		return (rtsendzeros(device, false) == 0) ? true : false;
+		bool status = (rtsendzeros(device, false) == 0) ? true : false;
+#ifdef WBUG
+        RTPrintf("EXITING inTraverse()\n");
+#endif
+        return status;
 	}
 
     if (interactive() && run_status == RT_PANIC) {
@@ -209,13 +215,15 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
     const BusSlot *iBus;
 
 	while ((Iptr = rtHeap->deleteMin(bufEndSamp, &heapChunkStart)) != NULL) {
-#ifdef DBUG
-		RTPrintf("Iptr %p pulled from rtHeap\n", Iptr);
-		RTPrintf("heapChunkStart = %lld\n", (long long)heapChunkStart);
+#ifdef IBUG
+		RTPrintf("Iptr %p pulled from rtHeap (size %d) with heapChunkStart = %lld\n", Iptr, rtHeap->getSize(), (long long)heapChunkStart);
 #endif
 		if (panic) {
 #ifdef DBUG
 			RTPrintf("Panic: Iptr %p unref'd\n", Iptr);
+#endif
+#ifdef IBUG
+            RTPrintf("Iptr %p being unref'd for panic\n", Iptr);
 #endif
 			Iptr->unref();
 			continue;
@@ -419,7 +427,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			
 			Iptr = rtQueue[busq].pop(&rtQchunkStart);  // get next instrument off queue
 #ifdef IBUG
-            printf("Iptr %p popped from rtQueue %d at rtQchunkStart %lld\n", Iptr, busq, rtQchunkStart);
+            printf("Iptr %p popped from rtQueue[%d] at rtQchunkStart %lld\n", Iptr, busq, rtQchunkStart);
 #endif			
 			Iptr->set_ichunkstart(rtQchunkStart);
 
@@ -480,13 +488,13 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		}	// while (rtQSize > 0 && rtQchunkStart < bufEndSamp)
 
 		if (!instruments.empty()) {
-#if defined(DBUG)
+#if defined(DBUG) || defined(IBUG)
 			printf("Done adding instruments for current slice\n");
 			printf("waiting for %d instrument tasks...", (int) instruments.size());
 #endif
 			taskManager->waitForTasks(instruments);
         	RTcmix::mixToBus();
-#if defined(DBUG)
+#if defined(DBUG) || defined(IBUG)
             printf("done waiting\n");
 #endif
 #if defined(IBUG)
@@ -506,7 +514,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			// ReQueue or unref ++++++++++++++++++++++++++++++++++++++++++++++
 			if (endsamp > bufEndSamp && !panic) {
 #ifdef IBUG
-                printf("re queueing inst %p on rtQueue %d\n", Iptr, busq);
+                printf("re-queueing inst %p on rtQueue[%d] because its endsamp %lld > bufEndSamp %lld\n", Iptr, busq, endsamp, bufEndSamp);
 #endif
 				rtQueue[busq].pushUnsorted(Iptr,rtQchunkStart+chunksamps);   // put back onto queue
 			}
@@ -545,7 +553,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		instrumentFound = true;
         Iptr = rtQueue[busq].pop(&rtQchunkStart);  // get next instrument off queue
 #ifdef IBUG
-		printf("Iptr %p popped from rtQueue %d at rtQchunkStart %lld\n", Iptr, busq, rtQchunkStart);
+		printf("Iptr %p popped from rtQueue[%d] at rtQchunkStart %lld\n", Iptr, busq, rtQchunkStart);
 #endif
         Iptr->set_ichunkstart(rtQchunkStart);
                 
@@ -607,7 +615,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
         // ReQueue or unref ++++++++++++++++++++++++++++++++++++++++++++++
         if (endsamp > bufEndSamp && !panic) {
 #ifdef IBUG
-            printf("re queueing inst %p on rtQueue %d\n", Iptr, busq);
+            printf("re queueing inst %p on rtQueue[%d]\n", Iptr, busq);
 #endif
             rtQueue[busq].push(Iptr,rtQchunkStart+chunksamps);   // put back onto queue
         }
@@ -661,7 +669,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 
 		if (rtsendsamps(device) != 0) {
 #ifdef WBUG
-			RTPrintf("EXITING inTraverse()\n");
+			RTPrintf("EXITING inTraverse() with error\n");
 #endif
 			return false;
 		}

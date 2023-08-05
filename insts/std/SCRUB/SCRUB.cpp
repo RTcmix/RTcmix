@@ -163,7 +163,7 @@ int SCRUB::run()
 	for (i = 0; i < frameCount; i++) {
 		if (--branch < 0) {
 			double 	p[9];
-			update(p, 8);
+			update(p, 9);
 			amp = p[3];
 			speed = p[4];
             pctleft = p[8];
