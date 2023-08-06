@@ -151,7 +151,6 @@ int RVB::run()
 	const int inChans = inputChannels();
 
     rtgetin(in, this, frames * inChans);
-
 	register float *outptr = &this->outbuf[0];
 	/* run summed 1st and 2nd generation paths through reverberator */
  	for (int n = 0; n < frames; n++) {
@@ -166,12 +165,13 @@ int RVB::run()
 			double rvbPair[2];
 			rmPair[0] = in[n*inChans+2];
 			rmPair[1] = in[n*inChans+3];
-			doRun(rmPair, rvbPair, currentFrame() + n);
+            doRun(rmPair, rvbPair, currentFrame() + n);
 			rvbsig[0][n] = rvbPair[0] * m_amp;
 			rvbsig[1][n] = rvbPair[1] * m_amp;
 		}
-		else
-			rvbsig[0][n] = rvbsig[1][n] = 0.0;
+		else {
+            rvbsig[0][n] = rvbsig[1][n] = 0.0;
+        }
 		/* sum the input signal (which includes early response) & reverbed sigs  */
 		*outptr++ = in[n*inChans] + rvbsig[0][n];
 		*outptr++ = in[n*inChans+1] + rvbsig[1][n];

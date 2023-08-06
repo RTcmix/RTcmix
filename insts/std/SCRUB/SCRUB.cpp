@@ -131,6 +131,7 @@ int SCRUB::configure()
 	int length = (int)(kSincWidth * kSincOversampling);
 	pSincTable = new float[length + 1]; // store the last 0.0, too
 	pSincTableDiffs = new float[length + 1];    // DAS 08/02/23
+    memset(pSincTableDiffs, 0, (length+1)*sizeof(float));
 	if (pSincTable && pSincTableDiffs) {
 		MakeSincTable();
 	}
@@ -180,20 +181,14 @@ int SCRUB::run()
 			branch = skip;
 		}
 
-        if (inChans == 2) {
-            outp[0] = aamp * in[(i * 2)];
-            if (outputchans == 2) {
-                outp[1] = aamp * in[(i * 2) + 1];
-            }
+        double newsig = in[(i * inChans) + inchan];
+        outp[0] = newsig * aamp;
+
+        if (outputchans == 2) {
+            outp[1] = outp[0] * (1.0 - pctleft);
+            outp[0] *= pctleft;
         }
-        else {  // mono file or reading just one channel
-            double newsig = in[(i * inChans) + inchan];
-            outp[0] = newsig * aamp;
-            if (outputchans == 2) {
-                outp[1] = outp[0] * (1.0 - pctleft);
-                outp[0] *= pctleft;
-            }
-        }
+
 		outp += outputchans;
 		increment();
 	}

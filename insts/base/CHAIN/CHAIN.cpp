@@ -132,17 +132,25 @@ int CHAIN::configure()
 
 int CHAIN::run()
 {
+//    printf("CHAIN::run(%p)\n", this);
+    bool anInstRan = false;
 	for (std::vector<Instrument *>::iterator it = mInstVector.begin(); it != mInstVector.end(); ++it) {
 		Instrument *inst = *it;
 		if (!inst->isDone()) {
 			inst->setchunk(framesToRun());	// For outer instrument, this is done in inTraverse()
-			inst->run(true);
+ //           printf("   CHAIN: running inst %p\n", inst);
+            inst->run(true);
+            anInstRan = true;
 		}
 		else {
+ //           printf("   CHAIN: inst %p is done\n", inst);
 			inst->clearOutput(framesToRun());			// This should be optimized to happen only once
 		}
 		inst->addout(BUS_NONE_OUT, 0);		// Special bus type makes this a no-op
 	}
+//    if (!anInstRan) {
+//        printf("CHAIN::run(%p) - no internal instruments ran!\n", this);
+//    }
 	// Copy from inputChainedBuf, which points to the outbuf of the last instrument in the chain.
 	unsigned copySize = framesToRun() * outputChannels() * sizeof(BUFTYPE);
 	memcpy(outbuf, inputChainBuf, copySize);
