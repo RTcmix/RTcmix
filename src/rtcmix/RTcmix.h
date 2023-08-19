@@ -314,6 +314,7 @@ private:
         MixData(BufPtr inSrc, BufPtr inDest, int inFrames, int inChans)
             : src(inSrc), dest(inDest), frames(inFrames), channels(inChans) {}
     };
+    static void mixOperation(MixData &m);
     static std::vector<MixData> mixVectors[];
 #endif
 	

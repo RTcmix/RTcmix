@@ -14,8 +14,8 @@
 #include <vector>
 #include <string.h>
 
-#undef SCOPE_DEBUG
-#undef DPRINT
+//#undef SCOPE_DEBUG
+//#undef DPRINT
 #ifdef SCOPE_DEBUG
 #define DPRINT(...) rtcmix_print(__VA_ARGS__)
 #else
@@ -74,7 +74,7 @@ Scope::install(const char *name)
     htab[h] = p;
     
 #ifdef SCOPE_DEBUG
-    DPRINT("Scope::install (%p, '%s') => %p [scope %d]\n", this, name, p, p->scope);
+    DPRINT("Scope::install (%p, '%s') => %p [scope %d]\n", this, name, p, p->scope());
 #endif
     return p;
 }
@@ -388,6 +388,7 @@ lookupStructType(const char *typeName, ScopeLookupType lookupType)
 
 void dump_symbols()
 {
+#ifdef SCOPE_DEBUG
     DPRINT("---- SYMBOL DUMP ----\n");
     if (sCallStack != NULL) {
         DPRINT("CallStack %p:\n", sCallStack);
@@ -403,5 +404,6 @@ void dump_symbols()
     }
     ScopeManager::dump();
     DPRINT("---- END ----\n");
+#endif  /* SCOPE_DEBUG */
 }
 

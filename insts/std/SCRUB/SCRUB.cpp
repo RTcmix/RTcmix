@@ -130,7 +130,8 @@ int SCRUB::configure()
 	in = new float[inputChannels() * RTBUFSAMPS];
 	int length = (int)(kSincWidth * kSincOversampling);
 	pSincTable = new float[length + 1]; // store the last 0.0, too
-	pSincTableDiffs = new float[length];
+	pSincTableDiffs = new float[length + 1];    // DAS 08/02/23
+    memset(pSincTableDiffs, 0, (length+1)*sizeof(float));
 	if (pSincTable && pSincTableDiffs) {
 		MakeSincTable();
 	}
@@ -163,7 +164,7 @@ int SCRUB::run()
 	for (i = 0; i < frameCount; i++) {
 		if (--branch < 0) {
 			double 	p[9];
-			update(p, 8);
+			update(p, 9);
 			amp = p[3];
 			speed = p[4];
             pctleft = p[8];
@@ -180,13 +181,13 @@ int SCRUB::run()
 			branch = skip;
 		}
 
-		double newsig = in[(i * inChans) + inchan];
-		outp[0] = newsig * aamp;
+        double newsig = in[(i * inChans) + inchan];
+        outp[0] = newsig * aamp;
 
-		if (outputchans == 2) {
-			outp[1] = outp[0] * (1.0 - pctleft);
-			outp[0] *= pctleft;
-		}
+        if (outputchans == 2) {
+            outp[1] = outp[0] * (1.0 - pctleft);
+            outp[0] *= pctleft;
+        }
 
 		outp += outputchans;
 		increment();
@@ -380,7 +381,7 @@ void SCRUB::MakeSincTable() {
     pSincTable[i] = sin(rad)/rad * (.5 * cos(i * T_w) + .5);
     pSincTableDiffs[i-1] = pSincTable[i] - pSincTable[i-1];
   }
-} 
+}
 
 
 //

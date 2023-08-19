@@ -72,17 +72,20 @@ public:
 class RTQueue {
 	typedef std::pair<FRAMETYPE, Instrument *> Element;
 private:
-	std::vector<Element>	mInstrumentList;
-	typedef std::vector<Element>::iterator InstrumentListIterator;
+	std::vector<Element>	mInstrumentVector;
+	typedef std::vector<Element>::iterator InstrumentVecIterator;
 	static bool sortElems(const Element& x,const Element& y);
+    static void unrefElems(Element &e);
 public:
 	RTQueue() {}
 	~RTQueue();
 	void push(Instrument*, FRAMETYPE);
+    void pushUnsorted(Instrument*, FRAMETYPE);
+    void sort();
 	Instrument *pop(FRAMETYPE *pChunkStart);
 	FRAMETYPE nextChunk();
 	// Return the number of elements on the RTQueue
-	int getSize() const { return (int) mInstrumentList.size(); }
+	int getSize() const { return (int) mInstrumentVector.size(); }
 	void print();  // For debugging
 };
 

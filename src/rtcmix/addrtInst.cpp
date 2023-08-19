@@ -29,11 +29,9 @@ addrtInst(rt_item *rt_p)
 int
 RTcmix::addrtInst(rt_item *rt_p)
 {
-	rt_item *rt_tail;
-
 	// RTPrintf("ENTERING addrtInst() FUNCTION -----\n");
 	/*  Seek end of rt_list	*/
-	rt_tail = rt_list;
+    rt_item *rt_tail = rt_list;
 	
 	if (!rt_tail) { // first one on the list
 	  rt_list = rt_p;
@@ -41,7 +39,7 @@ RTcmix::addrtInst(rt_item *rt_p)
 	  // RTPrintf("EXITING addrtInst() FUNCTION (0)-----\n");
 	  return 0;
 	}
-	for (rt_tail=rt_list; rt_tail->rt_next; rt_tail=rt_tail->rt_next)
+	for (rt_tail=rt_list; rt_tail->rt_next != NULL; rt_tail=rt_tail->rt_next)
 	{
 		if (!strcmp(rt_tail->rt_name, rt_p->rt_name))	{
 			mixerr = MX_FEXIST;

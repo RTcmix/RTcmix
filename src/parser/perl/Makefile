@@ -21,8 +21,8 @@ $(EXT_FILE): $(XS_DIR)/$(XS_FILE) $(XS_DIR)/$(PM_FILE)
 
 install: all
 	@echo "making install..."	
-	@$(INSTALL) $(XS_DIR)/$(PM_FILE) $(LIBDESTDIR)
-	@$(INSTALL) $(EXT_FILE) $(LIBDESTDIR)
+	$(INSTALL) $(XS_DIR)/$(PM_FILE) $(LIBDESTDIR)
+	$(INSTALL) $(EXT_FILE) $(LIBDESTDIR)
 
 uninstall:
 	@echo "making uninstall..."	

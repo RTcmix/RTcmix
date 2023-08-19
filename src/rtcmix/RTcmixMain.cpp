@@ -677,7 +677,7 @@ RTcmixMain::sockit(void *arg)
     /* create the socket for listening */
 
     rtcmix_debug(NULL, "RTcmixMain::sockit entered");
-    if( (s = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    if( (s = ::socket(AF_INET, SOCK_STREAM, 0)) < 0) {
       perror("socket");
 	  run_status = RT_ERROR;	// Notify inTraverse()
       exit(1);
@@ -694,7 +694,7 @@ RTcmixMain::sockit(void *arg)
     // socknew is offset from MYPORT to allow more than one inst
     sss.sin_port = htons(MYPORT+socknew);
 
-    err = bind(s, (struct sockaddr *)&sss, sizeof(sss));
+    err = ::bind(s, (struct sockaddr *)&sss, sizeof(sss));
     if (err < 0) {
       perror("bind");
 	  run_status = RT_ERROR;	// Notify inTraverse()
@@ -709,7 +709,7 @@ RTcmixMain::sockit(void *arg)
 #else
     socklen_t len = sizeof(sss);
 #endif
-    ns = accept(s, (struct sockaddr *)&sss, &len);
+    ns = ::accept(s, (struct sockaddr *)&sss, &len);
     if(ns < 0) {
         perror("RTcmixMain::sockit: accept");
         run_status = RT_ERROR;	// Notify inTraverse()

@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <ugens.h>
 #include <bus.h>
+#include <algorithm>
 #include "BusSlot.h"
 #include <RTcmix.h>
 #include <RTThread.h>
@@ -682,34 +683,37 @@ RTcmix::addToBus(BusType type, int bus, BufPtr src, int offset, int endfr, int c
 }
 
 void
+RTcmix::mixOperation(MixData &m)
+{
+    BufPtr src = m.src;
+    BufPtr dest = m.dest;
+    const int framesOverFour = m.frames >> 2;
+    const int framesRemaining = m.frames - (framesOverFour << 2);
+    const int chans = m.channels;
+    const int chansx2 = chans << 1;
+    const int chansx3 = chansx2 + chans;
+    const int chansx4 = chansx2 + chansx2;
+    for (int n = 0; n < framesOverFour; ++n) {
+        dest[0] += src[0];
+        dest[1] += src[chans];
+        dest[2] += src[chansx2];
+        dest[3] += src[chansx3];
+        dest += 4;
+        src += chansx4;
+    }
+    for (int n = 0; n < framesRemaining; ++n) {
+        dest[n] += *src;
+        src += chans;
+    }
+}
+
+void
 RTcmix::mixToBus()
 {
     // Mix all vectors from each thread down to the final mix buses
     for (int i = 0; i < RT_THREAD_COUNT; ++i) {
         std::vector<MixData> &vector = mixVectors[i];
-        for (std::vector<RTcmix::MixData>::iterator it = vector.begin(); it != vector.end(); ++it) {
-            MixData &m = *it;
-            BufPtr src = m.src;
-            BufPtr dest = m.dest;
-            const int framesOverFour = m.frames >> 2;
-            const int framesRemaining = m.frames - (framesOverFour << 2);
-            const int chans = m.channels;
-            const int chansx2 = chans << 1;
-            const int chansx3 = chansx2 + chans;
-            const int chansx4 = chansx2 + chansx2;
-            for (int n = 0; n < framesOverFour; ++n) {
-                dest[0] += src[0];
-                dest[1] += src[chans];
-                dest[2] += src[chansx2];
-                dest[3] += src[chansx3];
-                dest += 4;
-                src += chansx4;
-            }
-            for (int n = 0; n < framesRemaining; ++n) {
-                dest[n] += *src;
-                src += chans;
-            }
-        }
+        std::for_each(vector.begin(), vector.end(), mixOperation);
         vector.clear();
     }
 }

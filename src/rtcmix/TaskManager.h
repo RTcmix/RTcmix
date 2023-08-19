@@ -129,7 +129,7 @@ inline void TaskManager::addTask(Object * inObject)
 template <typename Object, typename Ret, typename Arg, Ret (Object::*Method)(Arg)>
 inline void TaskManager::addTask(Object * inObject, Arg inArg)
 {
-	mImpl->addTask(OneArgumentTask<Object, Ret, Arg, Method>(inObject, inArg));
+	mImpl->addTask(new OneArgumentTask<Object, Ret, Arg, Method>(inObject, inArg));
 }
 
 template <typename Object, typename Ret, typename Arg1, typename Arg2, Ret (Object::*Method)(Arg1, Arg2)>

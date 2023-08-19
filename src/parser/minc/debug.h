@@ -11,7 +11,8 @@
 #undef DEBUG_TRACE
 //#define DEBUG_TRACE 1
 //#define DEBUG_TRACE 2
-//#define DEBUG_MEMORY
+//#define DEBUG_MINC_MEMORY
+//#define DEBUG_NODE_MEMORY
 
 #include "minc_internal.h"
 

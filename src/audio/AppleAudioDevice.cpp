@@ -358,6 +358,7 @@ AppleAudioDevice::Impl::renderProcess(void *context)
 	{
         //	perror("AppleAudioDevice::Impl::renderProcess: Failed to set priority of thread.");
 	}
+    pthread_setname_np("RenderProcess");
     while (true) {
         DPRINT("AppleAudioDevice::Impl::renderProcess waiting...\n");
         impl->renderSema->wait();

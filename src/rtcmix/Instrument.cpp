@@ -248,7 +248,7 @@ int Instrument::configure(int bufsamps)
 // This is the virtual function that derived classes override.  We supply a
 // default base class version because not all subclasses need/use this method.
 
-int Instrument::configure(void)
+int Instrument::configure()
 {
 	return 0;	// 0 is success, -1 is failure.
 }
@@ -327,7 +327,7 @@ int Instrument::exec(BusType bus_type, int bus)
 {
    bool done;
 
-//   printf("Instrument::exec(%p, bus_type %d, bus %d\n", this, (int)bus_type, bus);
+   //printf("Instrument::exec(%p [%s] bus_type %d, bus %d, needs_to_run %d\n", this, name(), (int)bus_type, bus, needs_to_run);
    
    run(needs_to_run);	// Only does anything if true.
 
@@ -343,9 +343,10 @@ int Instrument::exec(BusType bus_type, int bus)
          break;
       }
    }
-   if (done)
-      needs_to_run = true;
-//   printf("Instrument::exec(%p) returning %d\n", this, (int) needs_to_run);
+   if (done) {
+       needs_to_run = true;
+   }
+   //printf("   Instrument::exec(%p) returning %d\n", this, (int) needs_to_run);
    return (int) needs_to_run;
 }
 

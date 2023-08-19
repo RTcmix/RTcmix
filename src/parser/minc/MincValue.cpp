@@ -25,24 +25,24 @@ MincList::MincList(int inLen) : len(inLen), data(NULL)
     if (inLen > 0) {
         data = new MincValue[len];
     }
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("MincList::MincList: %p alloc'd with len %d\n", this, inLen);
 #endif
 }
 
 MincList::~MincList()
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("deleting MincList %p\n", this);
 #endif
     if (data != NULL) {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
         MPRINT("deleting MincList data %p...\n", data);
 #endif
         delete [] data;
         data = NULL;
     }
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("\tdone\n");
 #endif
 }
@@ -134,14 +134,14 @@ MincList::operator > (const MincList &rhs)
 
 MincMap::MincMap()
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("MincMap::MincMap: %p alloc'd\n", this);
 #endif
 }
 
 MincMap::~MincMap()
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("deleting MincMap %p\n", this);
 #endif
 }
@@ -229,7 +229,7 @@ MincFunction::MincFunction(Node *argumentList, Node *functionBody, MincFunction:
 
 MincFunction::~MincFunction()
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("deleting MincFunction %p\n", this);
 #endif
 }
@@ -273,7 +273,7 @@ MincFunction::execute()
 
 MincValue::MincValue(MincHandle h) : type(MincHandleType)
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("created MincValue %p (for MincHandle)\n", this);
 #endif
     _u.handle = h; ref_handle(h);
@@ -281,7 +281,7 @@ MincValue::MincValue(MincHandle h) : type(MincHandleType)
 
 MincValue::MincValue(MincList *l) : type(MincListType)
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("created MincValue %p (for MincList *)\n", this);
 #endif
     _u.list = l; RefCounted::ref(l);
@@ -289,7 +289,7 @@ MincValue::MincValue(MincList *l) : type(MincListType)
 
 MincValue::MincValue(MincMap *m) : type(MincMapType)
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("created MincValue %p (for MincMap *)\n", this);
 #endif
     _u.map = m; RefCounted::ref(m);
@@ -297,7 +297,7 @@ MincValue::MincValue(MincMap *m) : type(MincMapType)
 
 MincValue::MincValue(MincStruct *str) : type(MincStructType)
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("created MincValue %p (for MincStruct *)\n", this);
 #endif
     _u.mstruct = str; RefCounted::ref(str);
@@ -305,7 +305,7 @@ MincValue::MincValue(MincStruct *str) : type(MincStructType)
 
 MincValue::MincValue(MincFunction *func) : type(MincFunctionType)
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("created MincValue %p (for MincFunction *)\n", this);
 #endif
     _u.mfunc = func; RefCounted::ref(func);
@@ -313,7 +313,7 @@ MincValue::MincValue(MincFunction *func) : type(MincFunctionType)
 
 MincValue::MincValue(MincDataType inType) : type(inType)
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("created MincValue %p (for MincDataType)\n", this);
 #endif
     _u.list = NULL;        // to zero our contents
@@ -321,7 +321,7 @@ MincValue::MincValue(MincDataType inType) : type(inType)
 
 MincValue::MincValue(const MincValue &rhs) : type(MincVoidType)
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("created MincValue %p (for copy ctor with rhs %p)\n", this, &rhs);
 #endif
     *this = rhs;
@@ -329,7 +329,7 @@ MincValue::MincValue(const MincValue &rhs) : type(MincVoidType)
 
 MincValue::~MincValue()
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("deleting MincValue %p\n", this);
 #endif
     switch (type) {
@@ -351,7 +351,7 @@ MincValue::~MincValue()
        default:
             break;
     }
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("\tdone deleting\n");
 #endif
 }
@@ -487,7 +487,7 @@ void MincValue::print()
 
 const MincValue& MincValue::operator = (const MincValue &rhs)
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     ENTER();
     MPRINT("MincValue %p assigning from rhs %p)\n", this, &rhs);
 #endif
