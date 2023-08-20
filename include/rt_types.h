@@ -10,10 +10,14 @@
 #define BUFTYPE float           /* could be double some day */
 typedef BUFTYPE *BufPtr;
 
-#if BUFTYPE == float
-#define ZERO 0.0f
+#ifdef _WIN32 // MSVC doesn't like this
+	#define ZERO 0.0f
 #else
-#define ZERO 0.0
+	#if BUFTYPE == float
+	#define ZERO 0.0f
+	#else
+	#define ZERO 0.0
+	#endif
 #endif
 
 /* type for frame counts (Inst start and end points) */
