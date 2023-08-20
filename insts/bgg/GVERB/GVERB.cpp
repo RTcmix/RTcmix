@@ -80,8 +80,7 @@ int GVERB::init(double pfs[], int n_args)
 	// BGG max/msp heritage, params/etc. stored in this "p" struct (ty_gverb)
 	p = &realp;
 	// zero out the struct, to be careful
-	// BGG took this out because it didn't work on Windows -- not necessary
-	//bzero((void *)p, sizeof (ty_gverb));
+	memcpy((void *)p, 0, sizeof(ty_gverb));
 
 	p->rate = SR;
 	p->fdndamping = damping;
