@@ -140,7 +140,11 @@ makeLFO(const Arg args[], const int nargs)
 
 // -------------------------------------------------------------- makerandom ---
 #include <Random.h>
-#include <sys/time.h>
+#ifdef _WIN32
+	#include <time.h>
+#else
+	#include <sys/time.h>
+#endif
 
 static Handle
 _makerandom_usage()
@@ -250,9 +254,15 @@ makerandom(const Arg args[], const int nargs)
 	if (nargs - index > 0)		// explicit seed
 		seed = (int) args[index];
 	if (seed == 0) {
+#ifdef _WIN32
+		time_t ltime;
+		time(&ltime);
+		seed = (int) ltime;
+#else
 		struct timeval tv;
 		gettimeofday(&tv, NULL);
 		seed = (int) tv.tv_usec;
+#endif
 	}
 
 	// check initial values

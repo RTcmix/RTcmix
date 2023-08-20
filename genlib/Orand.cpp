@@ -3,7 +3,11 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 #include <Orand.h>
-#include <sys/time.h>
+#ifdef _WIN32
+	#include <time.h>
+#else
+	#include <sys/time.h>
+#endif
 
 Orand::Orand() : rand_x(1)
 {
@@ -20,11 +24,17 @@ void Orand::seed(int seed)
 
 void Orand::timeseed()
 {
+#ifdef _WIN32
+	time_t ltime;
+	time(&ltime);
+	seed(ltime);
+#else
 	struct timeval tv;
 	struct timezone tz;
 
 	gettimeofday(&tv,&tz);
 	seed(tv.tv_usec);
+#endif
 }
 
 float Orand::random()

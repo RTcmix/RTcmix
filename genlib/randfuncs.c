@@ -1,5 +1,9 @@
 #include <math.h>
-#include <sys/time.h>
+#ifdef _WIN32
+	#include <time.h>
+#else
+	#include <sys/time.h>
+#endif
 
 static  long    randx = 1;
 
@@ -34,11 +38,17 @@ static float s_brrand()
 
 void tsrand()
 {
+#ifdef _WIN32
+	time_t ltime;
+	time(&ltime);
+	s_srrand(ltime);
+#else
 	struct timeval tv;
 	struct timezone tz;
 
 	gettimeofday(&tv,&tz);
 	s_srrand(tv.tv_usec);
+#endif
 }
 
 

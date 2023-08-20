@@ -2,7 +2,11 @@
 #include <stdio.h>
 #include <sys/file.h>
 #include <sys/types.h>
-#include <sys/time.h>
+#ifdef _WIN32
+	#include <time.h>
+#else
+	#include <sys/time.h>
+#endif
 #include <unistd.h>
 #include <math.h>
 #include <ugens.h>
@@ -100,10 +104,16 @@ double m_srand(float p[], int n_args)
    unsigned int randx;
 
    if (n_args == 0) {
+#ifdef _WIN32
+		time_t ltime;
+		time(&ltime);
+		randx = ltime;
+#else
       struct timeval tv;
       gettimeofday(&tv, NULL);
       randx = (unsigned int) tv.tv_usec;
-	  rtcmix_advise("srand", "Seed initialized internally with value %u", randx);
+#endif
+	   rtcmix_advise("srand", "Seed initialized internally with value %u", randx);
    }
    else
       randx = (unsigned int) p[0];

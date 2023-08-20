@@ -10,7 +10,11 @@
 #include <stdint.h>		// for int32_t, etc.
 #include <assert.h>
 #include <unistd.h>
-#include <sys/time.h>
+#ifdef _WIN32
+	#include <time.h>
+#else
+	#include <sys/time.h>
+#endif
 #include <RTcmix.h>
 #include <rtcmix_types.h>
 #include "prototypes.h"
@@ -1331,9 +1335,15 @@ _random_table(const Arg args[], const int nargs, double *array, const int len)
 		seed = (int) args[3];
 
 	if (seed == 0) {
+#ifdef _WIN32
+		time_t ltime;
+		time(&ltime);
+		seed = (int) ltime;
+#else
 		struct timeval tv;
 		gettimeofday(&tv, NULL);
 		seed = (int) tv.tv_usec;
+#endif
 	}
 
 	Random *gen = NULL;

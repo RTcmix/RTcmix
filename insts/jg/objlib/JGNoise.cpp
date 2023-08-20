@@ -3,7 +3,11 @@
    (Seed arg and method added by JGG.)
 */
 #include "JGNoise.h"    
-#include <sys/time.h>
+#ifdef _WIN32
+	#include <time.h>
+#else
+	#include <sys/time.h>
+#endif
 
 #if defined(__OS_Win_)                              // for Windows95 or NT
    #define ONE_OVER_RANDLIMIT 0.00006103516
@@ -33,12 +37,21 @@ JGNoise :: ~JGNoise()
 */
 void JGNoise :: seed(unsigned int aSeed = 0)
 {
+#ifdef _WIN32
+   if (aSeed == 0) {
+		time_t ltime;
+		time(&ltime);
+		aSeed = ltime;
+   }
+   srand(aSeed);
+#else
    if (aSeed == 0) {
       struct timeval tv;
       gettimeofday(&tv, NULL);
       aSeed = (unsigned int)tv.tv_usec;
    }
    srandom(aSeed);
+#endif
 }
 
 
