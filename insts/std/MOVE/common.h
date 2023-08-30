@@ -8,9 +8,7 @@
 
 #ifdef __cplusplus
 
-extern "C" {
 #include <ugens.h>
-}
 
 const double MACH1 = 1080.0;
 
@@ -37,7 +35,6 @@ extern "C" {
 
 extern long MFP_samps(float, double []);
 extern int close_prime(int, int, int []);
-extern void setup_trigfuns(void);
 extern float cycle(float, double, int);
 extern void binaural(double, double, double, double, double,
                                                           double *, double *);
