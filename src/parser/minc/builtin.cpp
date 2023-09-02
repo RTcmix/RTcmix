@@ -31,6 +31,7 @@ static MincFloat _minc_index(const MincValue args[], const int nargs);
 static MincFloat _minc_contains(const MincValue args[], const int nargs);
 static MincString _minc_type(const MincValue args[], const int nargs);
 static MincString _minc_tostring(const MincValue args[], const int nargs);
+static MincString _minc_substring(const MincValue args[], const int nargs);
 
 /* other prototypes */
 static int _find_builtin(const char *funcname);
@@ -53,6 +54,7 @@ static struct _builtins {
    { "contains", _minc_contains, NULL },
    { "type",      NULL,          _minc_type },
    { "tostring",  NULL,          _minc_tostring },
+   { "substring", NULL,          _minc_substring },
    { NULL,        NULL,          NULL }         /* marks end of list */
 };
 
@@ -683,19 +685,30 @@ _minc_contains(const MincValue args[], const int nargs)
         minc_warn("contains: must have two arguments (container, item_to_find)");
         return 0;
     }
-    if (args[0].dataType() != MincListType && args[0].dataType() != MincMapType) {
-        minc_warn("contains: first argument must be a list or map");
-        return 0;
-    }
     MincDataType argtype = args[1].dataType() ;
     assert(argtype != MincVoidType);
-    
-    if (args[0].dataType() == MincListType) {
-        return _minc_index(args, nargs) != -1.0;
-    }
-    else {
-        MincMap *theMap = (MincMap *)args[0];
-        return theMap ? theMap->contains(args[1]) : 0;
+
+    switch(args[0].dataType()) {
+        case MincListType:
+            return _minc_index(args, nargs) != -1.0;
+        case MincMapType: {
+            MincMap *theMap = (MincMap *) args[0];
+            return theMap ? theMap->contains(args[1]) : 0;
+        }
+        case MincStringType:
+            if (args[1].dataType() != MincStringType) {
+                minc_warn("contains: second argument must be a string if examining a string");
+                return 0;
+            }
+            else {
+                MincString theString = (MincString) args[0];
+                MincString theNeedle = (MincString) args[1];
+                return (theNeedle != NULL) ? strstr(theString, theNeedle) != NULL ? 1 : 0 : 0;
+            }
+            break;
+        default:
+            minc_warn("contains: first argument must be a string, list, or map");
+            return 0;
     }
 }
 
@@ -730,3 +743,39 @@ _minc_tostring(const MincValue args[], const int nargs)
 	return strdup(convertedString);
 }
 
+/* ------------------------------------------------------------------ substring -- */
+/* Return the portion of the string between index0 and index1.
+*/
+MincString
+_minc_substring(const MincValue args[], const int nargs)
+{
+    if (nargs != 3) {
+        minc_warn("substring: must have three arguments (string, start_index, end_index)");
+        return NULL;
+    }
+    if (args[0].dataType() != MincStringType) {
+        minc_warn("substring: first argument must be a string");
+        return 0;
+    }
+    if (args[1].dataType() != MincFloatType || args[2].dataType() != MincFloatType) {
+        minc_warn("substring: second and third arguments must be floats");
+        return 0;
+    }
+    int startIdx = (int)(MincFloat)args[1];
+    int endIdx = (int)(MincFloat)args[2];
+    MincString theString = (MincString) args[0];
+    int len = strlen(theString);
+    if (startIdx < 0 || endIdx <= startIdx) {
+        minc_warn("substring: illegal indices");
+        return 0;
+    }
+    if (endIdx > len - 1) {
+        minc_warn("substring: end index out of range - using string endpoint");
+        endIdx = len - 1;
+    }
+    int newlen = len - startIdx + 1;
+    char *sbuffer = new char [newlen];
+    strncpy(sbuffer, &theString[startIdx], newlen);
+    sbuffer[endIdx - startIdx] = '\0';
+    return strdup(sbuffer);
+}

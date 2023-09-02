@@ -114,7 +114,7 @@ static float peakflag;
 
 double m_open(float *p, short n_args, double *pp) 
 {
-	char  *name,*cp,*getsfcode();
+	char  *name,*cp;
 	int   fno,i,inew;
 	float *opk;
 
