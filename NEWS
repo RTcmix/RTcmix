@@ -1,6 +1,11 @@
 This gives a very brief summary of new things for each stable version.
 If you want more detail, see the ChangeLog.
 
+RTcmix version 5.0
+------------------
+
+Includes support for new struct and map objects.  New mfunction type allows
+builtin functions to be stored as a variable.
 
 RTcmix version 4.1
 ------------------
