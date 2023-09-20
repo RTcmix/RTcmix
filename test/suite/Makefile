@@ -5,6 +5,7 @@ include ../../makefile.conf
 CMD = ${CMIXDIR}/bin/CMIX
 
 CXXFLAGS += -DCMIXDIR=${CMIXDIR}
+LDFLAGS = $(ARCH_BITFLAGS)
 
 all:	announce all_tests
 
@@ -53,7 +54,7 @@ socksend: $(SOCKSENDOBJS)
 	$(CXX) -o $@ $(SOCKSENDOBJS) ${CMIXDIR}/lib/RTsockfuncs.o
 
 embeddedtest: embeddedtest.o
-	$(CXX) -g -o $@ embeddedtest.o -L${CMIXDIR}/lib -lrtcmix_embedded
+	$(CXX) $(LDFLAGS) -g -o $@ embeddedtest.o -L${CMIXDIR}/lib -lrtcmix_embedded
 
 osc_send_test.o:	osc_send_test.cpp
 	$(CXX) ${LIBLO_CFLAGS} -c osc_send_test.cpp

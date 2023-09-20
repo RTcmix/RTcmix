@@ -774,8 +774,7 @@ int yywrap()
 
 static void cleanup()
 {
-	rtcmix_debug("cleanup", "yy_init = %d", yy_init);
-	MPRINT1("Freeing program tree %p", program);
+	rtcmix_debug("cleanup", "Freeing program tree %p", program);
     delete program;
 	program = NULL;
 	/* Reset all static state */

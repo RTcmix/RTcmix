@@ -178,7 +178,7 @@ use_script_file(char *fname)
 }
 
 #ifdef EMBEDDED
-extern "C" double minc_memflush();                                    // minc/minc.cpp (from minc.y)
+extern "C" double minc_memflush(void);                                    // minc/minc.cpp (from minc.y)
 #endif
 
 /* ------------------------------------------------------- destroy_parser --- */

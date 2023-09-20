@@ -1741,7 +1741,8 @@ Node *	NodeFuncDef::doExct()
 	assert(child(0)->symbol() != NULL);
     // Note: arglist and body stored inside MincFunction.  This is how we store the behavior
     // of a function/method on its symbol for re-use.  Creating with MincFunction::Method causes it to
-    // expect to find a symbol for 'this'.
+    // expect to find a symbol for 'this'.  XXX FIX ME XXX the arglist (child(1)) is destroyed when the
+    // Node tree is cleaned up but the MincFunction still references it (because it is global!).
 	child(0)->symbol()->value() = MincValue(new MincFunction(child(1), child(2), _isMethod ? MincFunction::Method : MincFunction::Standalone));
 	return this;
 }
