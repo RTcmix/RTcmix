@@ -13,7 +13,7 @@ ifeq ($(BUILDTYPE), STANDALONE)
 endif
 
 ifdef BUILD_FILTERS
-	FILTERS = libPVNewFilter.so libPVRandBend.so libPVRandBands.so libPVTransBend.so
+	FILTERS = libPVNewFilter.so libPVRandBend.so libPVRandBands.so libPVTransBend.so libPVFilterBands.so
 endif
 
 PROGS = $(NAME) lib$(NAME).so $(FILTERS)
@@ -49,6 +49,9 @@ libPVRandBands.so:	PVFilter.o PVRandBands.o
 libPVTransBend.so:	PVFilter.o PVTransBend.o
 	$(CXX) $(SHARED_LDFLAGS) -o $@ PVFilter.o PVTransBend.o setup.o
 
+libPVFilterBands.so:	PVFilter.o PVFilterBands.o
+	$(CXX) $(SHARED_LDFLAGS) -o $@ PVFilter.o PVFilterBands.o setup.o
+
 endif
 
 $(NAME):	$(UGENS_H) $(OBJS) $(CMIXOBJS)
@@ -63,6 +66,7 @@ ifdef BUILD_FILTERS
 	$(INSTALL) $(CURDIR)/libPVRandBend.so $(LIBDESTDIR)
 	$(INSTALL) $(CURDIR)/libPVRandBands.so $(LIBDESTDIR)
 	$(INSTALL) $(CURDIR)/libPVTransBend.so $(LIBDESTDIR)
+	$(INSTALL) $(CURDIR)/libPVFilterBands.so $(LIBDESTDIR)
 endif
 
 standalone_install: standalone
@@ -77,13 +81,14 @@ ifdef BUILD_FILTERS
 	$(RM) $(LIBDESTDIR)/libPVRandBend.so
 	$(RM) $(LIBDESTDIR)/libPVRandBands.so
 	$(RM) $(LIBDESTDIR)/libPVTransBend.so
+	$(RM) $(LIBDESTDIR)/libPVFilterBands.so
 endif
 
 standalone_uninstall:
 	$(RM) $(DESTDIR)/$(NAME)
 
 clean:
-	$(RM) $(OBJS) $(PROGS) $(FILTERS) PVFilter.o PVFilterTest.o PVNewFilter.o PVRandBend.o PVRandBands.o PVTransBend.o
+	$(RM) $(OBJS) $(PROGS) $(FILTERS) PVFilter.o PVFilterTest.o PVNewFilter.o PVRandBend.o PVRandBands.o PVTransBend.o PVFilterBands.o
 
 cleanall: clean
 	$(RM) depend
