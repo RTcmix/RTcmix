@@ -118,10 +118,10 @@ class Node1Child : public Node
 {
 	Node* _child;
 public:
-    Node1Child(OpKind op, NodeKind kind, Node *n1) : Node(op, kind), _child(n1) { n1->ref(); }
+    Node1Child(OpKind op, NodeKind kind, Node *n1) : Node(op, kind), _child(n1) { RefCounted::ref(n1); }
 	virtual Node*		child(int index) const { return (index == 0) ? _child : NULL; }
 protected:
-    virtual        ~Node1Child() { _child->unref(); }
+    virtual        ~Node1Child() { RefCounted::unref(_child); }
 };
 
 class Node2Children : public Node
