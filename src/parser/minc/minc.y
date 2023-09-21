@@ -107,13 +107,13 @@ static Node * go(Node * t1);
 %type  <node> fdecl sdecl hdecl ldecl mapdecl structdecl structinit mfuncdecl arg argl funcdef fstml fblock fargl funcname mbr mbrl structdef methodname methoddef
 %type  <str> id structname
 
-%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl mapdecl structdecl structinit mfuncdecl funcdef fstml arg argl fargl funcname mbr mbrl structdef obj fexp fexpl fblock expblk methodname methoddef
+%destructor { MPRINT1("yydestruct unref'ing node %p\n", $$); RefCounted::unref($$); } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl mapdecl structdecl structinit mfuncdecl funcdef fstml arg argl fargl funcname mbr mbrl structdef obj fexp fexpl fblock expblk methodname methoddef
 
 %error-verbose
 
 %%
 /* program (the "start symbol") */
-prg:	| stml				{ MPRINT("prg:"); program = $1; cleanup(); return 0; }
+prg:	| stml				{ MPRINT("prg:"); program = $1; program->ref(); cleanup(); return 0; }
 	;
  
 /* statement list */
@@ -683,7 +683,7 @@ static Node * parseListArgument(const char *text, int *pOutErr)
         }
         listNode = new NodeList(listElem);
     } catch (int &ii) {
-        delete listElem;
+        RefCounted::unref(listElem);
         *pOutErr = 1;
     }
     return listNode;
@@ -749,7 +749,7 @@ go(Node * t1)
 			t1->exct();
 		}
         catch(const RTException &rtex) {
-            delete t1;
+            t1->unref();
             t1 = NULL;
             cleanup();
             rterror("parser", "caught fatal exception: '%s' - bailing out", rtex.mesg());
@@ -757,7 +757,7 @@ go(Node * t1)
         }
 		catch(...) {
 			MPRINT1("caught exception - deleting node %p and cleaning up", t1);
-			delete t1;
+			t1->unref();
 			t1 = NULL;
 			cleanup();
 			throw;
@@ -775,7 +775,7 @@ int yywrap()
 static void cleanup()
 {
 	rtcmix_debug("cleanup", "Freeing program tree %p", program);
-    delete program;
+    RefCounted::unref(program);
 	program = NULL;
 	/* Reset all static state */
 	comments = 0;	// from lex.yy.c
@@ -821,7 +821,7 @@ void reset_parser()
 double minc_memflush()
 {
 	rtcmix_debug("minc_memflush", "Freeing parser memory");
-	delete program;
+    RefCounted::unref(program);
 	program = NULL;
 	free_symbols();
 #ifdef USE_YYLEX_DESTROY
