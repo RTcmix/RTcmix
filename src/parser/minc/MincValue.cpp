@@ -225,6 +225,8 @@ MincFunction::MincFunction(Node *argumentList, Node *functionBody, MincFunction:
     : _argumentList(argumentList), _functionBody(functionBody), _type(type)
 {
     ENTER();
+    _argumentList->ref();
+    _functionBody->ref();
 }
 
 MincFunction::~MincFunction()
@@ -232,6 +234,8 @@ MincFunction::~MincFunction()
 #ifdef DEBUG_MINC_MEMORY
     MPRINT("deleting MincFunction %p\n", this);
 #endif
+    _functionBody->unref();
+    _argumentList->unref();
 }
 
 void
@@ -243,12 +247,13 @@ MincFunction::handleThis(std::vector<Symbol *> &symbolStack)
             symbolStack.pop_back();     // remove symbol once it is used
             MincStruct *structForThis = (MincStruct *) symbolForThis->value();
             Node *nodeStructDecl = new NodeStructDecl(strsave("this"), structForThis->typeName());
+            nodeStructDecl->ref();
             DPRINT("MincFunction::handleThis: declaring symbol for 'this' from called object '%s'\n", symbolForThis->name());
             Node *declaredVarThis = nodeStructDecl->exct();
             declaredVarThis->copyValue(symbolForThis, NO);  // dont allow type override
             DPRINT("MincFunction::handleThis: copying source symbol's value(s) into symbol for 'this'\n");
             declaredVarThis->symbol()->value() = symbolForThis->value();
-            delete nodeStructDecl;
+            nodeStructDecl->unref();
         }
         else {
             DPRINT("MincFunction::handleThis: symbolForThis is NULL\n");    // This will generate an error later

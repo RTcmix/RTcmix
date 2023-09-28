@@ -11,6 +11,7 @@
 
 #include "minc_internal.h"
 #include "MincValue.h"
+#include "RefCounted.h"
 
 // NODE_DEBUG enables logging of Node creation and destruction
 #undef NODE_DEBUG
@@ -67,7 +68,7 @@ typedef enum {
 	eNodeNoop
 } NodeKind;
 
-class Node : public MincObject
+class Node : public MincObject, public RefCounted
 {
 //protected:					TODO: FINISH FULL CLASS
 public:
@@ -79,7 +80,6 @@ public:
     const char *    includeFilename;   /* used for error statements */
 public:
 	Node(OpKind op, NodeKind kind);
-	virtual 			~Node();
 	const char *		classname() const;
     const char *		name() const;
 	MincDataType		dataType() const { return v.dataType(); }
@@ -95,6 +95,7 @@ public:
     Node *              copyValue(Symbol *, bool allowTypeOverwrite=true);
 	void				print();
 protected:
+    virtual             ~Node();
 	virtual Node*		doExct() = 0;
 protected:
 	union {
@@ -108,8 +109,8 @@ class NodeNoop : public Node
 {
 public:
 	NodeNoop() : Node(OpFree, eNodeNoop) { }
-	virtual				~NodeNoop();
 protected:
+    virtual                ~NodeNoop();
 	virtual Node*		doExct() { return this; }
 };
 
@@ -117,9 +118,10 @@ class Node1Child : public Node
 {
 	Node* _child;
 public:
-	Node1Child(OpKind op, NodeKind kind, Node *n1) : Node(op, kind), _child(n1) {}
-	virtual		~Node1Child() { delete _child; }
+    Node1Child(OpKind op, NodeKind kind, Node *n1) : Node(op, kind), _child(n1) { RefCounted::ref(n1); }
 	virtual Node*		child(int index) const { return (index == 0) ? _child : NULL; }
+protected:
+    virtual        ~Node1Child() { RefCounted::unref(_child); }
 };
 
 class Node2Children : public Node
@@ -127,9 +129,10 @@ class Node2Children : public Node
 	Node* _children[2];
 public:
 	Node2Children(OpKind op, NodeKind kind, Node *n1, Node *n2)
-		: Node(op, kind) { _children[0] = n1; _children[1]= n2; }
-	virtual			~Node2Children() { delete _children[0]; delete _children[1]; }
+        : Node(op, kind) { _children[0] = n1; _children[1]= n2; n1->ref(); n2->ref(); }
 	virtual Node*	child(int index) const { return (index < 2) ? _children[index] : NULL; }
+protected:
+    virtual            ~Node2Children() { _children[0]->unref(); _children[1]->unref(); }
 };
 
 class Node3Children : public Node
@@ -137,9 +140,13 @@ class Node3Children : public Node
 	Node* _children[3];
 public:
 	Node3Children(OpKind op, NodeKind kind, Node *n1, Node *n2, Node *n3)
-		: Node(op, kind) { _children[0] = n1; _children[1]= n2; _children[2] = n3; }
+    : Node(op, kind) {
+        _children[0] = n1; _children[1]= n2; _children[2] = n3;
+        n1->ref(); n2->ref(); n3->ref();
+    }
+protected:
 	virtual			~Node3Children() {
-		delete _children[0]; delete _children[1]; delete _children[2];
+		_children[0]->unref(); _children[1]->unref(); _children[2]->unref();
 	}
 	virtual Node*		child(int index) const { return (index < 3) ? _children[index] : NULL; }
 };
@@ -537,8 +544,9 @@ class NodeFor : public Node3Children
 public:
 	NodeFor(Node *n1, Node *n2, Node *n3, Node *n4) : Node3Children(OpFree, eNodeFor, n1, n2, n3), _child4(n4) {
 		NPRINT("NodeFor(%p, %p, %p, <e4>) => %p\n", n1, n2, n3, this);
+        n4->ref();
 	}
-	virtual ~NodeFor() { delete _child4; }
+	virtual ~NodeFor() { _child4->unref(); }
 protected:
 	virtual Node*		doExct();
 };
