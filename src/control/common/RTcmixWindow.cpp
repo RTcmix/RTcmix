@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
-#include <assert.h>
 
 RTcmixWindow::RTcmixWindow(int sleepTimeInMs)
 	: _sleeptime(sleepTimeInMs * 1000), _eventThread(0), _runThread(false)

@@ -154,10 +154,12 @@ create_audio_file_device(AudioDevice *inDevice,
 	
 	AudioDevice *device = NULL;
 
-	AudioFileDevice *fileDevice = new AudioFileDevice(outfilename,
-													  header_type);
-													
-	if (fileDevice == NULL) {
+	AudioFileDevice *fileDevice = NULL;
+
+    try {
+        fileDevice = new AudioFileDevice(outfilename,header_type);
+    }
+	catch(...) {
 		rterror("rtoutput", "Failed to create audio file device");
 		return NULL;
 	}

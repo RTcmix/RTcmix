@@ -22,28 +22,28 @@
 */
 
 /* builtin function prototypes */
-static MincFloat _minc_print(const MincValue args[], const int nargs);
-static MincFloat _minc_printf(const MincValue args[], const int nargs);
-static MincFloat _minc_error(const MincValue args[], const int nargs);
-static MincFloat _minc_len(const MincValue args[], const int nargs);
-static MincFloat _minc_interp(const MincValue args[], const int nargs);
-static MincFloat _minc_index(const MincValue args[], const int nargs);
-static MincFloat _minc_contains(const MincValue args[], const int nargs);
-static MincString _minc_type(const MincValue args[], const int nargs);
-static MincString _minc_tostring(const MincValue args[], const int nargs);
-static MincString _minc_substring(const MincValue args[], const int nargs);
+static MincFloat _minc_print(const MincValue args[], int nargs);
+static MincFloat _minc_printf(const MincValue args[], int nargs);
+static MincFloat _minc_error(const MincValue args[], int nargs);
+static MincFloat _minc_len(const MincValue args[], int nargs);
+static MincFloat _minc_interp(const MincValue args[], int nargs);
+static MincFloat _minc_index(const MincValue args[], int nargs);
+static MincFloat _minc_contains(const MincValue args[], int nargs);
+static MincString _minc_type(const MincValue args[], int nargs);
+static MincString _minc_tostring(const MincValue args[], int nargs);
+static MincString _minc_substring(const MincValue args[], int nargs);
 
 /* other prototypes */
 static int _find_builtin(const char *funcname);
-static void _do_print(const MincValue args[], const int nargs);
-static MincString _make_type_string(const MincDataType type);
+static void _do_print(const MincValue args[], int nargs);
+static MincString _make_type_string(MincDataType type);
 
 
 /* list of builtin functions, searched by _find_builtin */
 static struct _builtins {
    const char *label;
-   MincFloat (*number_return)(const MincValue *, const int); /* func name for those returning MincFloat */
-   MincString (*string_return)(const MincValue *, const int);   /* func name for those returning char * */
+   MincFloat (*number_return)(const MincValue *, int); /* func name for those returning MincFloat */
+   MincString (*string_return)(const MincValue *, int);   /* func name for those returning char * */
 } builtin_funcs[] = {
    { "print",     _minc_print,   NULL },
    { "printf",    _minc_printf,  NULL },
@@ -64,7 +64,7 @@ static int
 _find_builtin(const char *funcname)
 {
    int i = 0;
-   while (1) {
+   while (true) {
       if (builtin_funcs[i].label == NULL)
          break;
       if (strcmp(builtin_funcs[i].label, funcname) == 0)
@@ -76,7 +76,7 @@ _find_builtin(const char *funcname)
 
 int
 call_builtin_function(const char *funcname, const MincValue arglist[],
-   const int nargs, MincValue *retval)
+   int nargs, MincValue *retval)
 {
    int index = _find_builtin(funcname);
    if (index < 0)
@@ -97,7 +97,7 @@ call_builtin_function(const char *funcname, const MincValue arglist[],
 
 /* ----------------------------------------------------- _make_type_string -- */
 static MincString
-_make_type_string(const MincDataType type)
+_make_type_string(MincDataType type)
 {
    char *str = NULL;
 
@@ -133,7 +133,7 @@ _make_type_string(const MincDataType type)
 
 /* ------------------------------------------------------------- _do_print -- */
 static void
-_do_print(const MincValue args[], const int nargs)
+_do_print(const MincValue args[], int nargs)
 {
    int i, last_arg;
 
@@ -239,7 +239,7 @@ void    MincMap::print()
 
 /* ----------------------------------------------------------------- print -- */
 MincFloat
-_minc_print(const MincValue args[], const int nargs)
+_minc_print(const MincValue args[], int nargs)
 {
    if (get_print_option() < MMP_PRINTS) return 0.0;
 
@@ -275,9 +275,9 @@ _minc_print(const MincValue args[], const int nargs)
       a=1, a=1.2345, b=[-2, -1, 0, 1, 2, 99.99], c=boo!, type of c: string
 */
 
-#if defined(EMBEDDED)
+#if defined(EMBEDDED) && !FORCE_EMBEDDED_PRINTF
 MincFloat
-_minc_printf(const MincValue args[], const int nargs)
+_minc_printf(const MincValue args[], int nargs)
 {
    int n;
    const char *p;
@@ -399,7 +399,7 @@ err:
 
 #else
 MincFloat
-_minc_printf(const MincValue args[], const int nargs)
+_minc_printf(const MincValue args[], int nargs)
 {
    int n;
    const char *p;
@@ -516,7 +516,7 @@ err:
 #endif // EMBEDDED
 
 MincFloat
-_minc_error(const MincValue args[], const int nargs)
+_minc_error(const MincValue args[], int nargs)
 {
     MincString p = (MincString) args[0];
     minc_die("%s", p);
@@ -528,7 +528,7 @@ _minc_error(const MincValue args[], const int nargs)
    of items in a list or map, or the number of characters in a string.
 */
 MincFloat
-_minc_len(const MincValue args[], const int nargs)
+_minc_len(const MincValue args[], int nargs)
 {
    unsigned long len = 0;
 
@@ -580,7 +580,7 @@ static int min(int x, int y) { return (x <= y) ? x : y; }
    "distance" through the list.
  */
 MincFloat
-_minc_interp(const MincValue args[], const int nargs)
+_minc_interp(const MincValue args[], int nargs)
 {
 	MincFloat outValue = -1;
 	if (nargs != 2)
@@ -621,7 +621,7 @@ _minc_interp(const MincValue args[], const int nargs)
    <id> equals 1 after this call.
 */
 MincFloat
-_minc_index(const MincValue args[], const int nargs)
+_minc_index(const MincValue args[], int nargs)
 {
    int i, len, index = -1;
    MincDataType argtype;
@@ -679,7 +679,7 @@ _minc_index(const MincValue args[], const int nargs)
    in the given list or map, or 0 if the item is not found.
  */
 MincFloat
-_minc_contains(const MincValue args[], const int nargs)
+_minc_contains(const MincValue args[], int nargs)
 {
     if (nargs != 2) {
         minc_warn("contains: must have two arguments (container, item_to_find)");
@@ -716,7 +716,7 @@ _minc_contains(const MincValue args[], const int nargs)
 /* Print the object type of the argument: float, string, handle, list, mincfunction, struct.
 */
 MincString
-_minc_type(const MincValue args[], const int nargs)
+_minc_type(const MincValue args[], int nargs)
 {
    if (nargs != 1) {
       minc_warn("type: must have one argument");
@@ -729,7 +729,7 @@ _minc_type(const MincValue args[], const int nargs)
 /* Return the passed in (double) argument as a string type.
  */
 MincString
-_minc_tostring(const MincValue args[], const int nargs)
+_minc_tostring(const MincValue args[], int nargs)
 {
 	if (nargs != 1) {
 		minc_warn("tostring: must have one argument");
@@ -747,7 +747,7 @@ _minc_tostring(const MincValue args[], const int nargs)
 /* Return the portion of the string between index0 and index1.
 */
 MincString
-_minc_substring(const MincValue args[], const int nargs)
+_minc_substring(const MincValue args[], int nargs)
 {
     if (nargs != 3) {
         minc_warn("substring: must have three arguments (string, start_index, end_index)");

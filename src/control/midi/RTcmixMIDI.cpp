@@ -64,14 +64,17 @@ RTcmixMIDIInput::~RTcmixMIDIInput()
 
 RTcmixMIDIInput *createMIDIInputPort()
 {
-	RTcmixMIDIInput *midiport = new RTcmixMIDIInput();
-	if (midiport) {
-		if (midiport->init() == -1) {
-			delete midiport;
-			return NULL;
-		}
-	}
-
+	RTcmixMIDIInput *midiport = NULL;
+    try {
+        midiport = new RTcmixMIDIInput();
+    }
+    catch (...) {
+        return NULL;
+    }
+    if (midiport->init() == -1) {
+        delete midiport;
+        midiport = NULL;
+    }
 	return midiport;
 }
 
@@ -539,13 +542,18 @@ RTcmixMIDIOutput *createMIDIOutputPort()
         fprintf(stderr, "You must call rtsetparams before setting up MIDI output\n");
         return NULL;
     }
-    RTcmixMIDIOutput *midiport = new RTcmixMIDIOutput();
-    if (midiport) {
-        if (midiport->init() == -1) {
-            delete midiport;
-            return NULL;
-        }
+    RTcmixMIDIOutput *midiport = NULL;
+    try {
+        midiport = new RTcmixMIDIOutput();
     }
+    catch (...) {
+        return NULL;
+    }
+    if (midiport->init() == -1) {
+        delete midiport;
+        return NULL;
+    }
+
     RTcmix::registerAudioStartCallback(startCallback, midiport);
     RTcmix::registerAudioStopCallback(stopCallback, midiport);
     

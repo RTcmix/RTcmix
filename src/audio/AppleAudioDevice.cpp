@@ -1465,7 +1465,7 @@ errToString(OSStatus err)
         errstring = ": Unsupported audio format";
         break;
     case kAudioHardwareBadPropertySizeError:
-        errstring = ": Bad hardware propery size";
+        errstring = ": Bad hardware property size";
         break;
     case kAudioHardwareIllegalOperationError:
         errstring = ": Illegal operation";
@@ -1586,7 +1586,7 @@ void AppleAudioDevice::parseDeviceDescription(const char *inDesc)
 			strncpy(_impl->deviceName, inDesc, nameLen);
 			_impl->deviceName[nameLen] = '\0';
 			++substr;	// skip ':'
-         	// Extract input and output stream selecters
+         	// Extract input and output stream selectors
 			char *insubstr = NULL;
 			const char *outsubstr = NULL;
             if ((outsubstr = strchr(substr, ',')) != NULL) {
@@ -1597,7 +1597,7 @@ void AppleAudioDevice::parseDeviceDescription(const char *inDesc)
             else {
 				insubstr = (char *) (outsubstr = substr);
             }
-            // Now parse stream selecters and set up channel mapping if necessary
+            // Now parse stream selectors and set up channel mapping if necessary
             const char *selecters[2] = { insubstr, outsubstr };
 			int chanFirst = 0, chanLast = 0;
             for (int dir = REC; dir <= PLAY; ++dir) {
@@ -1605,11 +1605,11 @@ void AppleAudioDevice::parseDeviceDescription(const char *inDesc)
 					// Do nothing;  use defaults.
 				}
 				else if (strchr(selecters[dir], '-') == NULL) {
-					// Parse non-range selecter (single digit)
+					// Parse non-range selector (single digit)
 					chanFirst = (int) strtol(selecters[dir], NULL, 0);
 				}
 				else {
-					// Parse selecter of form "X-Y"
+					// Parse selector of form "X-Y"
 					int idx0, idx1;
 					int found = sscanf(selecters[dir], "%d-%d", &idx0, &idx1);
 					if (found == 2 && idx1 >= idx0) {
@@ -1640,7 +1640,7 @@ void AppleAudioDevice::parseDeviceDescription(const char *inDesc)
 				DPRINT("\tmapping our channel 0 to hardware channel %d, etc.\n", _impl->port[PLAY].channelMap[0]);
 			}
        }
-		// Treat old-stye device name as "default" (handled below).
+		// Treat old-style device name as "default" (handled below).
 		if (!strcmp(_impl->deviceName, "OSXHW")) {
 			delete [] _impl->deviceName;
 			_impl->deviceName = NULL;
