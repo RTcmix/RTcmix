@@ -16,6 +16,7 @@
 #include "RefCounted.h"
 #include <vector>
 #include <string.h>
+#include <new>          // std::bad_alloc
 
 #ifdef DEBUG
    #define DPRINT(...) rtcmix_print(__VA_ARGS__)
@@ -213,7 +214,11 @@ void efree(void *mem);
 
 inline void *	MincObject::operator new(size_t size)
 {
-	return emalloc(size);
+	char *mem = emalloc(size);
+    if (!mem) {
+        throw std::bad_alloc();
+    }
+    return mem;
 }
 
 inline void	MincObject::operator delete(void *ptr)

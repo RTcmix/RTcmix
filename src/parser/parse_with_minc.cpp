@@ -11,6 +11,7 @@
 #include <ugens.h>
 #include "rtdefs.h"
 #include <RTOption.h>
+#include <new>
 
 typedef struct yy_buffer_state * YY_BUFFER_STATE;
 #if BISON_VERSION >= 3 || !defined(MACOSX)
@@ -87,6 +88,14 @@ run_parser(const char *caller)
         }
         rtcmix_warn(caller, "Caught exception: %s", errname);
         status = otherError;
+    }
+    catch (std::bad_alloc &ba) {
+        rtcmix_warn(caller, "Caught memory exception: %s", ba.what());
+        status = MEMORY_ERROR;
+    }
+    catch (...) {
+        rtcmix_warn(caller, "Caught unknown exception");
+        status = -1;
     }
     if (status != 0) {
         // added for exit after Minc parse errors with the option set -- BGG

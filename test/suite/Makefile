@@ -32,6 +32,7 @@ test_simple_mix \
 test_scheduler \
 test_stereo \
 test_load \
+test_minc \
 run_stresstest \
 run_sockettest \
 $(NULL)
@@ -159,6 +160,14 @@ test_load:
 	@find ${CMIXDIR}/shlib/ -name lib\* | grep -v conn | sed 's/\(.*\)/if (load("&") != 1) { print("& LOAD FAILED"); }/' > load_test.sco
 	-$(CMD) < load_test.sco
 #	rm load_test.sco
+
+test_minc:
+	@echo
+	@echo Testing MinC functionality
+	-$(CMD) < test-minc-nestedlists.sco		
+	-$(CMD) < test-minc-nestedpfieldlists.sco		
+	-$(CMD) < test-minc-pfieldchain.sco		
+	-$(CMD) < test-minc-samplepfield.sco
 
 test_embedded:
 	@echo

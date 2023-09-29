@@ -2,12 +2,12 @@ links = 10
 
 pfield = maketable("line", 100, 0,0, 1,1)
 
-list = {}
+mylist = {}
 for (i = 0; i < links; i += 1) {
-	list[i] = pfield
+	mylist[i] = pfield
 	pfield = makefilter(pfield, "smooth", 10)
 }
-list[i] = pfield
+mylist[i] = pfield
 
-print(list)
+print(mylist)
 
