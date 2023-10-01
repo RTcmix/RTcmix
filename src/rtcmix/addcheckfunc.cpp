@@ -56,11 +56,13 @@ RTcmix::addfunc(
    int			    return_type,            /* return type of function */
    int    			legacy)                 /* use old function signature */
 {
-   RTcmixFunction *cur_node, *this_node;
+    RTcmixFunction *cur_node, *this_node = NULL;
 
-   /* Create and initialize new list node. */
-   this_node = new RTcmixFunction;
-   if (this_node == NULL) {
+    /* Create and initialize new list node. */
+    try {
+        this_node = new RTcmixFunction;
+    }
+   catch(...) {
       die("addfunc", "no memory for table of functions");
       RTExit(MEMORY_ERROR);
       return;
@@ -143,7 +145,6 @@ findfunc(RTcmixFunction *func_list, const char *func_label)
    for (cur_node = func_list; cur_node; cur_node = cur_node->next) {
       if (strcmp(cur_node->func_label, func_label) == 0) {
          return cur_node;
-         break;
       }
    }
    return NULL;

@@ -126,7 +126,7 @@ double m_ampdb(float p[])
 double m_dbamp(float p[])
 { return(dbamp(p[0])); }
 
-double m_stringify(float p, int n_args, double pp[])
+double m_stringify(float p[], int n_args, double pp[])
 {
 	/* coerces a string passed in from Minc in quotes in p[0]
 	   to a 'floating point' pointer suitable for use in

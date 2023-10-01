@@ -46,8 +46,11 @@ dispatch(const char *str, double *pp, int n_args, void **inst)
 	Arg retarg;
 	double retval;
 
-	Arg *rtcmixargs = new Arg[n_args];
-	if (rtcmixargs == NULL) {
+	Arg *rtcmixargs = NULL;
+    try {
+        rtcmixargs = new Arg[n_args];
+    }
+	catch(...) {
 	  rterror("dispatch", "out of memory");
 	  return -1.0;
 	}

@@ -76,12 +76,6 @@ BusQueue::~BusQueue()
 	slot->unref();
 }
 
-/* Special flags and whatnot */
-enum ConfigStatus {
-  CONFIG,
-  NOT_CONFIG
-};
-
 // Local classes for configuration checking
 
 struct CheckNode : public RefCounted {
@@ -847,10 +841,11 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
 #endif
        RTExit(PARAM_ERROR);
    }
-
-   bus_slot = new BusSlot(busCount);
-   if (bus_slot == NULL)
-      RTExit(MEMORY_ERROR);
+   try {
+       bus_slot = new BusSlot(busCount);
+   } catch(...) {
+       RTExit(MEMORY_ERROR);
+   }
 
    inbusses[0] = outbusses[0] = '\0';
    
