@@ -5,7 +5,7 @@
 
 #define VERBOSE 0      /* print stuff during filter design (in setell) */
 
-double ellset(float p[], int n_args, double *pp);
+double ellset(double p[], int n_args);
 int get_nsections(void);
 int ellpset(EllSect [], float *);
 float ellipse(float, int, EllSect [], float);
@@ -19,7 +19,7 @@ static int    nsections = 0;            /* number of sections */
 
 
 double
-ellset(float p[], int n_args, double *pp)
+ellset(double p[], int n_args)
 {
    double srate, f1, f2, f3, ripple, atten;
 

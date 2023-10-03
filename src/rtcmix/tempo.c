@@ -14,7 +14,7 @@ float beat_time(float beatin);
 
 
 double
-tbase(float p[], int n_args)
+tbase(double p[], int n_args)
 {
 	BASIS = p[0];
 	return 0.0;
@@ -22,7 +22,7 @@ tbase(float p[], int n_args)
 
 
 double
-tempo(float p[], int n_args)
+tempo(double p[], int n_args)
 {
 	short m;
 	float dur,prvbt;
@@ -119,7 +119,7 @@ beat_time(float beatin)    /* returns beats from times */
 
 
 double
-t(float p[], int n_args)
+t(double p[], int n_args)
 {
 	float x,y;
 	x = time_beat(p[0]);

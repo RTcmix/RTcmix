@@ -21,7 +21,7 @@ RTMIDIOutput *getMIDIOutput()
 }
 
 double
-setup_midi(float *p, int n_args)
+setup_midi(double *p, int n_args)
 {
 #ifndef EMBEDDED
     char loadPath[1024];
@@ -64,7 +64,7 @@ class Instrument;
 
 extern "C" {
 
-double controller_number(float *p, int n_args, double *pp);
+double controller_number(double p[], int n_args);
 
 int profile()
 {

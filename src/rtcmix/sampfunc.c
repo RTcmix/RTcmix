@@ -5,7 +5,7 @@
 #include <sys/types.h>
 
 double
-m_sampfunc(float p[], int n_args)
+m_sampfunc(double p[], int n_args)
 {
 	int size, fnumber,skipin;
 	double *thefunct;
@@ -23,7 +23,7 @@ m_sampfunc(float p[], int n_args)
 }
 
 double
-m_sampfunci(float p[], int n_args)	/* interpolated version of sampfunc -- DAS 5/90 */
+m_sampfunci(double p[], int n_args)	/* interpolated version of sampfunc -- DAS 5/90 */
 {
 	int fnumber,size,skipin, skipin2;
 	double *thefunct, frac;

@@ -264,10 +264,9 @@ RTcmix::parse_rtoutput_args(int nargs, double pp[])
 
 /* ------------------------------------------------------------- rtoutput --- */
 /* This routine is used in the Minc score to open up a file for
-   writing by RT instruments.  pp[0] is a pointer to the soundfile
-   name, disguised as a double by the crafty Minc.  (p[] is passed in
-   just for fun.)  Optional string arguments follow the filename,
-   and parse_rtoutput_args processes these. See the comment at the
+   writing by RT instruments.  p[0] is a pointer to the soundfile
+   name, disguised as a double by the crafty Minc. Optional string
+   arguments follow the filename, and parse_rtoutput_args processes these. See the comment at the
    top of this file for the meaning of these arguments.
 
    If "clobber" mode is on, we delete an existing file with the
@@ -278,7 +277,7 @@ RTcmix::parse_rtoutput_args(int nargs, double pp[])
    is any other error.
 */
 double
-RTcmix::rtoutput(float p[], int n_args, double pp[])
+RTcmix::rtoutput(double p[], int n_args)
 {
    int         error;
    struct stat statbuf;
@@ -298,7 +297,7 @@ RTcmix::rtoutput(float p[], int n_args, double pp[])
        return rtOptionalThrow(CONFIGURATION_ERROR);
    }
 
-   error = parse_rtoutput_args(n_args, pp);
+   error = parse_rtoutput_args(n_args, p);
    if (error)
       return rtOptionalThrow(PARAM_ERROR);          /* already reported in parse_rtoutput_args */
 

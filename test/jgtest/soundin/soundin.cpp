@@ -25,7 +25,7 @@ soundin :: ~soundin()
 }
 
 
-int soundin :: init(float p[], int n_args)
+int soundin :: init(double p[], int n_args)
 {
    float outskip, inskip, dur;
    char  *infilename;

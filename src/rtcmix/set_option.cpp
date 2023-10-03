@@ -435,10 +435,10 @@ static int _parse_arg(const char *arg, const bool rtsetparams_called)
 }
 
 //--------------------------------------------------------------- set_option ---
-double RTcmix::set_option(float *p, int nargs, double pp[])
+double RTcmix::set_option(double p[], int nargs)
 {
 	for (int i = 0; i < nargs; i++) {
-		char *arg = DOUBLE_TO_STRING(pp[i]);		// cast pfield to string
+		char *arg = DOUBLE_TO_STRING(p[i]);		// cast pfield to string
 
 		if (_parse_arg(arg, rtsetparams_was_called()) != 0)
 			return -1.0;

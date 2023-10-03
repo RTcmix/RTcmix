@@ -60,7 +60,7 @@ typedef enum {
 } GenModType;
 int combine_gens(int, int, int, int, GenModType, char *);
 int install_gen(int, int, double *);
-double makegen(float [], int, double []);
+double makegen(double [], int);
 double *floc(int);
 int fsize(int);
 
@@ -239,10 +239,10 @@ float *ploc(int tag);
 int psize(int tag);
 int piloc(int instnum);
 
-
+typedef double (*LegacyFunction)(double *, int);
 int registerFunction(const char *function, const char *dsoName);
 
-void addLegacyfunc(const char *label, double (*func_ptr)(float *, int, double *));
+void addLegacyfunc(const char *label, LegacyFunction func_pointer);
 
 #define STRING_TO_DOUBLE(string) (double)(size_t)(const char *)(string)
 #define DOUBLE_TO_STRING(d) (char *)(size_t)(d)
@@ -255,13 +255,13 @@ void addLegacyfunc(const char *label, double (*func_ptr)(float *, int, double *)
 #if defined(__cplusplus)
 #define UG_INTRO(flabel, func) \
    { \
-	addLegacyfunc(flabel, (double (*)(float *, int, double *)) func); \
+	addLegacyfunc(flabel, (LegacyFunction) func); \
    }
 #else
 #define UG_INTRO(flabel, func) \
    { \
-      extern double func(float *, int, double *); \
-      addLegacyfunc(flabel, (double (*)(float *, int, double *)) func); \
+      extern double func(double *, int); \
+      addLegacyfunc(flabel, func); \
    }
 #endif	/* __cplusplus */
 

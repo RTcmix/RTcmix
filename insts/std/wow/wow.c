@@ -31,7 +31,7 @@ extern float SR();
 #define MAX(x,y) ((x)>(y) ? (x) : (y))
 
 double
-wow(float p[], int n_args, double *pp)
+wow(double p[], int n_args)
 {
 	int n,nsamps,msize;
 	int i,j,input_offset_floor;

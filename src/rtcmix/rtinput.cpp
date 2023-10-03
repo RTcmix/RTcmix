@@ -195,7 +195,7 @@ RTcmix::findInput(const char *inName, int *pOutIndex)
 }
 
 double
-RTcmix::rtinput(float p[], int n_args, double pp[])
+RTcmix::rtinput(double p[], int n_args)
 {
 	int            audio_in = 0, in_memory = 0, p1_is_used = 0, fd;
 	int            is_open = 0, header_type, data_format, data_location = 0, nchans;
@@ -213,7 +213,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 	header_type = MUS_UNSUPPORTED;
 	data_format = MUS_UNSUPPORTED;
 
-	sfname = DOUBLE_TO_STRING(pp[0]);
+	sfname = DOUBLE_TO_STRING(p[0]);
 
 	/* Catch stoopid NULL filenames */
 	if (sfname == NULL) {
@@ -225,9 +225,9 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 	if (strcmp(sfname, "AUDIO") == 0) {
 		audio_in = 1;
 
-		if (n_args > 1 && pp[1] != 0.0) {
+		if (n_args > 1 && p[1] != 0.0) {
 			p1_is_used = 1;
-			str = DOUBLE_TO_STRING(pp[1]);
+			str = DOUBLE_TO_STRING(p[1]);
 			if (strcmp(str, "MIC") == 0)
 				port_type = MIC;
 			else if (strcmp(str, "LINE") == 0)
@@ -251,7 +251,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 // this segment is to allow rtcmix to access sample data from the
 // max/msp [buffer~] object.
 	else if (strcmp(sfname, "MMBUF") == 0) {
-		str = DOUBLE_TO_STRING(pp[1]);
+		str = DOUBLE_TO_STRING(p[1]);
 		if (str == NULL) {
 			rterror("rtinput", "NULL buffer name!");
             status = PARAM_ERROR;
@@ -266,9 +266,9 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 	}
 #endif // EMBEDDED
 	else {
-		if (n_args > 1 && pp[1] != 0.0) {
+		if (n_args > 1 && p[1] != 0.0) {
 			p1_is_used = 1;
-			str = DOUBLE_TO_STRING(pp[1]);
+			str = DOUBLE_TO_STRING(p[1]);
 			if (strcasestr(str, "mem") != NULL) {
 				in_memory = 1;
 			}
@@ -290,7 +290,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 	for (i = start_pfield; i < n_args; i++) {
 		ErrCode  err;
 
-		str = DOUBLE_TO_STRING(pp[i]);
+		str = DOUBLE_TO_STRING(p[i]);
 		if (str == NULL) {
 			rterror("rtinput", "NULL bus name!");
 			set_record = false;

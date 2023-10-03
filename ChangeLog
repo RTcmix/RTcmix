@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2023-10-02  Douglas Scott <netdscott-at-netscape.net>
+	* Edited all function prototypes to remove legacy float array entirely, everywhere!
+	* Bumped to 5.2.1 due to prototype changes.
+	* Added new FBSEND/FBRECEIVE instruments to allow bus feedback.
+	* Added exceptions to memory allocation to allow more robust recovery.
+
 2023-06-27  Douglas Scott <netdscott-at-netscape.net>
 	* Updated function prototypes for all instruments, etc. to (float *, int, double *)
 	  and fixed long-outdated function decls.  Reduces new compiler grumbling!

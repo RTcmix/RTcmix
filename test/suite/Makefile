@@ -46,7 +46,7 @@ TESTLEN = 30
 
 stresstest: $(STRESSOBJS) $(IMBCMIXOBJS)
 #	$(CXX) -o $@ $(DYN) $(STRESSOBJS) $(IMBCMIXOBJS) $(LDFLAGS) -L/home/dscott -ldmalloc
-	$(CXX) -o $@ $(DYN) $(STRESSOBJS) $(IMBCMIXOBJS) $(LDFLAGS)
+	$(CXX) -o $@ $(DYN) $(STRESSOBJS) $(IMBCMIXOBJS) $(LDFLAGS) -L${CMIXDIR}/lib -lrtcmix
 
 sockettest: $(SOCKOBJS)
 	$(CXX) -o $@ $(SOCKOBJS) ${CMIXDIR}/lib/RTsockfuncs.o

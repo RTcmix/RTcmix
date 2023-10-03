@@ -93,7 +93,7 @@ public:
 	static int dispatch(const char *func_label, const Arg arglist[],
 						const int nargs, Arg *retval);
 	static void addfunc(const char *func_label,
-					   double (*func_ptr_legacy)(float*, int, double*),
+					   double (*func_ptr_legacy)(double*, int),
                        double (*func_ptr_number)(const Arg[], int),
                        char * (*func_ptr_string)(const Arg[], int),
                        Handle (*func_ptr_handle)(const Arg[], int),
@@ -152,19 +152,19 @@ public:
 	
 	// Config routines.  Called from the parser via pointers, and are
 	// registered via rt_ug_intro().
-	static double rtsetparams(float*, int, double *);
-	static double rtinput(float*, int, double *);
-	static double rtoutput(float*, int, double *);
-	static double set_option(float *, int, double *);
-	static double bus_config(float*, int, double *);
-	static double offset(float *, int, double *);
+	static double rtsetparams(double*, int);
+	static double rtinput(double*, int);
+	static double rtoutput(double*, int);
+	static double set_option(double *, int);
+	static double bus_config(double*, int);
+	static double offset(double *, int);
 	// Minc information functions as methods
-	static double input_chans(float *, int);
-	static double input_dur(float *, int);
-	static double input_sr(float *, int);
-	static double input_peak(float *, int);
-	static double left_peak(float *, int);
-	static double right_peak(float *, int);
+	static double input_chans(double *, int);
+	static double input_dur(double *, int);
+	static double input_sr(double *, int);
+	static double input_peak(double *, int);
+	static double left_peak(double *, int);
+	static double right_peak(double *, int);
 
 protected:
 	RTcmix(bool dummy);				// Called by RTcmixMain class

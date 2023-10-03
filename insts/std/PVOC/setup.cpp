@@ -16,8 +16,8 @@ extern "C" {
 #ifndef EMBEDDED
 int profile();
 #endif
-double set_filter(float *p, int, double *pp);
-double init_filter(float *p, int, double *pp);
+double set_filter(double p[], int);
+double init_filter(double p[], int);
 }
 
 static const int maxFilters = 8;
@@ -62,13 +62,13 @@ void ClearFilter()
 	g_filters[g_currentFilterSlot] = NULL;
 }
 
-double set_filter(float *p, int n_args, double *pp)
+double set_filter(double p[], int n_args)
 {
 #ifdef EMBEDDED
 	rterror("set_filter", "Dynamic filter loading not supported on this platform");
 	return SYSTEM_ERROR;
 #endif
-	size_t numarg = (size_t) pp[0];
+	size_t numarg = (size_t) p[0];
 	if (numarg < (size_t)g_currentFilters) {
 		if (g_filterCtors[numarg] == 0) {
 			rterror("set_filter", "Requested filter slot (%d) is empty", 
@@ -79,7 +79,7 @@ double set_filter(float *p, int n_args, double *pp)
 		g_currentFilterSlot = (int)numarg;
 	}
 	else {
-		const char *filtername = DOUBLE_TO_STRING(pp[0]);
+		const char *filtername = DOUBLE_TO_STRING(p[0]);
 		char dsopath[1024];
 		if (filtername[0] == '.' || filtername[0] == '/') {
 			strncpy(dsopath, filtername, 1023);
@@ -112,13 +112,13 @@ double set_filter(float *p, int n_args, double *pp)
 	return 1;
 }
 
-double init_filter(float *p, int n_args, double *pp)
+double init_filter(double p[], int n_args)
 {
 	::ClearFilter();
 	PVFilter *filter = NULL;
 	::GetFilter(&filter);
 	if (filter) {
-		return filter->init(pp, n_args);
+		return filter->init(p, n_args);
 	}
 	return PARAM_ERROR;
 }

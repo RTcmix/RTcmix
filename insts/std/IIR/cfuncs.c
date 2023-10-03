@@ -22,7 +22,7 @@ static int _num_filters = 0;
 
    followed by additional triplets for a total of 64 filters.
 */
-double IIR_setup(float p[], int n_args, double *pp)
+double IIR_setup(double p[], int n_args)
 {
 	int i, j;
 	float first = 1.0f;

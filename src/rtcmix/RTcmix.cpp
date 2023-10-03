@@ -332,11 +332,9 @@ void
 RTcmix::init(float tsr, int tnchans, int bsize,
 			 const char *opt1, const char *opt2, const char *opt3)
 {
-	// for rtsetparams -- I forget why it's set up with both double
-	// and float p-field arrays.  Also, these aren't 0-ed out
+	// for rtsetparams -- these aren't 0-ed out
 	// so no need to dimension them at MAXDISPARGS
-	float p[3];
-	double pp[3];
+	double p[3];
 
     rtcmix_debug("RTcmix::init", "entered");
 #ifdef SGI
@@ -351,22 +349,22 @@ RTcmix::init(float tsr, int tnchans, int bsize,
 
 	int nargs = 0;
 	// set options if any are non-null
-	p[0] = pp[0] = STRINGIFY(opt1);
+	p[0] = STRINGIFY(opt1);
 	if (opt1) ++nargs;
-	p[1] = pp[1] =  STRINGIFY(opt2);
+	p[1] = STRINGIFY(opt2);
 	if (opt2) ++nargs;
-	p[2] = pp[2] = STRINGIFY(opt3);
+	p[2] = STRINGIFY(opt3);
 	if (opt3) ++nargs;
 
 	if (nargs)
-		set_option(p, nargs, pp);
+		set_option(p, nargs);
 
 	// set the sampling rate and nchannels
-	p[0] = pp[0] = tsr;
-	p[1] = pp[1] = tnchans;
-	p[2] = pp[2] = bsize;
+	p[0] = tsr;
+	p[1] = tnchans;
+	p[2] = bsize;
 	nargs = 3;
-	rtsetparams(p, nargs, pp);
+	rtsetparams(p, nargs);
 
 	if (RTOption::play() || RTOption::record()) {
 		int retcode = runMainLoop();
@@ -380,21 +378,21 @@ RTcmix::init(float tsr, int tnchans, int bsize,
     rtcmix_debug("RTcmix::init", "exited");
 }
 
-double RTcmix::offset(float *p, int n_args, double *pp)
+double RTcmix::offset(double *p, int n_args)
 {
 	if (n_args < 1 || n_args > 2) {
 		rtcmix_advise("rtoffset", "Usage: rtoffset(offset_time [, skip_preroll])");
 		return 0;
 	}
-	bufTimeOffset = pp[0];
-	runToOffset = (n_args == 1) ? true : pp[1] == 0.0;
+	bufTimeOffset = p[0];
+	runToOffset = (n_args == 1) ? true : p[1] == 0.0;
 	if (rtrecord) {
 		rtcmix_advise("rtoffset", "Cannot skip forward when recording");
         bufTimeOffset = 0.0;
 		runToOffset = false;
 		return bufTimeOffset;
 	}
-	rtcmix_advise("rtoffset", "Starting playback at time %.3f %s preroll.", pp[0], runToOffset ? "with" : "without");
+	rtcmix_advise("rtoffset", "Starting playback at time %.3f %s preroll.", p[0], runToOffset ? "with" : "without");
 	return bufTimeOffset;
 }
 

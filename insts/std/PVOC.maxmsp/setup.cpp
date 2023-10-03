@@ -7,7 +7,7 @@
 extern "C" {
 // BGG mm -- changed this for max/msp
 //int profile();
-double set_filter(float *p, int, double *pp);
+double set_filter(double p[], int);
 }
 
 static const int maxFilters = 8;
@@ -39,7 +39,7 @@ int GetFilter(PVFilter **ppFilter)
 	return 1;
 }
 
-double set_filter(float *p, int n_args, double *pp)
+double set_filter(double p[], int n_args)
 {
 	int filterSlot = (int) pp[0];
 	if (filterSlot > g_currentFilters || g_filterCtors[filterSlot] == 0) {

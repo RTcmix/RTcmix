@@ -199,7 +199,7 @@ int RTcmix::resetparams(float sr, int chans, int bufsamps, bool recording)
    for each of the output channels, and opens output devices.
 */
 double
-RTcmix::rtsetparams(float p[], int n_args, double pp[])
+RTcmix::rtsetparams(double p[], int n_args)
 {
 #ifdef EMBEDDED
 // BGG mm -- ignore this one, use RTcmix::setparams()

@@ -63,7 +63,7 @@ double calc_tot_dist () {
 
 /* speakerloc ------------------------------------------------------------------------ */
 
-double speakerloc(float p[], int n_args, double pp[]) {
+double speakerloc(double p[], int n_args) {
   int i,j;
 
   i=j=0;
@@ -92,7 +92,7 @@ double speakerloc(float p[], int n_args, double pp[]) {
 
 /* speakerloc_p ---------------------------------------------------------------------- */
 
-double speakerloc_p(float p[], int n_args, double pp[]) {
+double speakerloc_p(double p[], int n_args) {
   int i,j;
   double x,y,r,a;
 
@@ -126,7 +126,7 @@ double speakerloc_p(float p[], int n_args, double pp[]) {
 
 /* rates ---------------------------------------------------------------------------- */
 
-double rates(float p[], int n_args, double pp[]) {
+double rates(double p[], int n_args) {
   int i,j;
   double s,time;
   double r1,r2,t1,t2,accel;
@@ -166,7 +166,7 @@ double rates(float p[], int n_args, double pp[]) {
 
 /* path ------------------------------------------------------------------------------ */
 
-double path(float p[], int n_args, double pp[]) {
+double path(double p[], int n_args) {
   int i,j;
   double x,y,r,a,time,x1,x2,y1,y2,xvel,yvel,t1,t2;
 
@@ -227,7 +227,7 @@ double path(float p[], int n_args, double pp[]) {
 
 /* path_p ---------------------------------------------------------------------------- */
 
-double path_p(float p[], int n_args, double pp[]) {
+double path_p(double p[], int n_args) {
   int i,j;
   double x,y,r,a,time,x1,x2,y1,y2,xvel,yvel,t1,t2;
 

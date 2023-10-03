@@ -819,7 +819,7 @@ parse_bus_name(char *busname, BusType *type, int *startchan, int *endchan, int m
 
 /* ----------------------------------------------------------- bus_config --- */
 double 
-RTcmix::bus_config(float p[], int n_args, double pp[])
+RTcmix::bus_config(double p[], int n_args)
 {
    ErrCode     err;
    int         i, j, k, startchan, endchan, chain_incount=0, chain_outcount=0;
@@ -852,10 +852,10 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
    Lock localLock(&bus_slot_lock);	// This will unlock when going out of scope.
 
    /* do the old Minc casting rigamarole to get string pointers from a double */
-   instname = DOUBLE_TO_STRING(pp[0]);
+   instname = DOUBLE_TO_STRING(p[0]);
 
    for (i = 1; i < n_args; i++) {
-      busname = DOUBLE_TO_STRING(pp[i]);
+      busname = DOUBLE_TO_STRING(p[i]);
       err = parse_bus_name(busname, &type, &startchan, &endchan, busCount);
        switch (err) {
            case INVAL_BUS_ERR:

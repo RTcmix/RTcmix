@@ -23,7 +23,7 @@ extern "C" void sfstats(int fd);       /* defined in sfstats.c */
 
 extern "C" {
 
-double m_sr(float *p, int n_args)
+double m_sr(double *p, int n_args)
 {
   if(!isopen[(int)p[0]]) {
     rtcmix_warn("sr", "You haven't opened file %d yet!", (int)p[0]);
@@ -32,7 +32,7 @@ double m_sr(float *p, int n_args)
   return(sfsrate(&sfdesc[(int)p[0]]));
 }
 
-double m_chans(float *p, int n_args)
+double m_chans(double *p, int n_args)
 {	
   if(!isopen[(int)p[0]]) {
     rtcmix_warn("chans", "You haven't opened file %d yet!", (int)p[0]);
@@ -42,7 +42,7 @@ double m_chans(float *p, int n_args)
   return(sfchans(&sfdesc[(int)p[0]]));
 }
 
-double m_class(float *p, int n_args)
+double m_class(double *p, int n_args)
 {
   if(!isopen[(int)p[0]]) {
     rtcmix_warn("class", "You haven't opened file %d yet!", (int)p[0]);
@@ -54,7 +54,7 @@ double m_class(float *p, int n_args)
 // Still uses old style soundfile IO arrays, which are now updated with sndlib
 // We need to kill that old beast completely!
 
-double m_dur(float *p, int n_args)
+double m_dur(double *p, int n_args)
 {
 	int i;
 	float dur;
@@ -260,7 +260,7 @@ double filedc(const Arg args[], const int nargs)
 
 
 double
-RTcmix::input_chans(float *p, int n_args)   /* returns chans for rtinput() files */
+RTcmix::input_chans(double *p, int n_args)   /* returns chans for rtinput() files */
 {
    int index = get_last_input_index();
 
@@ -276,7 +276,7 @@ RTcmix::input_chans(float *p, int n_args)   /* returns chans for rtinput() files
 }
 
 double 
-RTcmix::input_dur(float *p, int n_args)   /* returns duration for rtinput() files */
+RTcmix::input_dur(double *p, int n_args)   /* returns duration for rtinput() files */
 {
    int index = get_last_input_index();
 
@@ -292,7 +292,7 @@ RTcmix::input_dur(float *p, int n_args)   /* returns duration for rtinput() file
 }
 
 double
-RTcmix::input_sr(float *p, int n_args)   /* returns rate for rtinput() files */
+RTcmix::input_sr(double *p, int n_args)   /* returns rate for rtinput() files */
 {
    int index = get_last_input_index();
 
@@ -319,7 +319,7 @@ extern "C" {
    like m_dur?  -JGG
 */ 
 double
-m_peak(float p[], int n_args)
+m_peak(double p[], int n_args)
 {
 	int      n, fno;
 	float    peak, chanpeak;
@@ -347,7 +347,7 @@ m_peak(float p[], int n_args)
 
 
 double
-m_left(float p[], int n_args)
+m_left(double p[], int n_args)
 {
 	int      fno;
 
@@ -367,7 +367,7 @@ m_left(float p[], int n_args)
 
 
 double
-m_right(float p[], int n_args)
+m_right(double p[], int n_args)
 {
 	int      fno;
 
@@ -478,21 +478,21 @@ RTcmix::get_peak(float start, float end, int chan)
 
 
 double
-RTcmix::input_peak(float p[], int n_args)
+RTcmix::input_peak(double p[], int n_args)
 {
    return get_peak(p[0], p[1], ALL_CHANS);
 }
 
 
 double
-RTcmix::left_peak(float p[], int n_args)
+RTcmix::left_peak(double p[], int n_args)
 {
    return get_peak(p[0], p[1], 0);
 }
 
 
 double
-RTcmix::right_peak(float p[], int n_args)
+RTcmix::right_peak(double p[], int n_args)
 {
    return get_peak(p[0], p[1], 1);
 }
@@ -503,7 +503,7 @@ extern int sfd[NFILES];
 extern "C" {
 
 double
-m_info(float *p, int n_args)
+m_info(double *p, int n_args)
 {
   sfstats(sfd[(int) p[0]]);
     return 0;

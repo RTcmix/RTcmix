@@ -169,10 +169,10 @@ static const ctlr ctlrs[] = {
 };
 
 extern "C"
-double controller_number(float *p, int n_args, double *pp)
+double controller_number(double p[], int n_args)
 /* p1=controller name name */
 {
-    const char *key = DOUBLE_TO_STRING(pp[0]);
+    const char *key = DOUBLE_TO_STRING(p[0]);
     
     if (key == NULL) {
         ::rterror("controller_number", "NULL controller name");

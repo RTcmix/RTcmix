@@ -26,7 +26,7 @@ extern float SR();
 */
 
 double
-mrotate(float p[], int n_args, double *pp)
+mrotate(double p[], int n_args)
 {
 	float samplenum1,samplenum2,x,interval=0.0;
 	float val1,val2,amp=0.0,in[2],out[2];

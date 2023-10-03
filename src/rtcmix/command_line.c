@@ -22,31 +22,31 @@ int aargc;
 */
 
 /* Return the p'th arg as a floating-point number. */
-double f_arg(float p[], short n_args)
+double f_arg(double p[], int n_args)
 {
 	return (((int)p[0]) < aargc) ? (atof(aargv[(int)p[0]])) : 0.0;
 }
 
 /* Return the p'th arg as an integer. */
-double i_arg(float *p, short n_args)
+double i_arg(double p[], int n_args)
 {
 	return (((int)p[0]) < aargc) ? (atoi(aargv[(int)p[0]])) : 0;
 }
 
 /* Return the p'th arg as a string. */
-double s_arg(float *p,short n_args,double *pp)
+double s_arg(double p[], int n_args)
 {
 	char *name;
 	size_t temp = 0;
-	if(((int)pp[0]) < aargc) {
-		name = aargv[(int)pp[0]];
+	if(((int)p[0]) < aargc) {
+		name = aargv[(int)p[0]];
 		temp = (size_t) strdup(name);
 	}
 	return (double) temp;  /* return string pointer, cast as a double, for Minc */
 }
 
 /* Return the number of args. */
-double n_arg(float *p, short n_args)
+double n_arg(double p[], int n_args)
 {
 	return(aargc);
 }

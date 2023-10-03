@@ -9,13 +9,13 @@
 #include "globals.h"
 
 double
-m_infile(float *p, short n_args, double *pp) 
+m_infile(double *p, int n_args)
 {
     FILE *descrip;
     char  *name;
     int   fno;
 
-    name = DOUBLE_TO_STRING(pp[0]);
+    name = DOUBLE_TO_STRING(p[0]);
     fno = p[1];
     /* Reject fno = 0, because that's indicates stdin to gen2. */
     if (fno < 1 || fno > MAX_INFILE_DESC)

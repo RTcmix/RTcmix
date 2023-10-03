@@ -10,7 +10,7 @@ int cartflag;
 double mindiff;
 
 double
-path (float p[], int n_args)		/* for polar coordinates */
+path (double p[], int n_args)		/* for polar coordinates */
 {
     float rhos[500], thetas[500];
     int i, t;
@@ -42,7 +42,7 @@ path (float p[], int n_args)		/* for polar coordinates */
 }
 
 double
-cpath (float p[], int n_args) 	/* for cartesian coordinates */
+cpath (double p[], int n_args) 	/* for cartesian coordinates */
 {
     float rhos[500], thetas[500];
     int i, t;
@@ -73,7 +73,7 @@ cpath (float p[], int n_args) 	/* for cartesian coordinates */
 }
 
 double
-param (float p[], int n_args)	/* parametric setup for polar coordinates */
+param (double p[], int n_args)	/* parametric setup for polar coordinates */
 {
     int i;
     double *fun1, *fun2;
@@ -100,7 +100,7 @@ param (float p[], int n_args)	/* parametric setup for polar coordinates */
 }
 
 double
-cparam (float p[], int n_args) /* parametric setup for cartesian coordinates */
+cparam (double p[], int n_args) /* parametric setup for cartesian coordinates */
 {
     int i;
     double *fun1, *fun2;
@@ -127,7 +127,7 @@ cparam (float p[], int n_args) /* parametric setup for cartesian coordinates */
 }
 
 double
-threshold(float p[], int n_args)
+threshold(double p[], int n_args)
 {
 	mindiff = p[0];
 	rtcmix_advise("threshold", "Source location updated every %.2f msec.",

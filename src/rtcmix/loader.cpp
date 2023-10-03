@@ -8,7 +8,7 @@
 #include "DynamicLib.h"
 
 typedef void (*ProfileFun)();
-extern "C" double m_load(float *, int, double *);
+extern "C" double m_load(double *, int);
 
 /* Assemble path to the shared library, and pass back as <dsoPath>. */
 static int
@@ -40,7 +40,7 @@ get_dso_path(double pfield, char dsoPath[])
     return 0;
 }
 
-double m_load(float *p, int n_args, double *pp)
+double m_load(double p[], int n_args)
 {
     char dsoPath[1024];
     int profileLoaded;
@@ -53,7 +53,7 @@ double m_load(float *p, int n_args, double *pp)
 	return 1.0;
 #endif
 
-    if (get_dso_path(pp[0], dsoPath) != 0)
+    if (get_dso_path(p[0], dsoPath) != 0)
 		return 0;
 
     if (theDSO.load(dsoPath) != 0) {

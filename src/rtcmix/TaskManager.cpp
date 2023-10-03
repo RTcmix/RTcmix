@@ -155,8 +155,8 @@ private:
 
 inline void ThreadPool::startAndWait(int taskCount) {
 	// Dont wake any more threads than we have tasks.
-	mRequestCount = std::min(taskCount, RT_THREAD_COUNT);
-	const int count = mRequestCount;
+	mRequestCount = (int) std::min(taskCount, RT_THREAD_COUNT);
+	const int count = (int) mRequestCount;
 	for(int i=0; i<count; ++i)
 		mThreads[i]->wake();
 #ifdef POOL_DEBUG

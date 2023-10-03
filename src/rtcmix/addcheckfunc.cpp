@@ -18,7 +18,7 @@
 typedef struct _func {
    struct _func *next;
    union {
-      double (*legacy_return) (float *, int, double *);
+      double (*legacy_return) (double *, int);
       double (*number_return) (const Arg[], int);
       char   *(*string_return) (const Arg[], int);
       Handle (*handle_return) (const Arg[], int);
@@ -205,19 +205,17 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
     case DoubleType:
     try {
         if (func->legacy) {
-         /* for old (float p[], int nargs, double pp[]) signature */
+         /* for old (double p[], int nargs) signature (now minus the float[] array -- DAS) */
          #include <maxdispargs.h>
-         float p[MAXDISPARGS];
-         double pp[MAXDISPARGS];
+         double p[MAXDISPARGS];
          for (int i = 0; i < nargs; i++) {
 			const Arg &theArg = arglist[i];
-            p[i] = (float) theArg;
 			switch (theArg.type()) {
             case DoubleType:
-               pp[i] = (double) theArg;
+               p[i] = (double) theArg;
 			   break;
             case StringType:
-               pp[i] = STRING_TO_DOUBLE(theArg);
+               p[i] = STRING_TO_DOUBLE(theArg);
 			   break;
             default:
                 die(NULL, "%s: arguments must be numbers or strings.", funcname);
@@ -227,10 +225,9 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
          /* some functions rely on zero contents of args > nargs */
          for (int i = nargs; i < MAXDISPARGS; i++) {
             p[i] = 0.0;
-            pp[i] = 0.0;
          }
          *retval = (double) (*(func->func_ptr.legacy_return))
-                                                      (p, nargs, pp);
+                                                      (p, nargs);
       }
       else
          *retval = (double) (*(func->func_ptr.number_return))
@@ -335,7 +332,7 @@ getDSOPath(FunctionEntry *entry, const char *funcname)
 	return NULL;
 }
 
-extern "C" double m_load(float *, int, double *);	// loader.c
+extern "C" double m_load(double *, int);	// loader.c
 
 /* --------------------------------------------------- findAndLoadFunction -- */
 
@@ -348,13 +345,11 @@ RTcmix::findAndLoadFunction(const char *funcname)
 	int status = -1;
 	if ((path = ::getDSOPath(_functionRegistry, funcname)) != NULL) {
 		char fullDSOPath[128];
-		float p[1];
 		double pp[1];
 		snprintf(fullDSOPath, 128, "%s.so", path);
-		p[0] = 0;
 		pp[0] = STRING_TO_DOUBLE(fullDSOPath);
 //        RTPrintf("findAndLoadFunction: calling load() on '%s' for function '%s'\n", fullDSOPath, funcname);
-		if (m_load(p, 1, pp) == 1)
+		if (m_load(pp, 1) == 1)
 			status = 0;
 		else
 			status = -1; 
@@ -461,7 +456,7 @@ void addfunc(
 };
 
 void
-addLegacyfunc(const char *label, double (*func_ptr)(float *, int, double *))
+addLegacyfunc(const char *label, double (*func_ptr)(double *, int))
 {
 	RTcmix::addfunc(label, func_ptr, NULL, NULL, NULL, DoubleType, 1);
 }

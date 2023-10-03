@@ -105,11 +105,11 @@ GetConfiguration(float *pMaxdev,
 
 //	These functions are all Minc utilities
 
-double dataset(float *p, int n_args, double *pp)
+double dataset(double p[], int n_args)
 /* p1=dataset name, p2=npoles */
 {
 	int set;
-	char *name=DOUBLE_TO_STRING(pp[0]);
+	char *name=DOUBLE_TO_STRING(p[0]);
 
 	if (name == NULL) {
         ::rterror("dataset", "NULL file name");
@@ -164,14 +164,14 @@ double dataset(float *p, int n_args, double *pp)
 	return (double) frms;
 }
 
-double lpcstuff(float *p, int n_args)
+double lpcstuff(double *p, int n_args)
 /* p0=thresh, p1=random amp, p2=unvoiced rate p3= rise, p4= dec, p5=thresh cutof, p6=source duration*/
 {
         risetime=.01f; decaytime=.1f;
         resetPitchPreprocessing();
         if (n_args>0) {
             // high thresh must be > than lowthresh, which must be > 0
-            float thresh=std::max(0.0f, p[0]);
+            float thresh=std::max(0.0, p[0]);
             lowthresh = thresh;
             highthresh = thresh + 0.00001;
         }
@@ -206,7 +206,7 @@ double lpcstuff(float *p, int n_args)
 	return 1;
 }
 
-double set_hnfactor(float *p, int n_args)
+double set_hnfactor(double *p, int n_args)
 {
 	if (p[0] < .01)
 	{
@@ -218,7 +218,7 @@ double set_hnfactor(float *p, int n_args)
 	return p[0];
 }
 
-double freset(float *p, int n_args)
+double freset(double *p, int n_args)
 {
         perperiod = p[0];
         ::rtcmix_advise("freset", "Frame reinitialization reset to %f times per period.",
@@ -227,14 +227,14 @@ double freset(float *p, int n_args)
 }
 
 
-double setdev(float *p, int n_args)
+double setdev(double *p, int n_args)
 {
         maxdev = p[0];
 		::rtcmix_advise("setdev", "pitch deviation set to %g Hz", maxdev);
 		return maxdev;
 }
 
-double setdevfactor(float *p, int n_args)
+double setdevfactor(double *p, int n_args)
 {
 		// LPCPLAY will treat negatives as a factor
         maxdev = -p[0];
@@ -246,7 +246,7 @@ double setdevfactor(float *p, int n_args)
 // the frame will be 100% unvoiced.  This needs to be reset after each call to lpcstuff()
 
 double
-set_thresh(float *p, int n_args)
+set_thresh(double *p, int n_args)
 {
 	if(p[1] <= p[0]) {
 		::rterror("set_thresh", "upper thresh must be > lower!");
@@ -261,7 +261,7 @@ set_thresh(float *p, int n_args)
 }
 
 double
-use_autocorrect(float *p, int n_args)
+use_autocorrect(double *p, int n_args)
 {
 	autoCorrect = (p[0] != 0.0f);
 	::rtcmix_advise("autocorrect", "auto-frame-correction turned %s", 
@@ -271,7 +271,7 @@ use_autocorrect(float *p, int n_args)
 
 // use_fix_pitch_octaves(p0 = true/false [, p1 = target octave in pch])
 
-double use_fix_pitch_octaves(float *p, int n_args)
+double use_fix_pitch_octaves(double *p, int n_args)
 {
     if (p[0] == 0.0) {
         pitchFixOctave = -1.0;
@@ -296,13 +296,13 @@ double use_fix_pitch_octaves(float *p, int n_args)
     return p[0];
 }
 
-double use_fix_pitch_gaps(float *p, int n_args)
+double use_fix_pitch_gaps(double *p, int n_args)
 {
     fixPitchGaps = p[0] != 0.0;
     return 0;
 }
 
-double use_pitch_smoothing(float *p, int n_args)
+double use_pitch_smoothing(double *p, int n_args)
 {
     if (p[0] <= 0.0) {
         pitchSmoothingFactor = 0.0;
@@ -329,7 +329,7 @@ extern "C" {
 #ifndef EMBEDDED
 int profile()
 {
-	float p[9]; double pp[9];
+	double p[9];
 	UG_INTRO("lpcstuff",lpcstuff);
 	UG_INTRO("dataset",dataset);
 	UG_INTRO("freset",freset);
@@ -342,11 +342,9 @@ int profile()
     UG_INTRO("fix_pitch_gaps",use_fix_pitch_gaps);
     UG_INTRO("pitch_smoothing",use_pitch_smoothing);
 	p[0]=SINE_SLOT; p[1]=10; p[2]=1024; p[3]=1;
-	pp[0]=SINE_SLOT; pp[1]=10; pp[2]=1024; pp[3]=1;
-	makegen(p,4,pp);  /* store sinewave in array SINE_SLOT */
+	makegen(p,4);  /* store sinewave in array SINE_SLOT */
 	p[0]=ENV_SLOT; p[1]=7; p[2]=512; p[3]=0; p[4]=512; p[5]=1; 
-	pp[0]=ENV_SLOT; pp[1]=7; pp[2]=512; pp[3]=0; pp[4]=512; pp[5]=1; 
-	makegen(p,6,pp);
+	makegen(p,6);
 	return 0;
 }
 #endif
@@ -356,16 +354,14 @@ int LPCprof_called = 0;
 
 int LPCprofile()
 {
-	float p[9]; double pp[9];
+	double p[9];
 
 	if (LPCprof_called == 1) return 0;
 
 	p[0]=SINE_SLOT; p[1]=10; p[2]=1024; p[3]=1;
-	pp[0]=SINE_SLOT; pp[1]=10; pp[2]=1024; pp[3]=1;
-	makegen(p,4,pp);  /* store sinewave in array SINE_SLOT */
+	makegen(p,4);  /* store sinewave in array SINE_SLOT */
 	p[0]=ENV_SLOT; p[1]=7; p[2]=512; p[3]=0; p[4]=512; p[5]=1;
-	pp[0]=ENV_SLOT; pp[1]=7; pp[2]=512; pp[3]=0; pp[4]=512; pp[5]=1;
-	makegen(p,6,pp);
+	makegen(p,6);
 	LPCprof_called = 1;
 	return 0;
 }

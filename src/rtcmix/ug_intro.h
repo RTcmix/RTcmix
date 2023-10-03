@@ -9,16 +9,14 @@ extern "C" {
 #endif /* __cplusplus */
 
 #include <stddef.h>        /* for NULL */
-
-void ug_intro(void);       /* called by RTcmix main and RTcmix.C */
-
-
 #include "rtcmix_types.h"
+#include <ugens.h>
 
-typedef double (*LegacyFunction)(float *, int, double *);
 typedef double (*NumberFunction)(const Arg[], int);
 typedef char * (*StringFunction)(const Arg[], int);
 typedef Handle (*HandleFunction)(const Arg[], int);
+
+void ug_intro(void);       /* called by RTcmix main and RTcmix.C */
 
 void addfunc(const char *func_label,
 			 LegacyFunction func_ptr_legacy,
