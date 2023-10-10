@@ -293,6 +293,10 @@ static int _set_key_value_option(const char *key, const char *sval,
 			status = _str_to_int(sval, ival);
 			RTOption::print(ival);
 			break;
+        case PRINT_LIST_LIMIT:
+            status = _str_to_int(sval, ival);
+            RTOption::printListLimit(ival);
+            break;
         case PARSER_WARNINGS:
             status = _str_to_int(sval, ival);
             RTOption::parserWarnings(ival);

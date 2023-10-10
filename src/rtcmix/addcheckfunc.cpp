@@ -359,7 +359,7 @@ RTcmix::findAndLoadFunction(const char *funcname)
 
 /* ------------------------------------------------------ registerFunction -- */
 
-// This is called by each DSO's registerMe() function to register a given
+// This is called by each DSO's registerSelf() function to register a given
 // Minc command name (function name) with a particular DSO name.  When
 // RTcmix::checkfunc() fails to find a functions, it calls findAndLoadFunction()
 // to search the function/DSO database for a matching DSO.
