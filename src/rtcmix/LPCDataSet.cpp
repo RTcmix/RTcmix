@@ -1,7 +1,7 @@
-// DataSet.C
+// LPCDataSet.C
 
 #include <ugens.h>
-#include "DataSet.h"
+#include "LPCDataSet.h"
 #include <stdio.h>
 #include <unistd.h>		// for lseek
 #include <sys/stat.h>	// for stat for getFrame()
@@ -10,14 +10,14 @@
 #include "lpcdefs.h"
 #include "lpcheader.h"
 
-DataSet::DataSet()
+LPCDataSet::LPCDataSet()
 	: _nPoles(0), _frameCount(0), _fdesc(-1), _lpHeaderSize(0), 
 	  _array(NULL), _oldframe(0), _endframe(0), _swapped(false)
 {
 	_fprec = 22;
 }
 
-DataSet::~DataSet()
+LPCDataSet::~LPCDataSet()
 {
 	if (_fdesc > 0)
 		::close(_fdesc);
@@ -25,7 +25,7 @@ DataSet::~DataSet()
 }
 
 off_t
-DataSet::open(const char *fileName, int npoleGuess, float sampRate)
+LPCDataSet::open(const char *fileName, int npoleGuess, float sampRate)
 {
     if ((_fdesc = ::open(fileName, O_RDONLY)) < 0) {
 		return die("dataset", "Can't open %s", fileName);
@@ -58,7 +58,7 @@ DataSet::open(const char *fileName, int npoleGuess, float sampRate)
 }
 
 int
-DataSet::getFrame(double frameno, float *pCoeffs)
+LPCDataSet::getFrame(double frameno, float *pCoeffs)
 {
 	int i,j;
 	int frame = (int)frameno;
@@ -96,7 +96,7 @@ DataSet::getFrame(double frameno, float *pCoeffs)
 }
 
 void
-DataSet::allocArray(int nPoles)
+LPCDataSet::allocArray(int nPoles)
 {
 	if (_array)
 	    delete [] _array;

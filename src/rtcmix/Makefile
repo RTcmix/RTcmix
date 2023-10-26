@@ -83,7 +83,7 @@ buffers.cpp \
 bus_config.cpp \
 checkInsts.cpp \
 dispatch.cpp \
-DataSet.cpp \
+LPCDataSet.cpp \
 filter.cpp \
 Instrument.cpp \
 intraverse.cpp \

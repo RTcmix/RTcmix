@@ -82,8 +82,9 @@ Some examples (the quotes are obligatory):
       does read just from the first channel.
 
 
-There are 16 "aux" buses available (defined as MAXBUS in H/bus.h). You
-set the maximum number of "out" buses in the call to rtsetparams. 
+There are 64 "aux" buses available (defined as DEFAULT_MAXBUS in H/bus.h, minus 1). You
+set the maximum number of "out" buses in the call to rtsetparams.  Embedded builds
+have 16 "aux" busses.
 
 If you don't call bus_config before using an instrument, you'll get
 a default configuration roughly equal to:

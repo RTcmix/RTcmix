@@ -3,7 +3,7 @@
 
 #define MAXVALS 2000
 
-class DataSet;
+class LPCDataSet;
 
 class LPCINST : public Instrument {
 public:
@@ -34,7 +34,7 @@ protected:
 	virtual void	SetupArrays(int frameCount) = 0;
 
 	// These are set via external routines and copied in during init.
-	DataSet	*_dataSet;
+	LPCDataSet	*_dataSet;
 
 	// These are set and used within subclasses.
 	double	_amp;

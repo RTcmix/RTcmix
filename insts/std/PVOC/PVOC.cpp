@@ -1,4 +1,4 @@
- #include <stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <ugens.h>
 #include <math.h>
@@ -11,6 +11,29 @@
 #include "PVOC.h"
 #include "setup.h"
 #include "PVFilter.h"
+
+/* Christopher Penrose's Notes
+
+Parameters!
+
+Ok, you need to learn what I call the "Dolson Rule":
+
+the greatest value of the D (decimation) and I (interpolation) values
+should never be greater than N/8 if you wish to avoid gross amplitude
+modulation.  D is the input or analysis overlap (overlap in samples =
+N-D) while I is the output or resynthesis overlap (overlap in samples
+= N-I).  The ratio between D and I determines time scaling.  If D/I is
+greater than 1, then the sound will have a shorter duration.  If D/I
+is less than 1, then the sound will be longer.
+
+Remember that frequency resolution is nyquist frequency/(N/2).  Thus,
+if you want to represent noisy signals (at 44.1KHz), then window sizes
+(N) of 4096 are not uncommon.  Window size must always be a power of
+two.  Also, decimation (D) determines the sampling rate of analysis,
+so for large values of N, it is typical to use overlap values (maximum
+of D and I) <= 128.
+
+ */
 
 #undef debug
 

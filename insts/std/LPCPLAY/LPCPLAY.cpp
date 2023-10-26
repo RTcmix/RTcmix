@@ -22,7 +22,7 @@
 #include <rtdefs.h>
 
 #include "LPCPLAY.h"
-#include "DataSet.h"
+#include "LPCDataSet.h"
 #include "setup.h"
 
 static const float kDefaultFrequency = 256.0;
@@ -164,7 +164,7 @@ static void smooth(double *pchvals, int frameCount, int framesToSkip, float fact
     }
 }
 
-extern int GetDataSet(DataSet **);
+extern int GetLPCDataSet(LPCDataSet **);
 
 extern int GetLPCStuff(double *hithresh, double *lowthresh,
 					   float *randamp,
@@ -214,7 +214,7 @@ int LPCINST::init(double p[], int n_args)
 	if (outputchans != 1)
 		return die(name(), "Output file must have 1 channel only\n");
 
-	GetDataSet(&_dataSet);
+	GetLPCDataSet(&_dataSet);
 	if (_dataSet == NULL)
 		return die(name(), "No open dataset!\n");
 

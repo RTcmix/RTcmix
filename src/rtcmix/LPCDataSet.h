@@ -1,18 +1,18 @@
 #include <RefCounted.h>
 #include <Lockable.h>
 
-// DataSet.h
+// LPCDataSet.h
 
-class DataSet : public RefCounted, public Lockable
+class LPCDataSet : public RefCounted, public Lockable
 {
 public:
-	DataSet();
+	LPCDataSet();
 	off_t	open(const char *fileName, int npoleGuess, float sampRate);
 	int getNPoles() const { return _nPoles; }
 	off_t getFrameCount() const { return _frameCount; }
 	int	getFrame(double frameno, float *pCoeffs);
 protected:
-	~DataSet();
+	~LPCDataSet();
 	void	allocArray(int nPoles);
 private:
 	int	_nPoles;

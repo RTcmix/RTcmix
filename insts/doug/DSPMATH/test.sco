@@ -1,6 +1,8 @@
 rtsetparams(44100, 2)
 load("./libDSPMATH.so")
 
-rtinput("../../../snd/input.wav")
+rtinput("../../../snd/huhh.wav")
 
-DSPMATH(0, 0, DUR(), gain=10000, "tanh", drive=16);
+drive = maketable("line", 1000, 0, 0.5, 1, 8, 2, 1);
+
+DSPMATH(0, 0, DUR(), gain=20000, "tanh", drive);

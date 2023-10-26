@@ -6,7 +6,7 @@
 #include <math.h>
 #include "setup.h"
 #include "lp.h"
-#include "DataSet.h"
+#include "LPCDataSet.h"
 #include <RTcmix.h>
 
 #define THRESH_UNSET (-1)
@@ -26,13 +26,13 @@ static float pitchFixOctave = -1.0;  // -1 indicates don't fix; 0 indicates no t
 static bool fixPitchGaps = false;
 static float pitchSmoothingFactor = 0.0;    // 0 indicates no smoothing
 
-static const int maxDataSets = 64;
+static const int maxLPCDataSets = 64;
 
 // For right now, datasets are created each time they are needed and are
 //	not shared.
 
-char	g_dataset_names[maxDataSets][80];	// open data set names
-DataSet	*g_datasets[maxDataSets];			// open datasets
+char	g_dataset_names[maxLPCDataSets][80];	// open data set names
+LPCDataSet	*g_datasets[maxLPCDataSets];			// open datasets
 int		g_currentDataset = 0;
 
 static void resetPitchPreprocessing()
@@ -53,9 +53,9 @@ static void resetPitchPreprocessing()
 //	current set of parameters from the Minc environment into the LPCPLAY
 //	instance.
 
-int GetDataSet(DataSet **ppDataSet)
+int GetLPCDataSet(LPCDataSet **ppLPCDataSet)
 {
-	*ppDataSet = g_datasets[g_currentDataset];
+	*ppLPCDataSet = g_datasets[g_currentDataset];
 	return g_datasets[g_currentDataset] ? 1 : -1;
 }
 
@@ -117,14 +117,14 @@ double dataset(double p[], int n_args)
 	}
 
 	// Search all open dataset slots for matching name
-	for (set = 0; set < maxDataSets && strlen(g_dataset_names[set]); ++set) {
+	for (set = 0; set < maxLPCDataSets && strlen(g_dataset_names[set]); ++set) {
 		if (strcmp(name, g_dataset_names[set]) == 0) {
 			g_currentDataset = set;
 			::rtcmix_advise("dataset", "Using already open dataset at slot %d", set);
 			return g_datasets[g_currentDataset]->getFrameCount();
 		}
 	}
-	if (set >= maxDataSets) {
+	if (set >= maxLPCDataSets) {
 		::rterror("dataset", "Maximum number of datasets exceeded");
 		return rtOptionalThrow(SYSTEM_ERROR);
 	}
@@ -133,7 +133,7 @@ double dataset(double p[], int n_args)
 	if(n_args>1)	/* if no npoles specified, it will be retrieved from */
 		npolesGuess= (int) p[1];	/* the header */
 
-	DataSet *dataSet = new DataSet;
+	LPCDataSet *dataSet = new LPCDataSet;
 	
 	int frms = (int) dataSet->open(name, npolesGuess, RTcmix::sr());
 	

@@ -8,55 +8,60 @@
 #include <ugens.h>        // for warn, die
 #include <rtcmix_types.h>
 #include "utils.h"
-#include "DataSet.h"
+#include "LPCDataSet.h"
 #include <stdlib.h>
 #include <string.h>
 
-extern int GetDataSet(DataSet **);
-
 extern "C" {
-    Handle lpcgetpitches(const Arg args[], const int nargs);
+    Handle getlpcpitches(const Arg args[], const int nargs);
 }
 
-// lpcgetpitches(first_frame, last_frame [, err_threshold)
-// Load the pitch values from the LPC dataset into a list object.
+// getlpcpitches(filename, npoles_guess, first_frame, last_frame [, err_threshold])
+// Open an LPC datafile and load the pitch frame values into a list object.
 // Any frame whose error value equals or exceeds err_threshold will have its pitch set to zero.
 // This allows you to get a list of "valid" pitches for the given threshold.
 
-Handle lpcgetpitches(const Arg args[], const int nargs)
+Handle getlpcpitches(const Arg args[], const int nargs)
 {
-    ::rterror("lpcgetpitches", "Not fully implemented yet");
-    return NULL;
-    DataSet *lpcdata = NULL;
-//    GetDataSet(&lpcdata);
-    if (lpcdata == NULL) {
-        ::rterror("lpcgetpitches", "You haven't opened an LPCdata file yet");
-        rtOptionalThrow(CONFIGURATION_ERROR);
+    LPCDataSet *dataSet = new LPCDataSet;
+    const char *filename = args[0];
+    const int npolesGuess = (int) (double) args[1];
+    int frms = (int) dataSet->open(filename, npolesGuess, 0);   // note: this will fail if file has no header
+    int lastFrame=0, firstFrame=0;
+    try {
+        if (frms < 0) {
+            ::rterror("getlpcpitches", "Failed to open LPC file");
+            throw FILE_ERROR;
+        }
+
+        dataSet->ref();
+        int frameCount = (int) dataSet->getFrameCount();
+
+        rtcmix_advise("getlpcpitches", "Data has %d total frames.", frameCount);
+
+        firstFrame = (int) (double) args[2];
+        lastFrame = (int) (double) args[3];
+        if (firstFrame >= frameCount) {
+            ::rterror("getlpcpitches", "Start frame is beyond end of file");
+            throw PARAM_ERROR;
+        }
+        if (lastFrame >= frameCount) {
+            rtcmix_warn("getlpcpitches", "End frame is beyond end of file - truncating");
+            lastFrame = frameCount - 1;
+        }
+        if (firstFrame >= lastFrame) {
+            ::rterror("getlpcpitches", "End frame must be > start frame");
+            throw PARAM_ERROR;
+        }
+    } catch (RTCmixStatus status) {
+        dataSet->unref();
+        rtOptionalThrow(status);
         return NULL;
     }
 
-    lpcdata->ref();
-    int frameCount = (int)lpcdata->getFrameCount();
-    
-    int firstFrame = (int)(double)args[0];
-    int lastFrame = (int)(double)args[1];
-    if (firstFrame >= frameCount) {
-        ::rterror("lpcgetpitches", "Start frame is beyond end of file");
-        rtOptionalThrow(CONFIGURATION_ERROR);
-        return NULL;
-    }
-    if (lastFrame >= frameCount) {
-        rtcmix_warn("lpcgetpitches", "End frame is beyond end of file - truncating");
-        lastFrame = frameCount - 1;
-    }
-    if (firstFrame >= lastFrame) {
-        ::rterror("lpcgetpitches", "End frame must be > start frame");
-        rtOptionalThrow(CONFIGURATION_ERROR);
-        return NULL;
-    }
     // If no threshold entered, pass all frame pitch values.
 
-    float errThreshold = (nargs < 3) ? 1.0 : (float)args[2];
+    float errThreshold = (nargs < 5) ? 1.0 : (float)args[4];
     
     int framesToRead = lastFrame - firstFrame + 1;
 
@@ -66,11 +71,11 @@ Handle lpcgetpitches(const Arg args[], const int nargs)
     memset(outPitches->data, 0, framesToRead * sizeof(double));
     float coeffs[MAXPOLES+4];
     for (int i = firstFrame; i <= lastFrame; ++i) {
-        if (lpcdata->getFrame((double) i, coeffs) < 0)
+        if (dataSet->getFrame((double) i, coeffs) < 0)
             break;
         outPitches->data[i-firstFrame] = (coeffs[THRESH] < errThreshold) ? coeffs[PITCH] : 0.0;
     }
-    rtcmix_advise("lpcgetpitches", "Returning list of %d pitches", framesToRead);
+    rtcmix_advise("getlpcpitches", "Returning list of %d pitches", framesToRead);
     
     // Wrap Array in Handle, and return.  This will return a 'list' to MinC.
     return createArrayHandle(outPitches);
