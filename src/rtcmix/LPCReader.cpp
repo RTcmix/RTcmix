@@ -14,43 +14,34 @@
 
 extern "C" {
     Handle getlpcpitches(const Arg args[], const int nargs);
+    Handle getlpcamps(const Arg args[], const int nargs);
 }
 
-// getlpcpitches(filename, npoles_guess, first_frame, last_frame [, err_threshold])
-// Open an LPC datafile and load the pitch frame values into a list object.
-// Any frame whose error value equals or exceeds err_threshold will have its pitch set to zero.
-// This allows you to get a list of "valid" pitches for the given threshold.
-
-Handle getlpcpitches(const Arg args[], const int nargs)
+Handle getlpcframedata(const char *filename, const char *functionname, int npolesGuess, int frameField, int firstFrame, int lastFrame, float thresh)
 {
     LPCDataSet *dataSet = new LPCDataSet;
-    const char *filename = args[0];
-    const int npolesGuess = (int) (double) args[1];
     int frms = (int) dataSet->open(filename, npolesGuess, 0);   // note: this will fail if file has no header
-    int lastFrame=0, firstFrame=0;
     try {
         if (frms < 0) {
-            ::rterror("getlpcpitches", "Failed to open LPC file");
+            ::rterror(functionname, "Failed to open LPC file");
             throw FILE_ERROR;
         }
 
         dataSet->ref();
         int frameCount = (int) dataSet->getFrameCount();
 
-        rtcmix_advise("getlpcpitches", "Data has %d total frames.", frameCount);
+        rtcmix_advise(functionname, "Data has %d total frames.", frameCount);
 
-        firstFrame = (int) (double) args[2];
-        lastFrame = (int) (double) args[3];
         if (firstFrame >= frameCount) {
-            ::rterror("getlpcpitches", "Start frame is beyond end of file");
+            ::rterror(functionname, "Start frame is beyond end of file");
             throw PARAM_ERROR;
         }
         if (lastFrame >= frameCount) {
-            rtcmix_warn("getlpcpitches", "End frame is beyond end of file - truncating");
+            rtcmix_warn(functionname, "End frame is beyond end of file - truncating");
             lastFrame = frameCount - 1;
         }
         if (firstFrame >= lastFrame) {
-            ::rterror("getlpcpitches", "End frame must be > start frame");
+            ::rterror(functionname, "End frame must be > start frame");
             throw PARAM_ERROR;
         }
     } catch (RTCmixStatus status) {
@@ -59,24 +50,52 @@ Handle getlpcpitches(const Arg args[], const int nargs)
         return NULL;
     }
 
-    // If no threshold entered, pass all frame pitch values.
+    // If no threshold entered, pass all frame data values.
 
-    float errThreshold = (nargs < 5) ? 1.0 : (float)args[4];
-    
     int framesToRead = lastFrame - firstFrame + 1;
 
-    Array *outPitches = (Array *)malloc(sizeof(Array));
-    outPitches->len = framesToRead;
-    outPitches->data = (double *)malloc(framesToRead * sizeof(double));
-    memset(outPitches->data, 0, framesToRead * sizeof(double));
+    Array *outValues = (Array *)malloc(sizeof(Array));
+    outValues->len = framesToRead;
+    outValues->data = (double *)malloc(framesToRead * sizeof(double));
+    memset(outValues->data, 0, framesToRead * sizeof(double));
     float coeffs[MAXPOLES+4];
     for (int i = firstFrame; i <= lastFrame; ++i) {
         if (dataSet->getFrame((double) i, coeffs) < 0)
             break;
-        outPitches->data[i-firstFrame] = (coeffs[THRESH] < errThreshold) ? coeffs[PITCH] : 0.0;
+        outValues->data[i-firstFrame] = (coeffs[THRESH] < thresh) ? coeffs[frameField] : 0.0;
     }
-    rtcmix_advise("getlpcpitches", "Returning list of %d pitches", framesToRead);
+    rtcmix_advise(functionname, "Returning list of %d values", framesToRead);
     
     // Wrap Array in Handle, and return.  This will return a 'list' to MinC.
-    return createArrayHandle(outPitches);
+    return createArrayHandle(outValues);
+}
+
+// getlpcpitches(filename, npoles_guess, first_frame, last_frame [, err_threshold])
+// Open an LPC datafile and return the pitch frame values as a list object.
+// Any frame whose error value equals or exceeds err_threshold will have its pitch set to zero.
+// This allows you to get a list of "valid" pitches for the given threshold.
+
+Handle getlpcpitches(const Arg args[], const int nargs)
+{
+    const char *filename = args[0];
+    const int npolesGuess = (int) (double) args[1];
+    int firstFrame = (int) (double) args[2];
+    int lastFrame = (int) (double) args[3];
+    float errThreshold = (nargs < 5) ? 1.0 : (float)args[4];
+    return getlpcframedata(filename, "getlpcpitches", npolesGuess, PITCH, firstFrame, lastFrame, errThreshold);
+}
+
+// getlpcamps(filename, npoles_guess, first_frame, last_frame [, err_threshold])
+// Open an LPC datafile and return the amplitude values as a list object.
+// Any frame whose error value equals or exceeds err_threshold will have its amp set to zero.
+// This allows you to treat frames with high error values as muted.
+
+Handle getlpcamps(const Arg args[], const int nargs)
+{
+    const char *filename = args[0];
+    const int npolesGuess = (int) (double) args[1];
+    int firstFrame = (int) (double) args[2];
+    int lastFrame = (int) (double) args[3];
+    float errThreshold = (nargs < 5) ? 1.0 : (float)args[4];
+    return getlpcframedata(filename, "getlpcamps", npolesGuess, RESIDAMP, firstFrame, lastFrame, errThreshold);
 }
