@@ -13,8 +13,8 @@
 #include <string.h>
 
 extern "C" {
-    Handle getlpcpitches(const Arg args[], const int nargs);
-    Handle getlpcamps(const Arg args[], const int nargs);
+    Handle lpcgetpitches(const Arg args[], const int nargs);
+    Handle lpcgetamps(const Arg args[], const int nargs);
 }
 
 Handle getlpcframedata(const char *filename, const char *functionname, int npolesGuess, int frameField, int firstFrame, int lastFrame, float thresh)
@@ -70,32 +70,32 @@ Handle getlpcframedata(const char *filename, const char *functionname, int npole
     return createArrayHandle(outValues);
 }
 
-// getlpcpitches(filename, npoles_guess, first_frame, last_frame [, err_threshold])
+// lpcgetpitches(filename, npoles_guess, first_frame, last_frame [, err_threshold])
 // Open an LPC datafile and return the pitch frame values as a list object.
 // Any frame whose error value equals or exceeds err_threshold will have its pitch set to zero.
 // This allows you to get a list of "valid" pitches for the given threshold.
 
-Handle getlpcpitches(const Arg args[], const int nargs)
+Handle lpcgetpitches(const Arg args[], const int nargs)
 {
     const char *filename = args[0];
     const int npolesGuess = (int) (double) args[1];
     int firstFrame = (int) (double) args[2];
     int lastFrame = (int) (double) args[3];
     float errThreshold = (nargs < 5) ? 1.0 : (float)args[4];
-    return getlpcframedata(filename, "getlpcpitches", npolesGuess, PITCH, firstFrame, lastFrame, errThreshold);
+    return getlpcframedata(filename, "lpcgetpitches", npolesGuess, PITCH, firstFrame, lastFrame, errThreshold);
 }
 
-// getlpcamps(filename, npoles_guess, first_frame, last_frame [, err_threshold])
+// lpcgetamps(filename, npoles_guess, first_frame, last_frame [, err_threshold])
 // Open an LPC datafile and return the amplitude values as a list object.
 // Any frame whose error value equals or exceeds err_threshold will have its amp set to zero.
 // This allows you to treat frames with high error values as muted.
 
-Handle getlpcamps(const Arg args[], const int nargs)
+Handle lpcgetamps(const Arg args[], const int nargs)
 {
     const char *filename = args[0];
     const int npolesGuess = (int) (double) args[1];
     int firstFrame = (int) (double) args[2];
     int lastFrame = (int) (double) args[3];
     float errThreshold = (nargs < 5) ? 1.0 : (float)args[4];
-    return getlpcframedata(filename, "getlpcamps", npolesGuess, RESIDAMP, firstFrame, lastFrame, errThreshold);
+    return getlpcframedata(filename, "lpcgetamps", npolesGuess, RESIDAMP, firstFrame, lastFrame, errThreshold);
 }

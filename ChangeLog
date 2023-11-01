@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2023-11-01  Douglas Scott <netdscott-at-netscape.net>
+	* Updated and renamed some of the LPC and PVOC reader utils.
+	* Marking this as version 5.2.2 for source code release.
+
 2023-10-02  Douglas Scott <netdscott-at-netscape.net>
 	* Edited all function prototypes to remove legacy float array entirely, everywhere!
 	* Bumped to 5.2.1 due to prototype changes.

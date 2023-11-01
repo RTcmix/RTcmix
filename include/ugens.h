@@ -202,7 +202,7 @@ typedef enum {
 #define MMP_PRINTALL		5
 #define MMP_DEBUG			6
 
-#ifdef EMBEDDED
+#if defined(EMBEDDED) && !FORCE_EMBEDDED_PRINTF
 #include "MMPrint.h"
 #define RTPrintf(format, ...) set_mm_print_ptr(snprintf(get_mm_print_ptr(), get_mm_print_space(), format, ## __VA_ARGS__)+1)
 #define RTFPrintf(FILE, format, ...) set_mm_print_ptr(snprintf(get_mm_print_ptr(), get_mm_print_space(), format, ## __VA_ARGS__)+1)

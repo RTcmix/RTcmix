@@ -329,7 +329,7 @@ double m_getpch(double p[], int n_args)
 	int pchfd;
 	int frameno,nbframe;
 	long skipbytes;
-	float vals[200]; /* enough for 46 poles + 4 data values */
+	float vals[2];
 	char  *input;
 
 /*	p0=name of pchanal file; p1=framenumber to get */
@@ -365,7 +365,7 @@ double m_getamp(double p[], int n_args)
 	int pchfd;
 	int frameno,nbframe;
 	long skipbytes;
-	float vals[200]; /* enough for 46 poles + 4 data values */
+	float vals[2];
 	char  *input;
 
 /*	p0=name of pchanal file; p1=framenumber to get */

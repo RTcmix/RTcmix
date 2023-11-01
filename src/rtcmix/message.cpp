@@ -143,7 +143,7 @@ void rtcmix_print(const char *format, ...)
 	vsnprintf(buf, BUFSIZE, format, args);
 	va_end(args);
 
-#ifdef USE_SYSLOG
+#if defined(USE_SYSLOG) && !FORCE_EMBEDDED_PRINTF
 	syslog(LOG_NOTICE, "DEBUG: %s", buf);
 #elif defined(USE_POST)
 	cpost("DEBUG: %s", buf);
