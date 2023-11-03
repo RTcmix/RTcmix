@@ -90,11 +90,14 @@ double m_pchadd(double p[], int n_args)
 	return pchoct(octpch(p[0]) + octpch(p[1]));
 }
 
-double m_rand()
+double m_rand(double[], int)
 { return rrand(); }
 
-double m_random()
+double _random()
 { return (rrand() * 0.5) + 0.5; }
+
+double m_random(double[], int)
+{ return _random(); }
 
 double m_srand(double p[], int n_args)
 {
@@ -550,7 +553,7 @@ double m_reset(double p[], int n_args)
 /* returns a randomly-interpolated value between its two input values, inclusive */
 static double _irand(double min, double max)
 {
-	double frac = m_random();
+	double frac = _random();
 	return (frac * min) + (1.0 - frac) * max;
 }
 
@@ -630,7 +633,7 @@ double m_chance(double p[], int n_args)
 		return 0.0;
 	if (numer > denom)
 		numer = denom;
-    double rval = m_random();
+    double rval = _random();
 	return rval <= numer / denom;
 }
 
@@ -751,7 +754,7 @@ double m_pickrand(const Arg args[], int n_args)
         }
 	}
     double rindex;
-	rindex = (m_random() * nxargs) - 0.000001; // 0 to 1.9999 for 2 args
+	rindex = (_random() * nxargs) - 0.000001; // 0 to 1.9999 for 2 args
 	return xargs[(int) rindex];
 }
 
@@ -798,7 +801,7 @@ double m_pickwrand(const Arg args[], int n_args)
     double totalchance = 0, psum = 0;
 	for (int n = 1; n < nxargs; n += 2)
 		totalchance += xargs[n];
-	const double rindex = m_random() * totalchance;
+	const double rindex = _random() * totalchance;
 	for (int n = 1; n < nxargs; n += 2) {
 		psum += xargs[n];
 		if (rindex <= psum)
