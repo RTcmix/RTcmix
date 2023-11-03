@@ -28,11 +28,11 @@ async function setup() {
         processorOptions: { frameSize },
     })
 
-    const output = new Float32Array(Module.HEAP32.buffer, Module._output, frameSize * numChannels)
+    const outputSize = frameSize * numChannels
     worklet.port.onmessage = (event) => {
         // Generate samples.
         if (Module._process()) {
-            event.data.set(output)
+            event.data.set(new Float32Array(Module.HEAP32.buffer, Module._output, outputSize))
         } else {
             // Score finished playing.
             event.data.fill(0)
@@ -71,7 +71,7 @@ decay = 2.0
 freq_offset = makeconnection("inlet", 1, 200)
 for (st = 0; st < dur; st += 0.11) {
     freq = irand(0, 300) + freq_offset
-    pan = irand(0, 1)
+    pan = random()
     STRUM2(st, notedur, amp, freq, squish, decay, pan)
 }</textarea><br />
         Status: <span id="status">Not started</span><br />
