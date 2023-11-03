@@ -543,7 +543,7 @@ void RTcmix::printOn()
 
 	/* Banner */
 	char tbuf[128];
-	sprintf(tbuf, "--------> %s %s <--------\n", RTCMIX_NAME, RTCMIX_VERSION);
+	snprintf(tbuf, 128, "--------> %s %s <--------\n", RTCMIX_NAME, RTCMIX_VERSION);
 	rtcmix_advise(NULL, tbuf);
 }
 

@@ -221,7 +221,7 @@ double AudioDeviceImpl::getPeak(int chan, long *pLocation) const
 
 int AudioDeviceImpl::error(const char *msg, const char *msg2)
 {
-	sprintf(_lastErr, "AudioDevice: %s%s", msg, msg2 ? msg2 : "");
+	snprintf(_lastErr, ErrLength, "AudioDevice: %s%s", msg, msg2 ? msg2 : "");
 	return -1;
 }
 

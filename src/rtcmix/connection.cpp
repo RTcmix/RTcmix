@@ -61,7 +61,7 @@ makeconnection(const Arg args[], const int nargs)
 	const char *dsoPath = RTOption::dsoPath();
 	if (strlen(dsoPath) == 0)
 		dsoPath = SHAREDLIBDIR;
-	sprintf(loadPath, "%s/lib%sconn.so", dsoPath, selector);
+	snprintf(loadPath, 1024, "%s/lib%sconn.so", dsoPath, selector);
 
 	DynamicLib theDSO;
 	if (theDSO.load(loadPath) == 0) {
