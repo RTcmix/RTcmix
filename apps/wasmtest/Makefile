@@ -1,6 +1,6 @@
 CFLAGS = -Wall -O3
 INCLUDES = -I../../include
-LDFLAGS = -L../../lib -lrtcmix_embedded -s EXPORTED_RUNTIME_METHODS=["ccall"]
+LDFLAGS = -L../../lib -lrtcmix_embedded -s EXPORTED_RUNTIME_METHODS=["ccall"] -sALLOW_MEMORY_GROWTH -sASSERTIONS
 
 all: glue.js glue.wasm
 

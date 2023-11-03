@@ -294,7 +294,7 @@ endif
 INCLUDES = -I. -I$(CMIXDIR)/include $(EXTRA_INCLUDES)
 
 CFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(PICFLAGS) $(ARCHFLAGS) $(CMIX_FLAGS)
-CXXFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(PICFLAGS) $(ARCHFLAGS) $(CMIX_FLAGS) -std=c++11
+CXXFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(PICFLAGS) $(ARCHFLAGS) $(CMIX_FLAGS) -std=c++98
 
 # Platform-independent library flags
 
@@ -391,5 +391,3 @@ TRASH = core core.[0-9]+ *~
 
 # Cool debugging feature:  to see value of make macro "$(MACRO)" type "make print-MACRO"
 print-%: ; @echo $* is $($*)
-
-
