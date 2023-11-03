@@ -1,0 +1,88 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf8">
+        <title>RTcmix WebAssembly demo</title>
+        <script src="glue.js"></script>
+        <script>
+const moduleReady = new Promise(resolve => (Module.onRuntimeInitialized = resolve))
+const context = new AudioContext()
+let setupDone = false
+let outBuffer
+let worklet
+
+function getInt(address) {
+    return new Int32Array(Module.HEAP32.buffer)[address / Int32Array.BYTES_PER_ELEMENT]
+}
+
+async function setup() {
+    await moduleReady
+    Module._setup(context.sampleRate)
+    await context.resume()
+    await context.audioWorklet.addModule("worklet.js")
+    const frameSize = getInt(Module._FRAME_SIZE)
+    const numChannels = getInt(Module._NUM_CHANNELS)
+    worklet = new AudioWorkletNode(context, "doublebuffer", {
+        numberOfInputs: 0,
+        outputChannelCount: [numChannels],
+        processorOptions: { frameSize },
+    })
+
+    const outputSize = frameSize * numChannels
+    worklet.port.onmessage = (event) => {
+        // Generate samples.
+        if (Module._process()) {
+            event.data.set(new Float32Array(Module.HEAP32.buffer, Module._output, outputSize))
+        } else {
+            // Score finished playing.
+            event.data.fill(0)
+            document.getElementById("status").innerText = "Finished"
+        }
+        // Transfer the buffer back to the worklet.
+        worklet.port.postMessage(event.data, [event.data.buffer])
+    }
+    worklet.connect(context.destination)
+    setupDone = true
+}
+
+async function play() {
+    if (!setupDone) {
+        await setup()
+    }
+    const score = document.getElementById("score").value
+    Module.ccall("load_score", null, ["string"], [score])
+    document.getElementById("status").innerText = "Playing"
+}
+
+function send(inlet) {
+    const value = +document.getElementById(`inlet-${inlet}`).value
+    document.getElementById("status").innerText = `Sent ${value} to inlet ${inlet}.`
+    Module.ccall("send", null, ["number", "number"], [inlet, value])
+}
+        </script>
+    </head>
+    <body>
+        <textarea id="score" rows="20" cols="80">
+dur = 15.0
+notedur = 1.0
+amp = makeconnection("inlet", 0, 5000)
+squish = 2
+decay = 2.0
+freq_offset = makeconnection("inlet", 1, 200)
+for (st = 0; st < dur; st += 0.11) {
+    freq = irand(0, 300) + freq_offset
+    pan = random()
+    STRUM2(st, notedur, amp, freq, squish, decay, pan)
+}</textarea><br />
+        Status: <span id="status">Not started</span><br />
+        <button onclick="play()">Play score</button><br /><br />
+        <label style="display: flex; align-items: center">
+            Inlet 0:
+            <input id="inlet-0" type="range" value="5000" min="0" max="10000" step="1" oninput="send(0)" />
+        </label><br />
+        <label style="display: flex; align-items: center">
+            Inlet 1:
+            <input id="inlet-1" type="range" value="200" min="0" max="1000" step="1" oninput="send(1)" />
+        </label>
+    </body>
+</html>

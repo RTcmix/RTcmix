@@ -65,8 +65,6 @@ ifeq ($(ARCH),LINUX)
   ifndef AUDIODRIVER
 	AUDIODRIVER=OSS
   endif
-  CC = gcc
-  CXX = g++ -Wno-deprecated
   LD = ld
   MAKE = make
   INSTALL = cp -f
@@ -283,10 +281,20 @@ ifeq ($(BUILDTYPE), STANDALONE)
     endif
 endif
 
+ifeq ($(BUILDTYPE), WASM)
+    ARCHFLAGS = -DLINUX -DEMBEDDED -DEMBEDDEDAUDIO -DWASM $(ARCH_BITFLAGS)
+    ARCH_RTLDFLAGS = -Wl
+    AUDIODRIVER = EMBEDDEDAUDIO
+    RANLIB = emranlib
+    RTLIBTYPE = STATIC
+    SHLIB = rtcmix_embedded
+    RTLIB_INSTALL_DIR = $(LIBDIR)
+endif
+
 INCLUDES = -I. -I$(CMIXDIR)/include $(EXTRA_INCLUDES)
 
 CFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(PICFLAGS) $(ARCHFLAGS) $(CMIX_FLAGS)
-CXXFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(PICFLAGS) $(ARCHFLAGS) $(CMIX_FLAGS)
+CXXFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(PICFLAGS) $(ARCHFLAGS) $(CMIX_FLAGS) -std=c++98
 
 # Platform-independent library flags
 
@@ -352,6 +360,10 @@ ifeq ($(ARCH),FREEBSD)
   DYN = -rdynamic
 endif
 
+ifeq ($(BUILDTYPE), WASM)
+    SHARED_LDFLAGS = -Wl
+endif
+
 LDFLAGS = $(ARCH_RTLDFLAGS) $(RTLDFLAGS)
 SYSLIBS = $(ARCH_RTLDFLAGS) -L$(LIBDIR) -lgen $(SYS_LDFLAGS)
 
@@ -379,5 +391,3 @@ TRASH = core core.[0-9]+ *~
 
 # Cool debugging feature:  to see value of make macro "$(MACRO)" type "make print-MACRO"
 print-%: ; @echo $* is $($*)
-
-

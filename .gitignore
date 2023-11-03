@@ -5,6 +5,7 @@
 *.dylib
 *.dsp_cache
 *.so
+*.wasm
 *.status
 *.build
 *.log
@@ -48,7 +49,6 @@ include/Lockable.h
 include/Locked.h
 include/mixerr.h
 include/MMPrint.h
-include/notetags.h
 include/Option.h
 include/PFBusData.h
 include/PField.h
@@ -61,12 +61,14 @@ include/RTcmix.h
 include/RTcmix_API.h
 include/rtcmix_types.h
 include/rtdefs.h
+include/RTsockfuncs.h
 include/sfheader.h
 include/sockdefs.h
 include/spray.h
 include/ug_intro.h
 
 # parser dir generated files
+src/parser/minc/bison_version.h
 src/parser/minc/minc.cpp
 src/parser/minc/minc.hpp
 src/parser/perl/RT/Makefile

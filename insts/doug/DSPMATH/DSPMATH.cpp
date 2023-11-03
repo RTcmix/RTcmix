@@ -12,6 +12,7 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <ugens.h>
 #include "DSPMATH.h"
 #include <rt.h>

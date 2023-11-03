@@ -214,7 +214,6 @@ ifeq ($(RTLIBTYPE), STATIC)
 		$(LIBPFBUSOBJS) $(LIBMINCOBJS) $(LIBOBJOBJS) $(LIBRTHEAPOBJS) \
 		$(LIBSNDOBJS) $(LIBSTKOBJS)
 	LOAD = $(AR) rv
-	RANLIB = ranlib
 	# Nothing to link for static lib
 	SYS_LDFLAGS =
 else
