@@ -61,13 +61,10 @@ int ThreadedAudioDevice::startThread()
 	PRINT1("\tThreadedAudioDevice::startThread: starting thread\n");
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
-	int status;
-#ifndef WASM
-	status = pthread_attr_setschedpolicy(&attr, SCHED_RR);
+	int status = pthread_attr_setschedpolicy(&attr, SCHED_RR);
 	if (status != 0) {
 		fprintf(stderr, "startThread: Failed to set scheduling policy\n");
 	}
-#endif
 	status = pthread_create(&_thread, &attr, _runProcess, this);
 	pthread_attr_destroy(&attr);
 	if (status < 0) {
