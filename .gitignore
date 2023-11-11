@@ -49,7 +49,8 @@ include/Locked.h
 include/mixerr.h
 include/MMPrint.h
 include/notetags.h
-include/Option.h
+include/RTOption.h
+include/RTsockfuncs.h
 include/PFBusData.h
 include/PField.h
 include/PFieldSet.h
@@ -90,6 +91,7 @@ src/rtcmix/PYMIX
 test/coreaudioprobe/coreaudioprobe
 test/suite/function_scores/*
 test/suite/load_test.sco
+test/suite/embeddedtest
 test/suite/sockettest
 test/suite/stresstest
 utils/cmixplay

@@ -86,7 +86,7 @@ double set_filter(double p[], int n_args)
 			dsopath[1023] = '\0';
 		}
 		else {
-			sprintf(dsopath, "%s/libPV%s.so", SHAREDLIBDIR, filtername);
+			snprintf(dsopath, 1024, "%s/libPV%s.so", SHAREDLIBDIR, filtername);
 		}
 		DynamicLib dso;
 		if (dso.load(dsopath) == 0) {

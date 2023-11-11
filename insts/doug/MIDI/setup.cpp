@@ -29,7 +29,7 @@ setup_midi(double *p, int n_args)
     if (strlen(dsoPath) == 0) {
         dsoPath = SHAREDLIBDIR;
     }
-    sprintf(loadPath, "%s/libmidiconn.so", dsoPath);
+    snprintf(loadPath, 1024, "%s/libmidiconn.so", dsoPath);
 
     DynamicLib theDSO;
     if (theDSO.load(loadPath) == 0) {

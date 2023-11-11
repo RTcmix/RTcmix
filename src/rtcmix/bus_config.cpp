@@ -636,21 +636,22 @@ RTcmix::get_bus_config(const char *inst_name)
 	char buslist[64];
 	switch (default_bus_slot->in_count) {
 		case 0:
-			sprintf(buslist, "() => ");
+			snprintf(buslist, 64, "() => ");
 			break;
 		case 1:
-			sprintf(buslist, "(in 0) => ");
+			snprintf(buslist, 64, "(in 0) => ");
 			break;
 		default:
-			sprintf(buslist, "(in 0-%d) => ", default_bus_slot->in_count - 1);
+			snprintf(buslist, 64, "(in 0-%d) => ", default_bus_slot->in_count - 1);
 			break;
 	}
 	strcat(buslist, inst_name);
 	if (default_bus_slot->out_count == 1)
 		strcat(buslist, " => (out 0)");
-	else
-		sprintf(buslist + strlen(buslist), " => (out 0-%d)", default_bus_slot->out_count - 1);
-	
+    else {
+        const unsigned long offset = strlen(buslist);
+        snprintf(buslist + offset, 64 - offset, " => (out 0-%d)", default_bus_slot->out_count - 1);
+    }
 	rtcmix_advise(NULL, "default: %s\n", buslist);
 
    return default_bus_slot;
