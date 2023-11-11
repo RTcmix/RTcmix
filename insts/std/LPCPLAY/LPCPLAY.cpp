@@ -422,7 +422,7 @@ int LPCPLAY::localInit(double p[], int n_args)
         rtcmix_advise("LPCPLAY", "p[3] will be used as flat pitch of %.2f Hz", _transposition);
         _useTranspositionAsPitch = true;
     }
-    else {  // pitch is <= -1.0 and < -20.0 (negative PCH)
+    else {  // pitch is <= -1.0 and >= -20.0 (negative PCH)
 		_transposition = cpspch(-_pitch);  /* flat pitch in octave pt */
         rtcmix_advise("LPCPLAY", "p[3] will be used as flat pitch of %.2f Hz (%.2f pch)", _transposition, -_pitch);
         _useTranspositionAsPitch = true;

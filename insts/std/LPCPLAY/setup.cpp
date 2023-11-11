@@ -237,8 +237,8 @@ double setdev(double *p, int n_args)
 double setdevfactor(double *p, int n_args)
 {
 		// LPCPLAY will treat negatives as a factor
-        maxdev = -p[0];
-		::rtcmix_advise("setdevfactor", "pitch deviation factor: %g", -maxdev);
+        maxdev = p[0];
+		::rtcmix_advise("setdevfactor", "pitch deviation factor set to %g", -maxdev);
 		return -maxdev;
 }
 
