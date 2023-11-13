@@ -17,6 +17,7 @@
 #include <rt.h>
 #include <rtdefs.h>
 #include <math.h>
+#include <string.h>
 
 struct MathFun {
     const char *name;
