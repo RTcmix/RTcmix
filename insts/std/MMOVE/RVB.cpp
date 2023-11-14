@@ -151,7 +151,7 @@ int RVB::run()
 	const int inChans = inputChannels();
 
     rtgetin(in, this, frames * inChans);
-	register float *outptr = &this->outbuf[0];
+	float *outptr = &this->outbuf[0];
 	/* run summed 1st and 2nd generation paths through reverberator */
  	for (int n = 0; n < frames; n++) {
 		if (--_branch <= 0) {
@@ -191,7 +191,7 @@ int RVB::run()
 inline double
 delpipe(double sig, int *counter, double nsdel, int delsize, double *delay)
 {
-   register int intap, tap1, tap2, del1;
+   int intap, tap1, tap2, del1;
 
    intap = *counter;
    if (intap >= delsize)
@@ -216,7 +216,7 @@ delpipe(double sig, int *counter, double nsdel, int delsize, double *delay)
 inline double
 Allpass(double sig, int *counter, double *data)
 {
-   register int nsdel, intap, length, outtap;
+   int nsdel, intap, length, outtap;
    double *delay = &data[2];
 
    nsdel = (int)data[1];
@@ -250,7 +250,7 @@ Allpass(double sig, int *counter, double *data)
 void
 RVB::doRun(double *input, double *output, long counter)
 {
-   register int i, j;
+   int i, j;
    double sig, delsig;
 
    for (i = 0; i < 2; ++i) {                /* loop for 2 output chans */
@@ -479,7 +479,7 @@ RVB::wire_matrix(double Matrix[12][12])
 void 
 RVB::rvb_reset()
 {
-	register int i, j, k;
+	int i, j, k;
 
 	/* reset reverb filters and delays */
 
@@ -489,7 +489,7 @@ RVB::rvb_reset()
 			r->delin = r->delout = 0.0;
 			r->deltap = 0;	// index for each delay unit
 			r->Rvb_air[2] = 0.0;
-			register double *point = r->Rvb_del;
+			double *point = r->Rvb_del;
 			while (k < rvbdelsize)
 				point[k++] = 0.0;
 		}

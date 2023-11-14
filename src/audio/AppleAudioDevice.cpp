@@ -194,7 +194,7 @@ AppleAudioDevice::Impl::Port::getFrames(void *frameBuffer, int inFrameCount, int
 	int stream;
 	for (stream = 0; stream < streamsToCopy; ++stream) {
 		// Offset into serially-ordered, multi-channel non-interleaved buf.
-		register float *buf = &audioBuffer[stream * bufFrames];
+		float *buf = &audioBuffer[stream * bufFrames];
 		float *frame = fFrameBuffer[stream];
 		bufLoc = outLoc;
 		DPRINT1("\tstream %d: raw offset into mono internal buffer: %ld (%d * %d)\n", stream, buf - &audioBuffer[0], stream, bufFrames);
@@ -534,8 +534,8 @@ OSStatus AppleAudioDevice::Impl::audioUnitRenderCallback(void *inUserData,
                    port->streamCount, destchans, port->streamCount > 1 ? "s" : "");
             for (int stream = 0; stream < port->streamCount; ++stream) {
                 const int strIdx = stream + port->streamIndex;
-                register float *src = &port->audioBuffer[stream * port->audioBufFrames];
-                register float *dest = (float *) ioData->mBuffers[strIdx].mData;
+                float *src = &port->audioBuffer[stream * port->audioBufFrames];
+                float *dest = (float *) ioData->mBuffers[strIdx].mData;
                 bufLoc = port->outLoc;
                 for (int n = 0; n < framesToWrite; ++n) {
                     if (bufLoc == bufLen)	// wrap

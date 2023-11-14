@@ -145,7 +145,7 @@ void MOVE::get_tap(int currentSamp, int chan, int path, int len)
    double incr = 1.0 + delta / len;
 
    const int tap = currentSamp % m_tapsize;
-   register double otap = (double) tap - outloc;
+   double otap = (double) tap - outloc;
    if (otap < 0.0) otap += m_tapsize;
    double otapPlusOne = otap + 1.0;
    if (otapPlusOne >= (double) m_tapsize) otapPlusOne -= m_tapsize;
@@ -156,8 +156,8 @@ void MOVE::get_tap(int currentSamp, int chan, int path, int len)
 
    int len1 = min(len, m_tapsize - (int) closestToEnd);
 
-   register double *tapdel = m_tapDelay;
-   register double *Sig = vec->Sig;
+   double *tapdel = m_tapDelay;
+   double *Sig = vec->Sig;
    int out = 0;
    
    while (out < len)

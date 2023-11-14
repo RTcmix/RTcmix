@@ -9,7 +9,7 @@
 double
 wrap(double x)
 {
-   register double val = x;
+   double val = x;
    while (val < 0.0)
       val += PI2;
    while (val >= PI2)
@@ -581,7 +581,7 @@ setfir(double theta, int nterms, int flag, double *coeffs, double *firtap)
 {
     static const double radmax = PI2;  /* 2PI rads */
     double rad_inc, angle, frac;
-    register int lower, upper, skip;
+    int lower, upper, skip;
         
     /* reset filter histories if flag = 1 */
     

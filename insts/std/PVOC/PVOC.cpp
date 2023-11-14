@@ -54,7 +54,7 @@ inline int max(int x, int y) { return (x >= y) ? x : y; }
 
 // static float maxof( float *a, int n )
 // {
-//  register float *lim = a + n, m;
+//  float *lim = a + n, m;
 //	 for ( m = *a++; a < lim; a++ )
 // 	if ( *a > m )
 // 		m = *a;
@@ -67,8 +67,8 @@ inline int max(int x, int y) { return (x >= y) ? x : y; }
 // 	 int i, found;
 // 	 static float **buf, *mx;
 // 	 static int *ptr;
-// 	 register int *p;
-// 	 register float *b, *m;
+// 	 int *p;
+// 	 float *b, *m;
 // 
 //	 if ( _first ) {
 // 		_first = 0;
@@ -97,7 +97,7 @@ inline int max(int x, int y) { return (x >= y) ? x : y; }
 
 static void vvmult( float *out, float *a, float *b, int n )
 {
-	register float *lim = out + n;
+	float *lim = out + n;
 	while ( out < lim )
 		*out++ = *a++ * *b++;
 }
@@ -646,7 +646,7 @@ void
 PVOC::convert(float S[], float C[], int N2, int D, int R)
 {
 	// Local copies
-	register float *lastphase = _convertPhase;
+	float *lastphase = _convertPhase;
 	const float fundamental = _fundamental;
 	const float factor = _convertFactor;
 	
@@ -717,7 +717,7 @@ void
 PVOC::unconvert( float C[], float S[], int N2, int I, int R )
 {
 	// Local copies
-	register float *lastphase = _unconvertPhase;
+	float *lastphase = _unconvertPhase;
 	const float fundamental = _fundamental;
 	const float factor = _unconvertFactor;
 
@@ -811,8 +811,8 @@ PVOC::oscbank(float C[], int N, float lpcoef[], int npoles,
 		}
 		C[freq] *= Pinc;
 
-		register float a, f;
-		register const float finc = ( C[freq] - ( f = lastfreq[chan] ) ) * Iinv;
+		float a, f;
+		const float finc = ( C[freq] - ( f = lastfreq[chan] ) ) * Iinv;
 	/*
 	 * if linear prediction specified, REPLACE phase vocoder amplitude
 	 * measurements with linear prediction estimates
@@ -823,8 +823,8 @@ PVOC::oscbank(float C[], int N, float lpcoef[], int npoles,
 			else
 				C[amp] = ::lpamp( chan*ffac, lpcoef[0], lpcoef, npoles );
 		}
-		register const float ainc = ( C[amp] - ( a = lastamp[chan] ) ) * Iinv;
-		register float address = index[chan];
+		const float ainc = ( C[amp] - ( a = lastamp[chan] ) ) * Iinv;
+		float address = index[chan];
 	/*
 	 * accumulate the I samples from each oscillator into
 	 * output array O (initially assumed to be zero);

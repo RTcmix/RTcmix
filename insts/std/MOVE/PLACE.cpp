@@ -114,9 +114,9 @@ void rtprofile()
 void PLACE::get_tap(int intap, int chan, int path, int len)
 {
 	Vector *vec = &m_vectors[chan][path];
-	register double *tapdel = m_tapDelay;
-	register double *Sig = vec->Sig;
-	register int tap = intap % m_tapsize;
+	double *tapdel = m_tapDelay;
+	double *Sig = vec->Sig;
+	int tap = intap % m_tapsize;
     int outtap = tap - (int) vec->outloc;
     if (outtap < 0) outtap += m_tapsize;
 

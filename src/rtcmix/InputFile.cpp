@@ -384,7 +384,7 @@ read_short_samps(
         if (swap) {
             int j = n;
             for (int i = chan; i < src_samps; i += file_chans, j += dest_chans) {
-                sbuf[i] = reverse_int2(&sbuf[i]);
+                sbuf[i] = (short)reverse_int2(&sbuf[i]);
                 dest[j] = (BUFTYPE) sbuf[i];
             }
         }

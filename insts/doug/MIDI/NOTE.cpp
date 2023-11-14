@@ -69,7 +69,7 @@ void NOTE::doStart(FRAMETYPE frameOffset)
     long timestamp = (1000.0 * frameOffset) / SR;
     int vel = (int)(0.5 + 127.0*_midiVel);
     PRINT("NOTE: %p sending note on chan %d note %d vel %d with offset %ld\n", this, _midiChannel, _midiNote, vel, timestamp);
-    _outputPort->sendNoteOn(timestamp, _midiChannel, _midiNote, vel);
+    _outputPort->sendNoteOn(timestamp, (unsigned char)_midiChannel, (unsigned char)_midiNote, (unsigned char)vel);
 }
 
 // Called at the control rate to update parameters like amplitude, pan, etc.
@@ -82,7 +82,7 @@ void NOTE::doStop(FRAMETYPE currentFrame)
 {
     long timestamp = 1000.0 * (currentFrame - getRunStartFrame()) / SR;
     PRINT("NOTE: %p sending note off with offset %ld\n", this, timestamp);
-    _outputPort->sendNoteOff(timestamp, _midiChannel, _midiNote, 0);
+    _outputPort->sendNoteOff(timestamp, (unsigned char)_midiChannel, (unsigned char)_midiNote, 0);
 }
 
 Instrument *makeNOTE()
