@@ -68,11 +68,14 @@ include/spray.h
 include/ug_intro.h
 
 # parser dir generated files
+src/parser/minc/bison_version.h
 src/parser/minc/minc.cpp
 src/parser/minc/minc.hpp
+src/parser/perl/RT.c
 src/parser/perl/RT/Makefile
+src/parser/perl/RT/MYMETA.json
+src/parser/perl/RT/MYMETA.yml
 src/parser/perl/RT/RT.bs
-src/parser/perl/RT/RT.c
 src/parser/perl/RT/blib/
 src/parser/perl/RT/pm_to_blib
 src/parser/python/funclist
@@ -80,6 +83,10 @@ src/parser/python/rtcmixmodule.cpp
 
 
 # in-directory binaries
+apps/embedtest/embedtest
+apps/embedtest/patest
+apps/embedtest/scoreplayer
+apps/embedtest/scoretrigger
 src/control/midi/portmidi/pm_test/latency
 src/control/midi/portmidi/pm_test/midithread
 src/control/midi/portmidi/pm_test/midithru
@@ -93,7 +100,9 @@ test/suite/function_scores/*
 test/suite/load_test.sco
 test/suite/embeddedtest
 test/suite/sockettest
+test/suite/socksend
 test/suite/stresstest
+test/suite/threadtest
 utils/cmixplay
 utils/cpspch
 utils/head/sfcreate
