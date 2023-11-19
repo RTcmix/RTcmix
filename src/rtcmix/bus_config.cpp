@@ -721,7 +721,7 @@ RTcmix::mixToBus()
 void
 RTcmix::addToBus(BusType type, int bus, BufPtr src, int offset, int endfr, int chans)
 {
-	register BufPtr dest;
+	BufPtr dest;
 	
 	if (type == BUS_AUX_OUT) {
 		dest = aux_buffer[bus];

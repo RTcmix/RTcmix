@@ -216,7 +216,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 
 	while ((Iptr = rtHeap->deleteMin(bufEndSamp, &heapChunkStart)) != NULL) {
 #ifdef IBUG
-		RTPrintf("Iptr %p pulled from rtHeap (size %d) with heapChunkStart = %lld\n", Iptr, rtHeap->getSize(), (long long)heapChunkStart);
+		RTPrintf("Iptr %p pulled from rtHeap (size %ld) with heapChunkStart = %lld\n", Iptr, rtHeap->getSize(), (long long)heapChunkStart);
 #endif
 		if (panic) {
 #ifdef DBUG
@@ -476,7 +476,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			// DT_PANIC_MOD
 			if (!panic) {
 #ifdef IBUG
-                printf("putting inst %p into taskmgr (bus_type %d) [%s]\n", Iptr, bus_type, Iptr->name());
+                printf("putting inst %p into taskmgr (bus_type %d, bus %d) [%s]\n", Iptr, bus_type, bus, Iptr->name());
 #endif
 				instruments.push_back(Iptr);
 				taskManager->addTask<Instrument, int, BusType, int, &Instrument::exec>(Iptr, bus_type, bus);
@@ -489,14 +489,13 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 
 		if (!instruments.empty()) {
 #if defined(DBUG) || defined(IBUG)
-			printf("Done adding instruments for current slice\n");
-			printf("waiting for %d instrument tasks...", (int) instruments.size());
+			printf("Done adding instruments for current slice. Waiting for %d instrument tasks...\n", (int) instruments.size());
 #endif
 			taskManager->waitForTasks(instruments);
-        	RTcmix::mixToBus();
 #if defined(DBUG) || defined(IBUG)
-            printf("done waiting\n");
+            printf("Done waiting... mixing all signals\n");
 #endif
+        	RTcmix::mixToBus();
 #if defined(IBUG)
 			printf("Re-queuing instruments\n");
 #endif
