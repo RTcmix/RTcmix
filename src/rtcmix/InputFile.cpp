@@ -613,12 +613,12 @@ off_t InputFile::readSamps(off_t cur_offset,
 		(void)copySamps(cur_offset, dest, dest_chans, dest_frames, src_chan_list, src_chans);
 	}
 	else {
-#ifdef MULTI_THREAD
-		_readBuffer = sConversionBuffers[RTThread::GetIndexForThread()];
-#endif
 		{
 			AutoLock fileLock(this);
-			if (lseek(_fd, cur_offset, SEEK_SET) == -1) {
+#ifdef MULTI_THREAD
+            _readBuffer = sConversionBuffers[RTThread::GetIndexForThread()];
+#endif
+            if (lseek(_fd, cur_offset, SEEK_SET) == -1) {
 				perror("RTcmix::readFromInputFile (lseek)");
                 return FILE_ERROR;
 			}
@@ -631,7 +631,7 @@ off_t InputFile::readSamps(off_t cur_offset,
 										 dest, dest_chans, dest_frames,
 										 src_chan_list, src_chans,
 										 _readBuffer);
-		}
+        }
 	}
     int bytes_per_samp = ::mus_data_format_to_bytes_per_sample(_data_format);
     return dest_frames * _chans * bytes_per_samp;
