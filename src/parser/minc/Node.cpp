@@ -1478,6 +1478,9 @@ Node *	NodeArgList::doExct()
 	TPRINT("NodeArgList: walking function '%s()' arg decl/copy list\n", sCalledFunctions.back());
 	child(0)->exct();
 	inCalledFunctionArgList = false;
+    // Create a special function block symbol storing the function's argument count.
+    Symbol *n_args = installSymbol(strsave("_n_args"), NO);
+    n_args->value() = (MincFloat) sArgListLen;
 	return this;
 }
 
@@ -1741,8 +1744,7 @@ Node *	NodeFuncDef::doExct()
 	assert(child(0)->symbol() != NULL);
     // Note: arglist and body stored inside MincFunction.  This is how we store the behavior
     // of a function/method on its symbol for re-use.  Creating with MincFunction::Method causes it to
-    // expect to find a symbol for 'this'.  XXX FIX ME XXX the arglist (child(1)) is destroyed when the
-    // Node tree is cleaned up but the MincFunction still references it (because it is global!).
+    // expect to find a symbol for 'this'.
 	child(0)->symbol()->value() = MincValue(new MincFunction(child(1), child(2), _isMethod ? MincFunction::Method : MincFunction::Standalone));
 	return this;
 }

@@ -1,6 +1,6 @@
 float testfunction(float f, string s, list l)
 {
-	print("in testfunction:");
+	printf("in testfunction: %d args\n", _n_args);
 	print(f);
 	print(s);
 	print(l);
@@ -9,13 +9,13 @@ float testfunction(float f, string s, list l)
 
 string str;
 float flt;
-handle hnd;
+list lst;
 
 str = "hello";
 flt = 77;
-hnd = { "hi", "there", 99 };
+lst = { "hi", "there", 99 };
 
-testfunction(flt, str, hnd);
+testfunction(flt, str, lst);
 
 testfunction(0, "goodbye", { 7, 6, 5, 4 });
 
