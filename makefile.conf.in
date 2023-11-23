@@ -57,14 +57,35 @@ LIBPREFIX = lib
 ifeq ($(ARCH),LINUX)
   ARCHFLAGS = -DLINUX $(ARCH_BITFLAGS)
   ARCH_RTLDFLAGS = -Wl,-rpath $(LIBDIR)
+  RTLIBTYPE = DYNAMIC
   ifeq ($(BUILDTYPE), STANDALONE)
     ARCHFLAGS += -DSTANDALONE
-    RTLIBTYPE = DYNAMIC
+    SHLIB = rtcmix
 	INSTTYPE = DYNAMIC
+    ifndef AUDIODRIVER
+	    AUDIODRIVER=OSS
+    endif
   endif
-  ifndef AUDIODRIVER
-	AUDIODRIVER=OSS
-  endif
+  ifeq ($(BUILDTYPE), LINUXEMBEDDED)
+    ARCHFLAGS += -DEMBEDDED
+    AUDIODRIVER=EMBEDDEDAUDIO
+    CMIX_FLAGS += -DEMBEDDEDAUDIO
+    INSTTYPE = STATIC
+    SHLIB = rtcmix_embedded
+    # This is overridable in site.conf
+    ifndef RTLIBTYPE
+        RTLIBTYPE = DYNAMIC
+    endif
+    ifeq ($(RTLIBTYPE), DYNAMIC) 
+        SHLIB_SUFFIX = so
+        RTLIB_LDFLAGS = $(DYNAMIC_LDFLAGS)
+    else
+        ARCH_RTLDFLAGS =
+        SHLIB_SUFFIX = a
+        RTLIB_LDFLAGS =
+    endif
+       RTLIB_INSTALL_DIR = $(LIBDIR)
+   endif
   CC = gcc
   CXX = g++ -Wno-deprecated
   LD = ld
@@ -72,8 +93,6 @@ ifeq ($(ARCH),LINUX)
   INSTALL = cp -f
   RANLIB = touch
   SHELL = /bin/sh
-  SHLIB = rtcmix
-  SHLIB_SUFFIX = so
 endif
 
 # -- Mac OS X -------------------------------------------------

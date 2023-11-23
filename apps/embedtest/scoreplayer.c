@@ -21,7 +21,10 @@
 #include <portaudio.h>
 #endif
 
+#ifndef EMBEDDEDAUDIO
 #define EMBEDDEDAUDIO
+#endif
+
 #include <RTcmix_API.h>
 
 #define MAX_SCORES 32
