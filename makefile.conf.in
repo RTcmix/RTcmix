@@ -76,6 +76,8 @@ ifeq ($(ARCH),LINUX)
     ifndef RTLIBTYPE
         RTLIBTYPE = DYNAMIC
     endif
+       RTLIB_INSTALL_DIR = $(LIBDIR)
+    endif
     ifeq ($(RTLIBTYPE), DYNAMIC) 
         SHLIB_SUFFIX = so
         RTLIB_LDFLAGS = $(DYNAMIC_LDFLAGS)
@@ -83,8 +85,6 @@ ifeq ($(ARCH),LINUX)
         ARCH_RTLDFLAGS =
         SHLIB_SUFFIX = a
         RTLIB_LDFLAGS =
-    endif
-       RTLIB_INSTALL_DIR = $(LIBDIR)
    endif
   CC = gcc
   CXX = g++ -Wno-deprecated
