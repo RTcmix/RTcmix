@@ -26,6 +26,15 @@ RTThread::~RTThread() {
 	}
 }
 
+void RTThread::setName(const char *name)
+{
+#ifdef MACOSX
+    (void) pthread_setname_np(name);
+#else
+    (void) pthread_setname_np(mThread, name);
+#endif
+}
+
 // We cannot start running the pthread in the ctor, so we do it here.
 
 void RTThread::start() {
