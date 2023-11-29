@@ -1,6 +1,16 @@
 #ifndef __CAAtomicStack_h__
 #define __CAAtomicStack_h__
 
+#if defined(__cpp_lib_atomic) || __cplusplus >= 199711L
+#define USE_ATOMIC 1
+#include <atomic>
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7))
+#define USE_ATOMIC 1
+#include <atomic>
+#else
+#define USE_ATOMIC 0
+#endif
+
 #ifdef MACOSX
 #include <libkern/OSAtomic.h>
 #elif defined(LINUX)
@@ -16,6 +26,20 @@ static bool	compare_and_swap(T *oldvalue, T *newvalue, T **pvalue);
 //  class T must implement T *& next().
 template <class T>
 class TAtomicStack {
+private:
+    bool	compare_and_swap(T *oldvalue, T *newvalue, T **pvalue)
+    {
+#if USE_ATOMIC
+        return std::atomic_compare_exchange_strong(
+                                oldvalue,
+                                newvalue,
+                                pvalue);
+#elif defined(MACOSX)
+        return ::OSAtomicCompareAndSwap64Barrier(int64_t(oldvalue), int64_t(newvalue), (int64_t *)pvalue);
+#else
+		return __sync_bool_compare_and_swap(pvalue, oldvalue, newvalue);
+#endif
+    }
 public:
 	TAtomicStack() : mHead(NULL) { }
 	
@@ -112,18 +136,6 @@ public:
 		}
 		return reversed.mHead;
 	}
-
-	static bool	compare_and_swap(T *oldvalue, T *newvalue, T **pvalue)
-	{
-#ifdef MACOSX
-		return ::OSAtomicCompareAndSwap64Barrier(int64_t(oldvalue), int64_t(newvalue), (int64_t *)pvalue);
-#elif (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) > 40100
-		return __sync_bool_compare_and_swap(pvalue, oldvalue, newvalue);
-#else
-		#error WE NEED AN ATOMIC COMPARE AND SWAP OPERATOR HERE
-#endif	// MACOSX
-	}
-	
 protected:
 	T *		mHead;
 };
@@ -140,12 +152,8 @@ public:
 	}
 	// a subset of the above
 	void	push_atomic(void *p) { OSAtomicEnqueue(&mHead, p, mNextPtrOffset); }
-	void	push_NA(void *p) { push_atomic(p); }
-	
 	void *	pop_atomic() { return OSAtomicDequeue(&mHead, mNextPtrOffset); }
-	void *	pop_atomic_single_reader() { return pop_atomic(); }
-	void *	pop_NA() { return pop_atomic(); }
-	
+
 private:
 	OSQueueHead		mHead;
 	size_t			mNextPtrOffset;
@@ -167,19 +175,60 @@ public:
 		}
 		OSAtomicEnqueue(&mHead, item, mNextPtrOffset);
 	}
-	void	push_NA(T *item) { push_atomic(item); }
-	void	push_all_NA(T *item) { }
-	
+
 	T *		pop_atomic() { return (T *)OSAtomicDequeue(&mHead, mNextPtrOffset); }
-	T *		pop_atomic_single_reader() { return pop_atomic(); }
-	T *		pop_NA() { return pop_atomic(); }
-	
+
 	// caution: do not try to implement pop_all_reversed here. the writer could add new elements
 	// while the reader is trying to pop old ones!
 	
 private:
 	OSQueueHead		mHead;
 	ssize_t			mNextPtrOffset;
+};
+
+#else   // !MACOSX
+
+template <typename T>
+class TAtomicStack2 {
+private:
+    struct Node {
+        T *data;
+        Node* next;
+
+        Node(T *val) : data(val), next(nullptr) {}
+    };
+
+    std::atomic<Node*> head;
+
+public:
+    TAtomicStack2() : head(nullptr) {}
+
+    void push_atomic(T *value) {
+        Node* newNode = new Node(value);
+        newNode->next = head.load(std::memory_order_relaxed);
+
+        while (!head.compare_exchange_weak(newNode->next, newNode,
+                                           std::memory_order_release,
+                                           std::memory_order_relaxed))
+            ; // spin
+    }
+
+    T * pop_atomic() {
+        Node* oldHead = head.load(std::memory_order_relaxed);
+
+        while (oldHead && !head.compare_exchange_weak(oldHead, oldHead->next,
+                                                      std::memory_order_acquire,
+                                                      std::memory_order_relaxed))
+            ; // spin
+
+        if (oldHead) {
+            T *value = oldHead->data;
+            delete oldHead;
+            return value;
+        }
+
+        return NULL;
+    }
 };
 
 #endif	// MACOSX
