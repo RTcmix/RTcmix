@@ -140,9 +140,9 @@ void MMOVE::get_tap(int currentSamp, int chan, int path, int len)
    const double incr = 1.0 + delta / len;
    const int tap = currentSamp % m_tapsize;
    
-   register double *tapdel = m_tapDelay;
-   register double *Sig = vec->Sig;
-   register double outTap = (double) tap - outloc;
+   double *tapdel = m_tapDelay;
+   double *Sig = vec->Sig;
+   double outTap = (double) tap - outloc;
    if (outTap < 0.0)
 	   outTap += m_tapsize;
    int out = 0;

@@ -36,7 +36,7 @@ extern "C" {
 extern int g_Nterms[13];				 /* defined in common.C */
 
 int BASE::primes[NPRIMES + 2];
-AtomicInt BASE::primes_gotten = -1;
+AtomicInt BASE::primes_gotten(-1);
 
 BASE::BASE() : m_tapsize(0)
 {

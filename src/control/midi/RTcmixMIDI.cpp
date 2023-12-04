@@ -451,7 +451,7 @@ int RTcmixMIDIOutput::stop()
 
 inline uchar make_status(uchar type, uchar chan) { return chan | type; }
 
-void RTcmixMIDIOutput::sendNoteOn(PmTimestamp timestamp, uchar chan, uchar pitch, uchar vel)
+void RTcmixMIDIOutput::sendNoteOn(long timestamp, uchar chan, uchar pitch, uchar vel)
 {
     PmEvent buffer;
     buffer.message = Pm_Message(make_status(kNoteOn, chan), pitch, vel);
@@ -461,7 +461,7 @@ void RTcmixMIDIOutput::sendNoteOn(PmTimestamp timestamp, uchar chan, uchar pitch
     unlock();
 }
 
-void RTcmixMIDIOutput::sendNoteOff(PmTimestamp timestamp, uchar chan, uchar pitch, uchar vel)
+void RTcmixMIDIOutput::sendNoteOff(long timestamp, uchar chan, uchar pitch, uchar vel)
 {
     PmEvent buffer;
     buffer.message = Pm_Message(make_status(kNoteOff, chan), pitch, vel);
@@ -471,7 +471,7 @@ void RTcmixMIDIOutput::sendNoteOff(PmTimestamp timestamp, uchar chan, uchar pitc
     unlock();
 }
 
-void RTcmixMIDIOutput::sendControl(PmTimestamp timestamp, uchar chan, uchar control, unsigned value)
+void RTcmixMIDIOutput::sendControl(long timestamp, uchar chan, uchar control, unsigned value)
 {
     PmEvent buffer;
     buffer.message = Pm_Message(make_status(kControl, chan), control, value);
@@ -493,7 +493,7 @@ void RTcmixMIDIOutput::sendPitchBend(long timestamp, uchar chan, unsigned value)
     unlock();
 }
 
-void RTcmixMIDIOutput::sendProgramChange(PmTimestamp timestamp, uchar chan, uchar program)
+void RTcmixMIDIOutput::sendProgramChange(long timestamp, uchar chan, uchar program)
 {
     PmEvent buffer;
     buffer.message = Pm_Message(make_status(kProgram, chan), program, 0);

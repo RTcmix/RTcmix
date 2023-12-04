@@ -84,7 +84,6 @@ int MBASE::init(double p[], int n_args)
 {
     int    UseMikes;
     float  outskip, inskip, abs_factor, dummy;
-    double R, T;
 
     outskip = p[0];
     inskip = p[1];
@@ -516,7 +515,7 @@ int MBASE::roomtrig(double A,                 /* 'rho' or 'x' */
                     double H,
                     int    cart)
 {
-   register int i;
+   int i;
    double x[13], y[13], r[13], t[13], d[4], Ra[2], Ta[2];
    double X, Y, R, T;
    const double z = 0.017453292;  /* Pi / 180 */
@@ -639,8 +638,8 @@ int MBASE::roomtrig(double A,                 /* 'rho' or 'x' */
    /* calculate stereo vector pairs for each of these */
    for (i = 0; i < 13; ++i) {
       binaural(r[i], t[i], x[i], y[i], H, Ra, Ta);
-	  register Vector *lvec = &m_vectors[0][i];
-	  register Vector *rvec = &m_vectors[1][i];
+	  Vector *lvec = &m_vectors[0][i];
+	  Vector *rvec = &m_vectors[1][i];
       lvec->Rho = Ra[0];
       rvec->Rho = Ra[1];
       lvec->Theta = Ta[0];
@@ -685,7 +684,7 @@ int MBASE::roomtrig(double A,                 /* 'rho' or 'x' */
 */
 void MBASE::rvb_reset()
 {
-	register int i, j, k;
+	int i, j, k;
 
 	/* reset wall filter hists */
 
@@ -761,7 +760,7 @@ void MBASE::airfil_set(int flag)
 
 void MBASE::put_tap(int intap, float *Sig, int len)
 {
-	register double *tapdel = m_tapDelay;
+	double *tapdel = m_tapDelay;
 	int tap = intap;
     while (tap >= m_tapsize)
         tap -= m_tapsize;
