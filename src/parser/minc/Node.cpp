@@ -202,7 +202,7 @@ static const char *printOpKind(OpKind k)
 static const char *methodNameFromStructAndFunction(const char *structName, const char *functionName)
 {
     static char sMethodNameBuffer[128];
-    snprintf(sMethodNameBuffer, 128, "#%s$$%s", functionName, structName);
+    snprintf(sMethodNameBuffer, 128, "#%s.%s", structName, functionName);
     return strsave(sMethodNameBuffer);
 }
 
@@ -211,10 +211,6 @@ static const char *nameFromMangledName(const char *mangledName)
     if (*mangledName == '#') {
         static char sMethodNameBuffer[128];
         strncpy(sMethodNameBuffer, mangledName+1, 128);
-        char *underscores = strstr(sMethodNameBuffer, "$$");
-        if (underscores) {
-            *underscores = '\0';
-        }
         return sMethodNameBuffer;
     }
     else {
