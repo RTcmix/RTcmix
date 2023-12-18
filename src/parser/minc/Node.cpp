@@ -138,7 +138,6 @@ static const char *s_NodeKinds[] = {
    "NodeOpAssign",
    "NodeLoadSym",
    "NodeAutoDeclLoadSym",
-   "NodeLoadFuncSym",
    "NodeConstf",
    "NodeString",
    "NodeMemberDecl",
@@ -710,7 +709,13 @@ Node *	NodeLoadSym::finishExct()
         copyValue(nodeSymbol);
 	}
 	else {
-		minc_die("'%s' is not declared", symbolName());
+        // Special trick: Store function name into Node's value
+        TPRINT("NodeLoadSym: did not locate '%s' - storing name into Node in case it is a builtin function\n", symbolName());
+        value() = MincValue(symbolName());
+        // Now throw exception.  This will be caught in the case where a function call is being made.
+        char msg[128];
+		snprintf(msg, 128, "'%s' is not declared", symbolName());
+        throw UndeclaredVariableException(msg);
 	}
 	return this;
 }
@@ -720,23 +725,6 @@ Node *	NodeAutoDeclLoadSym::doExct()
 	/* look up the symbol */
 	setSymbol(lookupOrAutodeclare(symbolName(), inFunctionCall() ? YES : NO));
 	return finishExct();
-}
-
-Node *    NodeLoadFuncSym::finishExct()
-{
-    Symbol *nodeSymbol;
-    if ((nodeSymbol = symbol()) != NULL) {
-        TPRINT("%s: symbol %p\n", classname(), nodeSymbol);
-        /* also assign the symbol's value into Node's value field */
-        TPRINT("NodeLoadFuncSym: copying value from symbol '%s' to us\n", nodeSymbol->name());
-        copyValue(nodeSymbol);
-    }
-    else {
-        TPRINT("NodeLoadFuncSym: '%s' has no symbol - will try builtin\n", symbolName());
-        // Special trick: Store function name into Node's value
-        value() = MincValue(symbolName());
-    }
-    return this;
 }
 
 Node *	NodeListElem::doExct()
@@ -904,7 +892,7 @@ void    NodeSubscriptWrite::writeToSubscript()
     MincFloat fltindex = (MincFloat) child(1)->value();
     int index = (int) fltindex;
     if (fltindex - (MincFloat) index > 0.0)
-        minc_warn("list index must be integer ... correcting");
+        minc_warn("list index (%f) must be integer ... correcting", fltindex);
     if (theList != NULL) {
         len = theList->len;
         assert(len >= 0);    /* NB: okay to have zero-length list */
@@ -1127,27 +1115,43 @@ Node *	NodeCall::doExct()
 {
     ENTER();
     TPRINT("NodeCall: Func: node %p (child 0)\n", child(0));
-    Node *calledFunction = child(0)->exct();         /* lookup target */
-    TPRINT("NodeCall: returned calledFunction %p\n", calledFunction);
-	push_list();
-    TPRINT("NodeCall: Args: list node %p (child 1)\n", child(1));
-    child(1)->exct();    // execute arg expression list (stored on this NodeCall)
-    switch (calledFunction->dataType()) {
-        case MincFunctionType:        // MinC function
-            callMincFunctionFromNode(calledFunction);
-            break;
-        case MincStringType:        // Builtin function
-            // We stored this string away when we noticed this in the parser.
-            callBuiltinFunction((MincString)child(0)->value());
-            break;
+    Node *target = child(0);
+    try {
+        Node *calledFunction = target->exct();         /* lookup target */
+        TPRINT("NodeCall: returned calledFunction %p\n", calledFunction);
+        push_list();
+        TPRINT("NodeCall: Args: list node %p (child 1)\n", child(1));
+        child(1)->exct();    // execute arg expression list (stored on this NodeCall)
+        switch (calledFunction->dataType()) {
+            case MincFunctionType:        // MinC function
+                callMincFunctionFromNode(calledFunction);
+                break;
 #if NOT_YET
-        case MincListType:          // A method called on list is treated as a string at the level
-            callListFunction((MincString)child(0)->value());
-            break;
+            case MincListType:          // A method called on list is treated as a string at the level
+                callListFunction((MincString)target->value());
+                break;
 #endif
-        default:
-            minc_die("variable is not a function or instrument");
-            break;
+            default:
+                minc_die("variable is not a function or instrument");
+                break;
+        }
+    } catch(UndeclaredVariableException &uve) {
+        const char *builtinFunctionString = NULL;
+        if (target->dataType() == MincStringType) {
+            // We stored this string away when we noticed this in the parser.
+            builtinFunctionString = target->value();
+        }
+        if (builtinFunctionString) {
+            TPRINT("NodeCall: attempting call to builtin function '%s'\n", builtinFunctionString);
+            push_list();
+            TPRINT("NodeCall: Args: list node %p (child 1)\n", child(1));
+            child(1)->exct();    // execute arg expression list (stored on this NodeCall)
+            callBuiltinFunction((MincString) builtinFunctionString);
+        }
+        else {
+            TPRINT("NodeCall: Other undeclared var exception - re-throwing\n");
+            throw uve;
+        }
     }
 	pop_list();
 	return this;

@@ -24,11 +24,11 @@ const char *lookup_token(const char *token, bool printWarning);
 #ifdef __cplusplus
 }
 #endif
-#undef MDEBUG	/* turns on yacc debugging below */
-#undef DEBUG_ID    /* turns on printing of each ID found (assumes MDEBUG) */
+#define MDEBUG	/* turns on yacc debugging below */
+#define DEBUG_ID    /* turns on printing of each ID found (assumes MDEBUG) */
 
 #ifdef MDEBUG
-//int yydebug=1;
+// yydebug=1;
 #define MPRINT(x) rtcmix_print("YACC: %s\n", x)
 #define MPRINT1(x,y) rtcmix_print("YACC: " x "\n", y)
 #define MPRINT2(x,y,z) rtcmix_print("YACC: " x "\n", y, z)
@@ -103,7 +103,7 @@ static Node * go(Node * t1);
 %token <ival> TOK_IDENT TOK_NUM TOK_ARG_QUERY TOK_ARG TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
 
-%type  <node> stml stmt rstmt bexp expl exp expblk str ret bstml obj fexp fexpl func
+%type  <node> stml stmt rstmt bexp expl exp expblk str ret bstml obj fexp fexpl
 %type  <node> fdecl sdecl hdecl ldecl mapdecl structdecl structinit mfuncdecl arg argl funcdef fstml fblock fargl funcname mbr mbrl structdef methodname methoddef
 %type  <str> id structname
 
@@ -202,6 +202,15 @@ ret: TOK_RETURN exp			{	MPRINT("ret exp");
 							}
 	;
 
+/* An identifier list is used to declare a variable of a particular type, e.g., "float gain" */
+idl: id					{ MPRINT("idl: id"); idlist[idcount++] = $1; }
+	| idl ',' id		{ MPRINT("idl: idl,id"); idlist[idcount++] = $3; }
+	;
+
+/* An identifier is any single text token */
+id:  TOK_IDENT			{ MPRINT_ID(yytext); $$ = strsave(yytext); }
+	;
+
 /* variable declaration lists */
 
 fdecl:	TOK_FLOAT_DECL idl	{ 	MPRINT("fdecl");
@@ -240,13 +249,7 @@ level:  /* nothing */ { incrLevel(); }
 /* An obj is an id or anything that can be operator accessed via . or [] */
 obj:    id                  {       MPRINT("obj: id");          $$ = new NodeLoadSym($1); }
     |   obj '.' id            {       MPRINT("obj: obj.id");      $$ = new NodeMemberAccess($1, $3);  }
-    |   obj '[' exp ']'      {       MPRINT("obj: obj[exp]");    $$ = new NodeSubscriptRead($1, $3); }     // This is always non-terminal therefor read-access only
-    ;
-
-/* A function can be an id, a member access on a struct/class, or a list element accessed by index, that can be followed by (args) */
-func:   id                  {       MPRINT("func: id");         $$ = new NodeLoadFuncSym($1); }
-    |   obj '.' id            {       MPRINT("func: obj.id");     $$ = new NodeMemberAccess($1, $3); }      // id is member or method name
-    |   obj '[' exp ']'      {       MPRINT("func: obj[exp]");   $$ = new NodeSubscriptRead($1, $3); }
+    |   obj '[' exp ']'      {       MPRINT("obj: obj[exp]");    $$ = new NodeSubscriptRead($1, $3); }
     ;
 
 /* An expression list block is used to initialize a list or a struct */
@@ -270,21 +273,33 @@ rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAuto
 	| id TOK_MULEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpMul); }
 	| id TOK_DIVEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpDiv); }
 
-    | TOK_PLUSPLUS id %prec CASTTOKEN { MPRINT("rstmt: TOK_PLUSPLUS id");
-        $$ = new NodeOpAssign(new NodeLoadSym($2), new NodeConstf(1.0), OpPlusPlus);
-    }
-    | TOK_MINUSMINUS id %prec CASTTOKEN { MPRINT("rstmt: TOK_MINUSMINUS id");
-        $$ = new NodeOpAssign(new NodeLoadSym($2), new NodeConstf(1.0), OpMinusMinus);
-    }
-    
-    /* Calls to a function object, with and without arguments */
+    /* Special-case rules for incrementing/decrementing an array access.  This is needed because the returned
+       value from [] has no symbol associated with it.
+ 	| TOK_PLUSPLUS obj '[' exp ']'  { MPRINT("rstmt: TOK_PLUSPLUS obj[exp]");
+ 	    $$ = new NodeSubscriptWrite($2, $4, new NodeOp(OpPlus, new NodeSubscriptRead($2, $4), new NodeConstf(1.0)));
+ 	}
+ 	| TOK_MINUSMINUS obj '[' exp ']'  { MPRINT("rstmt: TOK_MINUSMINUS obj[exp]");
+ 	    $$ = new NodeSubscriptWrite($2, $4, new NodeOp(OpMinus, new NodeSubscriptRead($2, $4), new NodeConstf(1.0)));
+ 	}
+    */
 
-    | func '(' fexpl ')' {	MPRINT("rstmt: func(fexpl)");
-								$$ = new NodeCall($1, $3);
-							}
-	| func '(' ')' {		MPRINT("rstmt: func()");
-        $$ = new NodeCall($1, new NodeEmptyListElem());
-                        }
+    /* Generic rule for all other objs */
+    | TOK_PLUSPLUS obj %prec CASTTOKEN { MPRINT("rstmt: TOK_PLUSPLUS obj");
+        $$ = new NodeOpAssign($2, new NodeConstf(1.0), OpPlusPlus);     // FIX ME FIX ME!!
+    }
+    | TOK_MINUSMINUS obj %prec CASTTOKEN { MPRINT("rstmt: TOK_MINUSMINUS obj");
+        $$ = new NodeOpAssign($2, new NodeConstf(1.0), OpMinusMinus);
+    }
+
+    /* A function can be an id, a member access on a struct/class, or a list element accessed by index, that can be followed by (args) or () */
+    | obj '(' fexpl ')' {    MPRINT("rstmt: obj(fexpl)");
+                                    $$ = new NodeCall($1, $3);
+                                }
+    | obj '(' ')'       { MPRINT("rstmt: obj()");
+                                    $$ = new NodeCall($1, new NodeEmptyListElem());
+                                }
+        ;
+
     /* Special case: Assigning value to an array at an index */
 	| obj '[' exp ']' '=' exp {
                                 MPRINT("rstmt: obj[exp] = exp");
@@ -295,15 +310,6 @@ rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAuto
                                 MPRINT("rstmt: obj.id = exp");
                                 $$ = new NodeStore(new NodeMemberAccess($1, $3), $5);
                             }
-	;
-
-/* An identifier list is used to declare a variable of a particular type, e.g., "float gain" */
-idl: id					{ MPRINT("idl: id"); idlist[idcount++] = $1; }
-	| idl ',' id		{ MPRINT("idl: idl,id"); idlist[idcount++] = $3; }
-	;
-
-/* An identifier is any single text token */
-id:  TOK_IDENT			{ MPRINT_ID(yytext); $$ = strsave(yytext); }
 	;
 
 /* An expression list is an expression or set of expressions which will be wrapped in a block */
@@ -503,8 +509,10 @@ funcdef: funcname fargl fblock	{ MPRINT("funcdef");
                                     decrFunctionLevel();
 									$$ = new NodeFuncDef($1, $2, $3);
 								}
+/* These do not work (yet) and generate warnings, so commenting out for now
 	| error funcname fargl '{' stml '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
 	| error funcname fargl '{' '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
+*/
 	;
 
 /* methoddef is a complete rule for a struct method definition.  Looks the same as funcdef but only occurs within a struct definition.
@@ -748,15 +756,15 @@ go(Node * t1)
 		try {
 			t1->exct();
 		}
-        catch(const RTException &rtex) {
+        catch(const RTException rtex) {
+            MPRINT1("caught fatal exception: '%s' - cleaning up and re-throwing", rtex.mesg());
             t1->unref();
             t1 = NULL;
             cleanup();
-            rterror("parser", "caught fatal exception: '%s' - bailing out", rtex.mesg());
             throw;
         }
 		catch(...) {
-			MPRINT1("caught exception - deleting node %p and cleaning up", t1);
+			MPRINT("caught other exception - cleaning up and re-throwing");
 			t1->unref();
 			t1 = NULL;
 			cleanup();

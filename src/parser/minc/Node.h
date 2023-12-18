@@ -38,7 +38,6 @@ typedef enum {
 	eNodeOpAssign,
 	eNodeLoadSym,
 	eNodeAutoDeclLoadSym,
-    eNodeLoadFuncSym,
 	eNodeConstf,
 	eNodeString,
     eNodeMemberDecl,
@@ -216,7 +215,7 @@ protected:
 };
 
 /* looks up symbol name and get the symbol.  Converts symbol table entry into Node
-	or initialize Node to a symbol entry
+	or initialize Node to a symbol entry.  This symbol can be an object or a function.
  */
 class NodeLoadSym : public Node
 {
@@ -244,20 +243,6 @@ public:
 	}
 protected:
 	virtual Node*		doExct();
-};
-
-/* looks up symbol name for a function and get the symbol.  Converts symbol table entry into Node
- or initialize Node to a symbol entry.  If there is no symbol, this is a builtin function, and we
- do not flag that as an error.
- */
-class NodeLoadFuncSym : public NodeLoadSym
-{
-public:
-    NodeLoadFuncSym(const char *symbolName) :  NodeLoadSym(symbolName, eNodeLoadFuncSym) {
-        NPRINT("NodeLoadFuncSym('%s') => %p\n", symbolName, this);
-    }
-protected:
-    virtual Node *      finishExct();
 };
 
 class NodeString : public Node

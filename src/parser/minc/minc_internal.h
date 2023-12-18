@@ -16,6 +16,7 @@
 #include "RefCounted.h"
 #include <vector>
 #include <string.h>
+#include <stdio.h>      // snprintf
 #include <new>          // std::bad_alloc
 
 #ifdef DEBUG
@@ -28,6 +29,7 @@
 #define YYLMAX   2048      /* maximum yacc line length */
 #define MAXSTACK 15        /* depth of function call or list recursion */
 #define HASHSIZE 107       /* number of buckets in string table */
+#define MAX_MESSAGE_SIZE 1024
 
 enum MincWarningLevel {
     MincNoWarnings = 0,
@@ -66,19 +68,26 @@ void minc_advise(const char *msg, ...);
 void minc_warn(const char *msg, ...);
 void minc_die(const char *msg, ...);
 void minc_internal_error(const char *msg, ...);
+extern char *concat_error_message(char *outbuf, int maxLen, const char *message, ...);
+
 extern "C" void yyerror(const char *msg);
 extern "C" const char *yy_get_current_include_filename();
+
 #define minc_try try
 #define minc_catch(actions) catch(...) { if (true) { actions } throw; }
 
 class RTException
 {
 public:
-	RTException(const char *msg) : _mesg(msg) {}
+	RTException(const char *msg) {
+        concat_error_message(_mesg, MAX_MESSAGE_SIZE, msg);
+    }
+    RTException(const RTException &rhs) { strcpy(_mesg, rhs.mesg()); }
 	const char *mesg() const { return _mesg; }
 private:
-	const char *_mesg;
+	char _mesg[MAX_MESSAGE_SIZE];
 };
+
 
 class RTFatalException : public RTException
 {
