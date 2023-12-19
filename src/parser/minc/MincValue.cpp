@@ -448,7 +448,7 @@ bool MincValue::validType(unsigned allowedTypes) const
     return ((type & allowedTypes) == type);
 }
 
-void MincValue::print()
+void MincValue::print() const
 {
     switch (type) {
         case MincFloatType:
@@ -551,21 +551,25 @@ const MincValue& MincValue::operator = (MincMap *m)
 
 const MincValue& MincValue::operator += (const MincValue &rhs)
 {
+    throw UnimplementedException("MincValue::operator +=");
     return *this;
 }
 
 const MincValue& MincValue::operator -= (const MincValue &rhs)
 {
+    throw UnimplementedException("MincValue::operator -=");
     return *this;
 }
 
 const MincValue& MincValue::operator *= (const MincValue &rhs)
 {
+    throw UnimplementedException("MincValue::operator *=");
     return *this;
 }
 
 const MincValue& MincValue::operator /= (const MincValue &rhs)
 {
+    throw UnimplementedException("MincValue::operator /=");
     return *this;
 }
 
@@ -588,6 +592,7 @@ MincValue& MincValue::operator[] (const MincValue &index)
     if (!index.validType(MincFloatType)) throw InvalidTypeException("Index into a list must be a number");
     int iIndex = (int)(MincFloat) index;
     // FINISH ME
+    throw UnimplementedException("MincValue::operator[]");
     return _u.list->data[iIndex];
 }
 

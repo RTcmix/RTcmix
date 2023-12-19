@@ -103,11 +103,11 @@ static Node * go(Node * t1);
 %token <ival> TOK_IDENT TOK_NUM TOK_ARG_QUERY TOK_ARG TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
 
-%type  <node> stml stmt rstmt bexp expl exp expblk str ret bstml obj fexp fexpl
+%type  <node> stml stmt rstmt bexp expl exp expblk str ret bstml obj fexp fexpl subscript
 %type  <node> fdecl sdecl hdecl ldecl mapdecl structdecl structinit mfuncdecl arg argl funcdef fstml fblock fargl funcname mbr mbrl structdef methodname methoddef
 %type  <str> id structname
 
-%destructor { MPRINT1("yydestruct unref'ing node %p\n", $$); RefCounted::unref($$); } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl mapdecl structdecl structinit mfuncdecl funcdef fstml arg argl fargl funcname mbr mbrl structdef obj fexp fexpl fblock expblk methodname methoddef
+%destructor { MPRINT1("yydestruct unref'ing node %p\n", $$); RefCounted::unref($$); } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl mapdecl structdecl structinit mfuncdecl funcdef fstml arg argl fargl funcname mbr mbrl structdef obj fexp fexpl fblock expblk subscript methodname methoddef
 
 %error-verbose
 
@@ -246,6 +246,8 @@ mfuncdecl:    TOK_MFUNC_DECL idl    {     MPRINT("mfuncdecl"); $$ = go(declare(M
 level:  /* nothing */ { incrLevel(); }
 	;
 
+subscript:  '[' exp ']'         {       MPRINT("subscript: [exp]"); $$ = $2; }
+
 /* An obj is an id or anything that can be operator accessed via . or [] */
 obj:    id                  {       MPRINT("obj: id");          $$ = new NodeLoadSym($1); }
     |   obj '.' id            {       MPRINT("obj: obj.id");      $$ = new NodeMemberAccess($1, $3);  }
@@ -275,13 +277,13 @@ rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAuto
 
     /* Special-case rules for incrementing/decrementing an array access.  This is needed because the returned
        value from [] has no symbol associated with it.
- 	| TOK_PLUSPLUS obj '[' exp ']'  { MPRINT("rstmt: TOK_PLUSPLUS obj[exp]");
- 	    $$ = new NodeSubscriptWrite($2, $4, new NodeOp(OpPlus, new NodeSubscriptRead($2, $4), new NodeConstf(1.0)));
- 	}
- 	| TOK_MINUSMINUS obj '[' exp ']'  { MPRINT("rstmt: TOK_MINUSMINUS obj[exp]");
- 	    $$ = new NodeSubscriptWrite($2, $4, new NodeOp(OpMinus, new NodeSubscriptRead($2, $4), new NodeConstf(1.0)));
- 	}
     */
+ 	| TOK_PLUSPLUS obj subscript  { MPRINT("rstmt: TOK_PLUSPLUS obj subscript");
+ 	    $$ = new NodeSubscriptIncrement($2, $3, new NodeConstf(1.0));
+ 	}
+ 	| TOK_MINUSMINUS obj subscript  { MPRINT("rstmt: TOK_MINUSMINUS obj subscript");
+ 	    $$ = new NodeSubscriptIncrement($2, $3, new NodeConstf(-1.0));
+ 	}
 
     /* Generic rule for all other objs */
     | TOK_PLUSPLUS obj %prec CASTTOKEN { MPRINT("rstmt: TOK_PLUSPLUS obj");

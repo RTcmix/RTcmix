@@ -95,6 +95,14 @@ public:
 	RTFatalException(const char *msg) : RTException(msg) {}
 };
 
+// Code that has not been finished (DAS HACK)
+
+class UnimplementedException : public RTFatalException
+{
+public:
+    UnimplementedException(const char *msg) : RTFatalException(msg) {}
+};
+
 // Such as attempting to multiply two MincStrings
 
 class UnsupportedOperationException : public RTException

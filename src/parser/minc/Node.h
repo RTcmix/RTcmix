@@ -34,6 +34,7 @@ typedef enum {
 	eNodeEmptyListElem,
 	eNodeSubscriptRead,
 	eNodeSubscriptWrite,
+    eNodeSubscriptIncrement,
     eNodeMember,
 	eNodeOpAssign,
 	eNodeLoadSym,
@@ -87,7 +88,6 @@ public:
 	Symbol *			symbol() const { return u.symbol; }
     void                setValue(const MincValue &value) { v = value; }
 	const MincValue&	value() const { return v; }
-	MincValue&			value() { return v; }
 	Node*				exct();
     
     Node *              copyValue(Node *, bool allowTypeOverwrite=true);
@@ -465,7 +465,14 @@ protected:
 	virtual Node*		doExct() { return this; }
 };
 
-class NodeSubscriptRead : public Node2Children
+class Subscript
+{
+public:
+    MincValue readValueAtIndex(Node *listNode, Node *indexNode);
+    void writeValueToIndex(Node *listNode, Node *indexNode, const MincValue &value);
+};
+
+class NodeSubscriptRead : public Node2Children, private Subscript
 {
 public:
 	NodeSubscriptRead(Node *n1, Node *n2) : Node2Children(OpFree, eNodeSubscriptRead, n1, n2) {
@@ -477,7 +484,7 @@ protected:
     void                searchWithMapKey();
 };
 
-class NodeSubscriptWrite : public Node3Children
+class NodeSubscriptWrite : public Node3Children, private Subscript
 {
 public:
 	NodeSubscriptWrite(Node *n1, Node *n2, Node *n3) : Node3Children(OpFree, eNodeSubscriptWrite, n1, n2, n3) {
@@ -485,8 +492,19 @@ public:
 	}
 protected:
 	virtual Node*		doExct();
-    void                writeToSubscript();
-    void                writeWithMapKey();
+    void                writeToSubscript(Node *listNode, Node *indexNode, const MincValue &value);
+    void                writeWithMapKey(Node *mapNode, Node *indexNode, const MincValue &value);
+};
+
+class NodeSubscriptIncrement : public Node3Children, private Subscript
+{
+public:
+    NodeSubscriptIncrement(Node *n1, Node *n2, Node *n3) : Node3Children(OpFree, eNodeSubscriptIncrement, n1, n2, n3) {
+        NPRINT("NodeSubscriptIncrement(%p, %p, %p) => %p\n", n1, n2, n3, this);
+    }
+protected:
+    virtual Node*		doExct();
+    void                incrementSubscript(Node *listNode, Node *indexNode, Node *valueNode);
 };
 
 // NodeMemberAccess returns symbol for member var or method function from RHS of dot operator
