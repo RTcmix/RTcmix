@@ -853,7 +853,9 @@ void    NodeSubscriptRead::readAtSubscript()
     ENTER();
     MincValue elem = readValueAtIndex(child(0), child(1));
     TPRINT("readAtSubscript: setting Node %p value to: ", this);
+#ifdef DEBUG
     elem.print();
+#endif
     setValue(elem);
 }
 
