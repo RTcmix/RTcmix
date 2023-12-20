@@ -1,6 +1,13 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2023-12-20 Douglas Scott <netdscott-at-netscape.net>
+	* Changed symbol and display names for methods to <struct name>.<method name>.
+	* Finished addition of parser code to handle "++someArray[someIndex]".
+	* Parser now returns an error if any non-string, non-float var or any struct
+	  element, is overwritten with another type.
+	* New parser features, so bumped version to 5.3.
+
 2023-11-01  Douglas Scott <netdscott-at-netscape.net>
 	* Updated and renamed some of the LPC and PVOC reader utils.
 	* Marking this as version 5.2.2 for source code release.

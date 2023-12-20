@@ -838,7 +838,7 @@ void Subscript::writeValueToIndex(Node *listNode, Node *indexNode, const MincVal
             minc_die("list array subscript exceeds integer size limit!");
         }
         if (theList == NULL) {
-            listNode->symbol()->value() = theList = new MincList(len);
+            listNode->symbol()->setValue(MincValue(theList = new MincList(len)));
         } else
             theList->resize(len);
         TPRINT("writeValueToIndex: MincList %p expanded to len %d\n",
@@ -938,7 +938,7 @@ void    NodeSubscriptWrite::writeWithMapKey(Node *mapNode, Node *indexNode, cons
     MincMap *theMap = (MincMap *) mapNode->symbol()->value();
     const MincValue &valueIndex = indexNode->value();
     if (theMap == NULL) {
-        mapNode->symbol()->value() = theMap = new MincMap();
+        mapNode->symbol()->setValue(MincValue(theMap = new MincMap()));
     }
     theMap->map[valueIndex] = value;
 }
@@ -996,7 +996,7 @@ void NodeSubscriptIncrement::incrementSubscript(Node *listNode, Node *indexNode,
         arrayValue = (MincFloat) arrayValue + (MincFloat) valueNode->value();
         TPRINT("incrementSubscript: Setting value of Node %p to: ", this);
         arrayValue.print();
- //       setValue(arrayValue);
+        setValue(arrayValue);
         writeValueToIndex(listNode, indexNode, arrayValue);
     }
     else {
@@ -1224,6 +1224,12 @@ Node *	NodeStore::doExct()
 	 the NodeLoadSym stored as child[0] */
 	TPRINT("NodeStore(%p): evaluate LHS %p (child 0)\n", this, child(0));
 	child(0)->exct();
+    // NEW: Do not allow overwrites of structs, functions, handles.
+    MincDataType rhsType = child(1)->dataType();
+    MincDataType lhsType = child(0)->dataType();
+    if (lhsType != MincVoidType && lhsType != MincFloatType && lhsType != MincStringType) {
+        _allowTypeOverwrite = false;
+    }
 #endif
 	TPRINT("NodeStore(%p): copying value from RHS (%p) to LHS's symbol (%p)\n",
 		   this, child(1), child(0)->symbol());
@@ -1240,7 +1246,7 @@ Node *	NodeOpAssign::doExct()		// was exct_opassign()
 	Node *tp0 = child(0)->exct();
 	Node *tp1 = child(1)->exct();
 	
-	if (tp0->symbol()->dataType() != MincFloatType || tp1->dataType() != MincFloatType) {
+	if (tp0->dataType() != MincFloatType || tp1->dataType() != MincFloatType) {     // DAS was "tp0->symbol()->dataType()
         if (op == OpPlusPlus) {
             minc_warn("can only use '++' with number values");
         }
@@ -1248,14 +1254,14 @@ Node *	NodeOpAssign::doExct()		// was exct_opassign()
             minc_warn("can only use '--' with number values");
         }
         else {
-            minc_warn("can only use '%c=' with numbers",
+            minc_warn("can only use '%c=' with number values",
                       op == OpPlus ? '+' : (op == OpMinus ? '-'
                                             : (op == OpMul ? '*' : '/')));
         }
 		copyValue(tp0->symbol());
 		return this;
 	}
-	MincValue& symValue = tp0->symbol()->value();
+	MincValue symValue = tp0->symbol()->value();
 	MincFloat rhs = (MincFloat)tp1->value();
 	switch (this->op) {
 		case OpPlus:
@@ -1276,6 +1282,8 @@ Node *	NodeOpAssign::doExct()		// was exct_opassign()
 			minc_internal_error("exct: tried to execute invalid NodeOpAssign");
 			break;
 	}
+    tp0->symbol()->setValue(symValue);
+    // Also set the value on this node
     setValue(symValue);
 	return this;
 }
@@ -1531,7 +1539,7 @@ Node *	NodeArgList::doExct()
 	inCalledFunctionArgList = false;
     // Create a special function block symbol storing the function's argument count.
     Symbol *n_args = installSymbol(strsave("_n_args"), NO);
-    n_args->value() = (MincFloat) sArgListLen;
+    n_args->setValue(MincValue((MincFloat) sArgListLen));
 	return this;
 }
 
@@ -1643,7 +1651,7 @@ Node *	NodeDecl::doExct()
 	Symbol *sym = lookupSymbol(_symbolName, inCalledFunctionArgList ? ThisLevel : AnyLevel);
 	if (!sym) {
 		sym = installSymbol(_symbolName, NO);
-		sym->value() = MincValue(this->_type);
+		sym->setValue(MincValue(this->_type));
 	}
 	else {
 		if (sym->scope() == current_scope()) {
@@ -1657,7 +1665,7 @@ Node *	NodeDecl::doExct()
 				minc_warn("variable '%s' also defined at enclosing scope", _symbolName);
 			}
 			sym = installSymbol(_symbolName, NO);
-			sym->value() = MincValue(this->_type);
+			sym->setValue(MincValue(this->_type));
 		}
 	}
 	this->setSymbol(sym);
@@ -1749,7 +1757,7 @@ Node *	NodeFuncDecl::doExct()
 	Symbol *sym = lookupSymbol(_symbolName, GlobalLevel);	// only look at current global level
 	if (sym == NULL) {
 		sym = installSymbol(_symbolName, YES);		// all functions global for now
-		sym->value() = MincValue(MincFunctionType);      // Empty MincFunction value
+		sym->setValue(MincValue(MincFunctionType));      // Empty MincFunction value
 		this->setSymbol(sym);
 	}
 	else {
@@ -1773,7 +1781,7 @@ Node *    NodeMethodDecl::doExct()
     Symbol *sym = lookupSymbol(mangledName, GlobalLevel);    // only look at current global level
     if (sym == NULL) {
         sym = installSymbol(mangledName, YES);        // all functions global for now
-        sym->value() = MincValue(MincFunctionType);      // Empty MincFunction value
+        sym->setValue(MincValue(MincFunctionType));      // Empty MincFunction value
         this->setSymbol(sym);
     }
     else {
@@ -1796,7 +1804,7 @@ Node *	NodeFuncDef::doExct()
     // Note: arglist and body stored inside MincFunction.  This is how we store the behavior
     // of a function/method on its symbol for re-use.  Creating with MincFunction::Method causes it to
     // expect to find a symbol for 'this'.
-	child(0)->symbol()->value() = MincValue(new MincFunction(child(1), child(2), _isMethod ? MincFunction::Method : MincFunction::Standalone));
+	child(0)->symbol()->setValue(MincValue(new MincFunction(child(1), child(2), _isMethod ? MincFunction::Method : MincFunction::Standalone)));
 	return this;
 }
 
