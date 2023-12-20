@@ -307,10 +307,10 @@ rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAuto
                                 MPRINT("rstmt: obj[exp] = exp");
                                 $$ = new NodeSubscriptWrite($1, $3, $6);
                             }
-    /* Special case: Assigning value to an element in a struct */
+    /* Special case: Assigning value to an element in a struct.  Types can never be overwritten here. */
     | obj '.' id '=' exp       {
                                 MPRINT("rstmt: obj.id = exp");
-                                $$ = new NodeStore(new NodeMemberAccess($1, $3), $5);
+                                $$ = new NodeStore(new NodeMemberAccess($1, $3), $5, /* allowOverwrite = */ false);
                             }
 	;
 
