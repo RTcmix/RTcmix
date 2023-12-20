@@ -312,10 +312,10 @@ Node::copyValue(Node *source, bool allowTypeOverwrite)
 #endif
     if (dataType() != MincVoidType && source->dataType() != dataType()) {
         if (allowTypeOverwrite) {
-            minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
+            minc_warn("Overwriting %s variable '%s' with a %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
         }
         else {
-            minc_die("Cannot overwrite %s member '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
+            minc_die("Cannot overwrite '%s' (type %s) with a %s", name(), MincTypeName(dataType()), MincTypeName(source->dataType()));
         }
     }
     setValue(source->value());
@@ -334,10 +334,10 @@ Node::copyValue(Symbol *source, bool allowTypeOverwrite)
     assert(source->scope() != -1);    // we accessed a variable after leaving its scope!
     if (dataType() != MincVoidType && source->dataType() != dataType()) {
         if (allowTypeOverwrite) {
-            minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
+            minc_warn("Overwriting %s variable '%s' with a %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
         }
         else {
-            minc_die("Cannot overwrite %s member '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
+            minc_die("Cannot overwrite '%s' (type %s) with a %s", name(), MincTypeName(dataType()), MincTypeName(source->dataType()));
         }
     }
     setValue(source->value());
@@ -1242,10 +1242,10 @@ Node *	NodeOpAssign::doExct()		// was exct_opassign()
 	
 	if (tp0->symbol()->dataType() != MincFloatType || tp1->dataType() != MincFloatType) {
         if (op == OpPlusPlus) {
-            minc_warn("can only use '++' with numbers");
+            minc_warn("can only use '++' with number values");
         }
         else if (op == OpMinusMinus) {
-            minc_warn("can only use '--' with numbers");
+            minc_warn("can only use '--' with number values");
         }
         else {
             minc_warn("can only use '%c=' with numbers",

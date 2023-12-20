@@ -276,7 +276,7 @@ rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAuto
 	| id TOK_DIVEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpDiv); }
 
     /* Special-case rules for incrementing/decrementing an array access.  This is needed because the returned
-       value from [] has no symbol associated with it.
+       value from [exp] has no symbol associated with it.
     */
  	| TOK_PLUSPLUS obj subscript  { MPRINT("rstmt: TOK_PLUSPLUS obj subscript");
  	    $$ = new NodeSubscriptIncrement($2, $3, new NodeConstf(1.0));
@@ -287,7 +287,7 @@ rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAuto
 
     /* Generic rule for all other objs */
     | TOK_PLUSPLUS obj %prec CASTTOKEN { MPRINT("rstmt: TOK_PLUSPLUS obj");
-        $$ = new NodeOpAssign($2, new NodeConstf(1.0), OpPlusPlus);     // FIX ME FIX ME!!
+        $$ = new NodeOpAssign($2, new NodeConstf(1.0), OpPlusPlus);
     }
     | TOK_MINUSMINUS obj %prec CASTTOKEN { MPRINT("rstmt: TOK_MINUSMINUS obj");
         $$ = new NodeOpAssign($2, new NodeConstf(1.0), OpMinusMinus);

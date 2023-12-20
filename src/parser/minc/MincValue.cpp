@@ -185,7 +185,7 @@ Symbol * MincStruct::addMember(const char *name, const MincValue &value, int sco
 
     Symbol *memberSym = Symbol::create(name);
     DPRINT("MincStruct::addMember(member '%s', type %s) => symbol %p\n", name, MincTypeName(value.dataType()), memberSym);
-    memberSym->value() = value;     // initialize member value
+    memberSym->setValue(value);     // initialize member value
     memberSym->_scope = scope;
 #if ALLOW_RECURSIVE_STRUCT_INIT     /* this causes a crash if a struct contains a struct which contains a... */
     if (structType) {
@@ -252,7 +252,7 @@ MincFunction::handleThis(std::vector<Symbol *> &symbolStack)
             Node *declaredVarThis = nodeStructDecl->exct();
             declaredVarThis->copyValue(symbolForThis, NO);  // dont allow type override
             DPRINT("MincFunction::handleThis: copying source symbol's value(s) into symbol for 'this'\n");
-            declaredVarThis->symbol()->value() = symbolForThis->value();
+            declaredVarThis->symbol()->setValue(symbolForThis->value());
             nodeStructDecl->unref();
         }
         else {

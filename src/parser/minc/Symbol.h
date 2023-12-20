@@ -20,8 +20,8 @@ public:
     ~Symbol();
     void                initAsStruct(const StructType *structType, MincList *memberInitList=NULL);
     MincDataType        dataType() const { return v.dataType(); }
+    void                setValue(const MincValue &value) { v = value; }
     const MincValue&    value() const { return v; }
-    MincValue&          value() { return v; }
     const char *        name() const { return _name; }
     int                 scope() const { return _scope; }
     Symbol *            copyValue(Node *, bool allowTypeOverwrite=true);

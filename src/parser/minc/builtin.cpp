@@ -303,21 +303,21 @@ _minc_printf(const MincValue args[], int nargs)
             switch (*p) {
                case 'd':      /* print float object as integer */
                   if (args[n].dataType() != MincFloatType) {
-                     minc_warn("printf: wrong argument type for format");
+                     minc_warn("printf: wrong argument type for %%f format");
                      goto err;
                   }
                   nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%d", (int) (MincFloat)args[n]);
                   break;
                case 'f':      /* print float object */
                   if (args[n].dataType() != MincFloatType) {
-                     minc_warn("printf: wrong argument type for format");
+                     minc_warn("printf: wrong argument type for %%d format");
                      goto err;
                   }
                   nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%.12g", (MincFloat)args[n]);
                   break;
                case 'l':      /* print list object */
                   if (args[n].dataType() != MincListType) {
-                     minc_warn("printf: wrong argument type for format");
+                     minc_warn("printf: wrong argument type for %%l format");
                      goto err;
                   }
                   nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%s", "[");
@@ -328,7 +328,7 @@ _minc_printf(const MincValue args[], int nargs)
                   break;
                case 's':      /* print string object */
                   if (args[n].dataType() != MincStringType) {
-                     minc_warn("printf: wrong argument type for format");
+                     minc_warn("printf: wrong argument type for %%s format");
                      goto err;
                   }
                   nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%s", (MincString)args[n]);
@@ -424,21 +424,21 @@ _minc_printf(const MincValue args[], int nargs)
             switch (*p) {
                case 'd':      /* print float object as integer */
                   if (args[n].dataType() != MincFloatType) {
-                     minc_warn("printf: wrong argument type for format");
+                     minc_warn("printf: wrong argument type for %%d format");
                      goto err;
                   }
                   RTPrintfCat("%d", (int) (MincFloat)args[n]);
                   break;
                case 'f':      /* print float object */
                   if (args[n].dataType() != MincFloatType) {
-                     minc_warn("printf: wrong argument type for format");
+                     minc_warn("printf: wrong argument type for %%f format");
                      goto err;
                   }
                   RTPrintfCat("%.12g", (MincFloat)args[n]);
                   break;
                case 'l':      /* print list object */
                   if (args[n].dataType() != MincListType) {
-                     minc_warn("printf: wrong argument type for format");
+                     minc_warn("printf: wrong argument type for %%l format");
                      goto err;
                   }
                   RTPrintfCat("[");
@@ -447,7 +447,7 @@ _minc_printf(const MincValue args[], int nargs)
                   break;
                case 's':      /* print string object */
                   if (args[n].dataType() != MincStringType) {
-                     minc_warn("printf: wrong argument type for format");
+                     minc_warn("printf: wrong argument type for %%s format");
                      goto err;
                   }
                   RTPrintfCat("%s", (MincString)args[n]);
