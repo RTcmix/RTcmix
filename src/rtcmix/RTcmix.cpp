@@ -125,6 +125,7 @@ std::vector<RTcmix::MixData> RTcmix::mixVectors[RT_THREAD_COUNT];
 
 std::vector<RTcmix::CallbackInfo> RTcmix::audioStartCallbacks;
 std::vector<RTcmix::CallbackInfo> RTcmix::audioStopCallbacks;
+std::vector<RTcmix::CallbackInfo> RTcmix::destroyCallbacks;
 
 // Bus config state
 
@@ -220,6 +221,7 @@ void
 RTcmix::free_globals()
 {
 	rtcmix_debug(NULL, "RTcmix::free_globals entered");
+    callDestroyCallbacks();
 	free_buffers();
 	free_bus_config();
 	freefuncs();
@@ -636,6 +638,11 @@ void RTcmix::unregisterAudioStopCallback(AudioCallback callback, void *context)
     }
 }
 
+void RTcmix::registerDestroyCallback(AudioCallback callback, void *context)
+{
+    destroyCallbacks.push_back(CallbackInfo(callback, context));
+}
+
 void RTcmix::callStartCallbacks()
 {
     for (std::vector<CallbackInfo>::iterator iter = audioStartCallbacks.begin();
@@ -650,6 +657,16 @@ void RTcmix::callStopCallbacks()
 {
     for (std::vector<CallbackInfo>::iterator iter = audioStopCallbacks.begin();
          iter != audioStopCallbacks.end();
+         ++iter)
+    {
+        (iter->callback)(iter->context);
+    }
+}
+
+void RTcmix::callDestroyCallbacks()
+{
+    for (std::vector<CallbackInfo>::iterator iter = destroyCallbacks.begin();
+         iter != destroyCallbacks.end();
          ++iter)
     {
         (iter->callback)(iter->context);

@@ -38,7 +38,7 @@ struct InputState;	// part of Instrument class
 struct InputFile;
 
 typedef bool (*AudioDeviceCallback)(AudioDevice *device, void *arg);
-typedef void (*AudioCallback)(void *content);
+typedef void (*AudioCallback)(void *context);
 
 enum RTstatus {
 	RT_GOOD = 0, RT_SHUTDOWN = 1, RT_PANIC = 2, RT_SKIP = 3, RT_FLUSH = 4, RT_ERROR = 5
@@ -138,7 +138,10 @@ public:
     static void registerAudioStopCallback(AudioCallback callback, void *context);
     static void unregisterAudioStopCallback(AudioCallback callback, void *context);
 
-	static int startAudio(AudioDeviceCallback renderCallback,
+    static void registerDestroyCallback(AudioCallback callback, void *context);
+    // No unregister for this
+
+    static int startAudio(AudioDeviceCallback renderCallback,
 						  AudioDeviceCallback doneCallback,
 						  void *inContext);
 #ifdef EMBEDDEDAUDIO
@@ -223,9 +226,11 @@ private:
     };
     static std::vector<CallbackInfo> audioStartCallbacks;
     static std::vector<CallbackInfo> audioStopCallbacks;
-    
+    static std::vector<CallbackInfo> destroyCallbacks;
+
     static void callStartCallbacks();
     static void callStopCallbacks();
+    static void callDestroyCallbacks();
 
     // Buffer alloc routines.
 	static int allocate_audioin_buffer(short chan, int len);
@@ -243,7 +248,6 @@ private:
 	
 	static int rtsendsamps(AudioDevice *);
 	static int rtwritesamps(AudioDevice *);
-	static void limiter(BUFTYPE peaks[], long peaklocs[]);
 	static int rtsendzeros(AudioDevice *device, int);
 	static void rtreportstats(AudioDevice *);
 	
