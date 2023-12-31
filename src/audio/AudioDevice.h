@@ -50,6 +50,7 @@ public:
 	virtual double		getPeak(int chan, long *loc) const = 0;
 	virtual int			setMuteThreshold(double thresh) = 0;
 	virtual	const char *getLastError() const = 0;
+    virtual unsigned long long      getStartTimestamp() const = 0;
 
 protected:
 	class Callback {

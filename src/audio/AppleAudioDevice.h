@@ -13,6 +13,8 @@ class AppleAudioDevice : public AudioDeviceImpl {
 public:
 	AppleAudioDevice(const char *desc=NULL);
 	virtual ~AppleAudioDevice();
+    unsigned long long      getStartTimestamp() const;
+
 	// Recognizer
 	static bool			recognize(const char *);
 	// Creator
