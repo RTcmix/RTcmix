@@ -199,3 +199,7 @@ const char *AudioIODevice::getLastError() const
 		theError = getPassiveDevice()->getLastError();
 	return theError;
 }
+
+unsigned long long AudioIODevice::getStartTimestamp() const {
+    return getActiveDevice()->getStartTimestamp();
+}
