@@ -3,7 +3,7 @@
 // NOTE(start, duration, MIDI chan, pitch (oct pt pc), velocity (0-1.0)
 
 set_option("midi_outdevice = Internal MIDI: Bus 2");
-rtsetparams(44100, 2, 1024);
+rtsetparams(48000, 2, 1024);
 load("MIDI");
 
 setup_midi();

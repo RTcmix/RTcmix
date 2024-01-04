@@ -78,9 +78,9 @@ int CONTROLLER::init(double p[], int n_args)
 
 void CONTROLLER::doStart(FRAMETYPE frameOffset)
 {
-    long timestamp = (1000.0 * frameOffset) / SR;
+    long timestamp = getEventTimestamp(frameOffset);
     unsigned value = unsigned(0.5 + (_controllerValue * 127));
-    PRINT("doStart sending on chan %d: ctrlr %d value %u at offset %ld\n", _midiChannel, _controllerNumber, value, timestamp);
+    PRINT("doStart sending on chan %d: ctrlr %d value %u at timestamp %ld\n", _midiChannel, _controllerNumber, value, timestamp);
     _outputPort->sendControl(timestamp, (unsigned char)_midiChannel, (unsigned char)_controllerNumber, value);
 }
 
@@ -107,8 +107,8 @@ void CONTROLLER::doupdate(FRAMETYPE currentFrame)
     }
     unsigned value = unsigned(0.5 + (_controllerValue * 127));
     if (value != _uControllerValue) {
-        long timestamp = 1000.0 * (currentFrame - getRunStartFrame()) / SR;
-        PRINT("doUpdate sending MIDI ctrlr %d with MIDI value %u to MIDI chan %d with frame time offset %ld ms\n",
+        long timestamp = getEventTimestamp(currentFrame);
+        PRINT("doUpdate sending MIDI ctrlr %d with MIDI value %u to MIDI chan %d with timestamp %ld ms\n",
               _controllerNumber, value, _midiChannel, timestamp);
         _outputPort->sendControl(timestamp, (unsigned char)_midiChannel, (unsigned char)_controllerNumber, value);
         _uControllerValue = value;

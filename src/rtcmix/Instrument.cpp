@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
 #include "Instrument.h"
 #include <RTcmix.h>
 #include "rt.h"

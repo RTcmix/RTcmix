@@ -22,6 +22,7 @@ protected:
     virtual void doStart(FRAMETYPE frameOffset)=0;
     virtual void doupdate(FRAMETYPE currentFrame)=0;
     virtual void doStop(FRAMETYPE currentFrame)=0;
+    long getEventTimestamp(FRAMETYPE frameOffset);
     FRAMETYPE getRunStartFrame() const { return _runStartFrame; };
 protected:
     int _branch;
