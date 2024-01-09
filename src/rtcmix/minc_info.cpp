@@ -154,7 +154,14 @@ int findpeakrmsdc(const char *funcname, const char *fname,
 
 	long startframe = long((starttime * srate) + 0.5);
 	long nframes = (nsamps / nchans) - startframe;
-	if (endtime != -1.0) {
+
+    if (startframe >= nframes) {
+        rterror(funcname, "Specified start time is at or past the end of the file.");
+        sndlib_close(fd, 0, 0, 0, 0);
+        return -1;
+    }
+
+    if (endtime != -1.0) {
 		long endframe = nframes;
 		nframes = long((endtime * srate) + 0.5) + startframe;
 		if (nframes > endframe)
@@ -164,6 +171,7 @@ int findpeakrmsdc(const char *funcname, const char *fname,
     if (chan != ALL_CHANS && chan >= nchans) {
 		die(funcname, "You specified channel %d for a %d-channel file.",
 		           chan, nchans);
+        sndlib_close(fd, 0, 0, 0, 0);
         RTExit(PARAM_ERROR);
     }
 	float peak[nchans];
@@ -171,9 +179,9 @@ int findpeakrmsdc(const char *funcname, const char *fname,
 	double ampavg[nchans];
 	double dcavg[nchans];
 	double rms[nchans];
-   int result = sndlib_findpeak(fd, -1, dataloc, -1, format, nchans,
+	int result = sndlib_findpeak(fd, -1, dataloc, -1, format, nchans,
                     startframe, nframes, peak, peakloc, ampavg, dcavg, rms);
-   sndlib_close(fd, 0, 0, 0, 0);
+	sndlib_close(fd, 0, 0, 0, 0);
 	if (result == -1)
         RTExit(SYSTEM_ERROR);
 
@@ -300,11 +308,6 @@ RTcmix::input_sr(double *p, int n_args)   /* returns rate for rtinput() files */
       rtcmix_warn("SR", "There are no currently opened input files!");
       return 0.0;
    }
-//   if (inputFileTable[index].is_audio_dev) {
-//     fprintf(stderr, "WARNING: Requesting duration of audio input device "
-//                    "(not sound file)!\n");
-//   return 0.0;
-//   }
    return (inputFileTable[index].sampleRate());
 }
 
