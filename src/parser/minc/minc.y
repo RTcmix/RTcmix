@@ -511,10 +511,8 @@ funcdef: funcname fargl fblock	{ MPRINT("funcdef");
                                     decrFunctionLevel();
 									$$ = new NodeFuncDef($1, $2, $3);
 								}
-/* These do not work (yet) and generate warnings, so commenting out for now
 	| error funcname fargl '{' stml '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
 	| error funcname fargl '{' '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
-*/
 	;
 
 /* methoddef is a complete rule for a struct method definition.  Looks the same as funcdef but only occurs within a struct definition.
