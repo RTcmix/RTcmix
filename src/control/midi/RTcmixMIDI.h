@@ -105,6 +105,7 @@ public:
     
     int start(long latency);
     int stop();
+    bool isStopped() { return _outstream == NULL; }
     
     void sendMIDIStart(long timestamp);
     void sendMIDIStop(long timestamp);

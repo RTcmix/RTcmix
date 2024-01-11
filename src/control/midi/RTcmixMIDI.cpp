@@ -11,6 +11,7 @@
 #include <assert.h>
 #include <RTOption.h>
 #include <RTcmix.h>
+#include <ugens.h>
 
 #define MIDI_TIMER_LOOP 0   /* for future use */
 
@@ -368,8 +369,11 @@ static void stopCallback(void *context)
 {
     PRINT("RTcmixMIDIOutput stop callback called\n");
     RTcmixMIDIOutput *midiout = (RTcmixMIDIOutput*) context;
-    midiout->sendMIDIStop(0);
-    midiout->stop();
+    if (!midiout->isStopped()) {
+        midiout->sendMIDIStop(0);
+        usleep(100000);     // wait for messages!
+        midiout->stop();
+    }
 }
 
 void RTcmixMIDIOutput::_midiCallback(PtTimestamp timestamp, void *context)
@@ -541,6 +545,7 @@ void RTcmixMIDIOutput::sendMIDIStop(long timestamp)
     buffer2.message = Pm_Message(0xFC, 0, 0);   // timecode stop
     buffer2.timestamp = timestamp;
     PmEvent buffers[16];
+    rtcmix_debug(NULL, "Sending MIDI System Reset, Stop, and All Sound Off events");
     for (int chan = 0; chan < 16; ++chan) {
         buffers[chan].message = Pm_Message(make_status(kControl, chan), 120, 0);   // AllSoundOff
         buffers[chan].timestamp = timestamp;
