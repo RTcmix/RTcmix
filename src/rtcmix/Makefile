@@ -49,7 +49,6 @@ sfprint.c \
 sfstats.c \
 sound.c \
 soundio.c \
-tempo.c \
 ug_intro.c
 
 GEN_CSRCS = \
@@ -120,6 +119,7 @@ set_option.cpp \
 sound_sample_buf_read.cpp \
 table.cpp \
 tableutils.cpp \
+tempo.cpp \
 modtable.cpp \
 ops.cpp \
 utils.cpp \

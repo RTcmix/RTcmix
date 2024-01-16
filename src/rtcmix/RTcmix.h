@@ -125,8 +125,14 @@ public:
     static void mixToBus();
 #endif
 	static void releaseInput(int fdIndex);
-	
-	int setInputBuffer(const char *inName, float *inBuffer, int inFrames, int inChans, int inModtime, float inGainScaling);
+
+    // Tempo methods
+    static double tbase(double p[], int n_args);
+    static double tempo(double p[], int n_args);
+    static float time_beat(float timein);
+    static float beat_time(float beatin);
+
+    int setInputBuffer(const char *inName, float *inBuffer, int inFrames, int inChans, int inModtime, float inGainScaling);
 	static InputFile * findInput(const char *inName, int *pOutIndex);
 	// Audio routines
 	static int setparams(float, int, int, bool, int);
@@ -271,8 +277,11 @@ private:
 	static int		is_float_format;
 	static char *	rtoutsfname;
 
+    /* used in tempo operations */
+    static float xtime[],temp[],rxtime[],accel[],BASIS;
+    static short tempo_set, numTimePoints;
 
-	/* used in intraverse.C, rtsendsamps.c */
+    /* used in intraverse.C, rtsendsamps.c */
 	static bool			runToOffset;
 	static float    	bufTimeOffset;
 	static FRAMETYPE 	bufStartSamp;
@@ -331,7 +340,6 @@ private:
 	static void print_parents();
 	static void print_children();
 	static void print_play_order();
-	static ErrCode parse_bus_chan(char*, int*, int*); /* Input processing */
 	static ErrCode check_bus_inst_config(BusSlot*, Bool);  /* Graph parsing, insertion */
 	static ErrCode print_inst_bus_config();
 	static ErrCode insert_bus_slot(char*, BusSlot*);
