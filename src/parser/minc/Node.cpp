@@ -145,6 +145,7 @@ static const char *s_NodeKinds[] = {
    "NodeMemberDecl",
    "NodeStructDef",
    "NodeFuncDef",
+   "NodeMethodDef",
    "NodeArgList",
    "NodeArgListElem",
    "NodeRet",
@@ -1135,6 +1136,47 @@ void NodeCall::callListFunction(const char *functionName)
     }
 }
 
+// In this special case, the function name is the struct type name
+
+bool NodeCall::callConstructor(const char *functionName)
+{
+    TPRINT("NodeCall::callConstructor(%p) -- looking up struct type '%s'\n", this, functionName);
+    const StructType *structType = lookupStructType(functionName, GlobalLevel);    // GlobalLevel for now
+    if (structType) {
+        TPRINT("NodeCall::callConstructor -- creating a value with type struct %s\n", functionName);
+        Node *initializers = child(1);
+        Symbol *sym = NULL;
+        MincList *initList = NULL;
+        try {
+            // We create a temporary Symbol object in order to avoid moving or duplicating initAsStruct() method
+            sym = Symbol::create("temporary");
+            sym->_scope = 0;    // XXX
+            // Wrap global sMincList to pass as argument
+            initList = new MincList(0);
+            initList->ref();
+            initList->data = sMincList;
+            initList->len = sMincListLen;
+            TPRINT("NodeCall::callConstructor -- initializing struct members from sMincList\n");
+            sym->initAsStruct(structType, initList);
+            copyValue(sym, false);
+            delete sym;
+            initList->data = NULL;
+            initList->len = 0;
+            initList->unref();
+        } catch (...) {
+            delete sym;
+            if (initList) {
+                initList->data = NULL;
+                initList->len = 0;
+                initList->unref();
+            }
+            throw;
+        }
+        return true;
+    }
+    return false;
+}
+
 void NodeCall::callBuiltinFunction(const char *functionName)
 {
     if (!functionName) {
@@ -1193,11 +1235,15 @@ Node *	NodeCall::doExct()
             builtinFunctionString = target->value();
         }
         if (builtinFunctionString) {
-            TPRINT("NodeCall: attempting call to builtin function '%s'\n", builtinFunctionString);
+            TPRINT("NodeCall: preparing for call to constructor or builtin function '%s'\n", builtinFunctionString);
             push_list();
             TPRINT("NodeCall: Args: list node %p (child 1)\n", child(1));
             child(1)->exct();    // execute arg expression list (stored on this NodeCall)
-            callBuiltinFunction((MincString) builtinFunctionString);
+            bool success = callConstructor((MincString) builtinFunctionString);
+            if (!success) {
+                TPRINT("NodeCall: no constructor - attempting call to builtin function '%s'\n", builtinFunctionString);
+                callBuiltinFunction((MincString) builtinFunctionString);
+            }
         }
         else {
             TPRINT("NodeCall: Other undeclared var exception - re-throwing\n");

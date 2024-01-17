@@ -386,6 +386,7 @@ protected:
 private:
     void                callMincFunctionFromNode(Node *functionNode);
     void                callListFunction(const char *functionName);
+    bool                callConstructor(const char *functionName);
     void                callBuiltinFunction(const char *functionName);
 };
 

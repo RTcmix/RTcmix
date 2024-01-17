@@ -503,6 +503,7 @@ fstml:	stml ret			{	MPRINT("fstml: stml ret");
 /* fblock is a function statement block including its curly braces */
 
 fblock: '{' fstml '}' {     MPRINT("fblock"); $$ = $2; }
+    ;
 
 /* funcdef is a complete rule for a function definition, e.g. "list myfunction(string s) { ... }".
  */
@@ -598,10 +599,9 @@ static Node * initializeStruct(const char *typeName, Node *initList)
     if (idcount > 1) {
         minc_die("Only one struct variable can be initialized at a time");
     }
-    Node * t = new NodeNoop();    // end of the list
+    Node * end = new NodeNoop();    // end of the list
     Node * decl = new NodeStructDecl(idlist[0], typeName, initList);
-    t = new NodeSeq(t, decl);
-    return t;
+    return new NodeSeq(end, decl);
 }
 
 static Node * parseArgumentQuery(const char *text, int *pOutErr)
