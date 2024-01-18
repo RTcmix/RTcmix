@@ -1225,7 +1225,10 @@ Node *	NodeCall::doExct()
                 break;
 #endif
             default:
-                minc_die("variable is not a function or instrument");
+            {
+                const char *name = (target->symbol() ? target->symbol()->name() : "");
+                minc_die("variable %s is not a function or instrument", name);
+            }
                 break;
         }
     } catch(UndeclaredVariableException &uve) {
