@@ -3,7 +3,7 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 
-// utils.h
+// handle.h
 // Decls of Handle and other utilities.
 
 #include "rtcmix_types.h"

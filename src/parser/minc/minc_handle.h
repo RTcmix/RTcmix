@@ -1,4 +1,4 @@
-// handle.h
+// minc_handle.h
 // Declarations for opaque handle manipulators
 
 #include <minc_internal.h>

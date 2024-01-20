@@ -27,7 +27,7 @@
 #include <ugens.h>
 #include <RTcmix.h>
 #include <RTOption.h>
-#include "utils.h"
+#include "handle.h"
 #include <ug_intro.h>
 #include <AudioDevice.h>
 #ifdef MULTI_THREAD

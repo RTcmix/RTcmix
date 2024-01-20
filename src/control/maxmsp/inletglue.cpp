@@ -8,7 +8,7 @@
 #include <rtcmix_types.h>
 #include <rtdefs.h>
 #include <PField.h>
-#include <utils.h>   // in ../../rtcmix
+#include <handle.h>   // in ../../rtcmix
 #include "RTInletPField.h"
 #include <ugens.h>		// for warn, die
 

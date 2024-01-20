@@ -10,7 +10,7 @@
 #include <ctype.h>
 #include <rtcmix_types.h>
 #include <PField.h>
-#include <utils.h>	// in ../../rtcmix
+#include <handle.h>	// in ../../rtcmix
 #include <RTcmixOSC.h>
 #include <RTOscPField.h>
 #include <ugens.h>		// for warn, die

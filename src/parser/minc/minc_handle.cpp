@@ -6,7 +6,7 @@
 
 #include <minc_internal.h>
 #include "handle.h"
-#include "../../rtcmix/utils.h"
+#include "../../rtcmix/handle.h"
 
 void
 ref_handle(MincHandle h)

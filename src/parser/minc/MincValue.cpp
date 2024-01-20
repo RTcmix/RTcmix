@@ -10,7 +10,7 @@
 
 #include "MincValue.h"
 #include "debug.h"
-#include "handle.h"
+#include "minc_handle.h"
 #include "Node.h"
 #include "Scope.h"
 #include "Symbol.h"

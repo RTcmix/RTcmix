@@ -19,7 +19,7 @@
 #include <sndlibsupport.h>
 #include <PField.h>
 #include <Random.h>
-#include "utils.h"
+#include "handle.h"
 #include <ugens.h>		// for warn, die
 #include <maxdispargs.h>
 #include <limits.h>

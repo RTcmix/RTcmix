@@ -8,7 +8,7 @@
 #include <rtcmix_types.h>
 #include "tableutils.h"
 #include <PField.h>
-#include "utils.h"
+#include "handle.h"
 #include <ugens.h>		// for warn, die
 
 // Functions for modifying table PFields.   -JGG, 4/8/05

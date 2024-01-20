@@ -13,7 +13,7 @@
 #include "prototypes.h"
 #include "byte_routines.h"
 #include <sndlibsupport.h>
-#include "utils.h"
+#include "handle.h"
 #include <ugens.h>		// for warn, die
 #include <maxdispargs.h>
 

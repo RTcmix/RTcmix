@@ -8,7 +8,7 @@
 
 #include "rtcmix_types.h"
 #include <PField.h>
-#include "utils.h"
+#include "handle.h"
 #include <ugens.h>		// for warn, die
 
 extern "C" {

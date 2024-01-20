@@ -10,9 +10,9 @@
 #include <float.h>   /* for epsilon constants */
 #include <maxdispargs.h>
 #include <ugens.h>
+#include <handle.h>
 #include "rename.h"
 #include "minc_defs.h"
-#include "utils.h"
 #include "RefCounted.h"
 #include <vector>
 #include <string.h>

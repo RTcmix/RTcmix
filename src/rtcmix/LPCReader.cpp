@@ -7,7 +7,7 @@
 #include "lpcdefs.h"
 #include <ugens.h>        // for warn, die
 #include <rtcmix_types.h>
-#include "utils.h"
+#include "handle.h"
 #include "LPCDataSet.h"
 #include <stdlib.h>
 #include <string.h>
