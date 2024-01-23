@@ -103,7 +103,7 @@ static Node * go(Node * t1);
 %token <ival> TOK_IDENT TOK_NUM TOK_ARG_QUERY TOK_ARG TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
 
-%type  <node> stml stmt rstmt bexp expl exp expblk str ret bstml obj fexp fexpl subscript
+%type  <node> stml stmt rstmt bexp expl exp expblk str ret bstml obj fexp fexpl func method subscript
 %type  <node> fdecl sdecl hdecl ldecl mapdecl structdecl structinit mfuncdecl arg argl funcdef fstml fblock fargl funcname mbr mbrl structdef methodname methoddef
 %type  <str> id structname
 
@@ -268,6 +268,16 @@ fexpl:  fexp            { MPRINT("fexpl: fexp"); $$ = new NodeListElem(new NodeE
     |   fexpl ',' fexp  {  MPRINT("fexpl: fexpl,fexp"); $$ = new NodeListElem($1, $3); }
     ;
 
+/* A function is an id followed by (args) or () */
+func:   id '(' fexpl ')' {    MPRINT("func: id(fexpl)"); $$ = new NodeFunctionCall(new NodeLoadSym($1), $3); }
+    |   id '(' ')'       { MPRINT("func: id()"); $$ = new NodeFunctionCall(new NodeLoadSym($1), new NodeEmptyListElem()); }
+    ;
+
+/* A method is a function call on an object using the dot operator. The object can be an id, a member access on a struct/class, or a list element accessed by index.  The id is the string representing the method */
+method: obj '.' id '(' fexpl ')' {  MPRINT("method: obj.id(fexpl)"); $$ = new NodeMethodCall($1, $3, $5); }
+    |   obj '.' id '(' ')' {  MPRINT("method: obj.id()"); $$ = new NodeMethodCall($1, $3, new NodeEmptyListElem()); }
+    ;
+
 /* An rstmt is statement returning a value, such as assignments, function calls, etc. */
 rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAutoDeclLoadSym($1), $3); }
 	| id TOK_PLUSEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpPlus); }
@@ -293,14 +303,8 @@ rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAuto
         $$ = new NodeOpAssign($2, new NodeConstf(1.0), OpMinusMinus);
     }
 
-    /* A function can be an id, a member access on a struct/class, or a list element accessed by index, that can be followed by (args) or () */
-    | obj '(' fexpl ')' {    MPRINT("rstmt: obj(fexpl)");
-                                    $$ = new NodeCall($1, $3);
-                                }
-    | obj '(' ')'       { MPRINT("rstmt: obj()");
-                                    $$ = new NodeCall($1, new NodeEmptyListElem());
-                                }
-        ;
+    |   func        {  MPRINT("rstmt: func"); $$ = $1; }
+    |   method        {  MPRINT("rstmt: method"); $$ = $1; }
 
     /* Special case: Assigning value to an array at an index */
 	| obj '[' exp ']' '=' exp {
@@ -328,7 +332,7 @@ str:	TOK_STRING		{
 	;
 
 /* Boolean expression, before being wrapped in () */
-bexp:	exp %prec LOWPRIO	{ MPRINT("bexp"); $$ = $1; }
+bexp:	exp %prec LOWPRIO	{ MPRINT("bexp: exp"); $$ = $1; }
 	| TOK_NOT bexp %prec TOK_UNEQU { MPRINT("!bexp"); $$ = new NodeNot($2); }
 	| bexp TOK_AND bexp	{ $$ = new NodeAnd($1, $3); }
 	| bexp TOK_OR  bexp	{ $$ = new NodeOr($1, $3); }

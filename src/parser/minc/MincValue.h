@@ -88,7 +88,7 @@ public:
         Method      = 0x20
     };
     MincFunction(Node *argumentList, Node *functionBody, MincFunction::Type type=MincFunction::Standalone);
-    void    handleThis(std::vector<Symbol *> &symbolStack);
+    void    handleThis(Symbol *thisSymbol);
     void    copyArguments();
     Node *  execute();
 protected:
