@@ -1,4 +1,4 @@
-set_option("record=true");
+set_option("require_sample_rate=false", "device=Aggregate Device", "record=true");
 rtsetparams(44100, 2);
 rtinput("AUDIO");
 
