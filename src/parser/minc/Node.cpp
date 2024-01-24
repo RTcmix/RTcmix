@@ -1039,61 +1039,54 @@ Node *  NodeMemberAccess::doExct()
     return this;
 }
 
-Node * MincFunctionHandler::callMincFunction(Symbol *funcSymbol, Symbol *thisSymbol)
+Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char *functionName, Symbol *thisSymbol)
 {
-    assert(funcSymbol != NULL);
-    sCalledFunctions.push_back(funcSymbol ? funcSymbol->name() : "temp lhs");   // FIX ME: have temp LHS vars store symbols
-    // Retrieve the workings of the function from its Symbol (stored there by FuncDef)
-    MincFunction *theFunction = (MincFunction *)funcSymbol->value();    // XXX CHECK ME!!
     Node *returnedNode = NULL;
-    if (theFunction) {
-        TPRINT("MincFunctionHandler::callMincFunction: theFunction = %p -- dropping in\n", theFunction);
-        push_function_stack();
-        push_scope();           // move into function-body scope
-        int savedLineNo=0, savedScope=0, savedCallDepth=0;
-        try {
-            // This replicates the argument-printing mechanism used by compiled-in functions.
-            if (RTOption::print() >= MMP_PRINTS) {
-                RTPrintf("============================\n");
-                RTPrintfCat("%s: ", nameFromMangledName(sCalledFunctions.back()));
-                MincValue retval;
-                call_builtin_function("print", sMincList, sMincListLen, &retval);
-            }
-            // Create a symbol for 'this' within the function's scope if this is a method.
-            theFunction->handleThis(thisSymbol);
-            /* The exp list is copied to the symbols for the function's arg list. */
-            TPRINT("MincFunctionHandler::callMincFunction declaring all argument symbols in the function's scope\n");
-            theFunction->copyArguments();
-            savedLineNo = yyget_lineno();
-            savedScope = current_scope();
-            ++sFunctionCallDepth;
-            savedCallDepth = sFunctionCallDepth;
-            TPRINT("MincFunctionHandler::callMincFunctionFromNode executing %s(), call depth now %d\n", sCalledFunctions.back(), savedCallDepth);
-            returnedNode = theFunction->execute();
+    sCalledFunctions.push_back(functionName);
+    assert(function != NULL);
+    TPRINT("MincFunctionHandler::callMincFunction: theFunction = %p -- dropping in\n", function);
+    push_function_stack();
+    push_scope();           // move into function-body scope
+    int savedLineNo=0, savedScope=0, savedCallDepth=0;
+    try {
+        // This replicates the argument-printing mechanism used by compiled-in functions.
+        if (RTOption::print() >= MMP_PRINTS) {
+            RTPrintf("============================\n");
+            RTPrintfCat("%s: ", nameFromMangledName(sCalledFunctions.back()));
+            MincValue retval;
+            call_builtin_function("print", sMincList, sMincListLen, &retval);
         }
-        catch (Node * returned) {    // This catches return statements!
-            TPRINT("MincFunctionHandler::callMincFunction caught Node %p as return stmt throw - restoring call depth %d\n",
-                   returned, savedCallDepth);
-            assert(returned->dataType() != MincVoidType);
-            returnedNode = returned;
-            sFunctionCallDepth = savedCallDepth;
-            restore_scope(savedScope);
-        }
-        catch(...) {    // Anything else is an error
-            sCalledFunctions.pop_back();
-            pop_function_stack();
-            --sFunctionCallDepth;
-            throw;
-        }
-        --sFunctionCallDepth;
-        TPRINT("MincFunctionHandler::callMincFunction: function call depth => %d\n", sFunctionCallDepth);
-        // restore parser line number
-        yyset_lineno(savedLineNo);
+        // Create a symbol for 'this' within the function's scope if this is a method.
+        function->handleThis(thisSymbol);
+        /* The exp list is copied to the symbols for the function's arg list. */
+        TPRINT("MincFunctionHandler::callMincFunction declaring all argument symbols in the function's scope\n");
+        function->copyArguments();
+        savedLineNo = yyget_lineno();
+        savedScope = current_scope();
+        ++sFunctionCallDepth;
+        savedCallDepth = sFunctionCallDepth;
+        TPRINT("MincFunctionHandler::callMincFunction executing %s(), call depth now %d\n", sCalledFunctions.back(), savedCallDepth);
+        returnedNode = function->execute();
+    }
+    catch (Node * returned) {    // This catches return statements!
+        TPRINT("MincFunctionHandler::callMincFunction caught Node %p as return stmt throw - restoring call depth %d\n",
+               returned, savedCallDepth);
+        assert(returned->dataType() != MincVoidType);
+        returnedNode = returned;
+        sFunctionCallDepth = savedCallDepth;
+        restore_scope(savedScope);
+    }
+    catch(...) {    // Anything else is an error
         pop_function_stack();
+        sCalledFunctions.pop_back();
+        --sFunctionCallDepth;
+        throw;
     }
-    else {
-        minc_die("mfunction variable '%s' is NULL", sCalledFunctions.back());
-    }
+    --sFunctionCallDepth;
+    TPRINT("MincFunctionHandler::callMincFunction: function call depth => %d\n", sFunctionCallDepth);
+    // restore parser line number
+    yyset_lineno(savedLineNo);
+    pop_function_stack();
     sCalledFunctions.pop_back();
     return returnedNode;
 }
@@ -1180,16 +1173,24 @@ Node *	NodeFunctionCall::doExct() {
         switch (calledFunction->dataType()) {
             case MincFunctionType:        // Standalone MinC function
             {
-                Node *returned = callMincFunction(calledFunction->symbol());    // XXX verify symbol is never NULL
-                if (returned != NULL) {
-                    TPRINT("NodeFunctionCall copying Minc function call results into self\n");
-                    assert(returned->dataType() != MincVoidType);
-                    copyValue(returned);
+                Symbol *functionSymbol = calledFunction->symbol();      // This can be NULL
+                const char *functionName = functionSymbol ? functionSymbol->name() : "LHS";
+                MincFunction *theFunction = (MincFunction *)calledFunction->value();
+                if (theFunction != NULL) {
+                    Node *returned = callMincFunction(theFunction, functionName);
+                    if (returned != NULL) {
+                        TPRINT("NodeFunctionCall copying Minc function call results into self\n");
+                        assert(returned->dataType() != MincVoidType);
+                        copyValue(returned);
+                    }
+                }
+                else {
+                    minc_die("variable %s is NULL", functionSymbol->name());
                 }
             }
                 break;
             default:
-                minc_die("variable %s is not a function or instrument", calledFunction->symbol() ? calledFunction->symbol()->name() : "");
+                minc_die("%s%s is not a function or instrument", calledFunction->symbol() ? "variable" : "", calledFunction->symbol() ? calledFunction->symbol()->name() : "LHS");
                 break;
         }
     } catch(UndeclaredVariableException &uve) {
@@ -1250,8 +1251,16 @@ Node *	NodeMethodCall::doExct()
                 Node *functionRet;
                 switch (memberSymbol->dataType()) {
                     case MincFunctionType:        // MinC function
-                        functionRet = callMincFunction(memberSymbol);
-                        setValue(functionRet->value());     // store value from Minc function call to us
+                    {
+                        MincFunction *theFunction = (MincFunction *)memberSymbol->value();
+                        if (theFunction != NULL) {
+                            functionRet = callMincFunction(theFunction, memberSymbol->name());
+                            setValue(functionRet->value());     // store value from Minc function call to us
+                        }
+                        else {
+                            minc_die("struct member '%s' is NULL", _methodName);
+                        }
+                    }
                         break;
                     default:
                         minc_die("struct member '%s' is not a function", _methodName);
@@ -1263,7 +1272,8 @@ Node *	NodeMethodCall::doExct()
                 const char *methodName = methodNameFromStructAndFunction(theStruct->typeName(), _methodName);
                 Symbol *methodSymbol = lookupSymbol(methodName, AnyLevel);
                 if (methodSymbol) {
-                    Node *functionRet = callMincFunction(methodSymbol, object->symbol());
+                    MincFunction *theMethod = (MincFunction *)methodSymbol->value();
+                    Node *functionRet = callMincFunction(theMethod, methodSymbol->name(), object->symbol());
                     setValue(functionRet->value());     // store value from Minc method call to us
                 } else {
                     minc_die("variable '%s' of type 'struct %s' has no member or method '%s'", object->name(),

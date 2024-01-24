@@ -378,7 +378,7 @@ class MincFunctionHandler
 {
 public:
     MincFunctionHandler() {}
-    Node *                callMincFunction(Symbol *functionSymbol, Symbol *thisSymbol=NULL);
+    Node *                callMincFunction(MincFunction *function, const char *functionName, Symbol *thisSymbol=NULL);
 };
 
 //  Function call node

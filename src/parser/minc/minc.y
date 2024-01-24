@@ -103,7 +103,7 @@ static Node * go(Node * t1);
 %token <ival> TOK_IDENT TOK_NUM TOK_ARG_QUERY TOK_ARG TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
 
-%type  <node> stml stmt rstmt bexp expl exp expblk str ret bstml obj fexp fexpl func method subscript
+%type  <node> stml stmt rstmt bexp expl exp expblk str ret bstml obj fexp fexpl func fcall mcall subscript
 %type  <node> fdecl sdecl hdecl ldecl mapdecl structdecl structinit mfuncdecl arg argl funcdef fstml fblock fargl funcname mbr mbrl structdef methodname methoddef
 %type  <str> id structname
 
@@ -268,14 +268,19 @@ fexpl:  fexp            { MPRINT("fexpl: fexp"); $$ = new NodeListElem(new NodeE
     |   fexpl ',' fexp  {  MPRINT("fexpl: fexpl,fexp"); $$ = new NodeListElem($1, $3); }
     ;
 
-/* A function is an id followed by (args) or () */
-func:   id '(' fexpl ')' {    MPRINT("func: id(fexpl)"); $$ = new NodeFunctionCall(new NodeLoadSym($1), $3); }
-    |   id '(' ')'       { MPRINT("func: id()"); $$ = new NodeFunctionCall(new NodeLoadSym($1), new NodeEmptyListElem()); }
+/* A function is a set of function arguments inside parentheses */
+func:   '(' fexpl ')' {    MPRINT("func: (fexpl)"); $$ = $2; }
+    |   '(' ')'       {     MPRINT("func: ()"); $$ = new NodeEmptyListElem();  }
     ;
 
-/* A method is a function call on an object using the dot operator. The object can be an id, a member access on a struct/class, or a list element accessed by index.  The id is the string representing the method */
-method: obj '.' id '(' fexpl ')' {  MPRINT("method: obj.id(fexpl)"); $$ = new NodeMethodCall($1, $3, $5); }
-    |   obj '.' id '(' ')' {  MPRINT("method: obj.id()"); $$ = new NodeMethodCall($1, $3, new NodeEmptyListElem()); }
+/* A function call is an id followed by (args) or () */
+fcall:   id func {    MPRINT("fcall: id func"); $$ = new NodeFunctionCall(new NodeLoadSym($1), $2); }
+    |   obj subscript func { MPRINT("fcall: obj subscript func"); $$ = new NodeFunctionCall(new NodeSubscriptRead($1, $2), $3); }
+    ;
+
+/* A method is a function call on an object using the dot operator. The object can be an id, a member access on a
+   struct/class, or a list element accessed by index.  The id is the string representing the method */
+mcall: obj '.' id func {  MPRINT("mcall: obj.id func"); $$ = new NodeMethodCall($1, $3, $4); }
     ;
 
 /* An rstmt is statement returning a value, such as assignments, function calls, etc. */
@@ -303,8 +308,8 @@ rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAuto
         $$ = new NodeOpAssign($2, new NodeConstf(1.0), OpMinusMinus);
     }
 
-    |   func        {  MPRINT("rstmt: func"); $$ = $1; }
-    |   method        {  MPRINT("rstmt: method"); $$ = $1; }
+    |   fcall        {  MPRINT("rstmt: fcall"); $$ = $1; }
+    |   mcall        {  MPRINT("rstmt: mcall"); $$ = $1; }
 
     /* Special case: Assigning value to an array at an index */
 	| obj '[' exp ']' '=' exp {
