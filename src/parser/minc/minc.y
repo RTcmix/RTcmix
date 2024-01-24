@@ -153,10 +153,10 @@ stmt: rstmt					{ MPRINT("stmt: rstmt");	$$ = go($1); }
 								$$ = go(new NodeFor($4, $6, $8, $10));
 								xblock = 0;
 							}
-	| bstml
+	| bstml                 { MPRINT("stmt: bstml"); $$ = $1; }
     | funcdef               { MPRINT("stmt: funcdef"); $$ = go($1); }
-	| ret
-    | structdef
+	| ret                   { MPRINT("stmt: ret"); $$ = $1; }
+    | structdef             { MPRINT("stmt: structdef"); $$ = $1; }
 	;
 
 /* block statement list
@@ -362,8 +362,8 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 						}
     /* DAS THESE ARE NOW PURE RIGHT-HAND-SIDE */
     | obj                   { MPRINT("exp: obj");   $$ = $1; }
-    | expblk                { MPRINT("exp: expblk");   $$ = $1; }
-	| '{' '}'				{ MPRINT("exp: {}");	$$ = new NodeList(new NodeEmptyListElem()); }
+    | expblk                { MPRINT("exp: expblk");   $$ = $1; }   // for list initialization
+	| '{' '}'				{ MPRINT("exp: {}");	$$ = new NodeList(new NodeEmptyListElem()); }   // for empty list initialization
 	| TOK_ARG_QUERY		    { $$ = parseArgumentQuery(yytext, &flerror); }
 	| TOK_ARG			    { $$ = parseScoreArgument(yytext, &flerror); }
     
