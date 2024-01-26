@@ -92,7 +92,7 @@ public:
 	Node*				exct();
     
     Node *              copyValue(Node *, bool allowTypeOverwrite=true);
-    Node *              copyValue(Symbol *, bool allowTypeOverwrite=true);
+    Node *              copyValue(Symbol *, bool allowTypeOverwrite=true, bool suppressOverwriteWarning=false);
 	void				print();
 protected:
     virtual             ~Node();
@@ -412,7 +412,7 @@ public:
 protected:
     virtual Node *  doExct();
 private:
-    void            callObjectMethod(Symbol *thisSymbol, const char *methodName);
+    bool            callObjectMethod(Symbol *thisSymbol, const char *methodName);
 private:
     const char *    _methodName;
 };

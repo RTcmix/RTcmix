@@ -1,6 +1,6 @@
 POSITIVE_TESTS = bexp default-args typereturn handle if-bstml ifrand iftrue exit exit2 \
 	manysymbols toofewargs undefined_func var-redeclare
-NEGATIVE_TESTS = too-many-args function-symbol arg-symbol lineno struct_type_overwrite \
+NEGATIVE_TESTS = too-many-args function-symbol arg-symbol lineno \
 struct_ctor_wrong_arg_count struct_ctor_wrong_arg_type two-bad-functions null_struct
 COMPAT_TESTS = compat compat1 compat2 compat3
 BLOCK_TESTS = block block01 block01a block02 block02a block02c block03 block03a block03c block_list

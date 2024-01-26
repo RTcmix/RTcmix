@@ -99,6 +99,12 @@ static int sFunctionCallDepth = 0;	// level of actively-executing function calls
 
 static bool inFunctionCall() { return sFunctionCallDepth > 0; }
 
+// Note:  This counter is a hack to allow backwards-compat scope behavior for if() blocks but allow
+// new scope behavior for for() and while() blocks:  The former stays in global score, the latter do not.
+
+static int sWhileForBlockDepth = 0;      // level of actively-executing while() and for() blocks
+static bool inWhileOrForBlock() { return sWhileForBlockDepth > 0; }
+
 static void copyNodeToMincList(MincValue *edest, Node *  tpsrc);
 
 static MincWarningLevel sMincWarningLevel = MincAllWarnings;
@@ -327,13 +333,16 @@ Node::copyValue(Node *source, bool allowTypeOverwrite)
 
 /* This copies a Symbol's value and handles ref counting when necessary */
 Node *
-Node::copyValue(Symbol *source, bool allowTypeOverwrite)
+Node::copyValue(Symbol *source, bool allowTypeOverwrite, bool suppressOverwriteWarning)
 {
     TPRINT("Node::copyValue(this=%p, Symbol=%p)\n", this, source);
     assert(source->scope() != -1);    // we accessed a variable after leaving its scope!
     if (dataType() != MincVoidType && source->dataType() != dataType()) {
         if (allowTypeOverwrite) {
-            minc_warn("Overwriting %s variable '%s' with a %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
+            if (!suppressOverwriteWarning) {
+                minc_warn("Overwriting %s variable '%s' with a %s", MincTypeName(dataType()), name(),
+                          MincTypeName(source->dataType()));
+            }
         }
         else {
             minc_die("Cannot overwrite '%s' (type %s) with a %s", name(), MincTypeName(dataType()), MincTypeName(source->dataType()));
@@ -707,7 +716,7 @@ Node *	NodeLoadSym::finishExct()
 		TPRINT("%s: symbol %p\n", classname(), nodeSymbol);
         /* also assign the symbol's value into Node's value field */
         TPRINT("NodeLoadSym/NodeAutoDeclLoadSym: copying value from symbol '%s' to us\n", nodeSymbol->name());
-        copyValue(nodeSymbol);
+        copyValue(nodeSymbol, true, true);
 	}
 	else {
         // Special trick: Store function name into Node's value
@@ -723,8 +732,10 @@ Node *	NodeLoadSym::finishExct()
 
 Node *	NodeAutoDeclLoadSym::doExct()
 {
-	/* look up the symbol */
-	setSymbol(lookupOrAutodeclare(symbolName(), inFunctionCall() ? YES : NO));
+    setValue(MincValue());  // reset value back to VoidType in case this Node is re-used in loop, etc.
+	/* look up the symbol.  If we auto-declare it, use local scope for functions and if/while blocks */
+    bool allowLocalScope = inFunctionCall() || inWhileOrForBlock();
+	setSymbol(lookupOrAutodeclare(symbolName(), allowLocalScope ? YES : NO));
 	return finishExct();
 }
 
@@ -1220,7 +1231,7 @@ Node *	NodeFunctionCall::doExct() {
     return this;
 }
 
-void NodeMethodCall::callObjectMethod(Symbol *thisSymbol, const char *methodName) {
+bool NodeMethodCall::callObjectMethod(Symbol *thisSymbol, const char *methodName) {
     MincValue thisValue = thisSymbol->value();
     TPRINT("NodeMethodCall::callObjectMethod: attempting to invoke '%s' on %s object\n", methodName, MincTypeName(thisValue.dataType()));
     MincValue retval;
@@ -1229,7 +1240,9 @@ void NodeMethodCall::callObjectMethod(Symbol *thisSymbol, const char *methodName
     if (result != 0) {
         thisSymbol->setValue(thisValue);
         this->setValue(retval);
+        return true;        // success
     }
+    return false;
 }
 
 Node *	NodeMethodCall::doExct()
@@ -1270,14 +1283,18 @@ Node *	NodeMethodCall::doExct()
                 // This is a "real method", so look for matching method symbol.
                 TPRINT("NodeMethodCall: member with that name not found - attempting to retrieve symbol for method\n");
                 const char *methodName = methodNameFromStructAndFunction(theStruct->typeName(), _methodName);
+                Symbol *objectSymbol = object->symbol();
                 Symbol *methodSymbol = lookupSymbol(methodName, AnyLevel);
                 if (methodSymbol) {
                     MincFunction *theMethod = (MincFunction *)methodSymbol->value();
-                    Node *functionRet = callMincFunction(theMethod, methodSymbol->name(), object->symbol());
+                    Node *functionRet = callMincFunction(theMethod, methodSymbol->name(), objectSymbol);
                     setValue(functionRet->value());     // store value from Minc method call to us
                 } else {
-                    minc_die("variable '%s' of type 'struct %s' has no member or method '%s'", object->name(),
-                             theStruct->typeName(), _methodName);
+                    // See if method was one of the builtin object methods.
+                    if (callObjectMethod(objectSymbol, _methodName) == false) {
+                        minc_die("variable '%s' of type 'struct %s' has no member or method '%s'", object->name(),
+                                 theStruct->typeName(), _methodName);
+                    }
                 }
             }
         } else {
@@ -1616,7 +1633,9 @@ Node *	NodeIfElse::doExct()
 Node *	NodeWhile::doExct()
 {
     while ((bool)child(0)->exct()->value() == true) {
+        ++sWhileForBlockDepth;
 		child(1)->exct();
+        --sWhileForBlockDepth;
     }
 	return this;
 }
@@ -1716,7 +1735,9 @@ Node *	NodeFor::doExct()
 {
 	child(0)->exct();         /* init */
 	while ((bool)child(1)->exct()->value() == true) { /* condition */
+        ++sWhileForBlockDepth;
 		_child4->exct();      /* execute block */
+        --sWhileForBlockDepth;
 		child(2)->exct();      /* prepare for next iteration */
 	}
 	return this;

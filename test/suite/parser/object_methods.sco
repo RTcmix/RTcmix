@@ -19,7 +19,7 @@ objectTests = {
 	Test({h}, 1, "handle"),
 	Test({{1, 2, 3}}, 3, "list"),
 	Test({m}, 2, "map"),
-	Test({testStruct}, 2, "struct")
+	Test({testStruct}, 0, "struct")		// struct does not suport len() so returns 0
 };
 
 printf("List of tests: %l\n", objectTests);

@@ -5,6 +5,7 @@ bool_checks.sco \
 builtin_function.sco \
 check_arg_order.sco \
 double_include.sco \
+for_while_score.sco \
 functest1.sco \
 functest2.sco \
 functest3.sco \
@@ -34,6 +35,7 @@ newfunction01.sco \
 newfunction02.sco \
 newfunction03.sco \
 null_list.sco \
+object_methods.sco \
 sanity_check.sco \
 struct01.sco \
 struct02.sco \
@@ -54,7 +56,9 @@ handletest1.sco \
 include_error.sco \
 list_large_index.sco \
 nested_func_decls.sco \
+nested_if_in_for.sco \
 null_struct.sco \
+struct_dupe_member_method.sco \
 struct_duplicate_member.sco \
 struct_duplicate_membername.sco \
 struct_init_wrong_type.sco \
