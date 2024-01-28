@@ -28,6 +28,7 @@ mfunction01.sco \
 multistruct.sco \
 negative_list_element.sco \
 nested.sco \
+nested_if_in_for.sco \
 nested_functions.sco \
 nestednoloop.sco \
 new_features.sco \
@@ -51,12 +52,13 @@ two_methods.sco \
 unaryop.sco
 
 FAIL_SCORES = \
+block_scope.sco \
+function_scope.sco \
 func_errortests1.sco \
 handletest1.sco \
 include_error.sco \
 list_large_index.sco \
 nested_func_decls.sco \
-nested_if_in_for.sco \
 null_struct.sco \
 struct_dupe_member_method.sco \
 struct_duplicate_member.sco \

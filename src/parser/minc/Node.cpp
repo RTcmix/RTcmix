@@ -1291,12 +1291,16 @@ Node *	NodeMethodCall::doExct()
                     MincFunction *theMethod = (MincFunction *)methodSymbol->value();
                     Node *functionRet = callMincFunction(theMethod, methodSymbol->name(), objectSymbol);
                     setValue(functionRet->value());     // store value from Minc method call to us
-                } else {
+                } else if (objectSymbol) {
                     // See if method was one of the builtin object methods.
                     if (callObjectMethod(objectSymbol, _methodName) == false) {
                         minc_die("variable '%s' of type 'struct %s' has no member or method '%s'", object->name(),
                                  theStruct->typeName(), _methodName);
                     }
+                }
+                else {
+                    // If the object's symbol was null, it was a LHS temp object
+                    minc_die("Calling methods on temporary LHS objects is not supported");
                 }
             }
         } else {
@@ -1310,7 +1314,7 @@ Node *	NodeMethodCall::doExct()
             callObjectMethod(objSymbol, _methodName);   // Note: This stores the return value internally
         }
         else {
-            minc_die("Calling methods on temporary objects is not supported");
+            minc_die("Calling methods on temporary LHS objects is not supported");
         }
     }
 	pop_list();
@@ -1633,10 +1637,10 @@ Node *	NodeIfElse::doExct()
 {
     incrementIfElseBlockDepth();
     if ((bool)child(0)->exct()->value() == true) {
-		child(1)->exct();
+        child(1)->exct();
     }
 	else {
-		child(2)->exct();
+        child(2)->exct();
     }
     decrementIfElseBlockDepth();
 	return this;
@@ -1767,10 +1771,10 @@ Node *	NodeSeq::doExct()
 Node *	NodeBlock::doExct()
 {
     if (!inIfOrElseBlock())
-	push_scope();
+	    push_scope();
 	child(0)->exct();
     if (!inIfOrElseBlock())
-	pop_scope();
+        pop_scope();
 	return this;				// NodeBlock returns void type
 }
 
