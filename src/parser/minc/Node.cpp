@@ -102,8 +102,10 @@ static bool inFunctionCall() { return sFunctionCallDepth > 0; }
 // Note:  This counter is a hack to allow backwards-compat scope behavior for if() blocks but allow
 // new scope behavior for for() and while() blocks:  The former stays in global score, the latter do not.
 
-static int sWhileForBlockDepth = 0;      // level of actively-executing while() and for() blocks
-static bool inWhileOrForBlock() { return sWhileForBlockDepth > 0; }
+static int sIfElseBlockDepth = 0;      // level of actively-executing while() and for() blocks
+static void incrementIfElseBlockDepth() { ++sIfElseBlockDepth; }
+static void decrementIfElseBlockDepth() { --sIfElseBlockDepth; }
+static bool inIfOrElseBlock() { return sIfElseBlockDepth > 0; }
 
 static void copyNodeToMincList(MincValue *edest, Node *  tpsrc);
 
@@ -734,8 +736,8 @@ Node *	NodeAutoDeclLoadSym::doExct()
 {
     setValue(MincValue());  // reset value back to VoidType in case this Node is re-used in loop, etc.
 	/* look up the symbol.  If we auto-declare it, use local scope for functions and if/while blocks */
-    bool allowLocalScope = inFunctionCall() || inWhileOrForBlock();
-	setSymbol(lookupOrAutodeclare(symbolName(), allowLocalScope ? YES : NO));
+    bool useLocalScope = inFunctionCall() || !inIfOrElseBlock();
+	setSymbol(lookupOrAutodeclare(symbolName(), useLocalScope ? YES : NO));
 	return finishExct();
 }
 
@@ -1614,28 +1616,38 @@ Node *	NodeOr::doExct()
 	return this;
 }
 
+// Note: For backwards-compat, if() blocks need to be global scope *even if* contained within
+// a for/while block.  Hence the clearing and restoring of the block depth count here and in the next class.
+
 Node *	NodeIf::doExct()
 {
-    if ((bool)child(0)->exct()->value() == true)
+    incrementIfElseBlockDepth();
+    if ((bool)child(0)->exct()->value() == true) {
 		child(1)->exct();
+    }
+    decrementIfElseBlockDepth();
 	return this;
 }
 
 Node *	NodeIfElse::doExct()
 {
-    if ((bool)child(0)->exct()->value() == true)
+    incrementIfElseBlockDepth();
+    if ((bool)child(0)->exct()->value() == true) {
 		child(1)->exct();
-	else
+    }
+	else {
 		child(2)->exct();
+    }
+    decrementIfElseBlockDepth();
 	return this;
 }
+
+// Note: while() blocks use local scope, which is controlled by the block depth counter
 
 Node *	NodeWhile::doExct()
 {
     while ((bool)child(0)->exct()->value() == true) {
-        ++sWhileForBlockDepth;
 		child(1)->exct();
-        --sWhileForBlockDepth;
     }
 	return this;
 }
@@ -1731,13 +1743,13 @@ Node *	NodeFuncBodySeq::doExct()
 	return this;
 }
 
+// Note: for() blocks use local scope, which is controlled by the block depth counter
+
 Node *	NodeFor::doExct()
 {
 	child(0)->exct();         /* init */
 	while ((bool)child(1)->exct()->value() == true) { /* condition */
-        ++sWhileForBlockDepth;
 		_child4->exct();      /* execute block */
-        --sWhileForBlockDepth;
 		child(2)->exct();      /* prepare for next iteration */
 	}
 	return this;
@@ -1750,10 +1762,14 @@ Node *	NodeSeq::doExct()
 	return this;
 }
 
+// Note: Block scopes behave differently we are in a while/for block for backwards compatibility
+
 Node *	NodeBlock::doExct()
 {
+    if (!inIfOrElseBlock())
 	push_scope();
 	child(0)->exct();
+    if (!inIfOrElseBlock())
 	pop_scope();
 	return this;				// NodeBlock returns void type
 }
