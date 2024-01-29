@@ -21,6 +21,7 @@
 #include <sys/time.h>
 #include <string.h>
 #include <signal.h>
+#include <math.h>
 
 #include "prototypes.h"
 #include "InputFile.h"
