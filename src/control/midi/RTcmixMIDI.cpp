@@ -469,6 +469,7 @@ void RTcmixMIDIOutput::sendNoteOn(long timestamp, uchar chan, uchar pitch, uchar
     buffer.timestamp = timestamp;
     PRINT("RTcmixMIDIOutput::sendNoteOn: sending event with ts = %ld\n", timestamp);
     lock();
+    _noteList.push_front(MidiItem(chan, pitch));
     Pm_Write(outstream(), &buffer, 1);
     unlock();
 }
@@ -480,6 +481,7 @@ void RTcmixMIDIOutput::sendNoteOff(long timestamp, uchar chan, uchar pitch, ucha
     buffer.timestamp = timestamp;
     PRINT("RTcmixMIDIOutput::sendNoteOff: sending event with ts = %ld\n", timestamp);
     lock();
+    _noteList.remove(MidiItem(chan, pitch));
     Pm_Write(outstream(), &buffer, 1);
     unlock();
 }
@@ -537,8 +539,22 @@ void RTcmixMIDIOutput::sendMIDIStart(long timestamp)
     PRINT("RTcmixMIDIOutput::sendMIDIStart: Done\n");
 }
 
+#define SEND_MIDI_NOTE_OFFS
+
 void RTcmixMIDIOutput::sendMIDIStop(long timestamp)
 {
+#ifdef SEND_MIDI_NOTE_OFFS
+    rtcmix_debug(NULL, "Sending MIDI Note Off events for Remaining Notes");
+    lock();
+    for (std::list<MidiItem>::iterator it = _noteList.begin(); it != _noteList.end(); ++it){
+        MidiItem item = *it;
+        PmEvent buffer;
+        buffer.message = Pm_Message(make_status(kNoteOff, item.first), item.second, 0);
+        buffer.timestamp = timestamp;
+        Pm_Write(outstream(), &buffer, 1);
+    }
+    unlock();
+#else
     PmEvent buffer1, buffer2;
     buffer1.message = Pm_Message(0xFF, 0, 0);   // system reset
     buffer1.timestamp = timestamp;
@@ -556,6 +572,7 @@ void RTcmixMIDIOutput::sendMIDIStop(long timestamp)
     Pm_Write(outstream(), &buffer1, 1);
     Pm_Write(outstream(), &buffer2, 1);
     unlock();
+#endif
     PRINT("RTcmixMIDIOutput::sendMIDIStop: Done\n");
 }
 
