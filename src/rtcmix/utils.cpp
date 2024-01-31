@@ -7,7 +7,7 @@
 #include "handle.h"
 #include <math.h>
 #ifdef linux
-#include <climits.h>
+#include <limits.h>
 #endif
 
 extern "C" {

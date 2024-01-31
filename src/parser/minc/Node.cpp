@@ -1126,17 +1126,18 @@ bool NodeFunctionCall::callConstructor(const char *functionName)
             TPRINT("NodeFunctionCall::callConstructor -- initializing struct members from sMincList\n");
             sym->initAsStruct(structType, initList);
             copyValue(sym, false);
-            delete sym;
             initList->data = NULL;
             initList->len = 0;
             initList->unref();
-        } catch (...) {
+            initList = NULL;
             delete sym;
+        } catch (...) {
             if (initList) {
                 initList->data = NULL;
                 initList->len = 0;
                 initList->unref();
             }
+            delete sym;
             throw;
         }
         return true;
