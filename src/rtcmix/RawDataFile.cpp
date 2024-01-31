@@ -7,8 +7,6 @@
 //
 
 #include "RawDataFile.h"
-
-#include "DataFile.h"
 #include <assert.h>
 #include <errno.h>
 #include <string.h>

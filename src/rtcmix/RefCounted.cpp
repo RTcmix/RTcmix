@@ -6,7 +6,6 @@
 #ifdef USE_OSX_DISPATCH
 #include <dispatch/dispatch.h>
 #endif
-#include <ugens.h>
 
 RefCounted::~RefCounted()
 {

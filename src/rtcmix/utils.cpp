@@ -6,6 +6,9 @@
 #include "ugens.h"
 #include "handle.h"
 #include <math.h>
+#ifdef linux
+#include <climits.h>
+#endif
 
 extern "C" {
     Handle m_bits(const Arg args[], const int nargs);
