@@ -16,7 +16,7 @@ static pthread_once_t sOnceControl = PTHREAD_ONCE_INIT;
 pthread_key_t	RTThread::sIndexKey;
 
 RTThread::RTThread(int inThreadIndex)
-	: mThread(NULL), mThreadIndex(inThreadIndex) {
+	: mThread(0), mThreadIndex(inThreadIndex) {
 	pthread_once(&sOnceControl, InitOnce);
 }
 
@@ -38,7 +38,7 @@ void RTThread::setName(const char *name)
 // We cannot start running the pthread in the ctor, so we do it here.
 
 void RTThread::start() {
-	if (mThread == NULL) {
+	if (mThread == 0) {
 		pthread_attr_t attr;
 		pthread_attr_init(&attr);
 		pthread_attr_setschedpolicy(&attr, SCHED_RR);

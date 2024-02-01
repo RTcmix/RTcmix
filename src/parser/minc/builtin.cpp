@@ -11,7 +11,6 @@
 #include <assert.h>
 #include <RTOption.h>
 #include <ugens.h>
-#include <rtdefs.h>
 
 /* Minc builtin functions, for use only in Minc scripts.
    To add a builtin function, make an entry for it in the function ptr array
@@ -632,7 +631,7 @@ _minc_index(const MincValue args[], int nargs)
       return -1.0;
    }
    if (args[0].dataType() != MincListType) {
-      minc_warn("index: first argument must be a list");
+      minc_warn("index: container must be a list");
       return -1.0;
    }
    argtype = args[1].dataType() ;
@@ -697,7 +696,7 @@ _minc_contains(const MincValue args[], int nargs)
         }
         case MincStringType:
             if (args[1].dataType() != MincStringType) {
-                minc_warn("contains: second argument must be a string if examining a string");
+                minc_warn("contains: search argument must be a string if examining a string");
                 return 0;
             }
             else {
@@ -705,9 +704,8 @@ _minc_contains(const MincValue args[], int nargs)
                 MincString theNeedle = (MincString) args[1];
                 return (theNeedle != NULL) ? strstr(theString, theNeedle) != NULL ? 1 : 0 : 0;
             }
-            break;
         default:
-            minc_warn("contains: first argument must be a string, list, or map");
+            minc_warn("contains: container must be a string, list, or map");
             return 0;
     }
 }
@@ -782,6 +780,29 @@ _minc_substring(const MincValue args[], int nargs)
 
 // Utilities for calling methods on Minc objects
 
+static float list_append(MincList *inList, const MincValue arglist[])
+{
+    int newSize = inList->len + 1;
+    inList->resize(newSize);
+    const MincValue &item = arglist[0];
+    inList->data[newSize-1] = item;
+    return 1;
+}
+
+int call_list_method(MincValue &object, const char *methodName, const MincValue arglist[], int nargs, MincValue *retval)
+{
+    MincList *theList = (MincList *)object;
+    int found = 1;
+    if (strcmp (methodName, "append") == 0) {
+        *retval = list_append(theList, arglist);
+    }
+    else {
+        found = 0;
+    }
+    return found;
+}
+
+
 // concatArgs puts the method object on the beginning of the arglist so we can use the
 // older builtin functions.
 
@@ -813,6 +834,12 @@ int call_object_method(MincValue &object, const char *methodName, const MincValu
     }
     else if (strcmp(methodName, "type") == 0) {
         *retval = (MincString) _minc_type((const MincValue *) &object, 1);
+    }
+    // Check for list-specific methods
+    else if (object.dataType() == MincListType) {
+        if (call_list_method(object, methodName, arglist, nargs, retval) == 1) {
+            return true;
+        }
     }
     else
         return false;

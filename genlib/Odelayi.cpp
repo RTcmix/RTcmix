@@ -19,7 +19,7 @@ float Odelayi::getsamp(double lagsamps)
 	// This call increments _outpoint
 //	const float out = Odelay::getsamp(lagsamps + 1);
 	const float out = Odelay::getsamp(lagsamps);
-	register float next;
+	float next;
 	if (_outpoint < _len)
 		next = _dline[_outpoint];
 	else

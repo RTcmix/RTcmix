@@ -1245,6 +1245,7 @@ bool NodeMethodCall::callObjectMethod(Symbol *thisSymbol, const char *methodName
         this->setValue(retval);
         return true;        // success
     }
+    minc_die("Method '%s' is not defined for type '%s'", methodName, MincTypeName(thisValue.dataType()));
     return false;
 }
 
@@ -1771,11 +1772,13 @@ Node *	NodeSeq::doExct()
 
 Node *	NodeBlock::doExct()
 {
-    if (!inIfOrElseBlock())
-	    push_scope();
+    if (!inIfOrElseBlock()) {
+        push_scope();
+    }
 	child(0)->exct();
-    if (!inIfOrElseBlock())
+    if (!inIfOrElseBlock()) {
         pop_scope();
+    }
 	return this;				// NodeBlock returns void type
 }
 
