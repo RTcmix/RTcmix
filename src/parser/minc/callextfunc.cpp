@@ -19,14 +19,10 @@ static Arg * minc_list_to_arglist(const char *funcname, const MincValue *inList,
 	int n = 0, newNumArgs = oldNumArgs + inListLen;
 	// Create expanded array
 	Arg *newArgs = new Arg[newNumArgs];
-	if (newArgs == NULL)
-		return NULL;
-	if (inArgs != NULL) {
-		// Copy existing args to new array
-		for (; n < oldNumArgs; ++n) {
-			newArgs[n] = inArgs[n];
-		}
-	}
+    // Copy existing args to new array
+    for (; n < oldNumArgs; ++n) {
+        newArgs[n] = inArgs[n];
+    }
 	for (int i = 0; n < newNumArgs; ++i, ++n) {
         minc_try {
             switch (inList[i].dataType()) {
@@ -56,7 +52,6 @@ static Arg * minc_list_to_arglist(const char *funcname, const MincValue *inList,
                         minc_die("for now, no nested lists can be passed to RTcmix function %s()", funcname);
                         return NULL;
                     }
-                    break;
                 case MincMapType:
                     minc_die("for now, maps cannot be passed to RTcmix function %s()", funcname);
                     break;
@@ -81,8 +76,6 @@ call_external_function(const char *funcname, const MincValue arglist[],
 	Arg retval;
 
 	Arg *rtcmixargs = new Arg[nargs];
-	if (rtcmixargs == NULL)
-		return MEMORY_ERROR;
 
     minc_try {
 	// Convert arglist for passing to RTcmix function.
@@ -132,7 +125,7 @@ call_external_function(const char *funcname, const MincValue arglist[],
 			else {
 				Array *newarray = (Array *) emalloc(sizeof(Array));
 				if (newarray == NULL)
-					return MEMORY_ERROR;
+					throw std::bad_alloc();
 				assert(sizeof(*newarray->data) == sizeof(double));	// because we cast MincFloat to double here
 				newarray->data = (double *) float_list_to_array(list);
 				if (newarray->data != NULL) {
@@ -141,7 +134,7 @@ call_external_function(const char *funcname, const MincValue arglist[],
 				}
 				else {
 					minc_die("can't pass a mixed-type list (arg %d) to RTcmix function %s()", i, funcname);
-					free(newarray);
+					efree(newarray);
 					return PARAM_ERROR;
 				}
 			}
@@ -150,19 +143,15 @@ call_external_function(const char *funcname, const MincValue arglist[],
        case MincMapType:
             minc_die("%s(): arg %d: maps not supported as function arguments", funcname, i);
             return PARAM_ERROR;
-            break;
        case MincStructType:
             minc_die("%s(): arg %d: structs not supported as function arguments", funcname, i);
             return PARAM_ERROR;
-            break;
        case MincFunctionType:
             minc_die("%s(): arg %d: functions not supported as function arguments", funcname, i);
             return PARAM_ERROR;
-            break;
 		default:
 			minc_die("%s(): arg %d: invalid argument type", funcname, i);
 			return PARAM_ERROR;
-			break;
 		}
 	}
     } minc_catch(delete [] rtcmixargs;)
@@ -209,7 +198,7 @@ void printargs(const char *funcname, const Arg arglist[], const int nargs)
 
 static Handle _createPFieldHandle(PField *pfield)
 {
-	Handle handle = (Handle) malloc(sizeof(struct _handle));
+	Handle handle = (Handle) emalloc(sizeof(struct _handle));
 	handle->type = PFieldType;
 	handle->ptr = (void *) pfield;
 	pfield->ref();

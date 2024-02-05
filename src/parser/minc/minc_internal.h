@@ -190,8 +190,6 @@ enum ScopeLookupType { AnyLevel = 0, GlobalLevel = 1, ThisLevel = 2 };
 void printargs(const char *funcname, const Arg arglist[], const int nargs);
 
 char *strsave(const char *str);
-void clear_elem(MincValue *);
-void unref_value_list(MincValue *);
 
 /* utils.cpp */
 int is_float_list(const MincList *list);

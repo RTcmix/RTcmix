@@ -23,6 +23,9 @@ patest: patest.c
 embedtest: embedtest.c
 	$(CC) $(CFLAGS) -o embedtest embedtest.c $(INCLUDES) $(LDFLAGS)
 
+embedtest2: embedtest2.c
+	$(CC) $(CFLAGS) -o embedtest2 embedtest2.c $(INCLUDES) $(LDFLAGS)
+
 scoreplayer: scoreplayer.c
 ifdef HAVE_PORTAUDIO
 	$(CC) $(CFLAGS) -o scoreplayer scoreplayer.c $(INCLUDES) $(LDFLAGS) -DHAVE_PORTAUDIO
