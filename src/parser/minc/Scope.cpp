@@ -14,7 +14,7 @@
 #include <vector>
 #include <string.h>
 
-//#undef SCOPE_DEBUG
+#undef SCOPE_DEBUG
 //#undef DPRINT
 #ifdef SCOPE_DEBUG
 #define DPRINT(...) rtcmix_print(__VA_ARGS__)

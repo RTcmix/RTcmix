@@ -40,6 +40,7 @@
 
 #undef DEBUG
 #undef DEBUG_FILENAME_INCLUDES /* DAS - I use this for debugging error reporting */
+#undef SCOPE_DEBUG  /* DAS - This is for the scope-assist code (level counters, etc.) */
 
 #include "debug.h"
 
@@ -47,7 +48,6 @@
 #include "MincValue.h"
 #include "Scope.h"
 #include "Symbol.h"
-//#include "handle.h"
 #include <RTOption.h>
 #include <stdio.h>
 #include <string.h>
@@ -75,6 +75,13 @@ extern MincHandle minc_binop_handle_float(const MincHandle handle, const MincFlo
 extern MincHandle minc_binop_float_handle(const MincFloat val, const MincHandle handle, OpKind op);
 extern MincHandle minc_binop_handles(const MincHandle handle1, const MincHandle handle2, OpKind op);
 
+#ifdef SCOPE_DEBUG
+static char ssBuf[256];
+#define SPRINT(...) do { snprintf(ssBuf, 256, __VA_ARGS__); rtcmix_print("%s\n", ssBuf); } while(0)
+#else
+#define SPRINT(...)
+#endif
+
 /* We maintain a stack of MAXSTACK lists, which we access when forming 
    user lists (i.e., {1, 2, "foo"}) and function argument lists.  Each
    element of this stack is a list, allocated and freed by push_list and
@@ -94,17 +101,25 @@ static int sArgListLen;		// number of arguments passed to a user-declared functi
 static int sArgListIndex;	// used to walk passed-in args for user-declared functions
 
 static bool inCalledFunctionArgList = false;
-static std::vector<const char *> sCalledFunctions;
-static int sFunctionCallDepth = 0;	// level of actively-executing function calls
 
+static int sFunctionCallDepth = 0;	// level of actively-executing function calls
+static void incrementFunctionCallDepth() { ++sFunctionCallDepth; SPRINT("sFunctionCallDepth -> %d", sFunctionCallDepth); }
+static void decrementFunctionCallDepth() { --sFunctionCallDepth; SPRINT("sFunctionCallDepth -> %d", sFunctionCallDepth); }
 static bool inFunctionCall() { return sFunctionCallDepth > 0; }
+
+static std::vector<const char *> sCalledFunctions;
 
 // Note:  This counter is a hack to allow backwards-compat scope behavior for if() blocks but allow
 // new scope behavior for for() and while() blocks:  The former stays in global score, the latter do not.
 
-static int sIfElseBlockDepth = 0;      // level of actively-executing while() and for() blocks
-static void incrementIfElseBlockDepth() { ++sIfElseBlockDepth; }
-static void decrementIfElseBlockDepth() { --sIfElseBlockDepth; }
+static int sForWhileBlockDepth = 0;      // level of actively-executing while() and for() blocks
+static void incrementForWhileBlockDepth() { ++sForWhileBlockDepth; SPRINT("sForWhileBlockDepth -> %d", sForWhileBlockDepth); }
+static void decrementForWhileBlockDepth() { --sForWhileBlockDepth; SPRINT("sForWhileBlockDepth -> %d", sForWhileBlockDepth); }
+static bool inForOrWhileBlock() { return sForWhileBlockDepth > 0; }
+
+static int sIfElseBlockDepth = 0;      // level of actively-executing if() and else() blocks
+static void incrementIfElseBlockDepth() { ++sIfElseBlockDepth; SPRINT("sIfElseBlockDepth -> %d", sIfElseBlockDepth); }
+static void decrementIfElseBlockDepth() { --sIfElseBlockDepth; SPRINT("sIfElseBlockDepth -> %d", sIfElseBlockDepth); }
 static bool inIfOrElseBlock() { return sIfElseBlockDepth > 0; }
 
 static void copyNodeToMincList(MincValue *edest, Node *  tpsrc);
@@ -1063,7 +1078,7 @@ Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char 
     TPRINT("MincFunctionHandler::callMincFunction: theFunction = %p -- dropping in\n", function);
     push_function_stack();
     push_scope();           // move into function-body scope
-    int savedLineNo=0, savedScope=0, savedCallDepth=0;
+    int savedLineNo=0, savedScope=0, savedCallDepth=0, savedIfElseDepth=0, savedForWhileDepth=0;
     try {
         // This replicates the argument-printing mechanism used by compiled-in functions.
         if (RTOption::print() >= MMP_PRINTS) {
@@ -1079,9 +1094,14 @@ Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char 
         function->copyArguments();
         savedLineNo = yyget_lineno();
         savedScope = current_scope();
-        ++sFunctionCallDepth;
+        savedIfElseDepth = sIfElseBlockDepth;
+        savedForWhileDepth = sForWhileBlockDepth;
+        sIfElseBlockDepth = 0;
+        sForWhileBlockDepth = 0;
+        incrementFunctionCallDepth();
         savedCallDepth = sFunctionCallDepth;
-        TPRINT("MincFunctionHandler::callMincFunction executing %s(), call depth now %d\n", sCalledFunctions.back(), savedCallDepth);
+        TPRINT("MincFunctionHandler::callMincFunction executing %s(), call depth saved at %d\n",
+               sCalledFunctions.back(), savedCallDepth);
         returnedNode = function->execute();
     }
     catch (Node * returned) {    // This catches return statements!
@@ -1090,16 +1110,19 @@ Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char 
         assert(returned->dataType() != MincVoidType);
         returnedNode = returned;
         sFunctionCallDepth = savedCallDepth;
+        sIfElseBlockDepth = savedIfElseDepth;
+        sForWhileBlockDepth = savedForWhileDepth;
+        SPRINT("Function call depth restored to %d, if/else depth to %d, for/while to %d",
+               sFunctionCallDepth, sIfElseBlockDepth, sForWhileBlockDepth);
         restore_scope(savedScope);
     }
     catch(...) {    // Anything else is an error
         pop_function_stack();
         sCalledFunctions.pop_back();
-        --sFunctionCallDepth;
+        decrementFunctionCallDepth();
         throw;
     }
-    --sFunctionCallDepth;
-    TPRINT("MincFunctionHandler::callMincFunction: function call depth => %d\n", sFunctionCallDepth);
+    decrementFunctionCallDepth();
     // restore parser line number
     yyset_lineno(savedLineNo);
     pop_function_stack();
@@ -1655,9 +1678,11 @@ Node *	NodeIfElse::doExct()
 
 Node *	NodeWhile::doExct()
 {
+    incrementForWhileBlockDepth();
     while ((bool)child(0)->exct()->value() == true) {
 		child(1)->exct();
     }
+    decrementForWhileBlockDepth();
 	return this;
 }
 
@@ -1757,10 +1782,12 @@ Node *	NodeFuncBodySeq::doExct()
 Node *	NodeFor::doExct()
 {
 	child(0)->exct();         /* init */
+    incrementForWhileBlockDepth();
 	while ((bool)child(1)->exct()->value() == true) { /* condition */
 		_child4->exct();      /* execute block */
 		child(2)->exct();      /* prepare for next iteration */
 	}
+    decrementForWhileBlockDepth();
 	return this;
 }
 
@@ -1771,15 +1798,16 @@ Node *	NodeSeq::doExct()
 	return this;
 }
 
-// Note: Block scopes behave differently we are in a while/for block for backwards compatibility
+// Note: Block scopes behave differently when we are in an if/else block for backwards compatibility.  However,
+// if we are inside a Minc function call block, all backwards-compat is turned off.
 
 Node *	NodeBlock::doExct()
 {
-    if (!inIfOrElseBlock()) {
+    if (!inIfOrElseBlock() || inFunctionCall()) {
         push_scope();
     }
 	child(0)->exct();
-    if (!inIfOrElseBlock()) {
+    if (!inIfOrElseBlock() || inFunctionCall()) {
         pop_scope();
     }
 	return this;				// NodeBlock returns void type
@@ -1961,7 +1989,6 @@ push_list()
    TPRINT("push_list: sMincList=%p at new stack level %d, len %d\n", sMincList, list_stack_ptr, sMincListLen);
    sMincListLen = 0;
 }
-
 
 static void
 pop_list()

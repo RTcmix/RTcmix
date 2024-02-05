@@ -45,6 +45,7 @@ struct_as_func_return.sco \
 struct_as_member.sco \
 struct_copy.sco \
 struct_increment_element.sco \
+struct_var_scope.sco \
 struct_initializer.sco \
 struct_with_same_as_member.sco \
 test_double_include.sco \
@@ -53,9 +54,11 @@ unaryop.sco
 
 FAIL_SCORES = \
 block_scope.sco \
+for_scope.sco \
 function_scope.sco \
 func_errortests1.sco \
 handletest1.sco \
+if_inside_fun_scope.sco \
 include_error.sco \
 list_large_index.sco \
 nested_func_decls.sco \
@@ -65,9 +68,9 @@ struct_duplicate_member.sco \
 struct_duplicate_membername.sco \
 struct_init_wrong_type.sco \
 struct_init_insufficient_args.sco \
-struct_var_scope.sco \
 uninit_fun_member.sco \
-uninit_mfunction.sco
+uninit_mfunction.sco \
+while_scope.sco
 
 
 scores_that_pass:
