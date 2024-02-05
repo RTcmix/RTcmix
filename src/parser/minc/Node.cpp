@@ -259,7 +259,7 @@ Node::~Node()
 
 const char * Node::name() const
 {
-    return (u.symbol) ? u.symbol->name() : "UNDEFINED";
+    return symbol() ? symbol()->name() : "UNDEFINED";
 }
 
 const char * Node::classname() const
@@ -272,7 +272,7 @@ void Node::print()
     TPRINT("Node %p contents: class: %s type: %s\n", this, classname(), MincTypeName(this->dataType()));
 	if (kind == eNodeLoadSym) {
 		TPRINT("\tsymbol:\n");
-        u.symbol->print();
+        symbol()->print();
 	}
 	else if (this->dataType() == MincVoidType && child(0) != NULL) {
 		TPRINT("\tchild 0:\n");
@@ -821,7 +821,7 @@ MincValue Subscript::readValueAtIndex(Node *listNode, Node *indexNode) {
 
 void Subscript::writeValueToIndex(Node *listNode, Node *indexNode, const MincValue &value)
 {
-    TPRINT("writeValueToIndex: Index via node %p (child 1)\n", indexNode);
+    TPRINT("writeValueToIndex: Index via node %p\n", indexNode);
     if (indexNode->dataType() != MincFloatType) {
         minc_die("list index must be a number");
         return;
@@ -850,20 +850,23 @@ void Subscript::writeValueToIndex(Node *listNode, Node *indexNode, const MincVal
             minc_die("list array subscript exceeds integer size limit!");
         }
         if (theList == NULL) {
-            listNode->symbol()->setValue(MincValue(theList = new MincList(len)));
-        } else
+            Symbol *tsym = listNode->symbol();
+            TPRINT("writeValueToIndex: setting new MincList on target %p's Symbol %p\n", listNode, tsym);
+            theList = new MincList(len);
+            tsym->setValue(MincValue(theList));
+        } else {
             theList->resize(len);
-        TPRINT("writeValueToIndex: MincList %p expanded to len %d\n",
-               theList->data, len);
+        }
+        TPRINT("writeValueToIndex: MincList %p expanded to len %d\n", theList->data, len);
     }
     theList->data[index] = value;
 }
 
 
-void    NodeSubscriptRead::readAtSubscript()
+void    NodeSubscriptRead::readAtSubscript(Node *target, Node *idx)
 {
     ENTER();
-    MincValue elem = readValueAtIndex(child(0), child(1));
+    MincValue elem = readValueAtIndex(target, idx);
 #ifdef DEBUG
     TPRINT("readAtSubscript: setting Node %p value to: ", this);
     elem.print();
@@ -871,18 +874,18 @@ void    NodeSubscriptRead::readAtSubscript()
     setValue(elem);
 }
 
-void    NodeSubscriptRead::searchWithMapKey()
+void    NodeSubscriptRead::searchWithMapKey(Node *target, Node *key)
 {
     ENTER();
-    MincMap *theMap = (MincMap *) child(0)->symbol()->value();
+    MincMap *theMap = (MincMap *) target->symbol()->value();
     if (theMap == NULL) {
         minc_die("attempt to search a NULL map");
         return;
     }
-    const MincValue &valueIndex = child(1)->value();
+    const MincValue &valueIndex = key->value();
     std::map<MincValue, MincValue>::iterator it = theMap->map.find(valueIndex);
     if (it == theMap->map.end()) {
-        minc_die("no item in map '%s' with that key", child(0)->symbol()->name());
+        minc_die("no item in map '%s' with that key", target->symbol()->name());
         return;
     }
     const MincValue &val = it->second;
@@ -894,16 +897,15 @@ Node *	NodeSubscriptRead::doExct()	// was exct_subscript_read()
 	ENTER();
     TPRINT("NodeSubscriptRead: Object:\n");
 	child(0)->exct();         /* lookup target */
-    child(0)->print();      // DEBUG
     TPRINT("NodeSubscriptRead: Index:\n");
 	child(1)->exct();         /* index */
     MincDataType child0Type = child(0)->dataType(); // This is the type of the object having operator [] applied.
     switch (child0Type) {
         case MincListType:
-            readAtSubscript();
+            readAtSubscript(child(0), child(1));
             break;
         case MincMapType:
-            searchWithMapKey();
+            searchWithMapKey(child(0), child(1));
             break;
         case MincStringType:
         {
@@ -966,15 +968,16 @@ Node *	NodeSubscriptWrite::doExct()	// was exct_subscript_write()
 	child(1)->exct();         /* index */
     TPRINT("NodeSubscriptWrite: Exp to store exct:\n");
 	child(2)->exct();         /* expression to store */
-    switch (child(0)->symbol()->dataType()) {
+    Node *object = child(0);
+    switch (object->dataType()) {
         case MincListType:
-            writeToSubscript(child(0), child(1), child(2)->value());
+            writeToSubscript(object, child(1), child(2)->value());
             break;
         case MincMapType:
-            writeWithMapKey(child(0), child(1), child(2)->value());
+            writeWithMapKey(object, child(1), child(2)->value());
             break;
         default:
-            minc_die("attempt to index or store into something that's not a list or map");
+            minc_die("attempt to index or store into L-variable '%s' which is not a list or map", object->name());
             break;
     }
 	copyValue(child(2));

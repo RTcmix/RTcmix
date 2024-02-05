@@ -20,7 +20,7 @@ double set_filter(double p[], int);
 double init_filter(double p[], int);
 }
 
-static const int maxFilters = 8;
+static const int maxFilters = 32;
 
 FilterCreateFunction	g_filterCtors[maxFilters];	// available filter creators
 PVFilter *				g_filters[maxFilters];		// available filters
@@ -95,8 +95,13 @@ double set_filter(double p[], int n_args)
 			FUN registerLib = NULL;
 			if (dso.loadFunction(&registerLib, "registerLib") == 0) {
 				g_currentFilterSlot = (*registerLib)(RegisterFilter);
-				rtcmix_advise("set_filter", "Filter dso loaded and placed in slot %d",
-						g_currentFilterSlot);
+                if (g_currentFilterSlot >= 0) {
+                    rtcmix_advise("set_filter", "Filter dso loaded and placed in slot %d",
+                                  g_currentFilterSlot);
+                }
+                else {
+                    return PARAM_ERROR;
+                }
 			}
 			else {
 				rterror("set_filter", "dso function load returned \"%s\"\n",

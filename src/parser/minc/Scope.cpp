@@ -127,6 +127,7 @@ void clear_scope_stack(ScopeStack *stack)
     while (stack && !stack->empty()) {
         Scope *top = stack->back();
         stack->pop_back();
+        DPRINT("\tclear_scope_stack unref'ing Scope %p (depth %d)\n", top, top->depth());
         top->unref();
     }
 }
@@ -181,7 +182,7 @@ void push_scope()
     assert(!stack->empty());
     int newscope = current_scope() + 1;
     Scope *scope = new Scope(newscope);
-    DPRINT("push_scope() => %d (stack %p) added scope %p\n", newscope, stack, scope);
+    DPRINT("push_scope() ScopeStack %p adding scope %p for depth %d\n", stack, scope, scope->depth());
     scope->ref();
     stack->push_back(scope);
 }
@@ -314,12 +315,13 @@ void push_function_stack()
         sCallStack = new CallStack;
     }
     ScopeStack *stack = ScopeManager::stack();
-    DPRINT("\tpushing ScopeStack %p\n", stack);
+    DPRINT("\tpushing current ScopeStack %p onto CallStack %p\n", stack, sCallStack);
     sCallStack->push_back(stack);
     ScopeStack *newStack = new ScopeStack;
     Scope *globalScope = stack->front();
     globalScope->ref();
     newStack->push_back(globalScope);
+    DPRINT("\tsetting current ScopeStack to %p\n", newStack);
     ScopeManager::setStack(newStack);
     dump_symbols();
 }
@@ -337,16 +339,19 @@ void pop_function_stack()
 
 void clear_call_stack(CallStack *stack)
 {
+    DPRINT("clear_call_stack(%p)\n", stack);
     while (!stack->empty()) {
         ScopeStack *top = stack->back();
         stack->pop_back();
         clear_scope_stack(top);
+        DPRINT("\tScopeStack %p being deleted", top);
         delete top;
     }
 }
 
 void free_scopes()
 {
+    DPRINT("free_scopes() deleting CallStack %p\n", sCallStack);
     // We should not be stuck in a function call.
     assert(sCallStack == NULL || sCallStack->size() == 0);
     delete sCallStack;

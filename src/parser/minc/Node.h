@@ -508,8 +508,8 @@ public:
 	}
 protected:
 	virtual Node*		doExct();
-    void                readAtSubscript();
-    void                searchWithMapKey();
+    void                readAtSubscript(Node *target, Node *idx);
+    void                searchWithMapKey(Node *target, Node *key);
 };
 
 class NodeSubscriptWrite : public Node3Children, private Subscript
