@@ -10,7 +10,6 @@
 #include "MincValue.h"
 #include <handle.h>
 #include <rtcmix_types.h>
-#include <prototypes.h>
 #include <PField.h>
 
 static Arg * minc_list_to_arglist(const char *funcname, const MincValue *inList, const int inListLen, Arg *inArgs, int *pNumArgs)
@@ -189,11 +188,6 @@ call_external_function(const char *funcname, const MincValue arglist[],
 	delete [] rtcmixargs;
 
 	return result;
-}
-
-void printargs(const char *funcname, const Arg arglist[], const int nargs)
-{
-	RTcmix::printargs(funcname, arglist, nargs);
 }
 
 static Handle _createPFieldHandle(PField *pfield)

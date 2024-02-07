@@ -187,8 +187,6 @@ union YYSTYPE {
 
 enum ScopeLookupType { AnyLevel = 0, GlobalLevel = 1, ThisLevel = 2 };
 
-void printargs(const char *funcname, const Arg arglist[], const int nargs);
-
 char *strsave(const char *str);
 
 /* utils.cpp */

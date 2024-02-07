@@ -1138,6 +1138,13 @@ bool NodeFunctionCall::callConstructor(const char *functionName)
     const StructType *structType = lookupStructType(functionName, GlobalLevel);    // GlobalLevel for now
     if (structType) {
         TPRINT("NodeFunctionCall::callConstructor -- creating a value with type struct %s\n", functionName);
+        // This replicates the argument-printing mechanism used by compiled-in functions.
+        if (RTOption::print() >= MMP_PRINTS) {
+            RTPrintf("============================\n");
+            RTPrintfCat("%s: ", functionName);
+            MincValue retval;
+            call_builtin_function("print", sMincList, sMincListLen, &retval);
+        }
         Symbol *sym = NULL;
         MincList *initList = NULL;
         try {
