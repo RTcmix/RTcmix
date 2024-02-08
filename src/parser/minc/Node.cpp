@@ -1232,7 +1232,7 @@ Node *	NodeFunctionCall::doExct() {
                     }
                 }
                 else {
-                    minc_die("variable %s is NULL", functionSymbol->name());
+                    minc_die("function variable %s is NULL", functionName);
                 }
             }
                 break;

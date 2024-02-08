@@ -274,7 +274,8 @@ func:   '(' fexpl ')' {    MPRINT("func: (fexpl)"); $$ = $2; }
     ;
 
 /* A function call is an id followed by (args) or () */
-fcall:   id func {    MPRINT("fcall: id func"); $$ = new NodeFunctionCall(new NodeLoadSym($1), $2); }
+fcall:  id func       {    MPRINT("fcall: id func"); $$ = new NodeFunctionCall(new NodeLoadSym($1), $2); }
+    |   fcall func    {    MPRINT("fcall: fcall func"); $$ = new NodeFunctionCall($1, $2); }    /* calling a function on the returned value of a function */
     |   obj subscript func { MPRINT("fcall: obj subscript func"); $$ = new NodeFunctionCall(new NodeSubscriptRead($1, $2), $3); }
     ;
 
@@ -427,9 +428,7 @@ structinit: TOK_STRUCT_DECL id idl '=' expblk {   MPRINT("structinit: struct <ty
 
 /* Rules for declaring and defining functions and methods */
 
-/* function name, e.g. "list myfunction".  Used as first part of definition.
-    TODO: This is where I would add the ability for a function to return an mfunction.
- */
+/* function name, e.g. "list myfunction".  Used as first part of definition. */
 
 funcname: TOK_FLOAT_DECL id { MPRINT("funcname"); incrFunctionLevel();
                                     $$ = new NodeFuncDecl(strsave($2), MincFloatType); }
@@ -439,6 +438,8 @@ funcname: TOK_FLOAT_DECL id { MPRINT("funcname"); incrFunctionLevel();
                                     $$ = new NodeFuncDecl(strsave($2), MincHandleType); }
     | TOK_LIST_DECL id { MPRINT("funcname: returns list");  incrFunctionLevel();
                                     $$ = new NodeFuncDecl(strsave($2), MincListType); }
+    | TOK_MFUNC_DECL id { MPRINT("funcname: returns mfunction"); incrFunctionLevel();
+                                    $$ = new NodeFuncDecl(strsave($2), MincFunctionType); }
     | TOK_MAP_DECL id { MPRINT("funcname: returns map");  incrFunctionLevel();
                                     $$ = new NodeFuncDecl(strsave($2), MincMapType); }
     | TOK_STRUCT_DECL id id { MPRINT("funcname: returns struct");  incrFunctionLevel();
