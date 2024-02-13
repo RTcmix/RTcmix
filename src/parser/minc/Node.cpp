@@ -1278,7 +1278,6 @@ bool NodeMethodCall::callObjectMethod(Symbol *thisSymbol, const char *methodName
         this->setValue(retval);
         return true;        // success
     }
-    minc_die("Method '%s' is not defined for type '%s'", methodName, MincTypeName(thisValue.dataType()));
     return false;
 }
 
@@ -1346,7 +1345,9 @@ Node *	NodeMethodCall::doExct()
         // Method is being called on a non-struct object
         Symbol *objSymbol = object->symbol();
         if (objSymbol != NULL) {
-            callObjectMethod(objSymbol, _methodName);   // Note: This stores the return value internally
+            if (callObjectMethod(objSymbol, _methodName) == false) {   // Note: This stores the return value internally
+                minc_die("Method '%s' is not defined for type '%s'", _methodName, MincTypeName(object->dataType()));
+            }
         }
         else {
             minc_die("Calling methods on temporary LHS objects is not supported");

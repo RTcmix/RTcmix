@@ -837,12 +837,11 @@ int call_object_method(MincValue &object, const char *methodName, const MincValu
     }
     // Check for list-specific methods
     else if (object.dataType() == MincListType) {
-        if (call_list_method(object, methodName, arglist, nargs, retval) == 1) {
-            return true;
-        }
+        return call_list_method(object, methodName, arglist, nargs, retval) == 1;
     }
-    else
+    else {
         return false;
+    }
     return true;
 }
 
