@@ -523,18 +523,21 @@ void RTcmixMIDIOutput::sendProgramChange(long timestamp, uchar chan, uchar progr
 
 void RTcmixMIDIOutput::sendMIDIStart(long timestamp)
 {
-    PmEvent buffer;
-    buffer.message = Pm_Message(0xFA, 0, 0);
-    buffer.timestamp = timestamp;
+    PmEvent startEvent, SPPEvent;
+    startEvent.message = Pm_Message(0xFA, 0, 0);
+    startEvent.timestamp = timestamp;
+    SPPEvent.message = Pm_Message(0xF2, 0, 0);
+    SPPEvent.timestamp = timestamp;
     PmEvent buffers[16];
     for (int chan = 0; chan < 16; ++chan) {
         buffers[chan].message = Pm_Message(make_status(kControl, chan), 121, 0);   // ResetAllControllers
         buffers[chan].timestamp = timestamp;
     }
-    PRINT("RTcmixMIDIOutput::sendMIDIStart: sending MIDI Start and ResetAllControllers events with ts = %ld\n", timestamp);
+    PRINT("RTcmixMIDIOutput::sendMIDIStart: sending MIDI ResetAllControllers, Start and SPP events with ts = %ld\n", timestamp);
     lock();
     Pm_Write(outstream(), buffers, 16);
-    Pm_Write(outstream(), &buffer, 1);
+    Pm_Write(outstream(), &SPPEvent, 1);
+    Pm_Write(outstream(), &startEvent, 1);
     unlock();
     PRINT("RTcmixMIDIOutput::sendMIDIStart: Done\n");
 }
