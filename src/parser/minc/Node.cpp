@@ -155,7 +155,7 @@ static const char *s_NodeKinds[] = {
    "NodeEmptyListElem",
    "NodeSubscriptRead",
    "NodeSubscriptWrite",
-   "NodeSubscriptIncrement",
+   "NodeSubscriptOpAssign",
    "NodeMemberAccess",
    "NodeOpAssign",
    "NodeLoadSym",
@@ -390,8 +390,6 @@ Node *	NodeOp::do_op_string(const char *str1, const char *str2, OpKind op)
       case OpPlus:   /* concatenate */
          len = (strlen(str1) + strlen(str2)) + 1;
          s = (char *) emalloc(sizeof(char) * len);
-         if (s == NULL)
-            return NULL;	// TODO: check this
          strcpy(s, str1);
          strcat(s, str2);
          this->v = s;
@@ -999,19 +997,19 @@ Node *	NodeSubscriptWrite::doExct()	// was exct_subscript_write()
 	return this;
 }
 
-Node * NodeSubscriptIncrement::doExct()
+Node * NodeSubscriptOpAssign::doExct()
 {
     ENTER();
-    TPRINT("NodeSubscriptIncrement: Object:\n");
+    TPRINT("NodeSubscriptOpAssign: Object:\n");
     child(0)->exct();         /* lookup target */
-    TPRINT("NodeSubscriptIncrement: Index:\n");
+    TPRINT("NodeSubscriptOpAssign: Index:\n");
     child(1)->exct();         /* index */
-    TPRINT("NodeSubscriptWrite: Exp to apply to element:\n");
+    TPRINT("NodeSubscriptOpAssign: Exp to apply to element:\n");
     child(2)->exct();         /* expression to apply */
     MincDataType child0Type = child(0)->dataType(); // This is the type of the object having operator [] applied.
     switch (child0Type) {
         case MincListType:
-            incrementSubscript(child(0), child(1), child(2));
+            operateOnSubscript(child(0), child(1), child(2), op);
             break;
         default:
             minc_die("attempt to index an L-variable that's not a list");
@@ -1020,19 +1018,38 @@ Node * NodeSubscriptIncrement::doExct()
     return this;
 }
 
-void NodeSubscriptIncrement::incrementSubscript(Node *listNode, Node *indexNode, Node *valueNode)
+void NodeSubscriptOpAssign::operateOnSubscript(Node *listNode, Node *indexNode, Node *valueNode, OpKind op)
 {
     ENTER();
     MincValue arrayValue = readValueAtIndex(listNode, indexNode);
     if (arrayValue.dataType() == MincFloatType && valueNode->dataType() == MincFloatType) {
-        arrayValue = (MincFloat) arrayValue + (MincFloat) valueNode->value();
+        switch (op) {
+            case OpPlus:
+                arrayValue = (MincFloat) arrayValue + (MincFloat) valueNode->value();
+                break;
+            case OpMinus:
+                arrayValue = (MincFloat) arrayValue - (MincFloat) valueNode->value();
+                break;
+            case OpMul:
+                arrayValue = (MincFloat) arrayValue * (MincFloat) valueNode->value();
+                break;
+            case OpDiv:
+            {
+                MincFloat divisor =  (MincFloat) valueNode->value();
+                arrayValue = (MincFloat) arrayValue / divisor;      // TODO: Check for div-by-zero?
+            }
+                break;
+            default:
+                minc_internal_error("operator %s not yet supported", printOpKind(op));
+                break;
+        }
         TPRINT("incrementSubscript: Setting value of Node %p to: ", this);
         arrayValue.print();
         setValue(arrayValue);
         writeValueToIndex(listNode, indexNode, arrayValue);
     }
     else {
-        minc_warn("Increment/decrement not supported for this data type");
+        minc_warn("Increment/decrement not supported for these data types");
     }
 }
 

@@ -24,8 +24,8 @@ const char *lookup_token(const char *token, bool printWarning);
 #ifdef __cplusplus
 }
 #endif
-#undef MDEBUG	/* turns on yacc debugging below */
-#undef DEBUG_ID    /* turns on printing of each ID found (assumes MDEBUG) */
+#define MDEBUG	/* turns on yacc debugging below */
+#define DEBUG_ID    /* turns on printing of each ID found (assumes MDEBUG) */
 
 #ifdef MDEBUG
 // yydebug=1;
@@ -291,14 +291,29 @@ rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAuto
 	| id TOK_MULEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpMul); }
 	| id TOK_DIVEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpDiv); }
 
+    /* Special-case rules for operating on an array access.  This is needed because the returned
+       value from array[exp] has no symbol associated with it.
+    */
+	| obj subscript TOK_PLUSEQU exp { MPRINT("rstmt: obj subscript TOK_PLUSEQU exp");
+     	$$ = new NodeSubscriptOpAssign($1, $2, $4, OpPlus);
+	}
+	| obj subscript TOK_MINUSEQU exp { MPRINT("rstmt: obj subscript TOK_MINUSEQU exp");
+     	$$ = new NodeSubscriptOpAssign($1, $2, $4, OpMinus);
+	}
+	| obj subscript TOK_MULEQU exp { MPRINT("rstmt: obj subscript TOK_MULEQU exp");
+     	$$ = new NodeSubscriptOpAssign($1, $2, $4, OpMul);
+	}
+	| obj subscript TOK_DIVEQU exp { MPRINT("rstmt: obj subscript TOK_DIVEQU exp");
+     	$$ = new NodeSubscriptOpAssign($1, $2, $4, OpDiv);
+	}
     /* Special-case rules for incrementing/decrementing an array access.  This is needed because the returned
-       value from [exp] has no symbol associated with it.
+       value from array[exp] has no symbol associated with it.
     */
  	| TOK_PLUSPLUS obj subscript  { MPRINT("rstmt: TOK_PLUSPLUS obj subscript");
- 	    $$ = new NodeSubscriptIncrement($2, $3, new NodeConstf(1.0));
+ 	    $$ = new NodeSubscriptOpAssign($2, $3, new NodeConstf(1.0), OpPlus);
  	}
  	| TOK_MINUSMINUS obj subscript  { MPRINT("rstmt: TOK_MINUSMINUS obj subscript");
- 	    $$ = new NodeSubscriptIncrement($2, $3, new NodeConstf(-1.0));
+ 	    $$ = new NodeSubscriptOpAssign($2, $3, new NodeConstf(1.0), OpMinus);
  	}
 
     /* Generic rule for all other objs */

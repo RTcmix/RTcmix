@@ -34,7 +34,7 @@ typedef enum {
 	eNodeEmptyListElem,
 	eNodeSubscriptRead,
 	eNodeSubscriptWrite,
-    eNodeSubscriptIncrement,
+    eNodeSubscriptOpAssign,
     eNodeMember,
 	eNodeOpAssign,
 	eNodeLoadSym,
@@ -524,15 +524,15 @@ protected:
     void                writeWithMapKey(Node *mapNode, Node *indexNode, const MincValue &value);
 };
 
-class NodeSubscriptIncrement : public Node3Children, private Subscript
+class NodeSubscriptOpAssign : public Node3Children, private Subscript
 {
 public:
-    NodeSubscriptIncrement(Node *n1, Node *n2, Node *n3) : Node3Children(OpFree, eNodeSubscriptIncrement, n1, n2, n3) {
-        NPRINT("NodeSubscriptIncrement(%p, %p, %p) => %p\n", n1, n2, n3, this);
+    NodeSubscriptOpAssign(Node *n1, Node *n2, Node *n3, OpKind op) : Node3Children(op, eNodeSubscriptOpAssign, n1, n2, n3) {
+        NPRINT("NodeSubscriptOpAssign(%p, %p, %p, op=%d) => %p\n", n1, n2, n3, op, this);
     }
 protected:
     virtual Node*		doExct();
-    void                incrementSubscript(Node *listNode, Node *indexNode, Node *valueNode);
+    void                operateOnSubscript(Node *listNode, Node *indexNode, Node *valueNode, OpKind op);
 };
 
 // NodeMemberAccess returns symbol for member var or method function from RHS of dot operator
