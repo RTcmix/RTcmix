@@ -1022,35 +1022,8 @@ void NodeSubscriptOpAssign::operateOnSubscript(Node *listNode, Node *indexNode, 
 {
     ENTER();
     MincValue arrayValue = readValueAtIndex(listNode, indexNode);
-    if (arrayValue.dataType() == MincFloatType && valueNode->dataType() == MincFloatType) {
-        switch (op) {
-            case OpPlus:
-                arrayValue = (MincFloat) arrayValue + (MincFloat) valueNode->value();
-                break;
-            case OpMinus:
-                arrayValue = (MincFloat) arrayValue - (MincFloat) valueNode->value();
-                break;
-            case OpMul:
-                arrayValue = (MincFloat) arrayValue * (MincFloat) valueNode->value();
-                break;
-            case OpDiv:
-            {
-                MincFloat divisor =  (MincFloat) valueNode->value();
-                arrayValue = (MincFloat) arrayValue / divisor;      // TODO: Check for div-by-zero?
-            }
-                break;
-            default:
-                minc_internal_error("operator %s not yet supported", printOpKind(op));
-                break;
-        }
-        TPRINT("incrementSubscript: Setting value of Node %p to: ", this);
-        arrayValue.print();
-        setValue(arrayValue);
-        writeValueToIndex(listNode, indexNode, arrayValue);
-    }
-    else {
-        minc_warn("Increment/decrement not supported for these data types");
-    }
+    doOperation(this, arrayValue, valueNode->value(), op);
+    writeValueToIndex(listNode, indexNode, this->value());
 }
 
 Node *  NodeMemberAccess::doExct()

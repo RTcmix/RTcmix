@@ -286,7 +286,9 @@ mcall: obj '.' id func {  MPRINT("mcall: obj.id func"); $$ = new NodeMethodCall(
 
 /* An rstmt is statement returning a value, such as assignments, function calls, etc. */
 rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAutoDeclLoadSym($1), $3); }
-	| id TOK_PLUSEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpPlus); }
+	| id TOK_PLUSEQU exp {	MPRINT("rstmt: id TOK_PLUSEQU exp");
+	                        $$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpPlus);
+	}
 	| id TOK_MINUSEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpMinus); }
 	| id TOK_MULEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpMul); }
 	| id TOK_DIVEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpDiv); }

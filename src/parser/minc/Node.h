@@ -531,7 +531,7 @@ protected:
     void                writeWithMapKey(Node *mapNode, Node *indexNode, const MincValue &value);
 };
 
-class NodeSubscriptOpAssign : public Node3Children, private Subscript
+class NodeSubscriptOpAssign : public Node3Children, private Subscript, private OperationBase
 {
 public:
     NodeSubscriptOpAssign(Node *n1, Node *n2, Node *n3, OpKind op) : Node3Children(op, eNodeSubscriptOpAssign, n1, n2, n3) {
