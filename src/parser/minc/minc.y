@@ -286,12 +286,12 @@ mcall: obj '.' id func {  MPRINT("mcall: obj.id func"); $$ = new NodeMethodCall(
 
 /* An rstmt is statement returning a value, such as assignments, function calls, etc. */
 rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAutoDeclLoadSym($1), $3); }
-	| id TOK_PLUSEQU exp {	MPRINT("rstmt: id TOK_PLUSEQU exp");
-	                        $$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpPlus);
+	| obj TOK_PLUSEQU exp {	MPRINT("rstmt: obj TOK_PLUSEQU exp");
+	                        $$ = new NodeOpAssign($1, $3, OpPlus);
 	}
-	| id TOK_MINUSEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpMinus); }
-	| id TOK_MULEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpMul); }
-	| id TOK_DIVEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpDiv); }
+	| obj TOK_MINUSEQU exp {	$$ = new NodeOpAssign($1, $3, OpMinus); }
+	| obj TOK_MULEQU exp {		$$ = new NodeOpAssign($1, $3, OpMul); }
+	| obj TOK_DIVEQU exp {		$$ = new NodeOpAssign($1, $3, OpDiv); }
 
     /* Special-case rules for operating on an array access.  This is needed because the returned
        value from array[exp] has no symbol associated with it.
