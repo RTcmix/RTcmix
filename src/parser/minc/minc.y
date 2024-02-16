@@ -24,8 +24,8 @@ const char *lookup_token(const char *token, bool printWarning);
 #ifdef __cplusplus
 }
 #endif
-#define MDEBUG	/* turns on yacc debugging below */
-#define DEBUG_ID    /* turns on printing of each ID found (assumes MDEBUG) */
+#undef MDEBUG	/* turns on yacc debugging below */
+#undef DEBUG_ID    /* turns on printing of each ID found (assumes MDEBUG) */
 
 #ifdef MDEBUG
 // yydebug=1;

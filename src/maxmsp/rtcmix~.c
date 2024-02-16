@@ -89,7 +89,7 @@
 #define MAXMSP 1
 
 #define VERSION "2.03" // fix for max_input_fds included, Bg Sur + later
-#define RTcmixVERSION "RTcmix-maxmsp-5.4.0"
+#define RTcmixVERSION "RTcmix-maxmsp-5.4.1"
 
 #if MAX_SDK_VERSION==6
 #include <ext.h>

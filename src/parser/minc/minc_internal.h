@@ -39,8 +39,7 @@ enum MincWarningLevel {
 };
 
 typedef enum {
-	OpZero = 0,
-	OpFree,
+	OpFree = 1,
 	OpPlus,
 	OpMinus,
 	OpMul,

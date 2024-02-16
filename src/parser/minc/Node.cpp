@@ -147,7 +147,7 @@ void clear_tree_state()
 }
 
 static const char *s_NodeKinds[] = {
-   "NodeZero",
+   "ILLEGAL",
    "NodeSeq",
    "NodeStore",
    "NodeList",
@@ -400,11 +400,11 @@ Node *	OperationBase::do_op_string(Node *node, const char *str1, const char *str
       case OpDiv:
       case OpMod:
       case OpPow:
-        minc_warn("invalid operator for two strings");
+        minc_warn("invalid '%s' operator for two strings", printOpKind(op));
         node->v = (char *)NULL;
         break;
       case OpNeg:
-		minc_warn("invalid operator on string");
+		minc_warn("invalid negation of string");
         break;
       default:
          minc_internal_error("invalid string operator");
@@ -472,7 +472,7 @@ Node *	OperationBase::do_op_handle_num(Node *node, const MincHandle val1, const 
           node->v = minc_binop_handle_float(val1, -1.0, OpMul);	// <val2> ignored
          break;
       default:
-         minc_internal_error("invalid operator for handle and number");
+         minc_internal_error("invalid '%s' operator for handle and number", printOpKind(op));
          break;
    }
 	return node;
@@ -496,7 +496,7 @@ Node *	OperationBase::do_op_num_handle(Node *node, const MincFloat val1, const M
       case OpNeg:
          /* fall through */
       default:
-         minc_internal_error("invalid operator for handle and number");
+         minc_internal_error("invalid '%s' operator for number and handle", printOpKind(op));
          break;
    }
 	return node;
@@ -519,7 +519,7 @@ Node *	OperationBase::do_op_handle_handle(Node *node, const MincHandle val1, con
 		break;
 	case OpNeg:
 	default:
-		minc_internal_error("invalid binary handle operator");
+		minc_internal_error("invalid binary handle operator '%s'", printOpKind(op));
 		break;
 	}
 	return node;
@@ -634,7 +634,7 @@ Node *	OperationBase::do_op_list_list(Node *node, const MincList *list1, const M
 			}
 			break;
 		default:
-			minc_warn("invalid operator for two lists");
+			minc_warn("invalid '%s' operator for two lists", printOpKind(op));
 			destList = new MincList(0);		// return zero-length list
 			break;
 	}
@@ -832,6 +832,25 @@ MincValue Subscript::readValueAtIndex(Node *listNode, Node *indexNode) {
     return returnedValue;
 }
 
+MincValue Subscript::searchWithMapKey(Node *mapNode, Node *key)
+{
+    ENTER();
+    MincMap *theMap = (MincMap *) mapNode->symbol()->value();
+    if (theMap == NULL) {
+        minc_die("attempt to search a NULL map");
+        return MincValue();     // void
+    }
+    const MincValue &valueIndex = key->value();
+    std::map<MincValue, MincValue>::iterator it = theMap->map.find(valueIndex);
+    if (it == theMap->map.end()) {
+        minc_die("no item in map '%s' with that key", mapNode->symbol()->name());
+        return MincValue();     // void
+    }
+    const MincValue &val = it->second;
+    return val;
+}
+
+
 void Subscript::writeValueToIndex(Node *listNode, Node *indexNode, const MincValue &value)
 {
     TPRINT("writeValueToIndex: Index via node %p\n", indexNode);
@@ -875,34 +894,17 @@ void Subscript::writeValueToIndex(Node *listNode, Node *indexNode, const MincVal
     theList->data[index] = value;
 }
 
-
-void    NodeSubscriptRead::readAtSubscript(Node *target, Node *idx)
+void    Subscript::writeWithMapKey(Node *mapNode, Node *indexNode, const MincValue &value)
 {
     ENTER();
-    MincValue elem = readValueAtIndex(target, idx);
-#ifdef DEBUG
-    TPRINT("readAtSubscript: setting Node %p value to: ", this);
-    elem.print();
-#endif
-    setValue(elem);
-}
-
-void    NodeSubscriptRead::searchWithMapKey(Node *target, Node *key)
-{
-    ENTER();
-    MincMap *theMap = (MincMap *) target->symbol()->value();
+    // This is the 'store' operation for NodeSubscriptWrite, etc. - access the symbol's MincMap and update it.
+    TPRINT("writeWithMapKey: Storing value into symbol's map\n");
+    MincMap *theMap = (MincMap *) mapNode->symbol()->value();
+    const MincValue &valueIndex = indexNode->value();
     if (theMap == NULL) {
-        minc_die("attempt to search a NULL map");
-        return;
+        mapNode->symbol()->setValue(MincValue(theMap = new MincMap()));
     }
-    const MincValue &valueIndex = key->value();
-    std::map<MincValue, MincValue>::iterator it = theMap->map.find(valueIndex);
-    if (it == theMap->map.end()) {
-        minc_die("no item in map '%s' with that key", target->symbol()->name());
-        return;
-    }
-    const MincValue &val = it->second;
-    this->setValue(val);
+    theMap->map[valueIndex] = value;
 }
 
 Node *	NodeSubscriptRead::doExct()	// was exct_subscript_read()
@@ -915,10 +917,10 @@ Node *	NodeSubscriptRead::doExct()	// was exct_subscript_read()
     MincDataType child0Type = child(0)->dataType(); // This is the type of the object having operator [] applied.
     switch (child0Type) {
         case MincListType:
-            readAtSubscript(child(0), child(1));
+            setValue(readValueAtIndex(child(0), child(1)));
             break;
         case MincMapType:
-            searchWithMapKey(child(0), child(1));
+            setValue(searchWithMapKey(child(0), child(1)));
             break;
         case MincStringType:
         {
@@ -953,25 +955,6 @@ Node *	NodeSubscriptRead::doExct()	// was exct_subscript_read()
 	return this;
 }
 
-void    NodeSubscriptWrite::writeToSubscript(Node *listNode, Node *indexNode, const MincValue &value)
-{
-    ENTER();
-    writeValueToIndex(listNode, indexNode, value);
-}
-
-void    NodeSubscriptWrite::writeWithMapKey(Node *mapNode, Node *indexNode, const MincValue &value)
-{
-    ENTER();
-    // This is the 'store' operation for NodeSubscriptWrite - access the symbol's MincMap and update it.
-    TPRINT("writeWithMapKey: Storing value into symbol's map\n");
-    MincMap *theMap = (MincMap *) mapNode->symbol()->value();
-    const MincValue &valueIndex = indexNode->value();
-    if (theMap == NULL) {
-        mapNode->symbol()->setValue(MincValue(theMap = new MincMap()));
-    }
-    theMap->map[valueIndex] = value;
-}
-
 Node *	NodeSubscriptWrite::doExct()	// was exct_subscript_write()
 {
 	ENTER();
@@ -984,7 +967,7 @@ Node *	NodeSubscriptWrite::doExct()	// was exct_subscript_write()
     Node *object = child(0);
     switch (object->dataType()) {
         case MincListType:
-            writeToSubscript(object, child(1), child(2)->value());
+            writeValueToIndex(object, child(1), child(2)->value());
             break;
         case MincMapType:
             writeWithMapKey(object, child(1), child(2)->value());
@@ -1011,8 +994,11 @@ Node * NodeSubscriptOpAssign::doExct()
         case MincListType:
             operateOnSubscript(child(0), child(1), child(2), op);
             break;
+        case MincMapType:
+            operateOnMapLookup(child(0), child(1), child(2), op);
+            break;
         default:
-            minc_die("attempt to index an L-variable that's not a list");
+            minc_die("attempt to operate on an L-variable that's not a list or map");
             break;
     }
     return this;
@@ -1024,6 +1010,14 @@ void NodeSubscriptOpAssign::operateOnSubscript(Node *listNode, Node *indexNode, 
     MincValue arrayValue = readValueAtIndex(listNode, indexNode);
     doOperation(this, arrayValue, valueNode->value(), op);
     writeValueToIndex(listNode, indexNode, this->value());
+}
+
+void NodeSubscriptOpAssign::operateOnMapLookup(Node *mapNode, Node *keyNode, Node *valueNode, OpKind op)
+{
+    ENTER();
+    MincValue mapValue = searchWithMapKey(mapNode, keyNode);    // will throw if not found
+    doOperation(this, mapValue, valueNode->value(), op);
+    writeWithMapKey(mapNode, keyNode, this->value());
 }
 
 Node *  NodeMemberAccess::doExct()
@@ -1222,12 +1216,12 @@ Node *	NodeFunctionCall::doExct() {
                     }
                 }
                 else {
-                    minc_die("function variable %s is NULL", functionName);
+                    minc_die("function variable '%s' is NULL", functionName);
                 }
             }
                 break;
             default:
-                minc_die("%s%s is not a function or instrument", calledFunction->symbol() ? "variable" : "", calledFunction->symbol() ? calledFunction->symbol()->name() : "LHS");
+                minc_die("%s'%s' is not a function or instrument", calledFunction->symbol() ? "variable " : "", calledFunction->symbol() ? calledFunction->symbol()->name() : "LHS");
                 break;
         }
     } catch(UndeclaredVariableException &uve) {
@@ -1386,46 +1380,24 @@ Node *	NodeOpAssign::doExct()		// was exct_opassign()
 	ENTER();
 	Node *tp0 = child(0)->exct();
 	Node *tp1 = child(1)->exct();
-	
-	if (tp0->dataType() != MincFloatType || tp1->dataType() != MincFloatType) {     // DAS was "tp0->symbol()->dataType()
-        if (op == OpPlusPlus) {
-            minc_warn("can only use '++' with number values");
+    OpKind theOp = this->op;
+
+    // ++ and -- are special-case for floats only
+    if (theOp == OpPlusPlus || theOp == OpMinusMinus) {
+        const char *opname = printOpKind(theOp);
+        if (tp0->dataType() != MincFloatType || tp1->dataType() != MincFloatType) {
+            minc_warn("can only use '%s' with number values", opname);
+            copyValue(tp0->symbol());
+            return this;
         }
-        else if (op == OpMinusMinus) {
-            minc_warn("can only use '--' with number values");
-        }
-        else {
-            minc_warn("can only use '%c=' with number values",
-                      op == OpPlus ? '+' : (op == OpMinus ? '-'
-                                            : (op == OpMul ? '*' : '/')));
-        }
-		copyValue(tp0->symbol());
-		return this;
-	}
+        // doOperation does not support ++ and -- directly, so convert.
+        theOp = (theOp == OpPlusPlus) ? OpPlus : OpMinus;
+    }
 	MincValue symValue = tp0->symbol()->value();
-	MincFloat rhs = (MincFloat)tp1->value();
-	switch (this->op) {
-		case OpPlus:
-        case OpPlusPlus:
-			symValue = (MincFloat)symValue + rhs;
-			break;
-		case OpMinus:
-        case OpMinusMinus:
-			symValue = (MincFloat)symValue - rhs;
-			break;
-		case OpMul:
-			symValue = (MincFloat)symValue * rhs;
-			break;
-		case OpDiv:
-			symValue = (MincFloat)symValue / rhs;
-			break;
-		default:
-			minc_internal_error("exct: tried to execute invalid NodeOpAssign");
-			break;
-	}
-    tp0->symbol()->setValue(symValue);
-    // Also set the value on this node
-    setValue(symValue);
+    MincValue rhs = tp1->value();
+    doOperation(this, symValue, rhs, theOp);
+    // N.B. doOperation() set the value on this node.  Now set it back on the symbol.
+    tp0->symbol()->setValue(value());
 	return this;
 }
 
@@ -1483,11 +1455,11 @@ Node *	NodeRelation::doExct()		// was exct_relation()
         setValue(MincValue(boolValue));
     }
     catch (NonmatchingTypeException &e) {
-        minc_warn("operator %s: attempt to compare variables having different types - returning false", printOpKind(this->op));
+        minc_warn("operator '%s': attempt to compare variables having different types - returning false", printOpKind(this->op));
         setValue(MincValue(0.0));
     }
     catch (InvalidTypeException &e) {
-        minc_warn("operator %s: cannot compare variables of this type - returning false", printOpKind(this->op));
+        minc_warn("operator '%s': cannot compare variables of this type - returning false", printOpKind(this->op));
         setValue(MincValue(0.0));
     }
 	return this;
@@ -1510,7 +1482,7 @@ Node *OperationBase::doOperation(Node *node, const MincValue &lhs, const MincVal
                         do_op_string(node, (MincString) buf, (MincString) rhs, op);
                     }
                     else {
-                        minc_warn("operator %s: invalid operation for a string and a float", printOpKind(op));
+                        minc_warn("operator '%s': invalid operation for a float and a string", printOpKind(op));
                     }
                     break;
                 case MincHandleType:
@@ -1531,13 +1503,12 @@ Node *OperationBase::doOperation(Node *node, const MincValue &lhs, const MincVal
                     }
                     break;
                 case MincMapType:
-                    minc_warn("operator %s: a map cannot be used for this operation", printOpKind(op));
-                    break;
                 case MincStructType:
-                    minc_warn("operator %s: a struct cannot be used for this operation", printOpKind(op));
+                case MincFunctionType:
+                    minc_warn("operator '%s': can't operate on a float and a %s", printOpKind(op), MincTypeName(rhs.dataType()));
                     break;
                 default:
-                    minc_internal_error("operator %s: invalid rhs type: %s", printOpKind(op), MincTypeName(rhs.dataType()));
+                    minc_internal_error("operator '%s': invalid rhs type: %s", printOpKind(op), MincTypeName(rhs.dataType()));
                     break;
             }
             break;
@@ -1551,26 +1522,21 @@ Node *OperationBase::doOperation(Node *node, const MincValue &lhs, const MincVal
                         do_op_string(node, (MincString)lhs, buf, op);
                     }
                     else {
-                        minc_warn("operator %s: invalid operation for a string and a float", printOpKind(op));
+                        minc_warn("operator '%s': invalid operation for a string and a float", printOpKind(op));
                     }
                     break;
                 case MincStringType:
                     do_op_string(node, (MincString)lhs, (MincString)rhs, op);
                     break;
                 case MincHandleType:
-                    minc_warn("can't operate on a string and a handle");
-                    break;
                 case MincListType:
-                    minc_warn("can't operate on a string and a list");
-                    break;
                 case MincMapType:
-                    minc_warn("can't operate on a string and a map");
-                    break;
                 case MincStructType:
-                    minc_warn("operator %s: a struct cannot be used for this operation", printOpKind(op));
+                case MincFunctionType:
+                    minc_warn("operator '%s': can't operate on a string and a %s", printOpKind(op), MincTypeName(rhs.dataType()));
                     break;
                 default:
-                    minc_internal_error("operator %s: invalid rhs type: %s", printOpKind(op), MincTypeName(rhs.dataType()));
+                    minc_internal_error("operator '%s': invalid rhs type: %s", printOpKind(op), MincTypeName(rhs.dataType()));
                     break;
             }
             break;
@@ -1580,22 +1546,19 @@ Node *OperationBase::doOperation(Node *node, const MincValue &lhs, const MincVal
                     do_op_handle_num(node, (MincHandle)lhs, (MincFloat)rhs, op);
                     break;
                 case MincStringType:
-                    minc_warn("operator %s: can't operate on a string and a handle", printOpKind(op));
+                    minc_warn("operator '%s': can't operate on a string and a handle", printOpKind(op));
                     break;
                 case MincHandleType:
                     do_op_handle_handle(node, (MincHandle)lhs, (MincHandle)rhs, op);
                     break;
                 case MincListType:
-                    minc_warn("operator %s: can't operate on a list and a handle", printOpKind(op));
-                    break;
                 case MincMapType:
-                    minc_warn("operator %s: a map cannot be used for this operation", printOpKind(op));
-                    break;
                 case MincStructType:
-                    minc_warn("operator %s: a struct cannot be used for this operation", printOpKind(op));
+                case MincFunctionType:
+                    minc_warn("operator '%s': can't operate on a handle and a %s", printOpKind(op), MincTypeName(rhs.dataType()));
                     break;
                 default:
-                    minc_internal_error("operator %s: invalid rhs type: %s", printOpKind(op), MincTypeName(rhs.dataType()));
+                    minc_internal_error("operator '%s': invalid rhs type: %s", printOpKind(op), MincTypeName(rhs.dataType()));
                     break;
             }
             break;
@@ -1605,30 +1568,31 @@ Node *OperationBase::doOperation(Node *node, const MincValue &lhs, const MincVal
                     do_op_list_float(node, (MincList *)lhs, (MincFloat)rhs, op);
                     break;
                 case MincStringType:
-                    minc_warn("operator %s: can't operate on a list and a string", printOpKind(op));
+                    minc_warn("operator '%s': can't operate on a list and a string", printOpKind(op));
                     break;
                 case MincHandleType:
-                    minc_warn("operator %s: can't operate on a list and a handle", printOpKind(op));
+                    minc_warn("operator '%s': can't operate on a list and a handle", printOpKind(op));
                     break;
                 case MincListType:
                     do_op_list_list(node, (MincList *)lhs, (MincList *)rhs, op);
                     break;
                 case MincMapType:
-                    minc_warn("operator %s: a map cannot be used for this operation", printOpKind(op));
-                    break;
                 case MincStructType:
-                    minc_warn("operator %s: a struct cannot be used for this operation", printOpKind(op));
+                case MincFunctionType:
+                    minc_warn("operator '%s': can't operate on a list and a %s", printOpKind(op), MincTypeName(rhs.dataType()));
                     break;
                 default:
-                    minc_internal_error("operator %s: invalid rhs type: %s", printOpKind(op), MincTypeName(rhs.dataType()));
+                    minc_internal_error("operator '%s': invalid rhs type: %s", printOpKind(op), MincTypeName(rhs.dataType()));
                     break;
             }
             break;
         case MincStructType:
-            minc_warn("operator %s: a struct cannot be used for this operation", printOpKind(op));
+        case MincMapType:
+        case MincFunctionType:
+            minc_warn("operator '%s': a %s cannot be used for this operation", printOpKind(op), MincTypeName(lhs.dataType()));
             break;
         default:
-            minc_internal_error("operator %s: invalid lhs type: %s", printOpKind(op), MincTypeName(rhs.dataType()));
+            minc_internal_error("operator '%s': invalid lhs type: %s", printOpKind(op), MincTypeName(lhs.dataType()));
             break;
     }
     return node;

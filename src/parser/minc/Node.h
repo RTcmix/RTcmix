@@ -26,8 +26,7 @@ static char sBuf[256];
 /* intermediate tree representation */
 
 typedef enum {
-	eNodeZero = 0,
-	eNodeSeq,
+	eNodeSeq = 1,
 	eNodeStore,
 	eNodeList,
 	eNodeListElem,
@@ -212,7 +211,7 @@ private:
 };
 
 /* like NodeStore, but modify value before storing into variable */
-class NodeOpAssign : public Node2Children
+class NodeOpAssign : public Node2Children, private OperationBase
 {
 public:
 	NodeOpAssign(Node *n1, Node *n2, OpKind op) : Node2Children(op, eNodeOpAssign, n1, n2) {
@@ -500,11 +499,15 @@ protected:
 	virtual Node*		doExct() { return this; }
 };
 
+// Subscript class owns implementtion for read/write access to lists and maps
+
 class Subscript
 {
 public:
     MincValue readValueAtIndex(Node *listNode, Node *indexNode);
     void writeValueToIndex(Node *listNode, Node *indexNode, const MincValue &value);
+    MincValue searchWithMapKey(Node *mapNode, Node *key);
+    void writeWithMapKey(Node *mapNode, Node *keyNode, const MincValue &value);
 };
 
 class NodeSubscriptRead : public Node2Children, private Subscript
@@ -515,8 +518,6 @@ public:
 	}
 protected:
 	virtual Node*		doExct();
-    void                readAtSubscript(Node *target, Node *idx);
-    void                searchWithMapKey(Node *target, Node *key);
 };
 
 class NodeSubscriptWrite : public Node3Children, private Subscript
@@ -527,8 +528,6 @@ public:
 	}
 protected:
 	virtual Node*		doExct();
-    void                writeToSubscript(Node *listNode, Node *indexNode, const MincValue &value);
-    void                writeWithMapKey(Node *mapNode, Node *indexNode, const MincValue &value);
 };
 
 class NodeSubscriptOpAssign : public Node3Children, private Subscript, private OperationBase
@@ -540,6 +539,7 @@ public:
 protected:
     virtual Node*		doExct();
     void                operateOnSubscript(Node *listNode, Node *indexNode, Node *valueNode, OpKind op);
+    void                operateOnMapLookup(Node *mapNode, Node *keyNode, Node *valueNode, OpKind op);
 };
 
 // NodeMemberAccess returns symbol for member var or method function from RHS of dot operator
