@@ -101,9 +101,9 @@ static int compare_speaker_angles(const void *a, const void *b)
 // Instead, 0 is in front of the listener, where 90 degrees normally is.
 
 double
-NPAN_set_speakers(float p[], int nargs, double pp[])
+NPAN_set_speakers(double p[], int n_args)
 {
-   if (nargs < 5 || !(nargs % 2))
+   if (n_args < 5 || !(n_args % 2))
       return usage();
 
    if (_num_speakers > 0) {
@@ -112,7 +112,7 @@ NPAN_set_speakers(float p[], int nargs, double pp[])
       delete [] _speakers;
    }
 
-   _num_speakers = (nargs - 1) / 2;
+   _num_speakers = (n_args - 1) / 2;
    if (_num_speakers < 2)
       return die("NPANspeakers", "Must have at least 2 speakers.");
    if (_num_speakers > MAX_SPEAKERS)
@@ -121,24 +121,24 @@ NPAN_set_speakers(float p[], int nargs, double pp[])
 
    _speakers = new Speaker * [_num_speakers];
 
-   char *modestr = DOUBLE_TO_STRING(pp[0]);
+   char *modestr = DOUBLE_TO_STRING(p[0]);
    if (strncmp(modestr, "pol", 3) == 0) {          // polar coordinates
       // Convert from user coordinates by adding 90 degrees, then convert
       // to radians.  Finally, normalize radians to [-PI, PI].
       int j = 1;
       for (int i = 0; i < _num_speakers; i++, j += 2) {
-         const double degrees = pp[j] + 90.0;      // user to internal degrees
+         const double degrees = p[j] + 90.0;      // user to internal degrees
          double angle = M_PI * 2 * (degrees / 360.0);    // to radians
          angle = atan2(sin(angle), cos(angle));    // normalize
-         const double distance = pp[j + 1];
+         const double distance = p[j + 1];
          _speakers[i] = new Speaker(i, angle, distance);
       }
    }
    else {                                          // cartesian coordinates
       int j = 1;
       for (int i = 0; i < _num_speakers; i++, j += 2) {
-         const double x = pp[j];
-         const double y = pp[j + 1];
+         const double x = p[j];
+         const double y = p[j + 1];
          const double angle = atan2(y, x);
          const double distance = sqrt((x * x) + (y * y));
          _speakers[i] = new Speaker(i, angle, distance);

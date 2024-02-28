@@ -80,7 +80,7 @@ int OSXDisplay::openSocket()
 			connected = true;
 			break;
 		}
-		else if (result < 0 && result != ECONNREFUSED)
+		else if (result != ECONNREFUSED)
 			return reportError("OSXDisplay::openSocket (connect)", true);
 		usleep(kConnectSleepMsec * 1000L);
 	}

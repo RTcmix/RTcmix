@@ -28,7 +28,7 @@
 #include <rt.h>
 #include <rtdefs.h>
 #include <stdio.h>
-#include <string.h> // for bzero()
+#include <string.h> // for memset()
 
 #ifdef DEBUG_MEMORY
 #define DPRINT(x,y) rtcmix_print(x,y)
@@ -186,9 +186,7 @@ int PFSCHED::makedyntable()
 
 int PFSCHED::configure()
 {
-	// BGGx ww
-	//bzero((void *)outbuf, (RTBUFSAMPS * NCHANS)*sizeof(BUFTYPE));
-	memcpy((void *)outbuf, 0, (RTBUFSAMPS * NCHANS) * sizeof(BUFTYPE));
+	memset((void *)outbuf, 0, (RTBUFSAMPS * NCHANS)*sizeof(BUFTYPE));
    return 0;
 }
 

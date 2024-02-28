@@ -146,6 +146,21 @@ unsigned int mus_char_to_ulint (const unsigned char *inp)
   return(o);
 }
 
+unsigned long long mus_char_to_ublonglong (const unsigned char *inp)
+{
+    unsigned long long o;
+#if (!MUS_LITTLE_ENDIAN)
+  int i;
+#endif
+  unsigned char *outp;
+  outp=(unsigned char *)&o;
+#if MUS_LITTLE_ENDIAN
+  outp[0] = inp[7]; outp[1] = inp[6]; outp[2] = inp[5]; outp[3] = inp[4]; outp[4] = inp[3]; outp[5] = inp[2]; outp[6] = inp[1]; outp[7] = inp[0];
+#else
+  for (i = 0; i < 8; i++) outp[i] = inp[i];
+#endif
+  return(o);
+}
 
 void mus_bfloat_to_char(unsigned char *j, float x)
 {

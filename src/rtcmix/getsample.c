@@ -19,8 +19,8 @@ extern char *sndbuf[NFILES];
 extern int headersize[NFILES];
 
 int (*getsample)();
-static int getfsample();
-static int getisample();
+static int getfsample(double sampleno, float *c, int input);
+static int getisample(double sampleno, float *c, int input);
 
 
 int

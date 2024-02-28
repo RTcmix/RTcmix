@@ -56,6 +56,7 @@ PVTransBend::init(double *pp, int nargs)
 		int pIndex = 0;
 		for (int arg=1; arg<nargs; arg+=2) {
 			if (pp[arg] < prevTime) {
+                delete [] pvals;
 				die("init_filter", "Time values must be in ascending order");
                 return PARAM_ERROR;
 			}

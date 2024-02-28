@@ -28,49 +28,46 @@ static Arg * minc_list_to_arglist(const char *funcname, const MincValue *inList,
 		}
 	}
 	for (int i = 0; n < newNumArgs; ++i, ++n) {
-		switch (inList[i].dataType()) {
-			case MincVoidType:
-				minc_die("call_external_function: %s(): invalid argument type", funcname);
-				delete [] newArgs;
-				return NULL;
-			case MincFloatType:
-				newArgs[n] = (MincFloat) inList[i];
-				break;
-			case MincStringType:
-				newArgs[n] = (MincString)inList[i];
-				break;
-			case MincHandleType:
-				newArgs[n] = (Handle) (MincHandle)inList[i];
-				break;
-			case MincListType:
-				if ((MincList *)inList[i] == NULL) {
-					minc_die("can't pass a null list (arg %d) to RTcmix function %s()", n, funcname);
-					return NULL;
-				}
-				if (((MincList *)inList[i])->len <= 0) {
-					minc_die("can't pass an empty list (arg %d) to RTcmix function %s()", n, funcname);
-					delete [] newArgs;
-					return NULL;
-				}
-				else {
-					minc_die("for now, no nested lists can be passed to RTcmix function %s()", funcname);
-					delete [] newArgs;
-					return NULL;
-				}
-                break;
-            case MincMapType:
-                minc_die("for now, maps cannot be passed to RTcmix function %s()", funcname);
-                delete [] newArgs;
-                return NULL;
-            case MincStructType:
-                minc_die("for now, structs cannot be passed to RTcmix function %s()", funcname);
-                delete [] newArgs;
-                return NULL;
-            case MincFunctionType:
-                minc_die("for now, functions cannot be passed to RTcmix function %s()", funcname);
-                delete [] newArgs;
-                return NULL;
-		}
+        minc_try {
+            switch (inList[i].dataType()) {
+                default:
+                case MincVoidType:
+                    minc_die("call_external_function: %s(): invalid argument type", funcname);
+                    break;
+                case MincFloatType:
+                    newArgs[n] = (MincFloat) inList[i];
+                    break;
+                case MincStringType:
+                    newArgs[n] = (MincString)inList[i];
+                    break;
+                case MincHandleType:
+                    newArgs[n] = (Handle) (MincHandle)inList[i];
+                    break;
+                case MincListType:
+                    if ((MincList *)inList[i] == NULL) {
+                        minc_die("can't pass a null list (arg %d) to RTcmix function %s()", n, funcname);
+                        return NULL;
+                    }
+                    if (((MincList *)inList[i])->len <= 0) {
+                        minc_die("can't pass an empty list (arg %d) to RTcmix function %s()", n, funcname);
+                        return NULL;
+                    }
+                    else {
+                        minc_die("for now, no nested lists can be passed to RTcmix function %s()", funcname);
+                        return NULL;
+                    }
+                    break;
+                case MincMapType:
+                    minc_die("for now, maps cannot be passed to RTcmix function %s()", funcname);
+                    break;
+                case MincStructType:
+                    minc_die("for now, structs cannot be passed to RTcmix function %s()", funcname);
+                    break;
+                case MincFunctionType:
+                    minc_die("for now, functions cannot be passed to RTcmix function %s()", funcname);
+                    break;
+            }
+        } minc_catch(delete [] newArgs; newArgs = NULL;)
 	}
 	*pNumArgs = newNumArgs;
 	return newArgs;
@@ -87,6 +84,7 @@ call_external_function(const char *funcname, const MincValue arglist[],
 	if (rtcmixargs == NULL)
 		return MEMORY_ERROR;
 
+    minc_try {
 	// Convert arglist for passing to RTcmix function.
 	for (int i = 0; i < nargs; i++) {
 		switch (arglist[i].dataType()) {
@@ -125,6 +123,10 @@ call_external_function(const char *funcname, const MincValue arglist[],
 					return PARAM_ERROR;
 				rtcmixargs = newargs;
 				numArgs = argCount;
+                if (numArgs > MAXDISPARGS) {
+                    minc_die("Too many list arguments generated for RTcmix function %s()", funcname);
+                    return PARAM_ERROR;
+                }
 			}
 			// If list contains only floats, convert and pass it along.
 			else {
@@ -163,6 +165,7 @@ call_external_function(const char *funcname, const MincValue arglist[],
 			break;
 		}
 	}
+    } minc_catch(delete [] rtcmixargs;)
 
 	result = RTcmix::dispatch(funcname, rtcmixargs, numArgs, &retval);
    
@@ -178,16 +181,17 @@ call_external_function(const char *funcname, const MincValue arglist[],
 		*return_value = (MincHandle) (Handle) retval;
 		break;
 	case ArrayType:
-#ifdef NOMORE
-// don't think functions will return non-opaque arrays to Minc, but if they do,
-// these should be converted to MincListType
-		return_value->type = MincArrayType;
-		{
-			Array *array = (Array *) retval;
-			return_value->val.array.len = array->len;
-			return_value->val.array.data = array->data;
+       {
+           // Functions can return non-opaque arrays to Minc.
+           // These are converted to MincListType so they can be accessed as 'list' objects
+           Array *array = (Array *) retval;
+           MincList *outlist = new MincList(array->len);
+           MincValue *dest = outlist->data;
+           for (unsigned n=0; n < array->len; ++n) {
+               dest[n] = array->data[n];
+           }
+           *return_value = outlist;
 		}
-#endif
 		break;
 	default:
 		break;
@@ -310,15 +314,16 @@ MincHandle minc_binop_float_handle(const MincFloat val,
         return (MincHandle)0;
     }
 
-    // Create ConstPField for MincFloat.
-	PField *pfield1 = new ConstPField(val);
-
 	// Extract PField from MincHandle.
 	Handle handle = (Handle) mhandle;
     if (handle->type != PFieldType) {
         minc_die("Illegal handle type for this operation");
         return (MincHandle)0;
     }
+    
+    // Create ConstPField for MincFloat.
+    PField *pfield1 = new ConstPField(val);
+    
 	PField *pfield2 = (PField *) handle->ptr;
 
 	// Create PField using appropriate operator.

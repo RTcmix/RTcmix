@@ -95,16 +95,6 @@ const char *MincTypeName(MincDataType type)
 	return NULL;
 }
 
-static int score_line_offset = 0;
-void increment_score_line_offset(int offset)
-{
-	score_line_offset = offset;
-}
-int get_score_line_offset()
-{
-	return score_line_offset;
-}
-
 /* Has error-checking for malloc built in. */
 char *
 emalloc(long nbytes)

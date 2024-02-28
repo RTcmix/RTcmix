@@ -15,6 +15,8 @@
 #include "utils.h"
 #include "RefCounted.h"
 #include <vector>
+#include <string.h>
+#include <new>          // std::bad_alloc
 
 #ifdef DEBUG
    #define DPRINT(...) rtcmix_print(__VA_ARGS__)
@@ -65,6 +67,9 @@ void minc_warn(const char *msg, ...);
 void minc_die(const char *msg, ...);
 void minc_internal_error(const char *msg, ...);
 extern "C" void yyerror(const char *msg);
+extern "C" const char *yy_get_current_include_filename();
+#define minc_try try
+#define minc_catch(actions) catch(...) { if (true) { actions } throw; }
 
 class RTException
 {
@@ -176,18 +181,44 @@ int is_float_list(const MincList *list);
 MincFloat *float_list_to_array(const MincList *list);
 MincList *array_to_float_list(const MincFloat *array, const int len);
 const char *MincTypeName(MincDataType type);
-void increment_score_line_offset(int offset);
-int get_score_line_offset();
 
 int hash(const char *c);
 int cmp(MincFloat f1, MincFloat f2);
+
+// returns true if both are null or strings are identical
+// Logic: if both are null, true.  If both are not  null, compare.  Else false;
+
+inline bool same(MincString s1, MincString s2)
+{
+    return (s1 == s2) ? true : (s1 != NULL && s2 != NULL) ? strcmp(s1, s2) == 0 : false;
+}
+
+inline bool bigger(MincString s1, MincString s2)
+{
+    return (s1 == s2) ? false :
+                        (s1 != NULL && s2 != NULL) ?
+                            strcmp(s1, s2) > 0 :
+                                (s1 != NULL) ? true : false;
+}
+
+inline bool smaller(MincString s1, MincString s2)
+{
+    return (s1 == s2) ? false :
+                        (s1 != NULL && s2 != NULL) ?
+                            strcmp(s1, s2) < 0 :
+                                (s1 == NULL) ? true : false;
+}
 
 char *emalloc(long nbytes);
 void efree(void *mem);
 
 inline void *	MincObject::operator new(size_t size)
 {
-	return emalloc(size);
+	char *mem = emalloc(size);
+    if (!mem) {
+        throw std::bad_alloc();
+    }
+    return mem;
 }
 
 inline void	MincObject::operator delete(void *ptr)

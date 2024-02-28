@@ -81,7 +81,7 @@ void CONTROLLER::doStart(FRAMETYPE frameOffset)
     long timestamp = (1000.0 * frameOffset) / SR;
     unsigned value = unsigned(0.5 + (_controllerValue * 127));
     PRINT("doStart sending on chan %d: ctrlr %d value %u at offset %ld\n", _midiChannel, _controllerNumber, value, timestamp);
-    _outputPort->sendControl(timestamp, _midiChannel, _controllerNumber, value);
+    _outputPort->sendControl(timestamp, (unsigned char)_midiChannel, (unsigned char)_controllerNumber, value);
 }
 
 // Called at the control rate to update parameters like amplitude, pan, etc.
@@ -110,7 +110,7 @@ void CONTROLLER::doupdate(FRAMETYPE currentFrame)
         long timestamp = 1000.0 * (currentFrame - getRunStartFrame()) / SR;
         PRINT("doUpdate sending MIDI ctrlr %d with MIDI value %u to MIDI chan %d with frame time offset %ld ms\n",
               _controllerNumber, value, _midiChannel, timestamp);
-        _outputPort->sendControl(timestamp, _midiChannel, _controllerNumber, value);
+        _outputPort->sendControl(timestamp, (unsigned char)_midiChannel, (unsigned char)_controllerNumber, value);
         _uControllerValue = value;
     }
 }
@@ -169,10 +169,10 @@ static const ctlr ctlrs[] = {
 };
 
 extern "C"
-double controller_number(float *p, int n_args, double *pp)
+double controller_number(double p[], int n_args)
 /* p1=controller name name */
 {
-    const char *key = DOUBLE_TO_STRING(pp[0]);
+    const char *key = DOUBLE_TO_STRING(p[0]);
     
     if (key == NULL) {
         ::rterror("controller_number", "NULL controller name");

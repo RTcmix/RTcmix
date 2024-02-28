@@ -34,13 +34,15 @@
 
 #include <unistd.h>
 #include <stdio.h>
+#include <assert.h>
+#include <algorithm>
 #include <ugens.h>
 #include <Instrument.h>
 #include <PField.h>
 #include <PFieldSet.h>
 #include <rt.h>
 #include <rtdefs.h>
-#include <Option.h>
+#include <RTOption.h>
 #include <MMPrint.h>
 #include "CHAIN.h"
 
@@ -49,12 +51,14 @@ CHAIN::CHAIN()
 {
 }
 
+void unrefInstrument(Instrument *i)
+{
+    i->unref();
+}
+
 CHAIN::~CHAIN()
 {
-	for (std::vector<Instrument *>::iterator it = mInstVector.begin(); it != mInstVector.end(); ++it) {
-		Instrument *inst = *it;
-		inst->unref();
-	}
+    std::for_each(mInstVector.begin(), mInstVector.end(), unrefInstrument);
 }
 
 int  CHAIN::setup(PFieldSet *inPFields)
@@ -78,7 +82,7 @@ int  CHAIN::setup(PFieldSet *inPFields)
 		// Instruments are referenced once when created.  Because CHAIN is the sole owner,
 		// we do not do another reference.
 	}
-	if (Option::print() >= MMP_PRINTALL) {
+	if (RTOption::print() >= MMP_PRINTALL) {
 
 		RTPrintfCat("Instrument chain: ");
 		for (std::vector<Instrument *>::iterator it = mInstVector.begin(); it != mInstVector.end(); ++it) {
@@ -118,6 +122,7 @@ int CHAIN::configure()
 		}
 		previous = inst;
 	}
+    assert(previous != NULL);   // should not be possible for this to fire
 	// For CHAIN itself, we override our (what should be zero) input channel count here.  This allows setChainedInputBuffer() to succeed
 	// even though the counts don't seem to match.
 	_input.inputchans = previous->outputChannels();
@@ -128,17 +133,25 @@ int CHAIN::configure()
 
 int CHAIN::run()
 {
+//    printf("CHAIN::run(%p)\n", this);
+    bool anInstRan = false;
 	for (std::vector<Instrument *>::iterator it = mInstVector.begin(); it != mInstVector.end(); ++it) {
 		Instrument *inst = *it;
 		if (!inst->isDone()) {
 			inst->setchunk(framesToRun());	// For outer instrument, this is done in inTraverse()
-			inst->run(true);
+ //           printf("   CHAIN: running inst %p\n", inst);
+            inst->run(true);
+            anInstRan = true;
 		}
 		else {
+ //           printf("   CHAIN: inst %p is done\n", inst);
 			inst->clearOutput(framesToRun());			// This should be optimized to happen only once
 		}
 		inst->addout(BUS_NONE_OUT, 0);		// Special bus type makes this a no-op
 	}
+//    if (!anInstRan) {
+//        printf("CHAIN::run(%p) - no internal instruments ran!\n", this);
+//    }
 	// Copy from inputChainedBuf, which points to the outbuf of the last instrument in the chain.
 	unsigned copySize = framesToRun() * outputChannels() * sizeof(BUFTYPE);
 	memcpy(outbuf, inputChainBuf, copySize);

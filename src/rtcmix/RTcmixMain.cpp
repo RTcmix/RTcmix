@@ -14,7 +14,7 @@
 
 #include "RTcmixMain.h"
 #include <AudioDevice.h>
-#include <Option.h>
+#include <RTOption.h>
 #include "version.h"
 #include <ugens.h>
 #include <ug_intro.h>
@@ -54,14 +54,16 @@ usage()
       "           -p NUM   set process priority to NUM (as root only)\n"
 #endif
       "           -D NAME  audio device name\n"
+      "           -S NUM   socket offset (for running in socket mode)\n"
 #ifdef NETAUDIO
       "           -k NUM   socket number (netplay)\n"
       "           -r NUM   remote host ip (or name for netplay)\n"
 #endif
-      "          NOTE: -s, -d, and -e are not yet implemented\n"
-      "           -s NUM   start time (seconds)\n"
+      "           -s NUM   start (offset) time (seconds)\n"
+#ifdef NOT_YET
       "           -d NUM   duration (seconds)\n"
       "           -e NUM   end time (seconds)\n"
+#endif
       "           -f NAME  read score from NAME instead of stdin\n"
       "                      (Minc and Python only)\n"
       "           --debug  enter parser debugger (Perl only)\n"
@@ -169,10 +171,6 @@ RTcmixMain::RTcmixMain() : RTcmix(false)
 RTcmixMain::RTcmixMain(int argc, char **argv, char **env) : RTcmix(false)
 #endif
 {
-#ifndef EMBEDDED
-   set_sig_handlers();
-#endif
-
 // FIXME: should consult a makefile variable to tell us whether we should
 // let dsoPath constructed at run time override SHAREDLIBDIR.
 
@@ -192,7 +190,9 @@ RTcmixMain::RTcmixMain(int argc, char **argv, char **env) : RTcmix(false)
 	init_options(true, NULL);		// 'true' indicates we were called from main
 	for (int i = 1; i <= MAXARGS; i++) xargv[i] = NULL;
 	xargc = 1;
+    setInteractive(true);           // this is always the default for embedded
 #else
+   set_sig_handlers();
    char *dsoPath = makeDSOPath(argv[0]);
    init_options(true, dsoPath);		// 'true' indicates we were called from main
    delete [] dsoPath;
@@ -202,113 +202,263 @@ RTcmixMain::RTcmixMain(int argc, char **argv, char **env) : RTcmix(false)
 
    // Note:  What follows was done in main().  Some of it is identical
    // to RTcmix::init() for imbedded.  Factor this out.
+   /* Banner */
 #ifdef EMBEDDED
 	RTPrintf("--------> %s %s <--------\n",
 			RTCMIX_NAME, RTCMIX_VERSION);
 #else
-	if (Option::print())
+	if (RTOption::print())
 	   RTPrintf("--------> %s %s (%s) <--------\n",
              RTCMIX_NAME, RTCMIX_VERSION, argv[0]);
 #endif
 
-  ::ug_intro();                /* introduce standard routines */
-  ::profile();                 /* introduce user-written routines etc. */
-  ::rtprofile();               /* introduce real-time user-written routines */
+   ::ug_intro();                /* introduce standard routines */
+   ::profile();                 /* introduce user-written routines etc. */
+   ::rtprofile();               /* introduce real-time user-written routines */
 
- //  setbuf(stdout, NULL);        /*  Want to see stdout errors */
+   setbuf(stdout, NULL);        /*  Want to see stdout errors */
 }
 
+RTcmixMain::~RTcmixMain()
+{
+    // This might come in handy at some point.
+}
+
+void
+RTcmixMain::parseArguments(int argc, char **argv, char **env)
+{
+   int         i;
+#ifdef LINUX
+   int		   priority = 0;
+#endif
+   int		   printlevel = 5;
+   char        *infile;
+#ifdef NETAUDIO
+   char        rhostname[60], thesocket[8];
+
+   rhostname[0] = thesocket[0] = '\0';
+#endif
+
+   xargv[0] = argv[0];
+   for (i = 1; i <= MAXARGS; i++)
+      xargv[i] = NULL;
+   xargc = 1;
+   xenv = env;
+
+   /* Process command line, copying any args we don't handle into
+      <xargv> for parsers to deal with.
+   */
+   for (i = 1; i < argc; i++) {
+      char *arg = argv[i];
+
+      if (arg[0] == '-') {
+         switch (arg[1]) {
+            case 'h':
+               usage();
+               break;
+            case 'i':               /* for separate parseit thread */
+               setInteractive(true);
+               audio_config = 0;
+               RTOption::exitOnError(false);  /* we cannot simply quit when in interactive mode */
+               break;
+            case 'o':
+#ifdef OSC
+                setInteractive(true);
+                setUseOSC(true);
+                audio_config = 0;
+                RTOption::exitOnError(false);
+#else
+                 fprintf(stderr, "This build does not include OSC support\n");
+                 exit(1);
+#endif
+                break;
+            case 'n':               /* for use in interactive mode only */
+               noParse = 1;
+               break;
+			case 'P':
+               parseOnly = 1;		/* parser testing */
+               break;
+            case 'Q':               /* really quiet */
+               RTOption::reportClipping(false);
+               RTOption::checkPeaks(false); /* (then fall through) */
+            case 'q':               /* quiet */
+               RTOption::print(0);
+               break;
+            case 'v':               /* verbosity */
+               if (++i >= argc) {
+                  fprintf(stderr, "You didn't give a print level (0-5).\n");
+                  exit(1);
+               }
+               printlevel = atoi(argv[i]);
+               if (printlevel < MMP_FATAL || printlevel > MMP_DEBUG) {
+                  fprintf(stderr, "Print level must be between %d and %d.\n", MMP_FATAL, MMP_DEBUG);
+                  printlevel = MMP_DEBUG;
+               }
+				RTOption::print(printlevel);
+               break;
+#ifdef LINUX
+            case 'p':
+               if (++i >= argc) {
+                  fprintf(stderr, "You didn't give a priority number.\n");
+                  exit(1);
+               }
+               priority = atoi(argv[i]);
+               break;
+#endif
+            case 'D':
+               if (++i >= argc) {
+                  fprintf(stderr, "You didn't give an audio device name.\n");
+                  exit(1);
+               }
+               RTOption::device(argv[i]);
+               break;
+#ifdef NETAUDIO
+            case 'r':               /* set up for network playing */
+              	if (++i >= argc) {
+                  fprintf(stderr, "You didn't give a remote host ip.\n");
+                  exit(1);
+              	}
+               /* host ip num */
+               strcat(rhostname, "net:");
+               strncat(rhostname, argv[i], 59-4);    /* safe strcat */
+               rhostname[59] = '\0';
+               netplay = 1;
+               break;
+            case 'k':               /* socket number for network playing */
+                                    /* defaults to 9999 */
+               if (++i >= argc) {
+                  fprintf(stderr, "You didn't give a socket number.\n");
+                  exit(1);
+               }
+               strncpy(thesocket, argv[i], 7);
+               thesocket[7] = '\0';
+               netplay = 1;
+               break;
+#endif
+            case 'S':               /* set up a socket offset */
+               if (++i >= argc) {
+                  fprintf(stderr, "You didn't give a socket offset.\n");
+                  exit(1);
+               }
+               socknew = atoi(argv[i]);
+               printf("%s listening on socket %d\n", xargv[0], MYPORT + socknew);
+               break;
+            case 's':               /* start time (offset into playback) */
+                 if (++i >= argc) {
+                    fprintf(stderr, "You didn't give a skip time.\n");
+                    exit(1);
+                 }
+                 setBufTimeOffset((float)atof(argv[i]), false);
+                 break;
+            case 'd':               /* duration to play for (unimplemented) */
+            case 'e':               /* time to stop playing (unimplemented) */
+               fprintf(stderr, "-d, -e options not yet implemented\n");
+               exit(1);
+               break;
+            case 'f':     /* use file name arg instead of stdin as score */
+               if (++i >= argc) {
+                  fprintf(stderr, "You didn't give a file name.\n");
+                  exit(1);
+               }
+               infile = argv[i];
+               use_script_file(infile);
+               break;
+            case '-':           /* accept "--debug" and pass to Perl as "-d" */
+               if (strncmp(&arg[2], "debug", 10) == 0)
+                  xargv[xargc++] = strdup("-d");
+			   else
+				   xargv[xargc++] = arg;    /* copy all other --arguments to parser */
+               break;
+            default:
+               xargv[xargc++] = arg;    /* copy for parser */
+         }
+      }
+      else
+         xargv[xargc++] = arg;          /* copy for parser */
+
+      if (xargc >= MAXARGS) {
+         fprintf(stderr, "Too many command-line options.\n");
+         exit(1);
+      }
+   }
+   // Handle state which is set via args but not stored in RTcmix.
+   // NOTE:  The way this is handled should change.
+#ifdef NETAUDIO
+   if (netplay) {             /* set up socket for sending audio */
+      int status = ::setnetplay(rhostname, thesocket);
+      if (status == -1) {
+         fprintf(stderr, "Cannot establish network connection to '%s' for "
+                                             "remote playing\n", rhostname);
+         exit(-1);
+      }
+      fprintf(stderr, "Network sound playing enabled on machine '%s'\n",
+                                                                  rhostname);
+    }
+#endif
+
+}
+
+#ifndef EMBEDDED
 
 void
 RTcmixMain::run()
 {
-   pthread_t   sockitThread;
-   int retcode;
-   if (interactive()) {
-		rtcmix_advise(NULL, "rtInteractive mode set\n");
+    /* In interactive mode, we set up RTcmix to listen for score data
+        over a socket, and then parse this, schedule instruments, and play
+        them concurrently. The socket listening and parsing go in one
+        thread, and the scheduler and instrument code go in another.
 
-#ifndef EMBEDDED
-      if (!noParse) {
-         int status;
-         rtcmix_debug(NULL, "Parsing once ...\n");
-         status = ::parse_score(xargc, xargv, xenv);
-         if (status != 0)
-            exit(1);
-      }
-#endif // EMBEDDED
-
-// BGGx ww -- no sockit in windows
-/*
-      rtcmix_debug(NULL, "creating sockit() thread\n");
-      retcode = pthread_create(&sockitThread, NULL, &RTcmixMain::sockit, (void *) this);
-      if (retcode != 0) {
-         rterror(NULL, "sockit() thread create failed\n");
-      }
-*/ // BGGx ww
-
-      rtcmix_debug(NULL, "calling runMainLoop()\n");
-      retcode = runMainLoop();
-      if (retcode != 0) {
-         rterror(NULL, "runMainLoop() failed\n");
-      }
-
-// BGGx ww -- no sockit in windows
-/*
-      rtcmix_debug(NULL, "joining sockit() thread\n");
-      retcode = pthread_join(sockitThread, NULL);
-      if (retcode != 0) {
-         rterror(NULL, "sockit() thread join failed\n");
-      }
-*/ // BGGx ww
-
-      rtcmix_debug(NULL, "calling waitForMainLoop()\n");
-	  retcode = waitForMainLoop();
-      if (retcode != 0) {
-         rterror(NULL, "waitForMailLoop() failed\n");
-      }
-
-#ifndef EMBEDDED
-     if (!noParse)
-         destroy_parser();
-#endif
-   }
-   else {
-#ifdef EMBEDDED
-		int status = 0;
-#else
-      int status = ::parse_score(xargc, xargv, xenv);
-	   if (parseOnly) {
-		   rtcmix_debug(NULL, "RTcmixMain::run: parse-only returned status %d", status);
-		   exit(status);
-	   }
-#endif
+        When not in interactive mode, RTcmix parses the score, schedules
+        all instruments, and then plays them -- in that order.
+    */
+    if (interactive()) {
+        int retcode;
+         rtcmix_advise("RTcmixMain", "interactive mode set\n");
+    }
+    else      // not interactive
+    {
+        int status = ::parse_score(xargc, xargv, xenv);
+        if (parseOnly) {
+            rtcmix_debug("RTcmixMain", "run: parse-only returned status %d", status);
+            return;
+        }
+       if (status == 0) {
 #ifdef PYTHON
-	  set_sig_handlers();
+           /* Have to reinstall this after running Python interpreter. (Why?) */
+           set_sig_handlers();
 #endif
-      if (status == 0) {
 #ifdef LINUX
-//		 if (priority != 0)
-//			 if (setpriority(PRIO_PROCESS, 0, priority) != 0)
-//			 	perror("setpriority");
+ //         if (priority != 0)
+ //             if (setpriority(PRIO_PROCESS, 0, priority) != 0)
+ //                 perror("setpriority");
 #endif
-		 rtcmix_debug(NULL, "RTcmixMain::run: calling runMainLoop()");
-		  if ((status = runMainLoop()) == 0) {
-			 rtcmix_debug(NULL, "RTcmixMain::run: calling waitForMainLoop()");
-			 waitForMainLoop();
-		  }
-	  }
-      else
-         exit(status);
-
-#ifndef EMBEDDED
-      destroy_parser();		// DAS TODO: make this work?
-#endif
-   }
-
-#ifndef EMBEDDED
-   ::closesf_noexit();
-#endif
+           rtcmix_debug("RTcmixMain", "run: calling runMainLoop()");
+           if ((status = runMainLoop()) == 0) {
+              rtcmix_debug("RTcmixMain", "run: calling waitForMainLoop()");
+              waitForMainLoop();
+           }
+       }
+       else {
+           exit(status);
+       }
+        destroy_parser();        // DAS TODO: make this work?
+        ::closesf_noexit();
+    }
 }
+
+#else   /* EMBEDDED */
+
+void
+RTcmixMain::run()
+{
+    rtcmix_debug("RTcmixMain::run", "calling runMainLoop()");
+    if (runMainLoop() == 0) {
+        rtcmix_debug("RTcmixMain::run", "calling waitForMainLoop()");
+        waitForMainLoop();
+    }
+}
+
+#endif  /* EMBEDDED */
 
 /* ---------------------------------------------------- interrupt_handler --- */
 void
@@ -324,14 +474,10 @@ RTcmixMain::interrupt_handler(int signo)
        // Notify rendering loop no matter what.
        run_status = RT_SHUTDOWN;
 
-	   // Notify rendering loop.
-	   run_status = RT_SHUTDOWN;
-	   if (audioDevice) {
-	       audioDevice->close();
-	   }
-	   if (!audioLoopStarted) {
-		   closesf();	// We exit if we have not yet configured audio.
-	   }
+       if (!audioLoopStarted) {
+           fprintf(stderr, "exiting\n");
+           exit(0);    // We exit if we have not yet configured audio.
+       }
 	}
 }
 
@@ -429,12 +575,11 @@ RTcmixMain::doload(char *dsoPath)
 		return 0;
     }
 
-#ifndef EMBEDDED
+#if 0
 // BGG -- this totally cause the maxmsp compile to stop
 	rtcmix_advise("loader", "Loaded %s functions from shared library:\n\t'%s'.\n", (profileLoaded == 3) ? "standard and RT" :
 		(profileLoaded == 2) ? "RT" : "standard", dsoPath);
 #endif
-*/ // BGGx ww
 
 	return 1;
 }

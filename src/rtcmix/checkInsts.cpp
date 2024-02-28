@@ -22,25 +22,9 @@ extern "C" {
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <Option.h>
+#include <RTOption.h>
 
 //#define DEBUG
-
-static void
-printargs(const char *instname, const Arg arglist[], const int nargs)
-{
-   int i;
-   Arg arg;
-
-   if (Option::print() >= MMP_PRINTALL) {
-      RTPrintf("========<rt-queueing>=======\n");
-      RTPrintfCat("%s:  ", instname);
-      for (i = 0; i < nargs; i++) {
-         arglist[i].printInline(stdout);
-      }
-      RTPrintf("\n");
-   }
-}
 
 static InstCreatorFunction
 findInstCreator(rt_item *inList, const char *inInstName)
@@ -205,14 +189,14 @@ static Handle mkusage()
 }
 
 extern "C" {
-	Handle makeinstrument(const Arg args[], const int nargs);
+	Handle makeinstrument(const Arg args[], int nargs);
 }
 
 // makeinstrument():  Create an instrument and return it as a handle.  Do not configure or schedule the instrument.
 // This is specifically for use with the CHAIN instrument.
 
 Handle
-makeinstrument(const Arg arglist[], const int nargs)
+makeinstrument(const Arg arglist[], int nargs)
 {
 	if (nargs < 4) {
 		return mkusage();

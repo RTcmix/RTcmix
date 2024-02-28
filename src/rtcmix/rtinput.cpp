@@ -18,7 +18,7 @@
 #include <errno.h>
 #include <sndlibsupport.h>
 #include <rtdefs.h>
-#include <Option.h>
+#include <RTOption.h>
 #include "audio_devices.h"
 #include "InputFile.h"
 #ifdef LINUX
@@ -202,7 +202,7 @@ RTcmix::findInput(const char *inName, int *pOutIndex)
 }
 
 double
-RTcmix::rtinput(float p[], int n_args, double pp[])
+RTcmix::rtinput(double p[], int n_args)
 {
 	int            audio_in = 0, in_memory = 0, p1_is_used = 0, fd;
 	int            is_open = 0, header_type, data_format, data_location = 0, nchans;
@@ -220,7 +220,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 	header_type = MUS_UNSUPPORTED;
 	data_format = MUS_UNSUPPORTED;
 
-	sfname = DOUBLE_TO_STRING(pp[0]);
+	sfname = DOUBLE_TO_STRING(p[0]);
 
 	/* Catch stoopid NULL filenames */
 	if (sfname == NULL) {
@@ -232,9 +232,9 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 	if (strcmp(sfname, "AUDIO") == 0) {
 		audio_in = 1;
 
-		if (n_args > 1 && pp[1] != 0.0) {
+		if (n_args > 1 && p[1] != 0.0) {
 			p1_is_used = 1;
-			str = DOUBLE_TO_STRING(pp[1]);
+			str = DOUBLE_TO_STRING(p[1]);
 			if (strcmp(str, "MIC") == 0)
 				port_type = MIC;
 			else if (strcmp(str, "LINE") == 0)
@@ -258,7 +258,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 // this segment is to allow rtcmix to access sample data from the
 // max/msp [buffer~] object.
 	else if (strcmp(sfname, "MMBUF") == 0) {
-		str = DOUBLE_TO_STRING(pp[1]);
+		str = DOUBLE_TO_STRING(p[1]);
 		if (str == NULL) {
 			rterror("rtinput", "NULL buffer name!");
             status = PARAM_ERROR;
@@ -273,9 +273,9 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 	}
 #endif // EMBEDDED
 	else {
-		if (n_args > 1 && pp[1] != 0.0) {
+		if (n_args > 1 && p[1] != 0.0) {
 			p1_is_used = 1;
-			str = DOUBLE_TO_STRING(pp[1]);
+			str = DOUBLE_TO_STRING(p[1]);
 // BGGx ww strcasestr doesn't exist in mingw/windows
 //			if (strcasestr(str, "mem") != NULL) {
 			if ((strstr(str, "mem") != NULL) || (strstr(str, "MEM") != NULL)) {
@@ -299,7 +299,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 	for (i = start_pfield; i < n_args; i++) {
 		ErrCode  err;
 
-		str = DOUBLE_TO_STRING(pp[i]);
+		str = DOUBLE_TO_STRING(p[i]);
 		if (str == NULL) {
 			rterror("rtinput", "NULL bus name!");
 			set_record = false;
@@ -342,24 +342,24 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 			if (rtsetparams_was_called()) {
 				// If audio *playback* was disabled, but there is a request for
 				// input audio, create the audio input device here.
-				if (!audioDevice && !Option::play()) {
+				if (!audioDevice && !RTOption::play()) {
 					int nframes = bufsamps();
                     srate = sr();
 					if ((audioDevice = create_audio_devices(true, false,
 											 NCHANS, &srate, &nframes,
-											 Option::bufferCount())) == NULL)
+											 RTOption::bufferCount())) == NULL)
 					{
 						set_record = false;
                         status = AUDIO_ERROR;
                         goto Error;
 					}
-					Option::record(true);
+					RTOption::record(true);
                     setSR(srate);
 					setRTBUFSAMPS(nframes);
 					rtcmix_advise("Input audio set",  "%g sampling rate, %d channels\n", sr(), NCHANS);
 				}
 				// If record disabled during rtsetparams(), we cannot force it on here.
-				else if (!Option::record()) {
+				else if (!RTOption::record()) {
 					rterror("rtinput", "Audio already configured for playback only via rtsetparams()\n\t\tAdd set_option(\"record=true\") at top of score");
 					set_record = false;
                     status = CONFIGURATION_ERROR;
@@ -368,7 +368,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 //			}
 //			else {
 //				// This allows rtinput("AUDIO") to turn on record XXX NO LONGER SUPPORTED - MUST CALL rtsetparams FIRST - DAS
-//				Option::record(1);
+//				RTOption::record(1);
 //				set_record = true;	// DAS I had set this to false -- WHY?
 //			}
                 fd = 1;  /* we don't use this; set to 1 so rtsetinput() will work */

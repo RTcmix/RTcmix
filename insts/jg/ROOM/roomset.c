@@ -5,7 +5,7 @@
 #include "roomset.h"
 
 static int roomset_called = 0;
-static float delay[NTAPS], sloc[NTAPS], amp[NTAPS];
+static double delay[NTAPS], sloc[NTAPS], amp[NTAPS];
 
 
 /* ------------------------------------------------------------- get_room --- */
@@ -42,16 +42,16 @@ get_room(int ipoint[], float lamp[], float ramp[], double SR)
 
 /* ---------------------------------------------------------------- specs --- */
 static int
-specs(float source[],     /* first 3 args: arrays of 2 elements */
-      float bounce[],
-      float xlist[],
-      float dec,
-      float *adelay,      /* last 3 args passed back to caller */
-      float *ansloc,
-      float *anamp)
+specs(double source[],     /* first 3 args: arrays of 2 elements */
+      double bounce[],
+      double xlist[],
+      double dec,
+      double *adelay,      /* last 3 args passed back to caller */
+      double *ansloc,
+      double *anamp)
 {
    int    i;
-   float  dist0[2], dist1[2], dist2[2];
+   double  dist0[2], dist1[2], dist2[2];
    double w, x, y, z, d0, d1, d2, fact, dist, angle;
 
    fact = 1.0 / PI;
@@ -74,13 +74,14 @@ specs(float source[],     /* first 3 args: arrays of 2 elements */
    x = z / (d0 * d2);
    if (x > 1.0)
       x = 1.0;
+   else if (x < -1.0)
+      x = -1.0;
    angle = acos(x);
    dist = d1 + d2;
 
-   *ansloc = (float)(angle / PI);
-   *adelay = (float)(dist / 1087.0);       /* speed of sound */
-   *anamp = (float)((pow(2.0, (double)dec) / pow(dist, (double)dec)) * 100.0);
-
+   *ansloc = angle / PI;
+   *adelay = dist / 1087.0;       /* speed of sound */
+   *anamp = (pow(2.0, (double)dec) / pow(dist, (double)dec)) * 100.0;
    return 0;
 }
 
@@ -105,17 +106,17 @@ rind(float amp, float *a)
 
 /* ---------------------------------------------------------------- space --- */
 static int
-space(float dim[],          /* first 4 args: arrays of 2 elements */
-      float source[],
-      float warp1[],
-      float warp2[],
-      float dec,
-      float rndval)
+space(double dim[],          /* first 4 args: arrays of 2 elements */
+      double source[],
+      double warp1[],
+      double warp2[],
+      double dec,
+      double rndval)
 {
    int    i;
    double pow1, pow2, pow3, pow4, rval, xval, x;
-   float  rndseed, bounce[NTAPS][2];
-   float  xxx, xlist[2];
+   double bounce[NTAPS][2], xlist[2];
+   float  rndseed, xxx;
 
    rndseed = (rndval == 0.0) ? 0.3 : rndval;
 
@@ -173,7 +174,7 @@ space(float dim[],          /* first 4 args: arrays of 2 elements */
 
    xxx = 0;
    for (i = 0; i < NTAPS; i++) {
-      float d, s, a;
+      double d, s, a;
       specs(source, &bounce[i][0], xlist, dec, &d, &s, &a);
       delay[i] = d;
       sloc[i] = s;
@@ -206,7 +207,7 @@ space(float dim[],          /* first 4 args: arrays of 2 elements */
       p9 = seed  [optional]
 */
 double
-roomset(float p[], int n_args)
+roomset(double p[], int n_args)
 {
    if (n_args < 9)
       die("roomset", "Not enough args.");

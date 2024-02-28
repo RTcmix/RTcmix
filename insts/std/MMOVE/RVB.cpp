@@ -77,10 +77,7 @@ RVB::~RVB()
 	delete [] in;
 	// Dont delete memory for global arrays if insts are still active
 	if (check_users() == 0) {
-		for (int i = 0; i < 2; i++) {
-			for (int j = 0; j < 6; j++)
-				delete [] m_rvbData[i][j].Rvb_del;
-		}
+        uninit();
 	}
 }
 
@@ -136,6 +133,16 @@ int RVB::configure()
 	return 0;
 }
 
+void RVB::uninit()
+{
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 6; j++) {
+            delete [] m_rvbData[i][j].Rvb_del;
+            m_rvbData[i][j].Rvb_del = NULL;
+        }
+    }
+}
+
 /* ------------------------------------------------------------------ run --- */
 int RVB::run()
 {
@@ -144,8 +151,7 @@ int RVB::run()
 	const int inChans = inputChannels();
 
     rtgetin(in, this, frames * inChans);
-
-	register float *outptr = &this->outbuf[0];
+	float *outptr = &this->outbuf[0];
 	/* run summed 1st and 2nd generation paths through reverberator */
  	for (int n = 0; n < frames; n++) {
 		if (--_branch <= 0) {
@@ -159,12 +165,13 @@ int RVB::run()
 			double rvbPair[2];
 			rmPair[0] = in[n*inChans+2];
 			rmPair[1] = in[n*inChans+3];
-			doRun(rmPair, rvbPair, currentFrame() + n);
+            doRun(rmPair, rvbPair, currentFrame() + n);
 			rvbsig[0][n] = rvbPair[0] * m_amp;
 			rvbsig[1][n] = rvbPair[1] * m_amp;
 		}
-		else
-			rvbsig[0][n] = rvbsig[1][n] = 0.0;
+		else {
+            rvbsig[0][n] = rvbsig[1][n] = 0.0;
+        }
 		/* sum the input signal (which includes early response) & reverbed sigs  */
 		*outptr++ = in[n*inChans] + rvbsig[0][n];
 		*outptr++ = in[n*inChans+1] + rvbsig[1][n];
@@ -184,7 +191,7 @@ int RVB::run()
 inline double
 delpipe(double sig, int *counter, double nsdel, int delsize, double *delay)
 {
-   register int intap, tap1, tap2, del1;
+   int intap, tap1, tap2, del1;
 
    intap = *counter;
    if (intap >= delsize)
@@ -209,7 +216,7 @@ delpipe(double sig, int *counter, double nsdel, int delsize, double *delay)
 inline double
 Allpass(double sig, int *counter, double *data)
 {
-   register int nsdel, intap, length, outtap;
+   int nsdel, intap, length, outtap;
    double *delay = &data[2];
 
    nsdel = (int)data[1];
@@ -243,7 +250,7 @@ Allpass(double sig, int *counter, double *data)
 void
 RVB::doRun(double *input, double *output, long counter)
 {
-   register int i, j;
+   int i, j;
    double sig, delsig;
 
    for (i = 0; i < 2; ++i) {                /* loop for 2 output chans */
@@ -472,7 +479,7 @@ RVB::wire_matrix(double Matrix[12][12])
 void 
 RVB::rvb_reset()
 {
-	register int i, j, k;
+	int i, j, k;
 
 	/* reset reverb filters and delays */
 
@@ -482,7 +489,7 @@ RVB::rvb_reset()
 			r->delin = r->delout = 0.0;
 			r->deltap = 0;	// index for each delay unit
 			r->Rvb_air[2] = 0.0;
-			register double *point = r->Rvb_del;
+			double *point = r->Rvb_del;
 			while (k < rvbdelsize)
 				point[k++] = 0.0;
 		}

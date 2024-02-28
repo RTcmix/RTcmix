@@ -12,7 +12,6 @@
 #include "rt.h"
 #include "rtdefs.h"
 #include "buffers.h"
-#include <notetags.h>
 #include <sndlibsupport.h>
 #include <bus.h>
 #include "BusSlot.h"
@@ -25,6 +24,7 @@
 #include <PFBusData.h>
 
 #undef DEBUG_INST
+#define DEBUG_BUFFER 0  /* this turns it off */
 
 using namespace std;
 
@@ -121,7 +121,7 @@ double Instrument::s_dArray[MAXDISPARGS];
 
 /* ------------------------------------------------------------ setup () --- */
 
-// This function is now the one called by checkInsts().  It calls init().
+// This function is now the one called by checkInsts() via loadPFieldsAndSetup().  It calls init().
 
 int Instrument::setup(PFieldSet *pfields)
 {
@@ -249,7 +249,7 @@ int Instrument::configure(int bufsamps)
 // This is the virtual function that derived classes override.  We supply a
 // default base class version because not all subclasses need/use this method.
 
-int Instrument::configure(void)
+int Instrument::configure()
 {
 	return 0;	// 0 is success, -1 is failure.
 }
@@ -269,7 +269,9 @@ int Instrument::run(bool needsTo)
 
 	   for (int i = 0; i < outputchans; i++)
 		   bufferWritten[i] = false;
-	   
+#if DEBUG_BUFFER
+       printf("   Instrument::run(%p, needsTo=%d) set bufferWritten[] to false\n", this, needsTo);
+#endif
 	   int status = run();	// Class-specific run().
 
 	   needs_to_run = false;
@@ -290,9 +292,9 @@ void Instrument::configureEndSamp(FRAMETYPE *pStartSamp)
 		startsamp += RTcmix::getElapsedFrames();
 	}
 	
-	FRAMETYPE endsamp = startsamp+nSamps();
-	assert(endsamp >= 0LL);
-	setendsamp(endsamp);  // used by intraverse.cpp
+	FRAMETYPE newEndSamp = startsamp+nSamps();
+	assert(newEndSamp >= 0LL);
+	setendsamp(newEndSamp);  // used by intraverse.cpp
 	if (pStartSamp)
 		*pStartSamp = startsamp;
 }
@@ -328,25 +330,31 @@ int Instrument::exec(BusType bus_type, int bus)
 {
    bool done;
 
-//   printf("Instrument::exec(%p, bus_type %d, bus %d\n", this, (int)bus_type, bus);
-   
+#if DEBUG_BUFFER
+printf("Instrument::exec(%p [%s] bus_type %d, bus %d, needs_to_run %d)\n", this, name(), (int)bus_type, bus, needs_to_run);
+#endif
    run(needs_to_run);	// Only does anything if true.
 
    addout(bus_type, bus);
 
    /* Decide whether we'll call run() next time. */
    done = true;
-//   printf("Instrument::exec(%p) bufferWritten[0]: %d bufferWritten[1]: %d\n",
-//		  this, (int) bufferWritten[0], (int) bufferWritten[1]);
+#if DEBUG_BUFFER
+   printf("Instrument::exec(%p) bufferWritten[0]: %d bufferWritten[1]: %d\n",
+		  this, (int) bufferWritten[0], (int) bufferWritten[1]);
+#endif
    for (int i = 0; i < outputchans; i++) {
 	   if (bufferWritten[i] == false) {
          done = false;
          break;
       }
    }
-   if (done)
-      needs_to_run = true;
-//   printf("Instrument::exec(%p) returning %d\n", this, (int) needs_to_run);
+   if (done) {
+       needs_to_run = true;
+   }
+#if DEBUG_BUFFER
+   printf("Instrument::exec(%p) returning %d\n", this, (int) needs_to_run);
+#endif
    return (int) needs_to_run;
 }
 
@@ -391,17 +399,16 @@ int Instrument::rtbaddout(BUFTYPE samps[], int length)
 void Instrument::addout(BusType bus_type, int bus)
 {
    int      endframe, src_chan, buses;
-   short    *bus_list;
+   short    *bus_list, sbus = (short) bus;
 
    assert(bus >= 0 && bus < RTcmix::getBusCount());
 
 	if (bus_type != BUS_NONE_OUT) {
 
 	   bus_list = _busSlot->getBusList(bus_type, &buses);
-
 	   src_chan = -1;
 	   for (int i = 0; i < buses; i++) {
-		  if (bus_list[i] == bus) {
+		  if (bus_list[i] == sbus) {    // short compare here saves CPU!
 			 src_chan = i;
 			 break;
 		  }
@@ -412,20 +419,23 @@ void Instrument::addout(BusType bus_type, int bus)
 	   endframe = output_offset + framesToRun();
 
 		// Add outbuf to appropriate bus at offset
-#ifdef DEBUG
-		RTPrintf("%s::addout(this=%p %d, %d): doing normal addToBus\n", name(), this, (int)bus_type, bus);
+#if defined(DEBUG) || DEBUG_BUFFER
+		RTPrintf("   %s::addout(this=%p %d, %d): doing normal addToBus with endframe %d\n",
+                 name(), this, (int)bus_type, bus, endframe);
 #endif
 		RTcmix::addToBus(bus_type, bus,
 						 &outbuf[src_chan], output_offset,
 						 endframe, outputchans);
+        /* Show exec() that we've written this chan. */
+        bufferWritten[src_chan] = true;
+#if DEBUG_BUFFER
+        printf("   %s::addout(%p): bufferWritten[%d] now 1\n", name(), this, src_chan);
+#endif
 
-		/* Show exec() that we've written this chan. */
-		bufferWritten[src_chan] = true;
-		//   printf("Instrument::addout(%p): bufferWritten[%d] now 1\n", this, src_chan);
 	}
-#ifdef DEBUG
+#if defined(DEBUG) || DEBUG_BUFFER
 	else {
-		RTPrintf("%s::addout(this=%p %d, %d): NO-OP\n", name(), this, (int)bus_type, bus);
+		RTPrintf("   %s::addout(this=%p %d, %d): NO-OP\n", name(), this, (int)bus_type, bus);
 	}
 #endif
 }

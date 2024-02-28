@@ -51,7 +51,7 @@
 */
 
 double
-fplot(float p[], short n_args, double pp[])
+fplot(double p[], int n_args)
 {
 	if (n_args > 1) {					/* use gnuplot */
 #ifdef MACOSX
@@ -79,7 +79,7 @@ fplot(float p[], short n_args, double pp[])
 				fprintf(fdata, "%d %.6f\n", i, array[i]);
 			fclose(fdata);
 
-			plotcmds = DOUBLE_TO_STRING(pp[2]);
+			plotcmds = DOUBLE_TO_STRING(p[2]);
 			fprintf(fcmd, 
 #ifdef MACOSX
 /* NB: requires installation of Aquaterm and gnuplot 3.8 */

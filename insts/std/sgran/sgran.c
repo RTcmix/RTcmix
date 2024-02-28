@@ -54,7 +54,7 @@ extern float SR();
 */
 
 double
-sgran(float p[], int n_args)
+sgran(double p[], int n_args)
 {
 	long n,bgrainsamps,bgraindist,bgrainslide;
 	long i,nsamps,gstt_var,count;

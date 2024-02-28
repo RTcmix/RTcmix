@@ -32,24 +32,16 @@ int DataFile::formatStringToCode(const char *str)
       return kDataFormatDouble;
    else if (strcmp(str, "float") == 0)
       return kDataFormatFloat;
-   else if (strcmp(str, "int") == 0) {
-		if (sizeof(int) == sizeof(int64_t))
-			return kDataFormatInt64;
-		else if (sizeof(int) == sizeof(int32_t))
-			return kDataFormatInt32;
-		else if (sizeof(int) == sizeof(int16_t))
-			return kDataFormatInt16;
-		else
-			return -1;
-	}
+   else if (strcmp(str, "int") == 0)
+       return kDataFormatInt32;
    else if (strcmp(str, "int64") == 0)
-      return kDataFormatInt64;
+       return kDataFormatInt64;
    else if (strcmp(str, "int32") == 0)
-      return kDataFormatInt32;
+       return kDataFormatInt32;
    else if (strcmp(str, "int16") == 0)
-      return kDataFormatInt16;
+       return kDataFormatInt16;
    else if (strcmp(str, "byte") == 0)
-      return kDataFormatByte;
+       return kDataFormatByte;
    return -1;
 }
 
@@ -58,27 +50,26 @@ int DataFile::formatStringToCode(const char *str)
 static int format_datumsize(const int format)
 {
 	switch (format) {
-		case kDataFormatDouble: return sizeof(double); break;
-		case kDataFormatFloat:  return sizeof(float); break;
-		case kDataFormatInt64:  return sizeof(int64_t); break;
-		case kDataFormatInt32:  return sizeof(int32_t); break;
-		case kDataFormatInt16:  return sizeof(int16_t); break;
-		case kDataFormatByte:   return sizeof(int8_t); break;
-		default:                return -1; break;
+		case kDataFormatDouble: return sizeof(double);
+		case kDataFormatFloat:  return sizeof(float);
+		case kDataFormatInt64:  return sizeof(int64_t);
+		case kDataFormatInt32:  return sizeof(int32_t);
+		case kDataFormatInt16:  return sizeof(int16_t);
+		case kDataFormatByte:   return sizeof(int8_t);
+		default:                return -1;
 	}
-	return 0;
 }
 
 // Return a string describing the given format.
 static const char *format_string(const int format)
 {
 	switch (format) {
-		case kDataFormatDouble: return "doubles"; break;
-		case kDataFormatFloat:  return "floats"; break;
-		case kDataFormatInt64:  return "64-bit signed integers"; break;
-		case kDataFormatInt32:  return "32-bit signed integers"; break;
-		case kDataFormatInt16:  return "16-bit signed integers"; break;
-		case kDataFormatByte:   return "8-bit signed bytes"; break;
+		case kDataFormatDouble: return "doubles";
+		case kDataFormatFloat:  return "floats";
+		case kDataFormatInt64:  return "64-bit signed integers";
+		case kDataFormatInt32:  return "32-bit signed integers";
+		case kDataFormatInt16:  return "16-bit signed integers";
+		case kDataFormatByte:   return "8-bit signed bytes";
 	}
 	return "";
 }

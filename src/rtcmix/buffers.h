@@ -11,8 +11,6 @@
 extern "C" {
 #endif /* __cplusplus */
 
-void copy_interleaved_buf_to_one_buf(BufPtr dest, const BufPtr src,
-                               int src_chans, int src_chan, int dest_frames);
 void copy_one_buf_to_interleaved_buf(BufPtr dest, const BufPtr src,
                               int dest_chans, int dest_chan, int dest_frames);
 void copy_interleaved_buf_to_buf(BufPtr dest, const BufPtr src, int dest_chans,

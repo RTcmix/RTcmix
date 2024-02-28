@@ -9,7 +9,7 @@
 #include <string.h>
 #include <limits.h>
 #include <assert.h>
-#include <Option.h>
+#include <RTOption.h>
 #include <RTcmix.h>
 
 #define DEBUG 0
@@ -64,68 +64,74 @@ RTcmixMIDIInput::~RTcmixMIDIInput()
 
 RTcmixMIDIInput *createMIDIInputPort()
 {
-	RTcmixMIDIInput *midiport = new RTcmixMIDIInput();
-	if (midiport) {
-		if (midiport->init() == -1) {
-			delete midiport;
-			return NULL;
-		}
-	}
-
+	RTcmixMIDIInput *midiport = NULL;
+    try {
+        midiport = new RTcmixMIDIInput();
+    }
+    catch (...) {
+        return NULL;
+    }
+    if (midiport->init() == -1) {
+        delete midiport;
+        midiport = NULL;
+    }
 	return midiport;
 }
 
-int RTcmixMIDIInput::init()
-{
-	_MIDIToMain = Pm_QueueCreate(MSG_QUEUE_SIZE, sizeof(RTMQMessage));
-	_mainToMIDI = Pm_QueueCreate(MSG_QUEUE_SIZE, sizeof(RTMQMessage));
-	if (_mainToMIDI == NULL || _MIDIToMain == NULL) {
-		fprintf(stderr, "Could not create MIDI message queues.\n");
-		return -1;
-	}
+int RTcmixMIDIInput::init() {
+    _MIDIToMain = Pm_QueueCreate(MSG_QUEUE_SIZE, sizeof(RTMQMessage));
+    _mainToMIDI = Pm_QueueCreate(MSG_QUEUE_SIZE, sizeof(RTMQMessage));
+    if (_mainToMIDI == NULL || _MIDIToMain == NULL) {
+        fprintf(stderr, "Could not create MIDI message queues.\n");
+        return -1;
+    }
 
-	// Start the timer before starting MIDI I/O.  The timer runs the callback
-	// function every SLEEP_MSEC milliseconds.
-	Pt_Start(SLEEP_MSEC, &_processMIDI, this);
+    // Start the timer before starting MIDI I/O.  The timer runs the callback
+    // function every SLEEP_MSEC milliseconds.
+    Pt_Start(SLEEP_MSEC, &_processMIDI, this);
 
-	Pm_Initialize();
+    Pm_Initialize();
 
-	int id = 0;
-	const char *devname = Option::midiInDevice();
+    int id = 0;
+    const char *devname = RTOption::midiInDevice();
 #if DEBUG
-	printf("Requested MIDI input device: \"%s\"\n", devname);
+    printf("Requested MIDI input device: \"%s\"\n", devname);
 #endif
-	if (strlen(devname)) {
-		bool found = false;
-		const int numdev = Pm_CountDevices();
-		for ( ; id < numdev; id++) {
-			const PmDeviceInfo *info = Pm_GetDeviceInfo(id);
-			if (info->input) {
+    bool devProvided = false, devFound = false;
+    if (strlen(devname)) {
+        bool found = false;
+        const int numdev = Pm_CountDevices();
+        devProvided = true;
+        for (; id < numdev; id++) {
+            const PmDeviceInfo *info = Pm_GetDeviceInfo(id);
+            if (info->input) {
 #if DEBUG
-				printf("Found MIDI input device: \"%s\"\n", info->name);
+                printf("Found MIDI input device: \"%s\"\n", info->name);
 #endif
-				if (strcmp(info->name, devname) == 0) {
-					found = true;
-					break;
-				}
-			}
-		}
-		if (!found) {
-			fprintf(stderr, "WARNING: no match for MIDI input device \"%s\""
-							" ... using default.\n", devname);
-			id = Pm_GetDefaultInputDeviceID();
-		}
-	}
-	else {
-		fprintf(stderr, "WARNING: using default MIDI input device.\n");
-		id = Pm_GetDefaultInputDeviceID();
-	}
-	const PmDeviceInfo *info = Pm_GetDeviceInfo(id);
-	if (info == NULL) {
-		fprintf(stderr, "Could not open MIDI input device %d.\n", id);
-		return -1;
-	}
-
+                if (strcmp(info->name, devname) == 0) {
+                    devFound = found = true;
+                    break;
+                }
+            }
+        }
+        if (!found) {
+            id = Pm_GetDefaultInputDeviceID();
+        }
+    } else {
+        id = Pm_GetDefaultInputDeviceID();
+    }
+    const PmDeviceInfo *info = Pm_GetDeviceInfo(id);
+    if (info == NULL) {
+        fprintf(stderr, "Could not open MIDI input device %d.\n", id);
+        return -1;
+    }
+    else if (!devProvided) {
+        fprintf(stderr, "WARNING: using default MIDI input device \"%s\".\n", info->name);
+    }
+    else if (!devFound) {
+        fprintf(stderr, "WARNING: no match for MIDI input device \"%s\""
+                        " ... using default \"%s\".\n", devname, info->name);
+    }
 	PmError err = Pm_OpenInput(&_instream, id, NULL, INBUF_SIZE, NULL, NULL);
 	if (err != pmNoError) {
 		fprintf(stderr, "Could not open MIDI input stream: %s.\n",
@@ -380,7 +386,7 @@ int RTcmixMIDIOutput::init()
 {
     Pm_Initialize();
     
-    const char *devname = Option::midiOutDevice();
+    const char *devname = RTOption::midiOutDevice();
 #if DEBUG
     printf("Requested MIDI output device: \"%s\"\n", devname);
 #endif
@@ -536,16 +542,21 @@ RTcmixMIDIOutput *createMIDIOutputPort()
 {
     // We need rtsetparams in order to set the latency of the MIDI system.
     if (!RTcmix::rtsetparams_was_called()) {
-        fprintf(stderr, "You must call rtsetparams before setting up MIDI output");
+        fprintf(stderr, "You must call rtsetparams before setting up MIDI output\n");
         return NULL;
     }
-    RTcmixMIDIOutput *midiport = new RTcmixMIDIOutput();
-    if (midiport) {
-        if (midiport->init() == -1) {
-            delete midiport;
-            return NULL;
-        }
+    RTcmixMIDIOutput *midiport = NULL;
+    try {
+        midiport = new RTcmixMIDIOutput();
     }
+    catch (...) {
+        return NULL;
+    }
+    if (midiport->init() == -1) {
+        delete midiport;
+        return NULL;
+    }
+
     RTcmix::registerAudioStartCallback(startCallback, midiport);
     RTcmix::registerAudioStopCallback(stopCallback, midiport);
     

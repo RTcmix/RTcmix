@@ -10,63 +10,63 @@
 // BGGx ww -- no drand48() in windows
 #define drand48() (((double)rand())/((double)RAND_MAX))
 
-double m_sin(float p[], int n_args, double pp[])
+double m_sin(double p[], int n_args)
 {
 	double val;
-	val = sin(pp[0]);
+	val = sin(p[0]);
 	return(val);
 }
 
-double m_cos(float p[], int n_args, double pp[])
+double m_cos(double p[], int n_args)
 {
 	double val;
-	val = cos(pp[0]);
+	val = cos(p[0]);
 	return(val);
 }
 
-double m_lowrand()
+double m_lowrand(double p[], int n_args)
 {
 	double v1 = drand48();	
 	double v2 = drand48();
 	return (v1<v2) ? v1 : v2;
 }
 
-double m_highrand()
+double m_highrand(double p[], int n_args)
 {
 	double v1 = drand48();	
 	double v2 = drand48();
 	return (v1>v2) ? v1 : v2;
 }
 
-double m_trirand()
+double m_trirand(double p[], int n_args)
 {
 	return 0.5*(drand48()+drand48());
 }
 
-double m_constrain(float p[], int n_args, double pp[])
+double m_constrain(double p[], int n_args)
 {
-	double lowval = (pp[1]<pp[2]) ? pp[1] : pp[2];
-	double highval = (pp[1]>pp[2]) ? pp[1] : pp[2];
-	double bottom = (pp[0]<lowval) ? lowval : pp[0];
+	double lowval = (p[1]<p[2]) ? p[1] : p[2];
+	double highval = (p[1]>p[2]) ? p[1] : p[2];
+	double bottom = (p[0]<lowval) ? lowval : p[0];
 	return (bottom>highval) ? highval : bottom;
 }
 
-double m_map(float p[], int n_args, double pp[])
+double m_map(double p[], int n_args)
 {
 	double result;
 	if (n_args>3)
 	{
-		double normVal = (pp[0]-pp[1])/(pp[2]-pp[1]);
-		result = pp[3] + normVal*(pp[4]-pp[3]);
+		double normVal = (p[0]-p[1])/(p[2]-p[1]);
+		result = p[3] + normVal*(p[4]-p[3]);
 	}
 	else
 	{
-		result = pp[1] + pp[0]*(pp[2]-pp[1]);
+		result = p[1] + p[0]*(p[2]-p[1]);
 	}
 	return result;
 }
 
-double m_gaussrand (float p[], int n_args, double pp[])
+double m_gaussrand (double p[], int n_args)
 // Normal (Gaussian) distribution
 // Code is derived from the GNU Scientific Library,
 // src/randist/gauss.c
@@ -88,7 +88,7 @@ double m_gaussrand (float p[], int n_args, double pp[])
 	return .5 + val*0.1;
 }
 
-double m_prob (float p[], int n_args, double pp[])
+double m_prob (double p[], int n_args)
 {
 	const double mid = (n_args==4) ? p[1] : p[0];
 	double num = 0.0;
@@ -97,12 +97,12 @@ double m_prob (float p[], int n_args, double pp[])
 	// prob(low,mid,high,tightness)
 	if (n_args==4)
 	{
-		const double low = pp[0];
-		const double high = pp[2];
+		const double low = p[0];
+		const double high = p[2];
 		const double hirange = high - mid;
 		const double lorange = mid - low;
 		const double range = (hirange > lorange) ? hirange : lorange;
-		const double tight = pp[3];
+		const double tight = p[3];
 		do {
 			num = drand48();       // num is [0,1]
 			sign = (num > 0.5) ? 1.0 : -1.0;
@@ -113,9 +113,9 @@ double m_prob (float p[], int n_args, double pp[])
 	{
 		// Joel Matthys's simplified 2-argument prob
 		// prob(mid,weight) , both in the range 0-1
-		if ((pp[1]>0) && (pp[1]<1))
+		if ((p[1]>0) && (p[1]<1))
 		{
-			const double tight = log(0.5)/log(pp[1]);
+			const double tight = log(0.5)/log(p[1]);
 			double range = (mid > 0.5) ? mid : 1.0 - mid;
 			do {
 				num = drand48();       // num is [0,1]
@@ -123,7 +123,7 @@ double m_prob (float p[], int n_args, double pp[])
 				num = mid + (sign * (pow (drand48(), tight) * range));
 			} while (num < 0 || num > 1);
 		}
-		if (pp[1]>=1) num = pp[0];
+		if (p[1]>=1) num = p[0];
 	}
 	return num;
 }

@@ -1,10 +1,10 @@
 depth = 50
 
 container = {}
-list = {}
+mylist = {}
 for (i = 0; i < depth; i += 1) {
-	list = {"nest depth:", i + 1}
-	container = {container, list}
+	mylist = {"nest depth:", i + 1}
+	container = {container, mylist}
 }
 
 print(container)

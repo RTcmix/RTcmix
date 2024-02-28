@@ -14,7 +14,7 @@ extern "C" {
 	const char *lookup_token(const char *token, bool printWarning);
 }
 
-static std::map<int, const char *> sTokenMap;
+static std::map<size_t, const char *> sTokenMap;
 
 #define MAX_TOKEN_LEN 32
 
@@ -44,8 +44,10 @@ check_new_arg(const char *argument)
 		}
 		const char *value = strchr(rawtoken, '=') + 1;
 		if (value && strlen(value) > 0) {
-			std::pair<std::map<int, const char *>::iterator, bool> ret;
-			ret = sTokenMap.insert(std::pair<int, const char *>(hash(token), value));
+            // Use same mechanism we do for symbols - copy string into symbol table and match by literal address
+            const char *tokenToStore = strsave(token);
+			std::pair<std::map<size_t, const char *>::iterator, bool> ret;
+			ret = sTokenMap.insert(std::pair<size_t, const char *>((size_t)tokenToStore, value));
 			if (ret.second == false) {
 				rtcmix_warn(NULL, "Argument '--%s=<value>' was passed to CMIX more than once -- ignoring", token);
 			}
@@ -61,7 +63,7 @@ check_new_arg(const char *argument)
 const char *
 lookup_token(const char *token, bool printWarning)
 {
-	std::map<int, const char *>::iterator it = sTokenMap.find(hash(token));
+	std::map<size_t, const char *>::iterator it = sTokenMap.find((size_t)token);
 	if (it == sTokenMap.end()) {
 		if (printWarning) {
 			minc_warn("$%s was not passed to CMIX as an argument", token);

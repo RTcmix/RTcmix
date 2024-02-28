@@ -21,7 +21,10 @@
 #include <portaudio.h>
 #endif
 
+#ifndef EMBEDDEDAUDIO
 #define EMBEDDEDAUDIO
+#endif
+
 #include <RTcmix_API.h>
 
 #define MAX_SCORES 32
@@ -183,7 +186,7 @@ int initRTcmix()
 		goto error;
 
 	if (printJobOutput) {
-		char str[64] = "set_option(\"print = 5\");\n";
+		char str[64] = "set_option(\"print = 6\");\n";
 		RTcmix_parseScore(str, strlen(str));
 		RTcmix_setPrintCallback(rtcmixPrintCallback, NULL);
 	}
@@ -203,10 +206,11 @@ void playScores()
 {
 	float sleepTime = 0.0;
 	float remainingTime;
-	int i;
+	int ret;
 
-	for (i = 0; i < numScores; i++) {
-		RTcmix_parseScore(scores[i], strlen(scores[i]));
+	for (int i = 0; i < numScores; i++) {
+        if (verbose) printf("Playing score '%s'...\n", scoreNames[i]);
+		ret = RTcmix_parseScore(scores[i], strlen(scores[i]));
 		if (!withAudio) {
 			// must do this to collect printout
 			float *output = (float *) calloc(framesPerBuffer * numOutChannels, sizeof(float));
@@ -218,7 +222,7 @@ void playScores()
 			sleepTime += scoreDelayTime;
 		}
 	}
-	remainingTime = totalDuration - sleepTime;
+    remainingTime = (ret == 0) ? totalDuration - sleepTime : 1;     // when we've had an error, sleep just long enough to print it
 	if (remainingTime > 0.0)
 		usleep(remainingTime * 1000000);
 }
@@ -433,13 +437,13 @@ int main(int argc, char *argv[])
 		if (scores[i])
 			free(scores[i]);
 
-	result = deleteRTcmix();
-
 #ifdef HAVE_PORTAUDIO
 	if (withAudio)
 		result = deleteAudio();
 #endif
-
+    
+    result = deleteRTcmix();
+    
 	return result;
 }
 

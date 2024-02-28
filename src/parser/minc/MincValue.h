@@ -25,6 +25,9 @@ class MincList : public MincObject, public RefCounted
 public:
     MincList(int len=0);
     void resize(int newLen);
+    bool operator == (const MincList &rhs);
+    bool operator < (const MincList &rhs);
+    bool operator > (const MincList &rhs);
     int len;                /* number of MincValue's in <data> array */
     MincValue *data;
 protected:
@@ -44,6 +47,7 @@ private:
 public:
     MincMap();
     int len() const { return (int) map.size(); }
+    bool contains(const MincValue &element);
     std::map<MincValue, MincValue, MincValueCmp> map;
     void        print();
 protected:
@@ -58,31 +62,41 @@ class Symbol;
 class MincStruct : public MincObject, public RefCounted
 {
 public:
-    MincStruct() : _memberList(NULL) {}
-    Symbol *    addMember(const char *name, MincDataType type, int scope, const char *subtype);
+    MincStruct(const char *typeName) : _typeName(typeName), _memberList(NULL) {}
+    const char *typeName() const { return _typeName; }
+    Symbol *    addMember(const char *name, const MincValue &value, int scope, const char *structTypeName);
     Symbol *    lookupMember(const char *name);
     Symbol *    members() { return _memberList; }
     void        print();
 protected:
     virtual ~MincStruct();
 protected:
-    Symbol *    _memberList;
+    const char *    _typeName;
+    Symbol *        _memberList;
 };
 
-// A MincFunction contains a Node which contains the list of operations to be carried
-// out by the function call.
+// A MincFunction contains two Nodes which contain the argument list
+// and the list of operations to be carried out by the function body.
 
 class Node;
 
+
 class MincFunction : public MincObject, public RefCounted {
 public:
-    MincFunction(Node *body);
+    enum Type {
+        Standalone  = 0x10,
+        Method      = 0x20
+    };
+    MincFunction(Node *argumentList, Node *functionBody, MincFunction::Type type=MincFunction::Standalone);
+    void    handleThis(std::vector<Symbol *> &symbolStack);
     void    copyArguments();
     Node *  execute();
 protected:
     virtual ~MincFunction();
 private:
+    Node *  _argumentList;
     Node *  _functionBody;
+    MincFunction::Type _type;
 };
 
 class MincValue {

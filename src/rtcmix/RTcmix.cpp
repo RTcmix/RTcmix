@@ -27,7 +27,7 @@
 #include "InputFile.h"
 #include <ugens.h>
 #include <RTcmix.h>
-#include <Option.h>
+#include <RTOption.h>
 #include "utils.h"
 #include <ug_intro.h>
 #include <AudioDevice.h>
@@ -64,16 +64,11 @@ int				RTcmix::sBufferFrameCount = 0;
 int				RTcmix::audioNCHANS 	= 0;
 float			RTcmix::sSamplingRate	= 0.0;
 bool			RTcmix::runToOffset		= false;
-FRAMETYPE		RTcmix::bufOffset		= 0;
+float   		RTcmix::bufTimeOffset	= 0.0;
 FRAMETYPE		RTcmix::bufStartSamp 	= 0;
 
-#ifdef EMBEDDED
 int				RTcmix::rtInteractive = 0;
-#else
-int				RTcmix::rtInteractive = 1; // keep the heap going for this object
-#endif
-
-int                             RTcmix::rtUsingOSC = 0;
+int             RTcmix::rtUsingOSC = 0;
 
 int				RTcmix::rtsetparams_called = 0; // will call at object instantiation, though
 int				RTcmix::audioLoopStarted = 0;
@@ -104,7 +99,6 @@ InputFile *	RTcmix::inputFileTable = NULL;
 long		RTcmix::max_input_fds = 0;
 int			RTcmix::last_input_index = -1;
 
-pthread_mutex_t RTcmix::pfieldLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t RTcmix::audio_config_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t RTcmix::aux_to_aux_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t RTcmix::to_aux_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -152,31 +146,31 @@ void
 RTcmix::init_options(bool fromMain, const char *defaultDSOPath)
 {
 	rtcmix_debug(NULL, "RTcmix::init_options entered");
-	Option::init();
+	RTOption::init();
 	if (defaultDSOPath && defaultDSOPath[0])
-		Option::dsoPathPrepend(defaultDSOPath);
+		RTOption::dsoPathPrepend(defaultDSOPath);
 	
 	if (fromMain) {
 #ifndef EMBEDDED
-		Option::readConfigFile(Option::rcName());
-		Option::exitOnError(true); // we do this no matter what is in config file
+		RTOption::readConfigFile(RTOption::rcName());
+		RTOption::exitOnError(true); // we do this no matter what is in config file
 #else
-		Option::exitOnError(false);
+		RTOption::exitOnError(false);
+        RTOption::print(6);
 #endif
         setInteractive(false);
 	}
 	else {
 		setSR(44100.0); // what the heck...
-		Option::print(0);
-		Option::reportClipping(false);
+		RTOption::print(0);
+		RTOption::reportClipping(false);
 	}
 	
-	setRTBUFSAMPS((int) Option::bufferFrames());  /* modifiable with rtsetparams */
-
-	// BGGxx
-	/*
-	if (Option::autoLoad()) {
-		const char *dsoPath = Option::dsoPath();
+	setRTBUFSAMPS((int) RTOption::bufferFrames());  /* modifiable with rtsetparams */
+    // BGGxx
+    /*
+	if (RTOption::autoLoad()) {
+		const char *dsoPath = RTOption::dsoPath();
 		if (strlen(dsoPath) == 0)
 			registerDSOs(SHAREDLIBDIR);
 		else
@@ -232,6 +226,7 @@ RTcmix::free_globals()
 	free_buffers();
 	free_bus_config();
 	freefuncs();
+    clearRtInstList();
 	delete [] rtQueue;
 	rtQueue = NULL;
 	delete rtHeap;
@@ -250,7 +245,7 @@ RTcmix::free_globals()
 	
 	// Reset state of all global vars
 	runToOffset				= false;
-	bufOffset				= 0;
+	bufTimeOffset			= 0.0;
 	rtsetparams_called 		= 0;
 	audioLoopStarted 		= 0;
 	audio_config 			= 1;
@@ -324,12 +319,14 @@ RTcmix::RTcmix(bool dummy) {}
 
 RTcmix::~RTcmix()
 {
+    rtcmix_debug("~RTcmix", "shutting down and freeing memory");
 	run_status = RT_SHUTDOWN;
 	waitForMainLoop();	// This calls close()
 	free_globals();
 #ifdef EMBEDDED
 	destroy_parser();	// clean up symbols, etc
 #endif
+    rtcmix_debug("~RTcmix", "done");
 }
 
 //  The actual initialization method called by the imbedded constructors
@@ -338,12 +335,11 @@ void
 RTcmix::init(float tsr, int tnchans, int bsize,
 			 const char *opt1, const char *opt2, const char *opt3)
 {
-	// for rtsetparams -- I forget why it's set up with both double
-	// and float p-field arrays.  Also, these aren't 0-ed out
+	// for rtsetparams -- these aren't 0-ed out
 	// so no need to dimension them at MAXDISPARGS
-	float p[3];
-	double pp[3];
+	double p[3];
 
+    rtcmix_debug("RTcmix::init", "entered");
 #ifdef SGI
    flush_all_underflows_to_zero();
 #endif
@@ -356,24 +352,24 @@ RTcmix::init(float tsr, int tnchans, int bsize,
 
 	int nargs = 0;
 	// set options if any are non-null
-	p[0] = pp[0] = STRINGIFY(opt1);
+	p[0] = STRINGIFY(opt1);
 	if (opt1) ++nargs;
-	p[1] = pp[1] =  STRINGIFY(opt2);
+	p[1] = STRINGIFY(opt2);
 	if (opt2) ++nargs;
-	p[2] = pp[2] = STRINGIFY(opt3);
+	p[2] = STRINGIFY(opt3);
 	if (opt3) ++nargs;
 
 	if (nargs)
-		set_option(p, nargs, pp);
+		set_option(p, nargs);
 
 	// set the sampling rate and nchannels
-	p[0] = pp[0] = tsr;
-	p[1] = pp[1] = tnchans;
-	p[2] = pp[2] = bsize;
+	p[0] = tsr;
+	p[1] = tnchans;
+	p[2] = bsize;
 	nargs = 3;
-	rtsetparams(p, nargs, pp);
+	rtsetparams(p, nargs);
 
-	if (Option::play() || Option::record()) {
+	if (RTOption::play() || RTOption::record()) {
 		int retcode = runMainLoop();
 		if (retcode != 0)
 			fprintf(stderr, "runMainLoop() failed\n");
@@ -382,24 +378,25 @@ RTcmix::init(float tsr, int tnchans, int bsize,
 		// If we are not playing or recording from HW, we cannot be interactive
         setInteractive(false);
 	}
+    rtcmix_debug("RTcmix::init", "exited");
 }
 
-double RTcmix::offset(float *p, int n_args, double *pp)
+double RTcmix::offset(double *p, int n_args)
 {
 	if (n_args < 1 || n_args > 2) {
 		rtcmix_advise("rtoffset", "Usage: rtoffset(offset_time [, skip_preroll])");
 		return 0;
 	}
-	bufOffset = (FRAMETYPE)(pp[0] * sr());
-	runToOffset = (n_args == 1) ? true : pp[1] == 0.0;
+	bufTimeOffset = p[0];
+	runToOffset = (n_args == 1) ? true : p[1] == 0.0;
 	if (rtrecord) {
 		rtcmix_advise("rtoffset", "Cannot skip forward when recording");
-		bufOffset = 0;
+        bufTimeOffset = 0.0;
 		runToOffset = false;
-		return bufOffset;
+		return bufTimeOffset;
 	}
-	rtcmix_advise("rtoffset", "Starting playback at time %.3f %s preroll.", pp[0], runToOffset ? "with" : "without");
-	return bufOffset;
+	rtcmix_advise("rtoffset", "Starting playback at time %.3f %s preroll.", p[0], runToOffset ? "with" : "without");
+	return bufTimeOffset;
 }
 
 // numeric p-field sending command.  The first "double" is to disambiguate
@@ -544,8 +541,8 @@ RTcmix::cmdval(const char *name, int n_args, const char* p0, ...)
 
 void RTcmix::printOn()
 {
-	Option::print(MMP_PRINTALL);
-	Option::reportClipping(true);
+	RTOption::print(MMP_PRINTALL);
+	RTOption::reportClipping(true);
 
 	/* Banner */
 	char tbuf[128];
@@ -555,8 +552,8 @@ void RTcmix::printOn()
 
 void RTcmix::printOff()
 {
-	Option::print(MMP_FATAL);
-	Option::reportClipping(false);
+	RTOption::print(MMP_FATAL);
+	RTOption::reportClipping(false);
 }
 
 void RTcmix::panic()
@@ -571,7 +568,7 @@ void RTcmix::panic()
 void RTcmix::run()
 {
 	int retcode;
-	if (!Option::play() && !Option::record() && rtfileit == 1) {
+	if (!RTOption::play() && !RTOption::record() && rtfileit == 1) {
 		/* Create scheduling/audio thread. */
 		rtcmix_debug(NULL, "RTcmix::run calling runMainLoop()");
 		retcode = runMainLoop();
@@ -604,8 +601,8 @@ int RTcmix::getBusCount()
 	return busCount;
 }
 
-void RTcmix::setBufOffset(FRAMETYPE inOffset, bool inRunToOffset) {
-	bufOffset = inOffset; runToOffset = inRunToOffset;
+void RTcmix::setBufTimeOffset(float inOffset, bool inRunToOffset) {
+	bufTimeOffset = inOffset; runToOffset = inRunToOffset;
 }
 
 void RTcmix::registerAudioStartCallback(AudioCallback callback, void *context)
@@ -677,6 +674,7 @@ int RTcmix::startAudio(AudioDeviceCallback renderCallback, AudioDeviceCallback d
 			audioDevice->close();
 			return -1;
 		}
+        rtcmix_debug(NULL, "RTcmix::startAudio finished");
 		return 0;	// Playing, thru HW and/or to FILE.
 	}
 	rtcmix_warn(NULL, "Audio device was NULL or not open");

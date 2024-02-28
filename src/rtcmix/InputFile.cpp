@@ -389,7 +389,7 @@ read_short_samps(
         if (swap) {
             int j = n;
             for (int i = chan; i < src_samps; i += file_chans, j += dest_chans) {
-                sbuf[i] = reverse_int2(&sbuf[i]);
+                sbuf[i] = (short)reverse_int2(&sbuf[i]);
                 dest[j] = (BUFTYPE) sbuf[i];
             }
         }
@@ -413,14 +413,14 @@ void InputFile::createConversionBuffers(int inBufSamps)
 {
 	/* Allocate buffers needed to convert input audio files as they are read */
 	for (int i = 0; i < RT_THREAD_COUNT; ++i) {
-		sConversionBuffers[i] = (char *) malloc(sizeof(BUFTYPE) * MAXCHANS * inBufSamps);
+		sConversionBuffers[i] = new char[sizeof(BUFTYPE) * MAXCHANS * inBufSamps];
 	}
 }
 
 void InputFile::destroyConversionBuffers()
 {
 	for (int i = 0; i < RT_THREAD_COUNT; ++i) {
-		free(sConversionBuffers[i]);
+        delete [] sConversionBuffers[i];
 		sConversionBuffers[i] = NULL;
 	}
 }
@@ -618,12 +618,12 @@ off_t InputFile::readSamps(off_t cur_offset,
 		(void)copySamps(cur_offset, dest, dest_chans, dest_frames, src_chan_list, src_chans);
 	}
 	else {
-#ifdef MULTI_THREAD
-		_readBuffer = sConversionBuffers[RTThread::GetIndexForThread()];
-#endif
 		{
 			AutoLock fileLock(this);
-			if (_lseek(_fd, cur_offset, SEEK_SET) == -1) {
+#ifdef MULTI_THREAD
+            _readBuffer = sConversionBuffers[RTThread::GetIndexForThread()];
+#endif
+            if (_lseek(_fd, cur_offset, SEEK_SET) == -1) {
 				perror("RTcmix::readFromInputFile (lseek)");
                 return FILE_ERROR;
 			}
@@ -636,7 +636,7 @@ off_t InputFile::readSamps(off_t cur_offset,
 										 dest, dest_chans, dest_frames,
 										 src_chan_list, src_chans,
 										 _readBuffer);
-		}
+        }
 	}
     int bytes_per_samp = ::mus_data_format_to_bytes_per_sample(_data_format);
     return dest_frames * _chans * bytes_per_samp;

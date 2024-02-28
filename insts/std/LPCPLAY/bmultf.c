@@ -1,4 +1,4 @@
-#include "lp.h"
+// bmultf.c
 
 void
 bmultf(float *array, float mult, int number)

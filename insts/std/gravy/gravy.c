@@ -28,7 +28,7 @@ float transpose(float);
 double interp(double, double, double, double);
 
 double
-gravy(float p[], int n_args)
+gravy(double p[], int n_args)
 {
 	int insamps,outsamps,winsamps,inmove;
 	int inshift,outshift,inchans,outchans,inchan;

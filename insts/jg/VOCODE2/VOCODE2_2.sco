@@ -1,7 +1,7 @@
 rtsetparams(44100, 2)
 load("VOCODE2")
 
-rtinput("/snd/beckett/furniture1.aiff")
+rtinput("../../../snd/input.wav");
 
 /* carrier */
 bus_config("MIX", "in 0", "aux 0 out")

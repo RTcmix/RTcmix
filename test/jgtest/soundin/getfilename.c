@@ -17,7 +17,7 @@ get_filename()
 /* Doesn't actually open the file; just gets filename from Minc.
 */
 double
-openfile(float p[], int n_args, double pp[])
+openfile(double p[], int n_args)
 {
    filename = DOUBLE_TO_STRING(pp[0]);
 

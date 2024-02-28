@@ -103,9 +103,9 @@ double parse(double note, double *whichScale, int elements)
    return baseFreq * interp_ratio;
 }
 
-double m_eqtemp(float p[], int n_args, double pp[])
+double m_eqtemp(double p[], int n_args)
 {
-	double note = pp[0];
+	double note = p[0];
 	double oct = floor(note);   
 	double basepitch = 100.0 * fmod(note,1.0);
 	double myDiap = diap / pow(2.0, octaveOffset);
@@ -123,52 +123,52 @@ double m_eqtemp(float p[], int n_args, double pp[])
    return baseFreq * pow(2.0,basepitch/12.0);
 }
 
-double m_create_scale(float p[], int n_args, double pp[])
+double m_create_scale(double p[], int n_args)
 {
    myScaleLength = n_args-1;
    int ii;
    for (ii=0; ii<n_args; ii++)
    {
-      myScale[ii] = pp[ii];
+      myScale[ii] = p[ii];
    }
    return 0;
 }
 
-double m_myscale(float p[], int n_args, double pp[])
+double m_myscale(double p[], int n_args)
 {
-   return parse(pp[0],myScale,myScaleLength);
+   return parse(p[0],myScale,myScaleLength);
 }
 
-double m_diapason(float p[], int n_args, double pp[])
+double m_diapason(double p[], int n_args)
 {
-   diap = (pp[0]<18.0) ? cpspch(pp[0]) : pp[0];
-   octaveOffset = (n_args>1) ? pp[1] : 8.0;
+   diap = (p[0]<18.0) ? cpspch(p[0]) : p[0];
+   octaveOffset = (n_args>1) ? p[1] : 8.0;
    return 0;
 }
 
-double m_partch(float p[], int n_args, double pp[])
+double m_partch(double p[], int n_args)
 {
-   return parse(pp[0],partchScale,43);
+   return parse(p[0],partchScale,43);
 }
 
-double m_young(float p[], int n_args, double pp[])
+double m_young(double p[], int n_args)
 {
-   return parse(pp[0],youngScale,12);
+   return parse(p[0],youngScale,12);
 }
 
-double m_just(float p[], int n_args, double pp[])
+double m_just(double p[], int n_args)
 {
-   return parse(pp[0],justScale,12);
+   return parse(p[0],justScale,12);
 }
 
-double m_pythag(float p[], int n_args, double pp[])
+double m_pythag(double p[], int n_args)
 {
-   return parse(pp[0],pythagScale,7);
+   return parse(p[0],pythagScale,7);
 }
 
-double m_mean(float p[], int n_args, double pp[])
+double m_mean(double p[], int n_args)
 {
-   return parse(pp[0],meanScale,12);
+   return parse(p[0],meanScale,12);
 }
 
 #ifndef EMBEDDED

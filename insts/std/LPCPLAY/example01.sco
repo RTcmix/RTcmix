@@ -1,12 +1,13 @@
 /************   LPCPLAY example score *****************/
 rtsetparams(44100, 1, 256);
+
 load("LPCPLAY");
 bus_config("LPCPLAY", "in 0", "out 0");
 
 /* LPCPLAY arguments: */
-/* p0=start,p1=dur,amp,p2=amp,p3=8ve.pch,p4=frame1,p5=frame2,p6=warp,p7=cf,p8=bw, p9/10 --> additional pitch specifications */
+/* p0=start,p1=dur,amp,p2=amp,p3=8ve.pch,p4=frame1,p5=frame2,p6=warp,p7=cf,p8=bw, p09/10 --> additional pitch specifications */
 
-float thresh,randamp,fps,frame1,frame2,warp,cf,bw,dur,amp,start,amp
+float thresh,randamp,fps,frame1,frame2,warp,cf,bw,dur,amp,start
 float buzthresh, noisethresh;
 
 /* open the LPC file to be used for the resynthesis */
@@ -45,7 +46,7 @@ LPCPLAY(start=start+dur+1,dur*1.5,amp,transp = .08,frame1,frame2,warp=.2,cf,bw)
 /* lower, slower, lower formants --sex change operation */
 LPCPLAY(start=start+dur*1.5+1,dur*1.5,amp,transp= -.12,frame1,frame2,warp=-.25,cf,bw)
 
-/* even more */
+/* even more, using fixed PCH value */
 LPCPLAY(start=start+dur*1.5+1,dur*1.5,amp,transp= 6.00,frame1,frame2,warp=-.25,cf,bw)
 
 /* distorted curve, some formant shift, speeding up slightly */
@@ -54,15 +55,15 @@ LPCPLAY(start=start+dur*1.5+1,dur*.9,amp,transp=.02,frame1,frame2,warp=-.1,cf,bw
 
 /* modify pitch curves */
 setdev(0)
-LPCPLAY(start=start+dur+1,dur*.9,amp,transp=8,frame1,frame2,warp=0,cf,bw,frame1+50,8,frame1+100,7,frame1+150,7.05,frame2,9)
+LPCPLAY(start=start+(dur*1.5)+1,dur*.9,amp,transp=8,frame1,frame2,warp=0,cf,bw, frame1+50,8, frame1+100,7, frame1+150,7.05, frame2,9)
 
 /* some whispered speech */
 lpcstuff(thresh = -.01,	randamp = .1,	0,0,0,0)
-set_thresh(0.9, 1);
+set_thresh(0.0, 0.001);
 LPCPLAY(start=start+dur+1,dur,amp,transp=8,frame1,frame2,warp=0,cf,bw)
 
 /* highpass whispered speech */
-LPCPLAY(start=start+dur+1,dur,amp,transp=8,frame1,frame2,warp=0,cf=5,bw=.1)
+LPCPLAY(start=start+dur+1,dur,amp*5,transp=8,frame1,frame2,warp=0,cf=5,bw=.1)
 
 /* highpass whispered speech, shift formants */
 LPCPLAY(start=start+dur+1,dur,amp,transp=8,frame1,frame2,warp=-.3,cf=7,bw=.05)
@@ -70,6 +71,7 @@ LPCPLAY(start=start+dur+1,dur,amp,transp=8,frame1,frame2,warp=-.3,cf=7,bw=.05)
 /* andrews sisters */
 lpcstuff(thresh = .09,	randamp = .1,	0, 0,0,0)
 set_thresh(buzthresh, noisethresh);
+dur *= 1.5;
 setdev(15)
 amp = 3
 LPCPLAY(start=start+dur+1,dur,amp,transp=.01,frame1,frame2,warp=0,cf=0,bw=0)

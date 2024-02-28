@@ -33,6 +33,7 @@ LIBDIR = $(CMIXDIR)/lib
 DESTDIR = $(CMIXDIR)/bin
 BINDIR = $(DESTDIR)
 INCLUDEDIR = $(CMIXDIR)/include
+MINCLUDEDIR = $(CMIXDIR)/minclude
 
 SRCDIR = $(CMIXDIR)/src
 AUDIODIR = $(SRCDIR)/audio
@@ -48,20 +49,43 @@ MINCLIB = $(MINCDIR)/libminc.a
 SNDLIB = $(SRCDIR)/sndlib/sndlib.a
 AUDIOLIB = $(AUDIODIR)/librtaudio.a
 
+LIBPREFIX = lib
+
 # Compile and link time flags
 
 # -- Linux ----------------------------------------------------
 ifeq ($(ARCH),LINUX)
   ARCHFLAGS = -DLINUX $(ARCH_BITFLAGS)
   ARCH_RTLDFLAGS = -Wl,-rpath $(LIBDIR)
+  RTLIBTYPE = DYNAMIC
   ifeq ($(BUILDTYPE), STANDALONE)
     ARCHFLAGS += -DSTANDALONE
-    RTLIBTYPE = DYNAMIC
+    SHLIB = rtcmix
 	INSTTYPE = DYNAMIC
+    ifndef AUDIODRIVER
+	    AUDIODRIVER=OSS
+    endif
   endif
-  ifndef AUDIODRIVER
-	AUDIODRIVER=OSS
-  endif
+  ifeq ($(BUILDTYPE), LINUXEMBEDDED)
+    ARCHFLAGS += -DEMBEDDED
+    AUDIODRIVER=EMBEDDEDAUDIO
+    CMIX_FLAGS += -DEMBEDDEDAUDIO
+    INSTTYPE = STATIC
+    SHLIB = rtcmix_embedded
+    # This is overridable in site.conf
+    ifndef RTLIBTYPE
+        RTLIBTYPE = DYNAMIC
+    endif
+       RTLIB_INSTALL_DIR = $(LIBDIR)
+    endif
+    ifeq ($(RTLIBTYPE), DYNAMIC) 
+        SHLIB_SUFFIX = so
+        RTLIB_LDFLAGS = $(DYNAMIC_LDFLAGS)
+    else
+        ARCH_RTLDFLAGS =
+        SHLIB_SUFFIX = a
+        RTLIB_LDFLAGS =
+   endif
   CC = gcc
   CXX = g++ -Wno-deprecated
   LD = ld
@@ -69,8 +93,6 @@ ifeq ($(ARCH),LINUX)
   INSTALL = cp -f
   RANLIB = touch
   SHELL = /bin/sh
-  SHLIB = rtcmix
-  SHLIB_SUFFIX = so
 endif
 
 # -- Mac OS X -------------------------------------------------
@@ -82,7 +104,7 @@ ifeq ($(ARCH),MACOSX)
   CXX = c++ -Wno-deprecated
   LD = ld
   MAKE = make
-  INSTALL = cp -f
+  INSTALL = ditto
   RANLIB = ranlib
   SHELL = /bin/sh
   # Optional but rare override for the maximum number of supported audio
@@ -151,6 +173,8 @@ ifeq ($(ARCH),MACOSX)
 
     SHLIB = rtcmixdylib
 	SHLIB_SUFFIX = so
+	# we override this to remove the "lib" prefix
+	LIBPREFIX =
 	RTLIB_LDFLAGS = $(UB_CFLAGS) -Wl,-U,_cpost,-bundle,-flat_namespace
 	RTLIBTYPE = DYNAMIC
 	RTLIB_INSTALL_DIR = $(MAX_LIB_INSTALL_DIR)
@@ -263,7 +287,7 @@ ifeq ($(BUILDTYPE), STANDALONE)
 	RTLIB_LDFLAGS = $(DYNAMIC_LDFLAGS)
 	RTLIBTYPE = DYNAMIC
 	RTLIB_INSTALL_DIR = $(LIBDIR)
-
+	
     ifeq ($(NPLAY_SUPPORT), TRUE)
       CMIX_FLAGS += -DNETAUDIO
     endif
@@ -285,9 +309,13 @@ CXXFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(PICFLAGS) $(ARCHFLAGS) $(CMIX_F
 
 # Platform-independent library flags
 
-RTLIB = lib$(SHLIB).$(SHLIB_SUFFIX)
+RTLIB = $(LIBPREFIX)$(SHLIB).$(SHLIB_SUFFIX)
 LIBRTCMIX = $(LIBDIR)/$(RTLIB)
 RTLDFLAGS = -L$(LIBDIR) -l$(SHLIB) -lgen
+
+# All platforms can use global score include directory
+
+CMIX_FLAGS += -DMINCLUDEDIR=\"$(MINCLUDEDIR)\"
 
 # Multi-platform OSC server support
 

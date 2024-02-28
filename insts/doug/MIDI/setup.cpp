@@ -5,7 +5,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <Option.h>
+#include <RTOption.h>
 #include "../../../src/rtcmix/DynamicLib.h"
 #include <RTMIDIOutput.h>
 #include <ugens.h>
@@ -21,15 +21,15 @@ RTMIDIOutput *getMIDIOutput()
 }
 
 double
-setup_midi(float *p, int n_args)
+setup_midi(double *p, int n_args)
 {
 #ifndef EMBEDDED
     char loadPath[1024];
-    const char *dsoPath = Option::dsoPath();
+    const char *dsoPath = RTOption::dsoPath();
     if (strlen(dsoPath) == 0) {
         dsoPath = SHAREDLIBDIR;
     }
-    sprintf(loadPath, "%s/libmidiconn.so", dsoPath);
+    snprintf(loadPath, 1024, "%s/libmidiconn.so", dsoPath);
 
     DynamicLib theDSO;
     if (theDSO.load(loadPath) == 0) {
@@ -64,7 +64,7 @@ class Instrument;
 
 extern "C" {
 
-double controller_number(float *p, int n_args, double *pp);
+double controller_number(double p[], int n_args);
 
 int profile()
 {

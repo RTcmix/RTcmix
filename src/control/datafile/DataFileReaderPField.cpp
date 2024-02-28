@@ -23,7 +23,9 @@ DataFileReaderPField::DataFileReaderPField(const char *fileName,
 			delete _datafile;
 			_datafile = NULL;
 		}
-		_datafile->setSkipTime(skipTime);
+        else {
+            _datafile->setSkipTime(skipTime);
+        }
 	}
 	_filter = new Oonepole(controlRate);
 	_filter->setlag(lag);

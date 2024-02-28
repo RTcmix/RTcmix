@@ -26,7 +26,6 @@
 #include "rtdefs.h"
 #include "heap.h"
 #include "sockdefs.h"
-#include "notetags.h"	   // contains defs for note-tagging
 #include "dbug.h"
 #include "InputFile.h"
 #include <MMPrint.h>
@@ -80,7 +79,7 @@ main(int argc, char *argv[], char **env)
  #ifdef DENORMAL_CHECK
    detect_denormals();
  #endif
-   signal(SIGFPE, sigfpe_handler);	  /* Install signal handler */
+   signal(SIGFPE, sigfpe_handler);          /* Install signal handler */
 #endif /* LINUX */
 #ifdef SGI
    flush_all_underflows_to_zero();
@@ -97,6 +96,8 @@ main(int argc, char *argv[], char **env)
 
 #else // EMBEDDED
 
+#include "RTOption.h"
+
 // BGGx
 #define TOTOBJS 178
 static RTcmixMain *globalApp[TOTOBJS];
@@ -111,7 +112,7 @@ wmmcontext theContext[TOTOBJS];
 
 void RTcmix_setPrintLevel(int level)
 {
-	Option::print(level);
+	RTOption::print(level);
 }
 
 /* ----------------------------------------------------------- RTcmix_init --- */
@@ -301,7 +302,7 @@ void RTcmix_setPrintCallback(RTcmixPrintCallback inPrintCallback, void *inContex
 void checkForPrint()
 {
 	if (!is_print_cleared()) {
-		const char *printBuf = MMPrint::mm_print_buf;
+		const char *printBuf = get_mm_print_buf();
 		if (sPrintCallback)
 			sPrintCallback(printBuf, sPrintCallbackContext);
 		clear_print();
@@ -329,6 +330,27 @@ int RTcmix_resetAudio(float sr, int nchans, int vecsize, int recording, int objn
 	globalApp[objno]->set_wmmcontext(objno);
 	return status;
 }
+
+/* XXX TODO XXX DAS IF NEEDED BY WINDOWS, PLEASE UNCOMMENT AND EDIT
+// This is now the entry point into the parser code, so all the RTcmix_XXX methods
+// can be defined in this file.
+
+extern "C" int embedded_parse_score(const char *caller, char *thebuf, int buflen);
+
+// BGG mm -- set this to accept a buffer from max/msp or other embedded systems
+
+int RTcmix_parseScore(char *theBuf, int buflen)
+{
+    int status = embedded_parse_score("RTcmix_parseScore", theBuf, buflen);
+#if defined(EMBEDDEDAUDIO)
+    if (!globalApp->interactive() && status != 0) {
+        // If there was an error, flush messages.
+        checkForPrint();
+    }
+#endif
+    return status;
+}
+*/
 
 #ifdef IOS
 
@@ -437,11 +459,12 @@ int RTcmix_setAudioBufferFormat(RTcmix_AudioFormat format, int nchans, int objno
 	return SetEmbeddedCallbackAudioFormat(rtcmix_fmt, nchans);
 }
 
+void RTcmix_setInteractive(int interactive)
+{
+    globalApp->setInteractive(interactive != 0);
+}
 
-// BGGx -- for unity
-float tinputbuf[2048];  // so we only have to pass one buffer ptr in unity
-
-int RTcmix_runAudio(void *inAudioBuffer, void *outAudioBuffer, int nframes, int objno)
+int RTcmix_runAudio(void *inAudioBuffer, void *outAudioBuffer, int nframes)
 {
 	// BGGx
 	int retval;

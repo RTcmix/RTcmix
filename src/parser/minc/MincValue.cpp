@@ -25,24 +25,24 @@ MincList::MincList(int inLen) : len(inLen), data(NULL)
     if (inLen > 0) {
         data = new MincValue[len];
     }
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("MincList::MincList: %p alloc'd with len %d\n", this, inLen);
 #endif
 }
 
 MincList::~MincList()
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("deleting MincList %p\n", this);
 #endif
     if (data != NULL) {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
         MPRINT("deleting MincList data %p...\n", data);
 #endif
         delete [] data;
         data = NULL;
     }
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("\tdone\n");
 #endif
 }
@@ -64,24 +64,97 @@ MincList::resize(int newLen)
     delete [] oldList;
 }
 
+bool
+MincList::operator == (const MincList &rhs)
+{
+    if (len != rhs.len) {
+        return false;   // different lengths always unequal
+    }
+    else if (len == 0 && rhs.len == 0) {
+        return true;    // empty lists always equal
+    }
+    bool same = false;
+    for (int i = 0; i < len; ++i) {
+        same = (data[i] == rhs.data[i]);
+        if (!same) {
+            return false;
+        }
+    }
+    return same;
+}
+
+bool
+MincList::operator < (const MincList &rhs)
+{
+    if (len > rhs.len) {
+        return false;   // shorter always less
+    }
+    else if (len < rhs.len) {
+        return true;
+    }
+    // At this point, lengths are equal
+    bool isLess = false;
+    int i = 0;
+    for (; i < len-1; ++i) {
+        isLess = (data[i] < rhs.data[i]);
+        if (isLess) {
+            return true;
+        }
+        else if (data[i] > rhs.data[i]) {
+            return false;
+        }
+    }
+    // last pair must be <
+    return (data[i] < rhs.data[i]);
+}
+
+bool
+MincList::operator > (const MincList &rhs)
+{
+    if (len > rhs.len) {
+        return true;
+    }
+    else if (len < rhs.len) {
+        return false;
+    }
+    // At this point, lengths are equal
+    bool isGreater = false;
+    int i = 0;
+    for (; i < len-1; ++i) {
+        isGreater = (data[i] > rhs.data[i]);
+        if (isGreater) {
+            return true;
+        }
+        else if (data[i] < rhs.data[i]) {
+            return false;
+        }
+    }
+    return (data[i] > rhs.data[i]);
+}
+
 MincMap::MincMap()
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("MincMap::MincMap: %p alloc'd\n", this);
 #endif
 }
 
 MincMap::~MincMap()
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("deleting MincMap %p\n", this);
 #endif
+}
+
+bool MincMap::contains(const MincValue &element)
+{
+    return map.count(element) > 0;
 }
 
 bool
 MincMap::MincValueCmp::operator()(const MincValue& lhs, const MincValue& rhs) const
 {
-    return lhs.rawValue() < rhs.rawValue();
+    return lhs < rhs;
 }
 
 #define ThrowIf(exp, excp) if (exp) { throw excp; }
@@ -98,26 +171,28 @@ MincStruct::~MincStruct()
     }
 }
 
-Symbol * MincStruct::addMember(const char *name, MincDataType type, int scope, const char *subtype)
+Symbol * MincStruct::addMember(const char *name, const MincValue &value, int scope, const char *structTypeName)
 {
     // Element symbols are not linked to any scope, so we call create() directly.
-    // RIGHT HERE, WE NEED THE FOLLOWING LINES, BUT WE ALSO NEED TO BE PASSED THE STRUCT TYPE
+    // RIGHT HERE, WE NEED THE FOLLOWING LINES, BUT WE ALSO NEED TO BE PASSED THE STRUCT TYPENAME
     const StructType *structType = NULL;
-    if (type == MincStructType) {
-        structType = lookupStructType(subtype, GlobalLevel);    // GlobalLevel for now
+    if (value.dataType() == MincStructType) {
+        structType = lookupStructType(structTypeName, GlobalLevel);    // GlobalLevel for now
         if (!structType) {
-            minc_die("struct type '%s' is not defined", subtype);
+            minc_die("struct type '%s' is not defined", structTypeName);
         }
     }
 
     Symbol *memberSym = Symbol::create(name);
-    DPRINT("MincStruct::addMember(member '%s', type %s) => symbol %p\n", name, MincTypeName(type), memberSym);
-    memberSym->value() = MincValue(type);   // initialize MincValue to correct type for member
-    memberSym->scope = scope;
+    DPRINT("MincStruct::addMember(member '%s', type %s) => symbol %p\n", name, MincTypeName(value.dataType()), memberSym);
+    memberSym->value() = value;     // initialize member value
+    memberSym->_scope = scope;
+#if ALLOW_RECURSIVE_STRUCT_INIT     /* this causes a crash if a struct contains a struct which contains a... */
     if (structType) {
+        // Recursively initialize a struct member within a struct.
         memberSym->initAsStruct(structType);
     }
-
+#endif
     // Ugly, but lets us put them on in order
     if (_memberList == NULL) {
         _memberList = memberSym;
@@ -146,29 +221,56 @@ Symbol * MincStruct::lookupMember(const char *name)
 /* ========================================================================== */
 /* MincFunction */
 
-MincFunction::MincFunction(Node *body) : _functionBody(body)
+MincFunction::MincFunction(Node *argumentList, Node *functionBody, MincFunction::Type type)
+    : _argumentList(argumentList), _functionBody(functionBody), _type(type)
 {
     ENTER();
+    _argumentList->ref();
+    _functionBody->ref();
 }
 
 MincFunction::~MincFunction()
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("deleting MincFunction %p\n", this);
 #endif
-    delete _functionBody;
+    _functionBody->unref();
+    _argumentList->unref();
+}
+
+void
+MincFunction::handleThis(std::vector<Symbol *> &symbolStack)
+{
+    if (_type == Method) {
+        Symbol *symbolForThis = (symbolStack.empty()) ? NULL : symbolStack.back();
+        if (symbolForThis) {
+            symbolStack.pop_back();     // remove symbol once it is used
+            MincStruct *structForThis = (MincStruct *) symbolForThis->value();
+            Node *nodeStructDecl = new NodeStructDecl(strsave("this"), structForThis->typeName());
+            nodeStructDecl->ref();
+            DPRINT("MincFunction::handleThis: declaring symbol for 'this' from called object '%s'\n", symbolForThis->name());
+            Node *declaredVarThis = nodeStructDecl->exct();
+            declaredVarThis->copyValue(symbolForThis, NO);  // dont allow type override
+            DPRINT("MincFunction::handleThis: copying source symbol's value(s) into symbol for 'this'\n");
+            declaredVarThis->symbol()->value() = symbolForThis->value();
+            nodeStructDecl->unref();
+        }
+        else {
+            DPRINT("MincFunction::handleThis: symbolForThis is NULL\n");    // This will generate an error later
+        }
+    }
 }
 
 void
 MincFunction::copyArguments()
 {
-    (void)_functionBody->child(1)->exct();
+    (void)_argumentList->exct();
 }
 
 Node *
 MincFunction::execute()
 {
-    return _functionBody->child(2)->exct();
+    return _functionBody->exct();
 }
 
 /* ========================================================================== */
@@ -176,7 +278,7 @@ MincFunction::execute()
 
 MincValue::MincValue(MincHandle h) : type(MincHandleType)
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("created MincValue %p (for MincHandle)\n", this);
 #endif
     _u.handle = h; ref_handle(h);
@@ -184,7 +286,7 @@ MincValue::MincValue(MincHandle h) : type(MincHandleType)
 
 MincValue::MincValue(MincList *l) : type(MincListType)
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("created MincValue %p (for MincList *)\n", this);
 #endif
     _u.list = l; RefCounted::ref(l);
@@ -192,7 +294,7 @@ MincValue::MincValue(MincList *l) : type(MincListType)
 
 MincValue::MincValue(MincMap *m) : type(MincMapType)
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("created MincValue %p (for MincMap *)\n", this);
 #endif
     _u.map = m; RefCounted::ref(m);
@@ -200,7 +302,7 @@ MincValue::MincValue(MincMap *m) : type(MincMapType)
 
 MincValue::MincValue(MincStruct *str) : type(MincStructType)
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("created MincValue %p (for MincStruct *)\n", this);
 #endif
     _u.mstruct = str; RefCounted::ref(str);
@@ -208,7 +310,7 @@ MincValue::MincValue(MincStruct *str) : type(MincStructType)
 
 MincValue::MincValue(MincFunction *func) : type(MincFunctionType)
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("created MincValue %p (for MincFunction *)\n", this);
 #endif
     _u.mfunc = func; RefCounted::ref(func);
@@ -216,15 +318,15 @@ MincValue::MincValue(MincFunction *func) : type(MincFunctionType)
 
 MincValue::MincValue(MincDataType inType) : type(inType)
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("created MincValue %p (for MincDataType)\n", this);
 #endif
     _u.list = NULL;        // to zero our contents
 }
 
-MincValue::MincValue(const MincValue &rhs)
+MincValue::MincValue(const MincValue &rhs) : type(MincVoidType)
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("created MincValue %p (for copy ctor with rhs %p)\n", this, &rhs);
 #endif
     *this = rhs;
@@ -232,7 +334,7 @@ MincValue::MincValue(const MincValue &rhs)
 
 MincValue::~MincValue()
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("deleting MincValue %p\n", this);
 #endif
     switch (type) {
@@ -254,7 +356,7 @@ MincValue::~MincValue()
        default:
             break;
     }
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     MPRINT("\tdone deleting\n");
 #endif
 }
@@ -390,7 +492,7 @@ void MincValue::print()
 
 const MincValue& MincValue::operator = (const MincValue &rhs)
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_MINC_MEMORY
     ENTER();
     MPRINT("MincValue %p assigning from rhs %p)\n", this, &rhs);
 #endif
@@ -491,14 +593,22 @@ MincValue& MincValue::operator[] (const MincValue &index)
 
 bool MincValue::operator == (const MincValue &rhs) const
 {
-    ThrowIf(rhs.type != this->type, NonmatchingTypeException("attempt to compare variables having different types"));
+    ThrowIf(rhs.type != this->type, NonmatchingTypeException("Attempt to compare variables having different types"));
     switch (type) {
         case MincFloatType:
             return cmp(_u.number, rhs._u.number) == 0;
         case MincStringType:
-            return strcmp(_u.string, rhs._u.string) == 0;
-        default:
-            throw InvalidTypeException("can't compare this type of object");
+            return same(_u.string, rhs._u.string);
+        case MincHandleType:
+        case MincFunctionType:
+            return (rawValue() == rhs.rawValue());
+        case MincListType:
+            return (_u.list == NULL || rhs._u.list == NULL) ?
+                _u.list == rhs._u.list : *_u.list == *rhs._u.list;
+        case MincMapType:
+        case MincStructType:
+       default:
+            throw InvalidTypeException("Can't compare objects of this type");
     }
 }
 
@@ -509,16 +619,50 @@ bool MincValue::operator != (const MincValue &rhs) const
 
 bool MincValue::operator < (const MincValue &rhs) const
 {
-    ThrowIf(rhs.type != this->type, NonmatchingTypeException("attempt to compare variables having different types"));
-    ThrowIf(this->type != MincFloatType, InvalidTypeException("can't compare this type of object"));
-    return cmp(_u.number, rhs._u.number) == -1;
+    if (rhs.type != this->type) {
+        return rawValue() < rhs.rawValue();
+    }
+    switch (type) {
+        case MincFloatType:
+            return cmp(_u.number, rhs._u.number) == -1;
+        case MincStringType:
+            return smaller(_u.string, rhs._u.string);
+        case MincHandleType:
+        case MincFunctionType:
+            return rawValue() < rhs.rawValue();
+        case MincListType:
+            // This logic handles either side being NULL
+            return (_u.list == NULL && rhs._u.list == NULL) ? false :
+                (_u.list == NULL) ? true : (rhs._u.list == NULL) ? false : *_u.list < *rhs._u.list;
+        case MincMapType:
+        case MincStructType:
+       default:
+            throw InvalidTypeException("Can't compare objects of this type");
+    }
 }
 
 bool MincValue::operator > (const MincValue &rhs) const
 {
-    ThrowIf(rhs.type != this->type, NonmatchingTypeException("attempt to compare variables having different types"));
-    ThrowIf(this->type != MincFloatType, InvalidTypeException("can't compare this type of object"));
-    return cmp(_u.number, rhs._u.number) == 1;
+    if (rhs.type != this->type) {
+        return (rawValue() > rhs.rawValue());
+    }
+    switch (type) {
+        case MincFloatType:
+            return cmp(_u.number, rhs._u.number) == 1;
+        case MincStringType:
+            return bigger(_u.string, rhs._u.string);
+        case MincHandleType:
+        case MincFunctionType:
+            return (rawValue() > rhs.rawValue());
+        case MincListType:
+            // This logic handles either side being NULL
+            return (_u.list == NULL && rhs._u.list == NULL) ? false :
+                (_u.list == NULL) ? false : (rhs._u.list == NULL) ? true : *_u.list > *rhs._u.list;
+        case MincMapType:
+        case MincStructType:
+       default:
+            throw InvalidTypeException("Can't compare objects of this type");
+    }
 }
 
 bool MincValue::operator <= (const MincValue &rhs) const

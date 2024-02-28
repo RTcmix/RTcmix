@@ -13,7 +13,9 @@
 #include "sys/time.h"
 #include "pthread.h"
 
+#ifndef NSEC_PER_MSEC
 #define NSEC_PER_MSEC 1000000
+#endif
 #define THREAD_IMPORTANCE 30
 
 static int time_started_flag = FALSE;
@@ -61,7 +63,7 @@ static void *Pt_CallbackProc(void *p)
     while (pt_callback_proc_id == parameters->id) {
         /* wait for a multiple of resolution ms */
         UInt64 wait_time;
-        int delay = mytime++ * parameters->resolution - Pt_Time();
+        long delay = mytime++ * parameters->resolution - Pt_Time();
         if (delay < 0) delay = 0;
         wait_time = AudioConvertNanosToHostTime((UInt64)delay * NSEC_PER_MSEC);
         wait_time += AudioGetCurrentHostTime();

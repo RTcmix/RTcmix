@@ -10,7 +10,7 @@ int cartflag;
 double mindiff;
 
 double
-path (float p[], int n_args)		/* for polar coordinates */
+path (double p[], int n_args)		/* for polar coordinates */
 {
     float rhos[500], thetas[500];
     int i, t;
@@ -42,7 +42,7 @@ path (float p[], int n_args)		/* for polar coordinates */
 }
 
 double
-cpath (float p[], int n_args) 	/* for cartesian coordinates */
+cpath (double p[], int n_args) 	/* for cartesian coordinates */
 {
     float rhos[500], thetas[500];
     int i, t;
@@ -73,61 +73,61 @@ cpath (float p[], int n_args) 	/* for cartesian coordinates */
 }
 
 double
-param (float p[], int n_args)	/* parametric setup for polar coordinates */
+param (double p[], int n_args)	/* parametric setup for polar coordinates */
 {
-    	int i;
-    	double *fun1, *fun2;
-
-    	if (n_args != 2)
-       die("param", "Incorrect number of args. Should have 2.");
-
-    	fun1 = floc((int) p[0]);
-    	if (fun1 == NULL)
-       		die("param", "You haven't made function table %d.", (int) p[0]);
-	fun2 = floc((int) p[1]);
-    	if (fun2 == NULL)
-       		die("param", "You haven't made function table %d.", (int) p[1]);
-
-	for (i = 0; i < ARRAYSIZE; i++)
-    	{
-       		rholoc[i] = *fun1++;
-       		thetaloc[i] = *fun2++;
-    	}
-	rtcmix_advise("param", "Functions loaded.");
-	cartflag = 0;
-
-	return 0.0;
+    int i;
+    double *fun1, *fun2;
+    
+    if (n_args != 2)
+        return die("param", "Incorrect number of args. Should have 2.");
+    
+    fun1 = floc((int) p[0]);
+    if (fun1 == NULL)
+        return die("param", "You haven't made function table %d.", (int) p[0]);
+    fun2 = floc((int) p[1]);
+    if (fun2 == NULL)
+        return die("param", "You haven't made function table %d.", (int) p[1]);
+    
+    for (i = 0; i < ARRAYSIZE; i++)
+    {
+        rholoc[i] = *fun1++;
+        thetaloc[i] = *fun2++;
+    }
+    rtcmix_advise("param", "Functions loaded.");
+    cartflag = 0;
+    
+    return 0.0;
 }
 
 double
-cparam (float p[], int n_args) /* parametric setup for cartesian coordinates */
+cparam (double p[], int n_args) /* parametric setup for cartesian coordinates */
 {
-    	int i;
-    	double *fun1, *fun2;
-
-    	if (n_args != 2)
-       die("cparam", "Incorrect number of args. Should have 2.");
-
-    	fun1 = floc((int) p[0]);
-    	if (fun1 == NULL)
-       		die("cparam", "You haven't made function table %d.", (int) p[0]);
-	fun2 = floc((int) p[1]);
-    	if (fun2 == NULL)
-       		die("cparam", "You haven't made function table %d.", (int) p[1]);
-
-	for (i = 0; i < ARRAYSIZE; i++)
-    	{
-       		rholoc[i] = *fun1++;
-       		thetaloc[i] = *fun2++;
-    	}
-	rtcmix_advise("cparam", "Functions loaded.");
-	cartflag = 1;
-
-	return 0.0;
+    int i;
+    double *fun1, *fun2;
+    
+    if (n_args != 2)
+        return die("cparam", "Incorrect number of args. Should have 2.");
+    
+    fun1 = floc((int) p[0]);
+    if (fun1 == NULL)
+        return die("cparam", "You haven't made function table %d.", (int) p[0]);
+    fun2 = floc((int) p[1]);
+    if (fun2 == NULL)
+        return die("cparam", "You haven't made function table %d.", (int) p[1]);
+    
+    for (i = 0; i < ARRAYSIZE; i++)
+    {
+        rholoc[i] = *fun1++;
+        thetaloc[i] = *fun2++;
+    }
+    rtcmix_advise("cparam", "Functions loaded.");
+    cartflag = 1;
+    
+    return 0.0;
 }
 
 double
-threshold(float p[], int n_args)
+threshold(double p[], int n_args)
 {
 	mindiff = p[0];
 	rtcmix_advise("threshold", "Source location updated every %.2f msec.",

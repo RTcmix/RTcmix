@@ -88,6 +88,9 @@ int FILTERBANK::init(double p[], int n_args)
 	if (rtsetinput(inskip, this) == -1)
 		return DONT_SCHEDULE;
 	insamps = int(dur * SR + 0.5);
+   if (inchan >= inputChannels())
+      return die("FILTERBANK", "You asked for channel %d of a %d-channel file.",
+                                                      inchan, inputChannels());
 
 	if (rtsetoutput(outskip, dur + ringdur, this) == -1)
 		return DONT_SCHEDULE;

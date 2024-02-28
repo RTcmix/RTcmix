@@ -16,7 +16,7 @@
 #include <assert.h>
 #include "audio_devices.h"
 #include <ugens.h>
-#include <Option.h>
+#include <RTOption.h>
 #include "rtdefs.h"
 #include "InputFile.h"
 
@@ -26,9 +26,9 @@ int
 RTcmix::setparams(float sr, int nchans, int bufsamps, bool recording, int bus_count)
 {
 	int         i;
-	int         verbose = Option::print();
-	int         play_audio = Option::play();
-	int         record_audio = Option::record(recording);
+	int         verbose = RTOption::print();
+	int         play_audio = RTOption::play();
+	int         record_audio = RTOption::record(recording);
 	
     if (sr <= 0.0) {
         die("rtsetparams", "Sampling rate must be greater than 0.");
@@ -58,7 +58,7 @@ RTcmix::setparams(float sr, int nchans, int bufsamps, bool recording, int bus_co
     NCHANS = nchans;
     setRTBUFSAMPS(bufsamps);
     
-    int numBuffers = Option::bufferCount();
+    int numBuffers = RTOption::bufferCount();
     
     // Now that much of our global state is dynamically sized, the initialization
 	// of that state needs to be delayed until after we know the bus count as
@@ -86,7 +86,7 @@ RTcmix::setparams(float sr, int nchans, int bufsamps, bool recording, int bus_co
 		/* These may have been reset by driver. */
 		setRTBUFSAMPS(nframes);
 		if (srate != RTcmix::sr()) {
-			if (!Option::requireSampleRate()) {
+			if (!RTOption::requireSampleRate()) {
 				rtcmix_advise("rtsetparams",
 							  "Sample rate reset by audio device from %f to %f.",
 							  RTcmix::sr(), srate);
@@ -146,9 +146,9 @@ int RTcmix::resetparams(float sr, int chans, int bufsamps, bool recording)
 	
 	init_buf_ptrs();
 
-	int	numBuffers = Option::bufferCount();
-	int	play_audio = Option::play();
-	int	record_audio = Option::record(recording);
+	int	numBuffers = RTOption::bufferCount();
+	int	play_audio = RTOption::play();
+	int	record_audio = RTOption::record(recording);
 	if (play_audio || record_audio) {
         int nframes = RTcmix::bufsamps();
 		float srate = RTcmix::sr();
@@ -199,7 +199,7 @@ int RTcmix::resetparams(float sr, int chans, int bufsamps, bool recording)
    for each of the output channels, and opens output devices.
 */
 double
-RTcmix::rtsetparams(float p[], int n_args, double pp[])
+RTcmix::rtsetparams(double p[], int n_args)
 {
 #ifdef EMBEDDED
 // BGG mm -- ignore this one, use RTcmix::setparams()
@@ -212,8 +212,8 @@ RTcmix::rtsetparams(float p[], int n_args, double pp[])
         RTExit(CONFIGURATION_ERROR);
 	}
 		
-	int bufsamps = (n_args > 2) ? (int) p[2] : (int) Option::bufferFrames();
-	bool recording = Option::record();
+	int bufsamps = (n_args > 2) ? (int) p[2] : (int) RTOption::bufferFrames();
+	bool recording = RTOption::record();
 	int numBusses = (n_args > 3) ? (int)p[3] : DEFAULT_MAXBUS;
 	
 	return (double) setparams(p[0], (int)p[1], bufsamps, recording, numBusses);

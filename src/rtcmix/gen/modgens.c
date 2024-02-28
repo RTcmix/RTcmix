@@ -23,7 +23,7 @@ static double *new_table(int size)
    to have the size of the larger one before adding corresponding values.
 */
 double
-m_addgens(float p[], int n_args, double pp[])
+m_addgens(double p[], int n_args)
 {
    int   destslot, srcslot1, srcslot2, normalize, size;
 
@@ -45,7 +45,7 @@ m_addgens(float p[], int n_args, double pp[])
    to have the size of the larger one before multiplying corresponding values.
 */
 double
-m_multgens(float p[], int n_args, double pp[])
+m_multgens(double p[], int n_args)
 {
    int   destslot, srcslot1, srcslot2, normalize, size;
 
@@ -74,7 +74,7 @@ m_multgens(float p[], int n_args, double pp[])
                [optional, default is 1]
 */
 double
-m_copygen(float p[], int n_args, double pp[])
+m_copygen(double p[], int n_args)
 {
    int   srcslot, destslot, srcsize, destsize;
    double *srctable, *desttable;
@@ -107,7 +107,7 @@ m_copygen(float p[], int n_args, double pp[])
    so that values outside [-1, 1] are possible.
 */
 double
-m_offsetgen(float p[], int n_args, double pp[])
+m_offsetgen(double p[], int n_args)
 {
    int   i, slot, size;
    double *srctable, *desttable, offset;
@@ -137,7 +137,7 @@ m_offsetgen(float p[], int n_args, double pp[])
    done, so that values outside [-1, 1] are possible.
 */
 double
-m_scalegen(float p[], int n_args, double pp[])
+m_scalegen(double p[], int n_args)
 {
    int   i, slot, size;
    double *srctable, *desttable, scale;
@@ -167,7 +167,7 @@ m_scalegen(float p[], int n_args, double pp[])
    table values; inversion is performed around this center of symmetry.
 */
 double
-m_invertgen(float p[], int n_args, double pp[])
+m_invertgen(double p[], int n_args)
 {
    int   i, slot, size;
    double min, max, center, *srctable, *desttable;
@@ -209,7 +209,7 @@ m_invertgen(float p[], int n_args, double pp[])
 /* ----------------------------------------------------------- reversegen --- */
 /* Reverse the values of the gen whose table number is given in p0. */
 double
-m_reversegen(float p[], int n_args, double pp[])
+m_reversegen(double p[], int n_args)
 {
    int   i, j, slot, size;
    double *srctable, *desttable;
@@ -244,7 +244,7 @@ m_reversegen(float p[], int n_args, double pp[])
       [3, 4, 5, 6, 7, 8, 9, 0, 1, 2]      shift = -3
 */
 double
-m_shiftgen(float p[], int n_args, double pp[])
+m_shiftgen(double p[], int n_args)
 {
    int      slot, size, shift, abs_shift;
    size_t   movesize;
@@ -291,7 +291,7 @@ m_shiftgen(float p[], int n_args, double pp[])
    quantum given in p1.
 */
 double
-m_quantizegen(float p[], int n_args, double pp[])
+m_quantizegen(double p[], int n_args)
 {
    int      i, slot, size;
    double   quantum, *srctable, *desttable;

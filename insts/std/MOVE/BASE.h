@@ -35,7 +35,7 @@ protected:
    void set_random(void);
    void put_tap(int, float *, int);
    int  roomtrig(double, double, double, int);
-   void rvb_reset(double *);
+   void rvb_reset();
    void setair(double, int, double *);
    void airfil_set(int);
    void earfil_set(int);

@@ -3,7 +3,7 @@
 extern "C" {
 #endif
 
-#define MAXARGS   32
+#define MAXARGS   64
 
 int parse_score(int argc, char *argv[], char **env);
 int parse_score_buffer(const char *buffer, int buflen);

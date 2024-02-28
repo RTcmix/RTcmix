@@ -5,6 +5,7 @@ include ../../makefile.conf
 CMD = ${CMIXDIR}/bin/CMIX
 
 CXXFLAGS += -DCMIXDIR=${CMIXDIR}
+LDFLAGS = $(ARCH_BITFLAGS)
 
 all:	announce all_tests
 
@@ -31,6 +32,7 @@ test_simple_mix \
 test_scheduler \
 test_stereo \
 test_load \
+test_minc \
 run_stresstest \
 run_sockettest \
 $(NULL)
@@ -44,7 +46,7 @@ TESTLEN = 30
 
 stresstest: $(STRESSOBJS) $(IMBCMIXOBJS)
 #	$(CXX) -o $@ $(DYN) $(STRESSOBJS) $(IMBCMIXOBJS) $(LDFLAGS) -L/home/dscott -ldmalloc
-	$(CXX) -o $@ $(DYN) $(STRESSOBJS) $(IMBCMIXOBJS) $(LDFLAGS)
+	$(CXX) -o $@ $(DYN) $(STRESSOBJS) $(IMBCMIXOBJS) $(LDFLAGS) -L${CMIXDIR}/lib -lrtcmix
 
 sockettest: $(SOCKOBJS)
 	$(CXX) -o $@ $(SOCKOBJS) ${CMIXDIR}/lib/RTsockfuncs.o
@@ -53,7 +55,7 @@ socksend: $(SOCKSENDOBJS)
 	$(CXX) -o $@ $(SOCKSENDOBJS) ${CMIXDIR}/lib/RTsockfuncs.o
 
 embeddedtest: embeddedtest.o
-	$(CXX) -g -o $@ embeddedtest.o -L${CMIXDIR}/lib -lrtcmix_embedded
+	$(CXX) $(LDFLAGS) -g -o $@ embeddedtest.o -L${CMIXDIR}/lib -lrtcmix_embedded
 
 osc_send_test.o:	osc_send_test.cpp
 	$(CXX) ${LIBLO_CFLAGS} -c osc_send_test.cpp
@@ -159,17 +161,25 @@ test_load:
 	-$(CMD) < load_test.sco
 #	rm load_test.sco
 
+test_minc:
+	@echo
+	@echo Testing MinC functionality
+	-$(CMD) < test-minc-nestedlists.sco		
+	-$(CMD) < test-minc-nestedpfieldlists.sco		
+	-$(CMD) < test-minc-pfieldchain.sco		
+	-$(CMD) < test-minc-samplepfield.sco
+
 test_embedded:
 	@echo
 	@echo Testing embedded use of all non-instrument functions
 	@mkdir -p function_scores
 	@for line in `cat every_function.sco`; do echo $$line\(\) > function_scores/$$line.sco; done
 	-./embeddedtest function_scores/*.sco
-#	@rm -rf function_scores
 	@echo Testing embedded use of all instruments
 	@echo "rtinput(\"input.wav\")" > embedded_test.sco
 	@find ${CMIXDIR}/shlib/ -name lib\* | grep -v conn | sed 's/^.*lib//' | sed 's/\.so/(0,0,1,1,1,1,1,1,1,1)/' >> embedded_test.sco
 	-./embeddedtest embedded_test.sco
+	@rm -rf function_scores
 
 clean:
 	@echo Cleaning test suite.

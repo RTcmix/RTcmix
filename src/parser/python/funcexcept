@@ -15,6 +15,8 @@ n_arg
 note_pfield_path
 open
 pgen
+print
+printf
 round
 s_arg
 set_inst_tag_num

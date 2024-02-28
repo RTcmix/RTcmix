@@ -3,12 +3,12 @@
 #include <string.h>
 #include "globals.h"
 #include <ugens.h>
-#include <Option.h>
+#include <RTOption.h>
 
 #include "DynamicLib.h"
 
 typedef void (*ProfileFun)();
-extern "C" double m_load(float *, int, double *);
+extern "C" double m_load(double *, int);
 
 /* Assemble path to the shared library, and pass back as <dsoPath>. */
 static int
@@ -31,16 +31,16 @@ get_dso_path(double pfield, char dsoPath[])
     if (strchr(str, '/'))
 		strcpy(dsoPath, str);
     /* if name does not start with "lib", add prefix and suffix */
-    else if (strncmp(str, "lib", 3))
-		sprintf(dsoPath, "%s/lib%s.so", directory, str);
+    else if (strncmp(str, "lib", 3) != 0)
+		snprintf(dsoPath, 1024, "%s/lib%s.so", directory, str);
     /* otherwise just prepend directory and use as is */
     else
-		sprintf(dsoPath, "%s/%s", directory, str);
+		snprintf(dsoPath, 1024, "%s/%s", directory, str);
 
     return 0;
 }
 
-double m_load(float *p, int n_args, double *pp)
+double m_load(double p[], int n_args)
 {
     char dsoPath[1024];
     int profileLoaded;
@@ -53,7 +53,7 @@ double m_load(float *p, int n_args, double *pp)
 	return 1.0;
 #endif
 
-    if (get_dso_path(pp[0], dsoPath) != 0)
+    if (get_dso_path(p[0], dsoPath) != 0)
 		return 0;
 
     if (theDSO.load(dsoPath) != 0) {

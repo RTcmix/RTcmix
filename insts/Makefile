@@ -2,9 +2,9 @@ include ../makefile.conf
 
 ifeq ($(BUILDTYPE), STANDALONE)
 # This finds all dirs in this directory (filtered for embedded types).
-DIRS = `find . -type d -mindepth 1 -maxdepth 1 | sed -e '/maxmsp/d' | sed 's/\.\///g'`
+DIRS = `find . -mindepth 1 -maxdepth 1 -type d | sed -e '/maxmsp/d' | sed 's/\.\///g'`
 else
-DIRS = `find . -type d -mindepth 1 -maxdepth 1  | sed 's/\.\///g'`
+DIRS = `find . -mindepth 1 -maxdepth 1 -type d | sed 's/\.\///g'`
 endif
 
 .PHONY: all progs base std dsos standalone install dso_install \

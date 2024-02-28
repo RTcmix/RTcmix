@@ -85,7 +85,7 @@ static void malerr(char *, int);
 
 
 double
-denoise(float p[], int n_args)
+denoise(double p[], int n_args)
 {
    float *input,               /* input buffer */
    *output,                    /* output buffer */

@@ -45,7 +45,7 @@
 //#include <sys/time.h>
 //#include <sys/times.h>
 #include <string.h>
-#include <Option.h>
+#include <RTOption.h>
 
 // BGGx ww
 #include <io.h>
@@ -120,13 +120,13 @@ static float *PTEMP1;
 static char *sfname[NFILES];
 static float peakflag;
 
-double m_open(float *p, short n_args, double *pp) 
+double m_open(double *p, int n_args)
 {
-	char  *name,*cp,*getsfcode();
+	char  *name,*cp;
 	int   fno,i,inew;
 	float *opk;
 
-	name = DOUBLE_TO_STRING(pp[0]);
+	name = DOUBLE_TO_STRING(p[0]);
 	fno = p[1];
 // JGG: will name ptr be valid for entire program run? Is its memory held by
 // parser? If not, we should malloc sfname[fno] below (with other mallocs)
@@ -815,7 +815,7 @@ _chkpeak(int fno)
 }
 
 double
-peak_off(float p[], int n_args)
+peak_off(double p[], int n_args)
 {
 	peakoff[(int)p[0]] = (char)p[1];
 	if(p[1]) rtcmix_advise(NULL, "      peak check turned off for file %d\n",(int)p[0]);
@@ -825,7 +825,7 @@ peak_off(float p[], int n_args)
 }
 
 double
-punch_on(float p[], int n_args)
+punch_on(double p[], int n_args)
 {
 	punch[(int)p[0]] = p[1];
 	if(!p[1]) rtcmix_advise(NULL, "      punch turned off for file %d\n",(int)p[0]);
@@ -1036,7 +1036,7 @@ closesf_noexit()
 }
 
 double
-m_clean(float p[], int n_args) /* a fast clean of file, after header */
+m_clean(double p[], int n_args) /* a fast clean of file, after header */
 {
 /* if p1-> = 0, clean whole file, else skip=p1, dur=p2, ch-on? p3--> */
 	int i;
@@ -1214,7 +1214,7 @@ float *p;
 #else /* !OBSOLETE */
 
 double
-play_on(float p[], int n_args)
+play_on(double p[], int n_args)
 {	
    rtcmix_warn("CMIX", "Sorry, this version of RTcmix does not support the old cmix method of playing real-time audio.");
    return 0.0;

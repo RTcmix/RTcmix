@@ -8,21 +8,17 @@
 #include <assert.h>
 #include <ugens.h>      // for die, warn
 #include "rtcmix_types.h"
-// BGGx ww
-extern "C" {
-	#include <mixerr.h>
-}
 #include "prototypes.h"
 #include <ug_intro.h>
 #include <string.h>
-#include <Option.h>
+#include <RTOption.h>
 
 #define WARN_DUPLICATES
 
 typedef struct _func {
    struct _func *next;
    union {
-      double (*legacy_return) (float *, int, double *);
+      double (*legacy_return) (double *, int);
       double (*number_return) (const Arg[], int);
       char   *(*string_return) (const Arg[], int);
       Handle (*handle_return) (const Arg[], int);
@@ -33,7 +29,7 @@ typedef struct _func {
 } RTcmixFunction;
 
 struct FunctionEntry {
-	FunctionEntry(const char *fname, const char *dsoPath);
+	FunctionEntry(const char *fname, const char *dso_path);
 	~FunctionEntry();
 	char *funcName;
 	char *dsoPath;
@@ -60,11 +56,13 @@ RTcmix::addfunc(
    int			    return_type,            /* return type of function */
    int    			legacy)                 /* use old function signature */
 {
-   RTcmixFunction *cur_node, *this_node;
+    RTcmixFunction *cur_node, *this_node = NULL;
 
-   /* Create and initialize new list node. */
-   this_node = new RTcmixFunction;
-   if (this_node == NULL) {
+    /* Create and initialize new list node. */
+    try {
+        this_node = new RTcmixFunction;
+    }
+   catch(...) {
       die("addfunc", "no memory for table of functions");
       RTExit(MEMORY_ERROR);
       return;
@@ -93,7 +91,7 @@ RTcmix::addfunc(
    this_node->func_label = func_label;
    this_node->legacy = legacy;
 
-    bool autoload = Option::autoLoad();
+    bool autoload = RTOption::autoLoad();
    /* Place new node at tail of list.  Warn if this function name is already
       in list.
    */
@@ -101,12 +99,11 @@ RTcmix::addfunc(
       _func_list = this_node;
       return;
    }
-   cur_node = _func_list;
-   for ( ; cur_node->next; cur_node = cur_node->next) {
+   for (cur_node = _func_list; cur_node->next != NULL; cur_node = cur_node->next) {
 #ifdef WARN_DUPLICATES
       if (strcmp(cur_node->func_label, this_node->func_label) == 0) {
          if (!autoload)
-             rtcmix_warn("addfunc", "Function '%s' already introduced",
+             rtcmix_advise("addfunc", "Function '%s' already introduced",
                   this_node->func_label);
           delete this_node;
          return;
@@ -148,7 +145,6 @@ findfunc(RTcmixFunction *func_list, const char *func_label)
    for (cur_node = func_list; cur_node; cur_node = cur_node->next) {
       if (strcmp(cur_node->func_label, func_label) == 0) {
          return cur_node;
-         break;
       }
    }
    return NULL;
@@ -162,7 +158,7 @@ RTcmix::printargs(const char *funcname, const Arg arglist[], const int nargs)
    int i;
    Arg arg;
 
-   if (Option::print() >= MMP_PRINTALL) {
+   if (RTOption::print() >= MMP_PRINTALL) {
       RTPrintf("============================\n");
       RTPrintfCat("%s:  ", funcname);
       for (i = 0; i < nargs; i++) {
@@ -213,19 +209,17 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
     case DoubleType:
     try {
         if (func->legacy) {
-         /* for old (float p[], int nargs, double pp[]) signature */
+         /* for old (double p[], int nargs) signature (now minus the float[] array -- DAS) */
          #include <maxdispargs.h>
-         float p[MAXDISPARGS];
-         double pp[MAXDISPARGS];
+         double p[MAXDISPARGS];
          for (int i = 0; i < nargs; i++) {
 			const Arg &theArg = arglist[i];
-            p[i] = (float) theArg;
 			switch (theArg.type()) {
             case DoubleType:
-               pp[i] = (double) theArg;
+               p[i] = (double) theArg;
 			   break;
             case StringType:
-               pp[i] = STRING_TO_DOUBLE(theArg);
+               p[i] = STRING_TO_DOUBLE(theArg);
 			   break;
             default:
                 die(NULL, "%s: arguments must be numbers or strings.", funcname);
@@ -235,10 +229,9 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
          /* some functions rely on zero contents of args > nargs */
          for (int i = nargs; i < MAXDISPARGS; i++) {
             p[i] = 0.0;
-            pp[i] = 0.0;
          }
          *retval = (double) (*(func->func_ptr.legacy_return))
-                                                      (p, nargs, pp);
+                                                      (p, nargs);
       }
       else
          *retval = (double) (*(func->func_ptr.number_return))
@@ -259,8 +252,19 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
                                                           (arglist, nargs);
           if (retHandle == NULL) {
               status = SYSTEM_ERROR;
+              *retval = retHandle;
           }
-          *retval = retHandle;
+          // New:  If function is returning an array, it does it via a new Handle type.
+          // This allows the function to return it has a Handle, and we copy it as an
+          // Array here.  This means we have to free the orphaned handle.
+          else if (retHandle->type == ListType) {
+              *retval = (Array *) retHandle->ptr;
+              free(retHandle);
+              retHandle = NULL;
+          }
+          else {
+              *retval = retHandle;
+          }
 	  }
       catch (int err) {
           status = err;
@@ -333,7 +337,7 @@ getDSOPath(FunctionEntry *entry, const char *funcname)
 	return NULL;
 }
 
-extern "C" double m_load(float *, int, double *);	// loader.c
+extern "C" double m_load(double *, int);	// loader.c
 
 /* --------------------------------------------------- findAndLoadFunction -- */
 
@@ -348,13 +352,11 @@ RTcmix::findAndLoadFunction(const char *funcname)
 /*
 	if ((path = ::getDSOPath(_functionRegistry, funcname)) != NULL) {
 		char fullDSOPath[128];
-		float p[1];
 		double pp[1];
 		snprintf(fullDSOPath, 128, "%s.so", path);
-		p[0] = 0;
 		pp[0] = STRING_TO_DOUBLE(fullDSOPath);
 //        RTPrintf("findAndLoadFunction: calling load() on '%s' for function '%s'\n", fullDSOPath, funcname);
-		if (m_load(p, 1, pp) == 1)
+		if (m_load(pp, 1) == 1)
 			status = 0;
 		else
 			status = -1; 
@@ -365,7 +367,7 @@ RTcmix::findAndLoadFunction(const char *funcname)
 
 /* ------------------------------------------------------ registerFunction -- */
 
-// This is called by each DSO's registerMe() function to register a given
+// This is called by each DSO's registerSelf() function to register a given
 // Minc command name (function name) with a particular DSO name.  When
 // RTcmix::checkfunc() fails to find a functions, it calls findAndLoadFunction()
 // to search the function/DSO database for a matching DSO.
@@ -468,7 +470,7 @@ void addfunc(
 };
 
 void
-addLegacyfunc(const char *label, double (*func_ptr)(float *, int, double *))
+addLegacyfunc(const char *label, double (*func_ptr)(double *, int))
 {
 	RTcmix::addfunc(label, func_ptr, NULL, NULL, NULL, DoubleType, 1);
 }

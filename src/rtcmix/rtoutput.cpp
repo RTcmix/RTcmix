@@ -14,7 +14,7 @@
 #include "AudioDevice.h"
 #include "audio_devices.h"
 #include "rtdefs.h"
-#include <Option.h>
+#include <RTOption.h>
 
 
 /* The syntax of rtoutput is expanded when using sndlib:
@@ -176,9 +176,9 @@ RTcmix::parse_rtoutput_args(int nargs, double pp[])
    }
 
    rtoutsfname = DOUBLE_TO_STRING(pp[0]);
-   if (rtoutsfname == NULL)
+   if (rtoutsfname == NULL || strlen(rtoutsfname) == 0)
    {
-      rterror("rtoutput", "NULL file name!");
+      rterror("rtoutput", "NULL or empty file name!");
       return -1;
    }
 
@@ -272,10 +272,9 @@ RTcmix::parse_rtoutput_args(int nargs, double pp[])
 
 /* ------------------------------------------------------------- rtoutput --- */
 /* This routine is used in the Minc score to open up a file for
-   writing by RT instruments.  pp[0] is a pointer to the soundfile
-   name, disguised as a double by the crafty Minc.  (p[] is passed in
-   just for fun.)  Optional string arguments follow the filename,
-   and parse_rtoutput_args processes these. See the comment at the
+   writing by RT instruments.  p[0] is a pointer to the soundfile
+   name, disguised as a double by the crafty Minc. Optional string
+   arguments follow the filename, and parse_rtoutput_args processes these. See the comment at the
    top of this file for the meaning of these arguments.
 
    If "clobber" mode is on, we delete an existing file with the
@@ -286,7 +285,7 @@ RTcmix::parse_rtoutput_args(int nargs, double pp[])
    is any other error.
 */
 double
-RTcmix::rtoutput(float p[], int n_args, double pp[])
+RTcmix::rtoutput(double p[], int n_args)
 {
    int         error;
    struct stat statbuf;
@@ -306,7 +305,7 @@ RTcmix::rtoutput(float p[], int n_args, double pp[])
        return rtOptionalThrow(CONFIGURATION_ERROR);
    }
 
-   error = parse_rtoutput_args(n_args, pp);
+   error = parse_rtoutput_args(n_args, p);
    if (error)
       return rtOptionalThrow(PARAM_ERROR);          /* already reported in parse_rtoutput_args */
 
@@ -343,7 +342,7 @@ RTcmix::rtoutput(float p[], int n_args, double pp[])
 
    // If user has chosen to turn off audio playback, we delete
    // the device that might have been created during rtsetparams().
-   if (!Option::record() && !Option::play()) {
+   if (!RTOption::record() && !RTOption::play()) {
        delete audioDevice;
 	   audioDevice = NULL;
    }

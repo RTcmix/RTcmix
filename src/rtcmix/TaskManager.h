@@ -33,7 +33,8 @@ private:
 
 class TaskProvider {
 public:
-	virtual Task *	getTask() = 0;
+    virtual ~TaskProvider() {}
+	virtual Task *	getSingleTask() = 0;
 };
 
 template <typename Object, typename Ret, Ret (Object::*Method)()>
@@ -88,7 +89,7 @@ class TaskManagerImpl : public TaskProvider
 public:
 	TaskManagerImpl();
 	virtual ~TaskManagerImpl();
-	virtual Task *	getTask();
+	virtual Task *	getSingleTask();
 	void	addTask(Task *inTask);
 	void	startAndWait();
 private:
@@ -128,7 +129,7 @@ inline void TaskManager::addTask(Object * inObject)
 template <typename Object, typename Ret, typename Arg, Ret (Object::*Method)(Arg)>
 inline void TaskManager::addTask(Object * inObject, Arg inArg)
 {
-	mImpl->addTask(OneArgumentTask<Object, Ret, Arg, Method>(inObject, inArg));
+	mImpl->addTask(new OneArgumentTask<Object, Ret, Arg, Method>(inObject, inArg));
 }
 
 template <typename Object, typename Ret, typename Arg1, typename Arg2, Ret (Object::*Method)(Arg1, Arg2)>

@@ -18,7 +18,7 @@ extern int fsync(int fd);
 
 
 double
-sfcopy(float p[], int n_args)
+sfcopy(double p[], int n_args)
 {
 	int maxread,n,input,output,bytes,jj;
 

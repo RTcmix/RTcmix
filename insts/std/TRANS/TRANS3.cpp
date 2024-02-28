@@ -12,28 +12,30 @@
    from a table or real-time control source.  See TRANS for information about
    a technique for updating transposition.
 
-   TRANS3 processes only one channel at a time.
+   TRANS3 processes only one input channel at a time.
 
    TRANS3 was written by Doug Scott.
    Revised for v4 by JG, 2/11/06.
+ 
+   Update:  RTRANS3 is a variant which allows the transposition to be specified as a ratio rather than an interval.
+    Doug Scott, May 2022.
+
 */
 #include <stdio.h>
 #include <stdlib.h>
 #include <float.h>
 #include <assert.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include "TRANS3.h"
 #include <rt.h>
 
 //#define DEBUG
 //#define DEBUG_FULL
 
-const float one = 1.0;
-const float two = 2.0;
-const float three = 3.0;
-const float onehalf = 0.5;
-const float onesixth = 0.166666666667;
+const float one = 1.0f;
+const float two = 2.0f;
+const float onehalf = 0.5f;
+const float onesixth = 0.166666666667f;
 
 inline float interp3rdOrder(float ym2, float ym1, float yp1, float yp2, float t)
 {
@@ -48,31 +50,40 @@ inline float interp3rdOrder(float ym2, float ym1, float yp1, float yp2, float t)
 	       onesixth * (e * c * yp2 - t * f * ym2);
 }
 
-TRANS3 :: TRANS3() : Instrument()
+TRANS3::TRANS3() : _useRatio(false)
 {
-   in = NULL;
-   branch = 0;
-   transp = FLT_MAX;
-   incount = 1;
-   _increment = 0.0;
-   counter = 0.0;
-   getframe = true;
-
-   // clear sample history
-   oldersig = 0.0;
-   oldsig = 0.0;
-   newsig = 0.0;
-   newestsig = 0.0;
+    clear();
 }
 
+TRANS3::TRANS3(bool inUseRatio) : _useRatio(inUseRatio)
+{
+    clear();
+}
 
-TRANS3 :: ~TRANS3()
+void TRANS3::clear()
+{
+    in = NULL;
+    branch = 0;
+    transp = FLT_MAX;
+    incount = 1;
+    _increment = 0.0;
+    counter = 0.0;
+    getframe = true;
+    
+    // clear sample history
+    oldersig = 0.0;
+    oldsig = 0.0;
+    newsig = 0.0;
+    newestsig = 0.0;
+}
+
+TRANS3::~TRANS3()
 {
    delete [] in;
 }
 
 
-int TRANS3 :: init(double p[], int n_args)
+int TRANS3::init(double p[], int n_args)
 {
    nargs = n_args;
    if (nargs < 5)
@@ -129,10 +140,11 @@ void TRANS3::doupdate()
    float newtransp = p[4];
    if (newtransp != transp) {
       transp = newtransp;
-      _increment = cpsoct(10.0 + octpch(transp)) * oneover_cpsoct10;
+      _increment = _useRatio ? transp : cpsoct(10.0 + octpch(transp)) * oneover_cpsoct10;
 #ifdef DEBUG
       RTPrintf("_increment: %g\n", _increment);
 #endif
+      assert(_increment > 0.0);
    }
 }
 
@@ -207,3 +219,20 @@ Instrument *makeTRANS3()
    return inst;
 }
 
+RTRANS3::RTRANS3() : TRANS3(true)
+{
+}
+
+RTRANS3::~RTRANS3()
+{
+}
+
+Instrument *makeRTRANS3()
+{
+    RTRANS3 *inst;
+    
+    inst = new RTRANS3();
+    inst->set_bus_config("RTRANS3");
+    
+    return inst;
+}

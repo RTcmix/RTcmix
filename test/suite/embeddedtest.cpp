@@ -86,6 +86,7 @@ int main(int argc, char **argv)
 		}
 	}
 
+    printf("waiting...\n");
 	while (!done) {
 //		usleep(100*1000);
 	}

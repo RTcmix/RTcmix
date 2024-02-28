@@ -2,9 +2,9 @@
 #include <ugens.h>
 
 double
-m_system(float *p, short n_args, double *pp)
+m_system(double *p, int n_args)
 {
-	char *command = DOUBLE_TO_STRING(pp[0]);
+	char *command = DOUBLE_TO_STRING(p[0]);
 
 #ifdef IOS
 	rtcmix_warn("system", "the system command %s not allowed on iDevices", command);

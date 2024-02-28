@@ -19,7 +19,7 @@
 #include "rtdefs.h"
 #include <AudioDevice.h>
 #include <AudioFileDevice.h>
-#include "Option.h"
+#include "RTOption.h"
 #include <bus.h>
 
 /* #define DUMP_AUDIO_TO_RAW_FILE */
@@ -98,7 +98,7 @@ RTcmix::rtsendzeros(AudioDevice *device, int also_write_to_file)
 
    clear_output_buffers();
 
-   if (Option::play()) {
+   if (RTOption::play()) {
       err = ::write_to_audio_device(out_buffer, bufsamps(), device);
       if (err) {
          rtcmix_warn("rtsendzeros error", "%s\n", device->getLastError());
@@ -119,12 +119,12 @@ int
 RTcmix::rtsendsamps(AudioDevice *device)
 {
    int   err = 0;
-   const bool playing = Option::play();
+   const bool playing = RTOption::play();
    
    /* If we're writing to a file, and not playing, print a dot to show
       we've output one buffer.
    */
-   if (!playing && rtfileit && Option::print()) {
+   if (!playing && rtfileit && RTOption::print()) {
       printing_dots = 1;
       printf(".");    /* no '\n' */
    }
@@ -143,7 +143,7 @@ RTcmix::rtreportstats(AudioDevice *device)
 {
    static const double dbref = ::dbamp(32768.0);
 	
-   if (Option::checkPeaks()) {
+   if (RTOption::checkPeaks()) {
       BUFTYPE peaks[MAXBUS];
       long peaklocs[MAXBUS];
       printf("\nPeak amplitudes of output:\n");

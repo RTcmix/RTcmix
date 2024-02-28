@@ -10,10 +10,11 @@
 #include "rtcmix_parse.h"
 #include <ugens.h>
 #include "rtdefs.h"
-#include <Option.h>
+#include <RTOption.h>
+#include <new>
 
 typedef struct yy_buffer_state * YY_BUFFER_STATE;
-#if BISON_VERSION >= 3
+#if BISON_VERSION >= 3 || !defined(MACOSX)
 extern YY_BUFFER_STATE yy_scan_bytes(const char * buf, int len);
 #else
 extern YY_BUFFER_STATE yy_scan_bytes(const char * buf, size_t len);
@@ -23,14 +24,17 @@ extern "C" {
     extern int yyparse();
     extern int check_new_arg(const char *); /* Defined in minc/args.cpp */
     static int run_parser(const char *caller);
-    int RTcmix_parseScore(char *thebuf, int buflen);
+    int embedded_parse_score(const char *caller, char *thebuf, int buflen);
 }
+
+extern int yydebug;
 
 static int
 run_parser(const char *caller)
 {
     int status;
     try {
+//        yydebug = 1;
         status = yyparse();
     }
     catch (MincError err) {
@@ -85,6 +89,14 @@ run_parser(const char *caller)
         rtcmix_warn(caller, "Caught exception: %s", errname);
         status = otherError;
     }
+    catch (std::bad_alloc &ba) {
+        rtcmix_warn(caller, "Caught memory exception: %s", ba.what());
+        status = MEMORY_ERROR;
+    }
+    catch (...) {
+        rtcmix_warn(caller, "Caught unknown exception");
+        status = -1;
+    }
     if (status != 0) {
         // added for exit after Minc parse errors with the option set -- BGG
         if (get_bool_option(kOptionExitOnError)) {
@@ -99,7 +111,7 @@ run_parser(const char *caller)
 
 int parse_score_buffer(const char *buffer, int buflen)
 {
-    YY_BUFFER_STATE yybuf = yy_scan_bytes(buffer, buflen);
+    (void) yy_scan_bytes(buffer, buflen);
     reset_parser();
     preserveSymbols(true);
     return run_parser("parse_score_buffer");
@@ -139,13 +151,15 @@ parse_score(int argc, char *argv[], char **env)
 
 #else
 
-// BGG mm -- set this to accept a buffer from max/msp
-int RTcmix_parseScore(char *theBuf, int buflen)
+/* ---------------------------------------------------------- embedded_parse_score --- */
+/* This is called by RTcmix_parseScore() from main.cpp */
+
+int embedded_parse_score(const char *caller, char *theBuf, int buflen)
 {
     YY_BUFFER_STATE buffer = yy_scan_bytes(theBuf, buflen);
     reset_parser();
     preserveSymbols(true);
-    return run_parser("RTcmix_parseScore");
+    return run_parser(caller);
 }
     
 #endif
@@ -165,15 +179,15 @@ use_script_file(char *fname)
 		RTFPrintf(stderr, "Can't open %s\n", fname);
 		exit(1);
 	}
-	if (get_print_option() > MMP_ADVISE)
-		RTPrintf("Using file %s\n", fname);
+	if (get_print_option() >= MMP_ADVISE)
+		RTPrintf("Using score file %s\n", fname);
 #else
     rterror("use_script_file", "Command not available for embedded builds");
 #endif
 }
 
 #ifdef EMBEDDED
-extern "C" double minc_memflush();                                    // minc/minc.cpp (from minc.y)
+extern "C" double minc_memflush(void);                                    // minc/minc.cpp (from minc.y)
 #endif
 
 /* ------------------------------------------------------- destroy_parser --- */

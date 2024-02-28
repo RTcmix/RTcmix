@@ -5,13 +5,14 @@ include ../package.conf
 # DT:  amen
 
 LDFLAGS = -lm -ldl -lpthread
-INCLUDE = -I../../H -I.
-CFLAGS = $(ARCHFLAGS) -DUSE_HEADERS
+INCLUDE = -I../../include -I.
+CFLAGS = $(ARCHFLAGS) -DUSE_HEADERS $(INCLUDE)
 PROGS = lpc
 CMIX_SYS = ../../sys
 CMIX_LIB = ../../lib
 CMIX_RT = ../../rtstuff
-LFLAGS =  $(CMIX_SYS)/cmix.o $(CMIX_LIB)/genlib.a $(CMIX_RT)/rtprofile.o $(LDFLAGS)
+#LFLAGS =  $(CMIX_SYS)/cmix.o $(CMIX_LIB)/genlib.a $(CMIX_RT)/rtprofile.o $(LDFLAGS)
+LFLAGS =  $(CMIX_LIB)/genlib.a $(LDFLAGS)
 UTILS = merge lpcplot lpcscan restoreplot pchplot restorelpc
 
 CC = gcc
@@ -47,10 +48,10 @@ LPCPLAY_O = allpole.o readjust.o mp.o shift.o lpcplay.o buzz.o inters.o bmultf.o
 
 NEWLPCPLAY_O = allpole.o readjust.o mp.o shift.o newlpcplay.o buzz.o inters.o bmultf.o lpcheader.o
 
-lpcplay: ../../H/ugens.h ../../sys/cmix.o ../../rtstuff/rtprofile.o $(LPCPLAY_O)
+lpcplay: ../../include/ugens.h ../../sys/cmix.o ../../rtstuff/rtprofile.o $(LPCPLAY_O)
 	$(CPP) -o lpcplay $(LPCPLAY_O) $(LFLAGS)
 
-newlpcplay: ../../H/ugens.h ../../sys/cmix.o ../../rtstuff/rtprofile.o $(NEWLPCPLAY_O)
+newlpcplay: ../../include/ugens.h $(NEWLPCPLAY_O)
 	$(CPP) -o newlpcplay $(NEWLPCPLAY_O) $(LFLAGS)
 
 

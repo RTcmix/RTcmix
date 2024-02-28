@@ -3,6 +3,18 @@
 //#include <strings.h>
 #include <string.h>
 
+#define SIZEOF_MMPRINTBUF 65536 /* should move to dyn alloc at some point */
+
+class MMPrint {
+public:
+    MMPrint() {};
+    ~MMPrint() {};
+    
+    static char mm_print_buf[];
+    static char *mm_print_ptr;
+    static bool mm_cleared;
+};
+
 char MMPrint::mm_print_buf[SIZEOF_MMPRINTBUF];
 char *MMPrint::mm_print_ptr;
 bool MMPrint::mm_cleared = true;
@@ -15,6 +27,11 @@ int get_mm_print_space()
 char *get_mm_print_ptr()
 {
 	return MMPrint::mm_print_ptr;
+}
+
+char *get_mm_print_buf()
+{
+    return MMPrint::mm_print_buf;
 }
 
 void set_mm_print_ptr(int v)

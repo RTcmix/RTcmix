@@ -82,6 +82,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <stdint.h>
 #if (!defined(HAVE_CONFIG_H)) || (defined(HAVE_STRING_H))
   #include <string.h>
 #endif
@@ -274,6 +275,8 @@ static const unsigned char I_SU7R[4] = {'S','U','7','R'};
 static const unsigned char I_PVF1[4] = {'P','V','F','1'};  /* portable voice format (mgetty) */
 static const unsigned char I_PVF2[4] = {'P','V','F','2'};
 static const unsigned char I_AUTH[4] = {'A','U','T','H'};
+static const unsigned char I_caff[4] = {'c','a','f','f'};  /* Apple's Common File Format */
+static const unsigned char I_desc[4] = {'d','e','s','c'};
 
 /* .glt and .shp -> Perry Cook's SPASM data files */
 /* GBF- for guile binary files */
@@ -460,6 +463,7 @@ const char *mus_header_type_name(int type)
     case MUS_CSL:              return("CSL");                     break;
     case MUS_FILE_SAMP:        return("snack SMP");               break;
     case MUS_PVF:              return("Portable Voice Format");   break;
+    case MUS_CAFF:             return("CAFF");                    break;
     default:                   return("unknown");                 break;
     }
 }
@@ -1373,6 +1377,158 @@ char *mus_header_aiff_aux_comment(const char *name, int *starts, int *ends)
 	}
     }
   return(sc);
+}
+
+/* ------------------------------------ CAF (Common Audio Format) ------------------------------------ */
+
+/*
+
+struct CAFFileHeader {
+    UInt32  mFileType;
+    UInt16  mFileVersion;
+    UInt16  mFileFlags;
+};
+
+ struct CAFChunkHeader {
+     UInt32  mChunkType;
+     SInt64  mChunkSize;
+ };
+
+ struct CAFAudioFormat {
+     Float64 mSampleRate;
+     UInt32  mFormatID;
+     UInt32  mFormatFlags;
+     UInt32  mBytesPerPacket;
+     UInt32  mFramesPerPacket;
+     UInt32  mChannelsPerFrame;
+     UInt32  mBitsPerChannel;
+ };
+ 
+ struct CAFData {
+     UInt32 mEditCount;                 // initially set to 0
+     UInt8 mData [kVariableLengthArray];
+ };
+ 
+ */
+
+typedef enum PCMID {
+    rtkAudioFormatLinearPCM                  = 'lpcm',
+    rtkCAFLinearPCMFormatFlagIsFloat         = (1L << 0),
+    rtkCAFLinearPCMFormatFlagIsLittleEndian  = (1L << 1)
+} PCMID;
+
+
+static int read_caff_header (int chan)
+{
+    const int kCAFFileHeaderSize = 8;
+    int offset = 0;
+    if (seek_and_read(chan, (unsigned char *)hdrbuf, offset, kCAFFileHeaderSize) <= 0) {
+        mus_error(MUS_HEADER_READ_FAILED,
+                  "CAFF header chunks confused at offset %d\n  [%s[%d] %s]",
+                  offset,
+                  __FILE__, __LINE__, __FUNCTION__);
+        return(MUS_ERROR);
+    }
+    unsigned short fileVersion = mus_char_to_ubshort((unsigned char *)hdrbuf+4);
+    unsigned short fileFlags = mus_char_to_ubshort((unsigned char *)hdrbuf+6);
+//    printf("CAFF file version: %u flags: %u\n", fileVersion, fileFlags);
+    offset += kCAFFileHeaderSize;
+    const int chunkHeaderSize = 12;
+    int haveDesc = 0, haveData = 0;
+    while (1) {
+        // get CAFChunkHeader
+        if (seek_and_read(chan, (unsigned char *)hdrbuf, offset, chunkHeaderSize) <= 0) {
+            mus_error(MUS_HEADER_READ_FAILED,
+                      "CAFF header chunks confused at offset %d\n  [%s[%d] %s]",
+                      offset,
+                      __FILE__, __LINE__, __FUNCTION__);
+            return(MUS_ERROR);
+        }
+        // size of the following chunk
+        long long chunkSize = (long long)mus_char_to_ublonglong((unsigned char *)hdrbuf + 4);
+        
+        offset += chunkHeaderSize;
+        
+        if (match_four_chars((unsigned char *)hdrbuf, I_desc)) {
+            if (seek_and_read(chan, (unsigned char *)hdrbuf, offset, chunkSize) <= 0) {
+                mus_error(MUS_HEADER_READ_FAILED,
+                          "CAFF header chunks confused at offset %d\n  [%s[%d] %s]",
+                          offset,
+                          __FILE__, __LINE__, __FUNCTION__);
+                return(MUS_ERROR);
+            }
+            srate = (int) mus_char_to_ldouble((unsigned char *)hdrbuf);
+            uint32_t formatID = mus_char_to_ubint((unsigned char *)hdrbuf+8);
+            uint32_t formatFlags = mus_char_to_ubint((unsigned char *)hdrbuf+12);
+            uint32_t bytesPerPacket = mus_char_to_ubint((unsigned char *)hdrbuf+16);
+            uint32_t framesPerPacket = mus_char_to_ubint((unsigned char *)hdrbuf+20);
+            chans = (int) mus_char_to_ubint((unsigned char *)hdrbuf+24);
+            uint32_t bitsPerChannel = mus_char_to_ubint((unsigned char *)hdrbuf+28);
+            
+            bits_per_sample = (int)bitsPerChannel;
+            
+            switch (formatID) {
+                case rtkAudioFormatLinearPCM:
+                    if (formatFlags & rtkCAFLinearPCMFormatFlagIsFloat) {
+                        data_format = (bytesPerPacket == 32) ? MUS_LFLOAT : MUS_LDOUBLE;
+                    }
+                    else {
+                        switch (bitsPerChannel) {
+                            case 8:
+                                data_format = MUS_BYTE;
+                                break;
+                            case 16:
+                                data_format = MUS_BSHORT;
+                                break;
+                            case 24:
+                                data_format = MUS_B24INT;
+                                break;
+                            case 32:
+                                data_format = MUS_BINT;
+                                break;
+                            default:
+                                mus_error(MUS_UNSUPPORTED_DATA_FORMAT,
+                                          "RTcmix does not support %u-bit PCM audio",
+                                          bitsPerChannel);
+                                return(MUS_ERROR);
+                        }
+                    }
+                    break;
+                default:
+                    mus_error(MUS_UNSUPPORTED_DATA_FORMAT,
+                              "RTcmix does not support CAFF audio format ID '%.4s'",
+                              (const char *) &formatID);
+                    return(MUS_ERROR);
+            }
+            haveDesc = 1;
+            if (haveData) {
+                break;
+            }
+            offset += chunkSize;
+        }
+        else if (match_four_chars((unsigned char *)hdrbuf, I_data)) {
+            if (seek_and_read(chan, (unsigned char *)hdrbuf, offset, 32) <= 0) {
+                mus_error(MUS_HEADER_READ_FAILED,
+                          "CAFF header chunks confused at offset %d\n  [%s[%d] %s]",
+                          offset,
+                          __FILE__, __LINE__, __FUNCTION__);
+                return(MUS_ERROR);
+            }
+            uint32_t editCount = mus_char_to_ubint((unsigned char *)hdrbuf);
+            data_location = offset + 4;
+            data_size = chunkSize - data_location;
+//            printf("data_location: %d, data_size: %llu\n", data_location, data_size);
+            haveData = 1;
+            if (haveDesc) {
+                break;
+            }
+        }
+        else {
+//            printf("got '%.4s' chunk -- increasing offset to %d\n", (const char *)hdrbuf, (int)(offset+chunkSize));
+            offset += chunkSize;
+        }
+    }
+    return MUS_NO_ERROR;
 }
 
 /* ------------------------------------ RIFF (wave) ------------------------------------
@@ -4590,6 +4746,11 @@ static int mus_header_read_with_fd_and_name(int chan, const char *filename)
       header_type = MUS_IRCAM;
       return(read_ircam_header(chan));
     }
+  if (match_four_chars((unsigned char *)hdrbuf, I_caff))
+      {
+        header_type = MUS_CAFF;
+        return(read_caff_header(chan));
+      }
   if (match_four_chars((unsigned char *)hdrbuf, I_NIST))
     {
       header_type = MUS_NIST;

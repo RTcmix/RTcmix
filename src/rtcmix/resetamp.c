@@ -17,7 +17,7 @@ static SFCODE ampcode = {
 };
 
 double
-resetamp(float p[], int n_args)
+resetamp(double p[], int n_args)
 {
 	int i;	
 	int fno;

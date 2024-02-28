@@ -18,8 +18,8 @@ ifeq ($(ARCH), MACOSX)
    else
       CXXFLAGS += -DAPP_PATH=\"$(DESTDIR)/$(APP).app\"
    endif
-   APP_TARGET = Deployment
-   OSX_VERSION=`xcrun --show-sdk-version`
+   APP_TARGET = Release
+   OSX_VERSION=`xcrun --show-sdk-version --sdk macosx`
    SDKROOT = macosx${OSX_VERSION}
    MACOSX_DEPLOYMENT_TARGET = ${OSX_VERSION}
 else

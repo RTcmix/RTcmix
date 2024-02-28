@@ -4,22 +4,10 @@
 #ifndef _UGENS_H_ 
 #define _UGENS_H_ 1
 
-#define	UG_NSIZ	7	/*  Max len of UG name	*/
-#define NAMESIZE 128    /* Max size of file name */
-#define	UG_NULL	(struct ug_item *)0
-
 #include <sys/types.h>
 #include <rt_types.h>
 
 #define NFILES       12       /* maximum number of opened files */
-
-struct	ug_item	{
-	struct	ug_item	*ug_next;
-	double 	(*ug_ptr)();	/*  Pointer to the function	*/
-	char	*ug_name;
-};
-
-typedef	struct ug_item	ug_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,11 +31,11 @@ struct gen {
 
 
 #ifndef SOUND
-extern int (*addoutpointer[NFILES])();
-extern int (*layoutpointer[NFILES])();
-extern int (*wipeoutpointer[NFILES])();
-extern int (*getinpointer[NFILES])();
-extern int (*bwipeoutpointer[NFILES])();
+extern int (*addoutpointer[NFILES])(float *, int);
+extern int (*layoutpointer[NFILES])(float *, int *, int);
+extern int (*wipeoutpointer[NFILES])(float *, int);
+extern int (*getinpointer[NFILES])(float *, int);
+extern int (*bwipeoutpointer[NFILES])(float *, int, int);
 
 #define ADDOUT(x,y)  (*addoutpointer[y])(x,y)
 #define LAYOUT(x,l,y)  (*layoutpointer[y])(x,l,y)
@@ -72,11 +60,11 @@ typedef enum {
 } GenModType;
 int combine_gens(int, int, int, int, GenModType, char *);
 int install_gen(int, int, double *);
-double makegen(float [], int, double []);
+double makegen(double [], int);
 double *floc(int);
 int fsize(int);
 
-extern int (*getsample)();
+extern int (*getsample)(double, float *, int);
 #define GETSAMPLE (*getsample)
 
 float allpass(float, float *);
@@ -207,14 +195,14 @@ typedef enum {
 /* printing macros */
 
 #define MMP_FATAL			0
-#define MMP_PRINTS			1
-#define MMP_RTERRORS		2
-#define MMP_WARN			3
+#define MMP_RTERRORS		1
+#define MMP_WARN			2
+#define MMP_PRINTS          3
 #define MMP_ADVISE			4
 #define MMP_PRINTALL		5
 #define MMP_DEBUG			6
 
-#ifdef EMBEDDED
+#if defined(EMBEDDED) && !FORCE_EMBEDDED_PRINTF
 #include "MMPrint.h"
 
 // BGGxx ww -- horrible temporary hack
@@ -244,7 +232,7 @@ void rtcmix_advise(const char *inst_name, const char *format, ...);
 void rtcmix_warn(const char *inst_name, const char *format, ...);
 void rterror(const char *inst_name, const char *format, ...);
 void rtcmix_print(const char *format, ...);
-/* returns DONT_SCHEDULE if !Option::exitOnError() */
+/* returns DONT_SCHEDULE if !RTOption::exitOnError() */
 int die(const char *inst_name, const char *format, ...);
 RTCmixStatus rtOptionalThrow(RTCmixStatus status);
 
@@ -255,10 +243,10 @@ float *ploc(int tag);
 int psize(int tag);
 int piloc(int instnum);
 
-
+typedef double (*LegacyFunction)(double *, int);
 int registerFunction(const char *function, const char *dsoName);
 
-void addLegacyfunc(const char *label, double (*func_ptr)(float *, int, double *));
+void addLegacyfunc(const char *label, LegacyFunction func_pointer);
 
 #define STRING_TO_DOUBLE(string) (double)(size_t)(const char *)(string)
 #define DOUBLE_TO_STRING(d) (char *)(size_t)(d)
@@ -271,13 +259,13 @@ void addLegacyfunc(const char *label, double (*func_ptr)(float *, int, double *)
 #if defined(__cplusplus)
 #define UG_INTRO(flabel, func) \
    { \
-	addLegacyfunc(flabel, (double (*)(float *, int, double *)) func); \
+	addLegacyfunc(flabel, (LegacyFunction) func); \
    }
 #else
 #define UG_INTRO(flabel, func) \
    { \
-      extern double func(); \
-      addLegacyfunc(flabel, (double (*)(float *, int, double *)) func); \
+      extern double func(double *, int); \
+      addLegacyfunc(flabel, func); \
    }
 #endif	/* __cplusplus */
 

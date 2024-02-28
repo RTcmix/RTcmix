@@ -70,7 +70,7 @@ public:
 
 	void printOn();
 	void printOff();
-	void panic();
+	static void panic();
 	void close();
 	virtual void run();	
 
@@ -83,7 +83,7 @@ public:
     static int bufsamps() { return sBufferFrameCount; }         // Replaces "RTBUFSAMPS"
     static float sr() { return sSamplingRate; }                 // Replaces "SR"
 	static int chans() { return NCHANS; }
-	static void setBufOffset(FRAMETYPE inOffset, bool inRunToOffset);
+	static void setBufTimeOffset(float inOffset, bool inRunToOffset);
 	static FRAMETYPE getElapsedFrames() { return elapsed + bufsamps(); }
 	static bool outputOpen() { return rtfileit != -1; }
 	static bool rtsetparams_was_called() { return rtsetparams_called; }
@@ -93,7 +93,7 @@ public:
 	static int dispatch(const char *func_label, const Arg arglist[],
 						const int nargs, Arg *retval);
 	static void addfunc(const char *func_label,
-					   double (*func_ptr_legacy)(float*, int, double*),
+					   double (*func_ptr_legacy)(double*, int),
                        double (*func_ptr_number)(const Arg[], int),
                        char * (*func_ptr_string)(const Arg[], int),
                        Handle (*func_ptr_handle)(const Arg[], int),
@@ -152,19 +152,19 @@ public:
 	
 	// Config routines.  Called from the parser via pointers, and are
 	// registered via rt_ug_intro().
-	static double rtsetparams(float*, int, double *);
-	static double rtinput(float*, int, double *);
-	static double rtoutput(float*, int, double *);
-	static double set_option(float *, int, double *);
-	static double bus_config(float*, int, double *);
-	static double offset(float *, int, double *);
+	static double rtsetparams(double*, int);
+	static double rtinput(double*, int);
+	static double rtoutput(double*, int);
+	static double set_option(double *, int);
+	static double bus_config(double*, int);
+	static double offset(double *, int);
 	// Minc information functions as methods
-	static double input_chans(float *, int);
-	static double input_dur(float *, int);
-	static double input_sr(float *, int);
-	static double input_peak(float *, int);
-	static double left_peak(float *, int);
-	static double right_peak(float *, int);
+	static double input_chans(double *, int);
+	static double input_dur(double *, int);
+	static double input_sr(double *, int);
+	static double input_peak(double *, int);
+	static double left_peak(double *, int);
+	static double right_peak(double *, int);
 
 // BGGx
 // BGG wmm -- these are the 'context' functions that allo multiple rtcmix-s
@@ -187,8 +187,6 @@ protected:
 
 	// Cleanup methods
 	static void free_globals();
-	static void free_bus_config();
-	
 	
 	// Audio loop methods
 	
@@ -210,8 +208,8 @@ protected:
 	static float 	sSamplingRate;
 	
 	static int		rtInteractive;
-	static int              rtUsingOSC;
-        static int		rtsetparams_called;
+	static int      rtUsingOSC;
+    static int		rtsetparams_called;
 	static int		audioLoopStarted;
 	static int		audio_config;
 
@@ -242,8 +240,10 @@ private:
 	static int allocate_aux_buffer(short chan, int len);
 	static int allocate_out_buffer(short chan, int len);
 
-	// Cleanup routine.
+	// Cleanup routines.
 	static void free_buffers();
+    static void free_bus_config();
+    static void clearRtInstList();
 
 	static int registerDSOs(const char *dsoPaths);
 
@@ -278,7 +278,7 @@ private:
 
 	/* used in intraverse.C, rtsendsamps.c */
 	static bool			runToOffset;
-	static FRAMETYPE	bufOffset;
+	static float    	bufTimeOffset;
 	static FRAMETYPE 	bufStartSamp;
 	static FRAMETYPE	elapsed;
 
@@ -286,7 +286,6 @@ private:
 public:
 	static rt_item *rt_list;
 private:
-	static pthread_mutex_t pfieldLock;
 	static pthread_mutex_t aux_to_aux_lock;
 	static pthread_mutex_t to_aux_lock;
 	static pthread_mutex_t to_out_lock;
@@ -323,6 +322,7 @@ private:
         MixData(BufPtr inSrc, BufPtr inDest, int inFrames, int inChans)
             : src(inSrc), dest(inDest), frames(inFrames), channels(inChans) {}
     };
+    static void mixOperation(MixData &m);
     static std::vector<MixData> mixVectors[];
 #endif
 	

@@ -13,7 +13,7 @@
 #include "yystype.h"
 #define YYDEBUG 1
 static char *my_strdup(const char *src);
-int conferror(void *obj, char *msg);
+int conferror(void *obj, const char *msg);
 %}
 
 /* This makes the parser reentrant, and allows us to pass a pointer to
@@ -94,7 +94,7 @@ my_strdup(const char *src)
 }
 
 int
-conferror(void *obj, char *msg)
+conferror(void *obj, const char *msg)
 {
    #pragma unused (obj) /* required for %parse-param change for yyparse */
    fprintf(stderr, "near line %d: %s\n", conflineno, msg);

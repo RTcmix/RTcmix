@@ -24,17 +24,17 @@ public:
     static void setStack(ScopeStack *stack);
     static Scope *globalScope();
     static Scope *currentScope();
-    static void dump();
+    static void dump(const char *spacer="");
     static void destroy();
 };
 
 // MemberInfo describes a member in a MinC-declared struct
 
 struct MemberInfo {
-    MemberInfo(const char *inName, MincDataType inType, const char *subType) : name(inName), type(inType), subtype(subType) {}
-    const char *    name;
-    MincDataType    type;
-    const char *    subtype;
+    MemberInfo(const char *inName, MincDataType inType, const char *subtypeName) : _name(inName), _type(inType), _subtypeName(subtypeName) {}
+    const char *    _name;
+    MincDataType    _type;
+    const char *    _subtypeName;
 };
 
 // A StructType describes a MinC-declared struct
@@ -43,17 +43,20 @@ class StructType {
 public:
     StructType(const char *inName) : _name(inName) {}
     ~StructType() {}
-    void addElement(const char *name, MincDataType type, const char *subtype) {
-        // TODO: Dont allow duplicate element names
-        _members.push_back(MemberInfo(name, type, subtype));
+    // Adds a MemberInfo for this struct member.
+    void addMemberInfo(const char *name, MincDataType type, const char *subtypeName) {
+        _members.push_back(MemberInfo(name, type, subtypeName));
     }
+    // Walk all MemberInfo's in list, calling functor on each.
+    // NOTE: Other code relies on this calling on the members in order.
     template <typename FuncType>
-    void forEachElement(FuncType &function) const {
+    void forEachMember(FuncType &function) const {
         for (std::vector<MemberInfo>::const_iterator i = _members.begin(); i != _members.end(); ++i) {
-            function(i->name, i->type, i->subtype);
+            function(i->_name, i->_type, i->_subtypeName);
         }
     }
     const char *name() const { return _name; }
+    const int memberCount() const { return (int) _members.size(); }
 protected:
     const char *                _name;
     std::vector<MemberInfo>     _members;

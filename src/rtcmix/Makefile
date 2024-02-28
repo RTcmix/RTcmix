@@ -37,6 +37,7 @@ funderflow.c \
 getsample.c \
 infile.c \
 io.c \
+lpcheader.c \
 merror.c \
 minout.c \
 m_system.c \
@@ -84,23 +85,26 @@ buffers.cpp \
 bus_config.cpp \
 checkInsts.cpp \
 dispatch.cpp \
+LPCDataSet.cpp \
 filter.cpp \
 Instrument.cpp \
 intraverse.cpp \
 lfo.cpp \
+LPCReader.cpp \
 message.cpp \
 minc_info.cpp \
 minc_functions.cpp \
 DataFile.cpp \
 MMPrint.cpp \
-Option.cpp \
 PFBusData.cpp \
 PField.cpp \
 PFieldSet.cpp \
+PvocReader.cpp \
 Random.cpp \
 RawDataFile.cpp \
 RefCounted.cpp \
 RTcmix.cpp \
+RTOption.cpp \
 InputFile.cpp \
 rtcmix_types.cpp \
 rtcmix_wrappers.cpp \
@@ -361,7 +365,7 @@ intraverse.o: intraverse.cpp
 MMPrint.o: MMPrint.cpp MMPrint.h
 	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c $< -o $@
 
-Option.o: Option.cpp Option.h
+RTOption.o: RTOption.cpp RTOption.h
 	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c $< -o $@
 
 PFBusData.o: PFBusData.cpp PFBusData.h
@@ -442,6 +446,10 @@ PYMIX: $(MAIN_OBJS) $(PY_O) $(LIBS) $(PROFILE_O)
 ifeq ($(PYTHON_SUPPORT), TRUE)
 	$(CXX) $(CXXFLAGS) -o PYMIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) \
 		$(PY_O) -L. $(LDFLAGS) $(PYEXT) $(PYTHONLIBS) $(SYS_LDFLAGS)
+  ifeq ($(ARCH),MACOSX)
+		/bin/sh ../parser/python/fix_libpython_path.sh $(PYTHON)
+		/usr/bin/codesign --force -s - PYMIX
+  endif
 else
 	@echo "You haven't configured with PYTHON_SUPPORT!"
 endif

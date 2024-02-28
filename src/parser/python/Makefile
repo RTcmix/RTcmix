@@ -25,15 +25,13 @@ $(MODULE_SRC): make_python_ext.pl $(MODULE_SRC).in $(FUNCLIST)
 $(MODULE): $(MODULE_SRC)
 ifeq ($(ARCH), MACOSX)
 ifeq ($(PYTHON_EXT_STATIC_LINK), FALSE)
-	@echo "Currently cannot build shared lib rtcmix extension under Mac OS X."
-	@exit 1
+	#FIXME: this is obviously false: it builds both static and dylib in build dir
+	#@echo "Currently cannot build shared lib rtcmix extension under Mac OS X."
+	#@exit 1
 endif
-	# Build both Intel architectures; build fails for ppc arch with OS X 10.6
-	# and gcc 4.2
-	env CFLAGS='-arch i386 -arch x86_64' \
-		LDFLAGS='-arch i386 -arch x86_64' $(PYTHON) setup.py build
-	@echo "Don't worry about shared lib build failure.  We're using static link."
-else
+	# Build the same architecture that we're using for RTcmix
+	env CFLAGS='-arch $(BUILD_ARCH)' LDFLAGS='-arch $(BUILD_ARCH)' $(PYTHON) setup.py build
+else # !MACOSX
 	$(PYTHON) setup.py build
 endif
 ifeq ($(PYTHON_EXT_STATIC_LINK), TRUE)

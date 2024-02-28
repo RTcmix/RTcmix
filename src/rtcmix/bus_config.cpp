@@ -9,13 +9,14 @@
 #include <assert.h>
 #include <ugens.h>
 #include <bus.h>
+#include <algorithm>
 #include "BusSlot.h"
 #include <RTcmix.h>
 #include <RTThread.h>
 #include "prototypes.h"
 #include "InputFile.h"
 #include <lock.h>
-#include <Option.h>
+#include <RTOption.h>
   
 //#define PRINTPLAY
 //#define DEBUG
@@ -74,12 +75,6 @@ BusQueue::~BusQueue()
 	free(inst_name);
 	slot->unref();
 }
-
-/* Special flags and whatnot */
-enum ConfigStatus {
-  CONFIG,
-  NOT_CONFIG
-};
 
 // Local classes for configuration checking
 
@@ -607,7 +602,7 @@ RTcmix::get_bus_config(const char *inst_name)
    index = get_last_input_index();
    /* Otherwise grab from audio device, if active */
    if (index == -1) {
-	 if (Option::record() && Option::play())
+	 if (RTOption::record() && RTOption::play())
 	   in_chans = NCHANS;
 	 else
 	   in_chans = 0;
@@ -641,21 +636,22 @@ RTcmix::get_bus_config(const char *inst_name)
 	char buslist[64];
 	switch (default_bus_slot->in_count) {
 		case 0:
-			sprintf(buslist, "() => ");
+			snprintf(buslist, 64, "() => ");
 			break;
 		case 1:
-			sprintf(buslist, "(in 0) => ");
+			snprintf(buslist, 64, "(in 0) => ");
 			break;
 		default:
-			sprintf(buslist, "(in 0-%d) => ", default_bus_slot->in_count - 1);
+			snprintf(buslist, 64, "(in 0-%d) => ", default_bus_slot->in_count - 1);
 			break;
 	}
 	strcat(buslist, inst_name);
 	if (default_bus_slot->out_count == 1)
 		strcat(buslist, " => (out 0)");
-	else
-		sprintf(buslist + strlen(buslist), " => (out 0-%d)", default_bus_slot->out_count - 1);
-	
+    else {
+        const unsigned long offset = strlen(buslist);
+        snprintf(buslist + offset, 64 - offset, " => (out 0-%d)", default_bus_slot->out_count - 1);
+    }
 	rtcmix_advise(NULL, "default: %s\n", buslist);
 
    return default_bus_slot;
@@ -682,34 +678,37 @@ RTcmix::addToBus(BusType type, int bus, BufPtr src, int offset, int endfr, int c
 }
 
 void
+RTcmix::mixOperation(MixData &m)
+{
+    BufPtr src = m.src;
+    BufPtr dest = m.dest;
+    const int framesOverFour = m.frames >> 2;
+    const int framesRemaining = m.frames - (framesOverFour << 2);
+    const int chans = m.channels;
+    const int chansx2 = chans << 1;
+    const int chansx3 = chansx2 + chans;
+    const int chansx4 = chansx2 + chansx2;
+    for (int n = 0; n < framesOverFour; ++n) {
+        dest[0] += src[0];
+        dest[1] += src[chans];
+        dest[2] += src[chansx2];
+        dest[3] += src[chansx3];
+        dest += 4;
+        src += chansx4;
+    }
+    for (int n = 0; n < framesRemaining; ++n) {
+        dest[n] += *src;
+        src += chans;
+    }
+}
+
+void
 RTcmix::mixToBus()
 {
     // Mix all vectors from each thread down to the final mix buses
     for (int i = 0; i < RT_THREAD_COUNT; ++i) {
         std::vector<MixData> &vector = mixVectors[i];
-        for (std::vector<RTcmix::MixData>::iterator i = vector.begin(); i != vector.end(); ++i) {
-            MixData &m = *i;
-            BufPtr src = m.src;
-            BufPtr dest = m.dest;
-            const int framesOverFour = m.frames >> 2;
-            const int framesRemaining = m.frames - (framesOverFour << 2);
-            const int chans = m.channels;
-            const int chansx2 = chans << 1;
-            const int chansx3 = chansx2 + chans;
-            const int chansx4 = chansx2 + chansx2;
-            for (int n = 0; n < framesOverFour; ++n) {
-                dest[0] += src[0];
-                dest[1] += src[chans];
-                dest[2] += src[chansx2];
-                dest[3] += src[chansx3];
-                dest += 4;
-                src += chansx4;
-            }
-            for (int n = 0; n < framesRemaining; ++n) {
-                dest[n] += *src;
-                src += chans;
-            }
-        }
+        std::for_each(vector.begin(), vector.end(), mixOperation);
         vector.clear();
     }
 }
@@ -722,7 +721,7 @@ RTcmix::mixToBus()
 void
 RTcmix::addToBus(BusType type, int bus, BufPtr src, int offset, int endfr, int chans)
 {
-	register BufPtr dest;
+	BufPtr dest;
 	
 	if (type == BUS_AUX_OUT) {
 		dest = aux_buffer[bus];
@@ -821,7 +820,7 @@ parse_bus_name(char *busname, BusType *type, int *startchan, int *endchan, int m
 
 /* ----------------------------------------------------------- bus_config --- */
 double 
-RTcmix::bus_config(float p[], int n_args, double pp[])
+RTcmix::bus_config(double p[], int n_args)
 {
    ErrCode     err;
    int         i, j, k, startchan, endchan, chain_incount=0, chain_outcount=0;
@@ -843,20 +842,21 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
 #endif
        RTExit(PARAM_ERROR);
    }
-
-   bus_slot = new BusSlot(busCount);
-   if (bus_slot == NULL)
-      RTExit(MEMORY_ERROR);
+   try {
+       bus_slot = new BusSlot(busCount);
+   } catch(...) {
+       RTExit(MEMORY_ERROR);
+   }
 
    inbusses[0] = outbusses[0] = '\0';
    
    Lock localLock(&bus_slot_lock);	// This will unlock when going out of scope.
 
    /* do the old Minc casting rigamarole to get string pointers from a double */
-   instname = DOUBLE_TO_STRING(pp[0]);
+   instname = DOUBLE_TO_STRING(p[0]);
 
    for (i = 1; i < n_args; i++) {
-      busname = DOUBLE_TO_STRING(pp[i]);
+      busname = DOUBLE_TO_STRING(p[i]);
       err = parse_bus_name(busname, &type, &startchan, &endchan, busCount);
        switch (err) {
            case INVAL_BUS_ERR:

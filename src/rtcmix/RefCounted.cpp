@@ -19,7 +19,7 @@ int RefCounted::unref()
 {
 	int r;
 #if defined(DEBUG_MEMORY) || defined(DEBUG)
-	if (_refcount < 0) { rtcmix_print("Refcounted::~RefCounted(this = %p): object already deleted!\n"); assert(0); }
+	if (_refcount <= 0) { rtcmix_print("Refcounted::~RefCounted(this = %p): object already deleted!\n"); assert(0); }
 #endif
 	if ((r=--_refcount) <= 0) {
 #ifdef USE_OSX_DISPATCH

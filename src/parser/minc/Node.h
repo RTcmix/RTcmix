@@ -11,8 +11,9 @@
 
 #include "minc_internal.h"
 #include "MincValue.h"
+#include "RefCounted.h"
 
-// NODE_DEBUG enables logging of Node creation
+// NODE_DEBUG enables logging of Node creation and destruction
 #undef NODE_DEBUG
 
 #ifdef NODE_DEBUG
@@ -43,10 +44,11 @@ typedef enum {
     eNodeMemberDecl,
     eNodeStructDef,
 	eNodeFuncDef,
+    eNodeMethodDef,
 	eNodeArgList,
 	eNodeArgListElem,
 	eNodeRet,
-	eNodeFuncSeq,
+	eNodeFuncBodySeq,
 	eNodeCall,
 	eNodeAnd,
 	eNodeOr,
@@ -61,11 +63,12 @@ typedef enum {
 	eNodeDecl,
     eNodeStructDecl,
 	eNodeFuncDecl,
+    eNodeMethodDecl,
 	eNodeBlock,
 	eNodeNoop
 } NodeKind;
 
-class Node : public MincObject
+class Node : public MincObject, public RefCounted
 {
 //protected:					TODO: FINISH FULL CLASS
 public:
@@ -73,10 +76,10 @@ public:
 	MincDataType    _type;
 	OpKind          op;
 	MincValue 		v;
-	int				lineno;		/* used for error statements */
+	int				lineno;         /* used for error statements */
+    const char *    includeFilename;   /* used for error statements */
 public:
 	Node(OpKind op, NodeKind kind);
-	virtual 			~Node();
 	const char *		classname() const;
     const char *		name() const;
 	MincDataType		dataType() const { return v.dataType(); }
@@ -92,6 +95,7 @@ public:
     Node *              copyValue(Symbol *, bool allowTypeOverwrite=true);
 	void				print();
 protected:
+    virtual             ~Node();
 	virtual Node*		doExct() = 0;
 protected:
 	union {
@@ -105,8 +109,8 @@ class NodeNoop : public Node
 {
 public:
 	NodeNoop() : Node(OpFree, eNodeNoop) { }
-	virtual				~NodeNoop();
 protected:
+    virtual                ~NodeNoop();
 	virtual Node*		doExct() { return this; }
 };
 
@@ -114,9 +118,10 @@ class Node1Child : public Node
 {
 	Node* _child;
 public:
-	Node1Child(OpKind op, NodeKind kind, Node *n1) : Node(op, kind), _child(n1) {}
-	virtual		~Node1Child() { delete _child; }
+    Node1Child(OpKind op, NodeKind kind, Node *n1) : Node(op, kind), _child(n1) { RefCounted::ref(n1); }
 	virtual Node*		child(int index) const { return (index == 0) ? _child : NULL; }
+protected:
+    virtual        ~Node1Child() { RefCounted::unref(_child); }
 };
 
 class Node2Children : public Node
@@ -124,9 +129,10 @@ class Node2Children : public Node
 	Node* _children[2];
 public:
 	Node2Children(OpKind op, NodeKind kind, Node *n1, Node *n2)
-		: Node(op, kind) { _children[0] = n1; _children[1]= n2; }
-	virtual			~Node2Children() { delete _children[0]; delete _children[1]; }
+        : Node(op, kind) { _children[0] = n1; _children[1]= n2; n1->ref(); n2->ref(); }
 	virtual Node*	child(int index) const { return (index < 2) ? _children[index] : NULL; }
+protected:
+    virtual            ~Node2Children() { _children[0]->unref(); _children[1]->unref(); }
 };
 
 class Node3Children : public Node
@@ -134,9 +140,13 @@ class Node3Children : public Node
 	Node* _children[3];
 public:
 	Node3Children(OpKind op, NodeKind kind, Node *n1, Node *n2, Node *n3)
-		: Node(op, kind) { _children[0] = n1; _children[1]= n2; _children[2] = n3; }
+    : Node(op, kind) {
+        _children[0] = n1; _children[1]= n2; _children[2] = n3;
+        n1->ref(); n2->ref(); n3->ref();
+    }
+protected:
 	virtual			~Node3Children() {
-		delete _children[0]; delete _children[1]; delete _children[2];
+		_children[0]->unref(); _children[1]->unref(); _children[2]->unref();
 	}
 	virtual Node*		child(int index) const { return (index < 3) ? _children[index] : NULL; }
 };
@@ -336,29 +346,44 @@ private:
     const char *    _typeName;
 };
 
-class NodeFuncSeq : public Node2Children
+class NodeFuncBodySeq : public Node2Children
 {
 public:
-	NodeFuncSeq(Node *n1, Node *n2) : Node2Children(OpFree, eNodeFuncSeq, n1, n2) {
-		NPRINT("NodeFuncSeq(%p, %p) => %p\n", n1, n2, this);
+	NodeFuncBodySeq(Node *n1, Node *n2) : Node2Children(OpFree, eNodeFuncBodySeq, n1, n2) {
+		NPRINT("NodeFuncBodySeq(%p, %p) => %p\n", n1, n2, this);
 	}
 protected:
 	virtual Node*		doExct();
 };
 
 // Function definition node
-//	n1 Lookup node
-//	n2 NodeArgList (argument symbol decls)
-//	n3 NodeFuncSeq function body (statements), which returns value
+//	funcDecl Lookup node
+//	argList  NodeArgList (argument symbol decls)
+//	funcBody NodeFuncBodySeq function body (statements), which returns value
 
 class NodeFuncDef : public Node3Children
 {
 public:
-	NodeFuncDef(Node *n1, Node *n2, Node *n3) : Node3Children(OpFree, eNodeFuncDef, n1, n2, n3) {
-		NPRINT("NodeFuncDef(%p, %p, %p) => %p\n", n1, n2, n3, this);
+	NodeFuncDef(Node *funcDecl, Node *argList, Node *funcBody) : Node3Children(OpFree, eNodeFuncDef, funcDecl, argList, funcBody), _isMethod(false) {
+		NPRINT("NodeFuncDef(%p, %p, %p) => %p\n", funcDecl, argList, funcBody, this);
 	}
 protected:
+    NodeFuncDef(Node *funcDecl, Node *argList, Node *funcBody, NodeKind kind) : Node3Children(OpFree, kind, funcDecl, argList, funcBody), _isMethod(kind==eNodeMethodDef) {}
 	virtual Node*		doExct();
+    bool                _isMethod;
+};
+
+// Method definition node
+//    funcDecl Lookup node
+//    argList  NodeArgList (argument symbol decls)
+//    funcBody NodeFuncBodySeq function body (statements), which returns value
+
+class NodeMethodDef : public NodeFuncDef
+{
+public:
+    NodeMethodDef(Node *funcDecl, Node *argList, Node *funcBody) : NodeFuncDef(funcDecl, argList, funcBody, eNodeMethodDef) {
+        NPRINT("NodeMethodDef(%p, %p, %p) => %p\n", funcDecl, argList, funcBody, this);
+    }
 };
 
 // Function call node
@@ -373,6 +398,10 @@ public:
 	}
 protected:
 	virtual Node*		doExct();
+private:
+    void                callMincFunctionFromNode(Node *functionNode);
+    void                callListFunction(const char *functionName);
+    void                callBuiltinFunction(const char *functionName);
 };
 
 class NodeAnd : public Node2Children
@@ -475,11 +504,13 @@ protected:
     void                writeWithMapKey();
 };
 
-class NodeMember : public Node1Child
+// NodeMemberAccess returns symbol for member var or method function from RHS of dot operator
+
+class NodeMemberAccess : public Node1Child
 {
 public:
-    NodeMember(Node *n1, const char *memberName) : Node1Child(OpFree, eNodeMember, n1), _memberName(memberName) {
-        NPRINT("NodeMember(%p, '%s') => %p\n", n1, memberName, this);
+    NodeMemberAccess(Node *n1, const char *memberName) : Node1Child(OpFree, eNodeMember, n1), _memberName(memberName) {
+        NPRINT("NodeMemberAccess(%p, '%s') => %p\n", n1, memberName, this);
     }
 protected:
     virtual Node*        doExct();
@@ -513,8 +544,9 @@ class NodeFor : public Node3Children
 public:
 	NodeFor(Node *n1, Node *n2, Node *n3, Node *n4) : Node3Children(OpFree, eNodeFor, n1, n2, n3), _child4(n4) {
 		NPRINT("NodeFor(%p, %p, %p, <e4>) => %p\n", n1, n2, n3, this);
+        n4->ref();
 	}
-	virtual ~NodeFor() { delete _child4; }
+	virtual ~NodeFor() { _child4->unref(); }
 protected:
 	virtual Node*		doExct();
 };
@@ -542,10 +574,11 @@ private:
 	const char *	_symbolName;
 };
 
-class NodeStructDecl : public Node
+class NodeStructDecl : public Node1Child
 {
 public:
-    NodeStructDecl(const char *name, const char *typeName) : Node(OpFree, eNodeStructDecl), _symbolName(name), _typeName(typeName) {
+    NodeStructDecl(const char *name, const char *typeName, Node *initializerList=NULL) : Node1Child(OpFree, eNodeStructDecl, initializerList),
+        _symbolName(name), _typeName(typeName) {
         this->_type = MincStructType;
         NPRINT("NodeStructDecl('struct %s %s') => %p\n", _typeName, _symbolName, this);
     }
@@ -567,6 +600,22 @@ protected:
 	virtual Node*		doExct();
 private:
 	const char *	_symbolName;
+};
+
+class NodeMethodDecl : public Node
+{
+public:
+    NodeMethodDecl(const char *name, const char *structTypeName, MincDataType type)
+        : Node(OpFree, eNodeMethodDecl),
+          _symbolName(name), _structTypeName(structTypeName) {
+        this->_type = type;        // TODO
+        NPRINT("NodeMethodDecl('%s', '%s') => %p\n", name, structTypeName, this);
+    }
+protected:
+    virtual Node*        doExct();
+private:
+    const char *    _symbolName;
+    const char *    _structTypeName;
 };
 
 class NodeBlock : public Node1Child

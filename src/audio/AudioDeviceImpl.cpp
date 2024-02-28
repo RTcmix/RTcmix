@@ -221,7 +221,7 @@ double AudioDeviceImpl::getPeak(int chan, long *pLocation) const
 
 int AudioDeviceImpl::error(const char *msg, const char *msg2)
 {
-	sprintf(_lastErr, "AudioDevice: %s%s", msg, msg2 ? msg2 : "");
+	snprintf(_lastErr, ErrLength, "AudioDevice: %s%s", msg, msg2 ? msg2 : "");
 	return -1;
 }
 
@@ -257,27 +257,25 @@ int AudioDeviceImpl::setMuteThreshold(double thresh)
 // Code for creating and destroying interleaved conversion buffer
 
 void *
-AudioDeviceImpl::createInterleavedBuffer(int fmt, int chans, int len)
-{
-	void *buffer = NULL;
-	if (IS_FLOAT_FORMAT(fmt)) {
-		buffer = (void *) new float[chans * len];
-	}
-	else if (IS_32BIT_FORMAT(fmt)) {
-		buffer = (void *) new int32_t[chans * len];
-	}
-	else if (IS_SHORT_FORMAT(fmt)) {
-		buffer = (void *) new short[chans * len];
-	}
-	else if (IS_24BIT_FORMAT(fmt)) {
-		buffer = (void *) new char[chans * len * 3];
-	}
-	else {
-		error("createInterleavedBuffer: unknown sample format!");
-		return NULL;
-	}
-	if (!buffer)
-		error("createInterleavedBuffer: memory allocation failure");
+AudioDeviceImpl::createInterleavedBuffer(int fmt, int chans, int len) {
+    void *buffer = NULL;
+    try {
+        if (IS_FLOAT_FORMAT(fmt)) {
+            buffer = (void *) new float[chans * len];
+        } else if (IS_32BIT_FORMAT(fmt)) {
+            buffer = (void *) new int32_t[chans * len];
+        } else if (IS_SHORT_FORMAT(fmt)) {
+            buffer = (void *) new short[chans * len];
+        } else if (IS_24BIT_FORMAT(fmt)) {
+            buffer = (void *) new char[chans * len * 3];
+        } else {
+            error("createInterleavedBuffer: unknown sample format!");
+            return NULL;
+        }
+    }
+    catch (...) {
+        error("createInterleavedBuffer: memory allocation failure");
+    }
 	return buffer;
 }
 

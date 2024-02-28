@@ -9,7 +9,7 @@
 
 /* ------------------------------------------------------------- somefunk --- */
 double
-somefunk(float p[], int n_args, double pp[])
+somefunk(double p[], int n_args)
 {
    int   an_int_arg;
    float val, a_float_arg;
@@ -25,7 +25,7 @@ somefunk(float p[], int n_args, double pp[])
       from Minc. Minc allocates space for the string that persists
       for the life of the program, so we just need a pointer to it.
    */
-   a_str_arg = DOUBLE_TO_STRING(pp[0]);
+   a_str_arg = DOUBLE_TO_STRING(p[0]);
 
    /* We'll just interpret the arg as a float here. */
    val = a_float_arg * 2;

@@ -38,9 +38,8 @@
 #include <float.h>
 #include <assert.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <PField.h>
-#include <Option.h>     // for fastUpdate
+#include <RTOption.h>     // for fastUpdate
 #include "TRANS.h"
 #include <rt.h>
 
@@ -94,7 +93,7 @@ TRANS::~TRANS()
 
 void TRANS::initamp(float dur, double p[], int ampindex, int ampgenslot)
 {
-   fastUpdate = Option::fastUpdate();
+   fastUpdate = RTOption::fastUpdate();
    if (fastUpdate) {
       // Prefer PField table, otherwise makegen
       int tablen = 0;
@@ -255,13 +254,15 @@ Instrument *makeTRANS()
    return inst;
 }
 
-extern Instrument *makeTRANS3();    // from TRANS3.cpp
-
 #ifndef EMBEDDED
+
+extern Instrument *makeTRANS3(), *makeRTRANS3();    // from TRANS3.cpp
+
 void rtprofile()
 {
    RT_INTRO("TRANS", makeTRANS);
    RT_INTRO("TRANS3", makeTRANS3);
+   RT_INTRO("RTRANS3", makeRTRANS3);
 }
 #endif
 

@@ -24,7 +24,6 @@ if numargs > 1:
 	base_freq = float(sys.argv[1])
 	if numargs > 2:
 		base_incr = float(sys.argv[2])
-print sys.argv
 
 print_off()
 
@@ -47,7 +46,7 @@ env = maketable("expbrk", 1000,  1, 1000, .0005)
 
 def bell(start, dur, amp, freq):
 	global env, wavet
-	print "fundamental frequency:", freq
+	print("fundamental frequency:", freq)
 	WAVETABLE(start, dur,        amp * env,        freq * .56,       1.0, wavet)
 	WAVETABLE(start, dur * .9,   amp * .67 * env,  freq * .56 + 1,   0.0, wavet)
 	WAVETABLE(start, dur * .65,  amp * env,        freq * .92,       0.9, wavet)

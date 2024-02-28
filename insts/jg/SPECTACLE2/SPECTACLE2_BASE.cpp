@@ -11,7 +11,7 @@
 
 #include "SPECTACLE2_BASE.h"
 #include <float.h>
-#include <Option.h>
+#include <RTOption.h>
 
 #ifndef cosf
 	#define cosf(x) cos((x))
@@ -174,7 +174,7 @@ int SPECTACLE2_BASE::init(double p[], int n_args)
 {
 	_nargs = n_args;
 #ifdef NOTYET
-	_print_stats = Option::printStats();
+	_print_stats = RTOption::printStats();
 #else
 	_print_stats = true;
 #endif

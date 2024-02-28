@@ -5,7 +5,6 @@
 #include <string.h>
 #include <math.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <rt.h>
 #include <rtdefs.h>
 
@@ -53,7 +52,6 @@ DMOVE::DMOVE()
     R_old = -100000.0;
     T_old = -100000.0;
     m_updateSamps = RTBUFSAMPS;
-    setup_trigfuns();
     for (int n = 0; n < 2; n++)
         for (int o = 0; o < 13; o++)
 	    oldOutlocs[n][o] = LocationUnset;	// to force update

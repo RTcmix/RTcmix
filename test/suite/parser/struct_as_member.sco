@@ -4,11 +4,13 @@ struct Inner {
 	float c
 };
 
+struct Inner b;
+
 struct Outer {
 	struct Inner b
 };
 
-struct Outer a;
+struct Outer a = { b };
 
 a.b.c = 777;
 

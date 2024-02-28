@@ -11,13 +11,14 @@
 #include <algorithm>
 #include <assert.h>
 
+void RTQueue::unrefElems(Element &e)
+{
+    e.second->unref();
+}
+
 RTQueue::~RTQueue()
 {
-	for (InstrumentListIterator it = mInstrumentList.begin();
-		 it != mInstrumentList.end();
-		 ++it) {
-		(*it).second->unref();
-	}
+    std::for_each(mInstrumentVector.begin(), mInstrumentVector.end(), unrefElems);
 }
 
 bool RTQueue::sortElems (const RTQueue::Element& x,const RTQueue::Element& y)
@@ -30,22 +31,36 @@ bool RTQueue::sortElems (const RTQueue::Element& x,const RTQueue::Element& y)
 void RTQueue::push(Instrument *inInst, FRAMETYPE chunkstart)
 {
 	Element element(chunkstart, inInst);
-	mInstrumentList.insert(std::lower_bound(mInstrumentList.begin(), mInstrumentList.end(), element, sortElems), element);
+	mInstrumentVector.insert(std::lower_bound(mInstrumentVector.begin(), mInstrumentVector.end(), element, sortElems), element);
 	inInst->ref();
+}
+
+// Push an element onto RTQueue, unsorted
+
+void RTQueue::pushUnsorted(Instrument *inInst, FRAMETYPE chunkstart)
+{
+    Element element(chunkstart, inInst);
+    mInstrumentVector.push_back(element);
+    inInst->ref();
+}
+
+void RTQueue::sort()
+{
+    std::sort(mInstrumentVector.begin(), mInstrumentVector.end(), sortElems);
 }
 
 // Pop an element of the top of the RTQueue
 
 Instrument *	RTQueue::pop(FRAMETYPE *pChunkStart)
 {
-	if (mInstrumentList.empty()) {
+	if (mInstrumentVector.empty()) {
 		rtcmix_warn("rtQueue", "attempt to pop empty RTQueue\n");
 		return NULL;
 	}
-	*pChunkStart = mInstrumentList.back().first;	// frame loc
-	Instrument *outInst = mInstrumentList.back().second;	// inst
+	*pChunkStart = mInstrumentVector.back().first;	// frame loc
+	Instrument *outInst = mInstrumentVector.back().second;	// inst
 	outInst->unref();
-	mInstrumentList.pop_back();
+	mInstrumentVector.pop_back();
 	return outInst;
 }
 
@@ -53,7 +68,7 @@ Instrument *	RTQueue::pop(FRAMETYPE *pChunkStart)
 
 FRAMETYPE RTQueue::nextChunk()
 {
-	return mInstrumentList.back().first;
+	return mInstrumentVector.back().first;
 }
 
 void RTQueue::print() {

@@ -1,6 +1,33 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2023-11-01  Douglas Scott <netdscott-at-netscape.net>
+	* Updated and renamed some of the LPC and PVOC reader utils.
+	* Marking this as version 5.2.2 for source code release.
+
+2023-10-02  Douglas Scott <netdscott-at-netscape.net>
+	* Edited all function prototypes to remove legacy float array entirely, everywhere!
+	* Bumped to 5.2.1 due to prototype changes.
+	* Added new FBSEND/FBRECEIVE instruments to allow bus feedback.
+	* Added exceptions to memory allocation to allow more robust recovery.
+
+2023-06-27  Douglas Scott <netdscott-at-netscape.net>
+	* Updated function prototypes for all instruments, etc. to (float *, int, double *)
+	  and fixed long-outdated function decls.  Reduces new compiler grumbling!
+
+2023-04-21	Douglas Scott <netdscott-at-netscape.net>
+	* Fixed major bugs in LPCPLAY dynamic pitch pfield behavior.
+
+2022-08-06  Douglas Scott <netdscott-at-netscape.net>
+	* Major parser extension to support class behavior on structs using new method declarations.
+	* Added "-s <skiptime>" argument to allow skipping into mixes.
+	* Bumped to 5.2.0 due to new parser features.
+
+2022-06-13  Douglas Scott <netdscott-at-netscape.net>
+	* Minor parser upgrade: Supports struct initializers.
+	* Some other code cleanup without visible effect.
+	* Bumped to 5.1.0 due to new parser feature.
+
 2020-11-09  Douglas Scott <netdscott-at-netscape.net>
 	* Major parser upgrade:  Supports embedding of structs, and maps in other structs.
 	* Added new 'mfunction' type to store custom functions - which can now be stored in structs, passed as function args.

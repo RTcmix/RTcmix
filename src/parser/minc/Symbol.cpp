@@ -5,8 +5,8 @@
 
 /* symbol table management routines */
 
-#undef SYMBOL_DEBUG
-#undef DEBUG_SYM_MEMORY
+//#undef SYMBOL_DEBUG
+//#undef DEBUG_SYM_MEMORY
 
 #ifdef SYMBOL_DEBUG
 #define DEBUG
@@ -49,7 +49,7 @@ Symbol *	Symbol::create(const char *name)
 }
 
 Symbol::Symbol(const char *symName)
-    : next(NULL), scope(-1), _name(symName)
+    : next(NULL), _scope(-1), _name(symName)
 {
 #ifdef NOTYET
 	defined = offset = 0;
@@ -63,9 +63,9 @@ Symbol::Symbol(const char *symName)
 Symbol::~Symbol()
 {
 #if defined(SYMBOL_DEBUG) || defined(DEBUG_SYM_MEMORY)
-//	rtcmix_print("\tSymbol::~Symbol() \"%s\" for scope %d (%p)\n", name, scope, this);
+    DPRINT("\tSymbol::~Symbol() \"%s\" scope %d (%p)\n", _name, scope(), this);
 #endif
-	scope = -1;			// we assert on this elsewhere
+	_scope = -1;			// we assert on this elsewhere
 }
 
 // Returns symbol for a struct's member, if present
@@ -89,7 +89,7 @@ Symbol::copyValue(Node *source, bool allowTypeOverwrite)
         return this;
     }
 #endif
-    assert(scope != -1);    // we accessed a variable after leaving its scope!
+    assert(_scope != -1);    // we accessed a variable after leaving its scope!
     if (dataType() != MincVoidType && source->dataType() != dataType()) {
         if (allowTypeOverwrite) {
             minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
@@ -102,31 +102,56 @@ Symbol::copyValue(Node *source, bool allowTypeOverwrite)
     return this;
 }
 
-// This functor object adds a new element symbol to the root symbol's _elements list
+// This functor object adds a new element symbol to the root struct symbol's _elements list
 
 class ElementFun
 {
 public:
-    ElementFun(Symbol *rootSym) : _root(rootSym) {}
-    void operator() (const char *name, MincDataType type, const char *subtype) {
+    ElementFun(Symbol *rootSym, MincList *memberInitList) : _root(rootSym), _initValues(NULL), _initIndex(0) {
+        _initValues = (memberInitList) ? memberInitList->data : NULL;
+        _initValueCount = (memberInitList) ? memberInitList->len : 0;
+    }
+    void operator() (const char *memberName, MincDataType type, const char *structTypename) {
         MincStruct *mstruct = (MincStruct *)_root->value();
-        if (mstruct->lookupMember(name) != NULL) {
-            minc_die("Struct contains a duplicate member '%s'", name);
+        if (mstruct->lookupMember(memberName) != NULL) {
+            minc_die("Struct contains a duplicate member '%s'", memberName);
         }
         else {
-            mstruct->addMember(name, type, _root->scope, subtype);
+            if (_initValues != NULL) {
+                if (_initIndex >= _initValueCount) {
+                    minc_die("struct initializer list is missing member values");
+                }
+                // Initialize with provided initializer value
+                const MincValue memberValue = _initValues[_initIndex++];
+                // Type check.  Eventually this will be handled directly by the operator =.
+                if (memberValue.dataType() != type) {
+                    minc_die("struct member '%s' initialized with a %s but needs a %s", memberName, MincTypeName(memberValue.dataType()), MincTypeName(type));
+                }
+                mstruct->addMember(memberName, memberValue, _root->scope(), structTypename);
+            }
+            else {
+                // Initialize with default value for type
+                mstruct->addMember(memberName, MincValue(type), _root->scope(), structTypename);
+            }
         }
     }
 private:
     Symbol *_root;
+    MincValue *_initValues;
+    int _initValueCount;
+    int _initIndex;
 };
 
-void Symbol::initAsStruct(const StructType *structType)
+// The use of a "visitor" functor allows a separation between the StructType and the symbol for the actual struct instance.
+// When the functor is invoked on a StructType's members, it instantiates instances of the members with proper names, types,
+// etc., based on the information for each.
+
+void Symbol::initAsStruct(const StructType *structType, MincList *initList)
 {
-    DPRINT("Symbol::initAsStruct(this=%p, structType=%p)\n", this, structType);
-    v = MincValue(new MincStruct);
-    ElementFun functor(this);
-    structType->forEachElement(functor);
+    DPRINT("Symbol::initAsStruct(this=%p, structType=%p) - creating struct and adding all members\n", this, structType);
+    this->v = MincValue(new MincStruct(structType->name()));
+    ElementFun functor(this, initList);
+    structType->forEachMember(functor);
 }
 
 static struct str {             /* string table */
@@ -207,10 +232,10 @@ free_node(Symbol *p)
 #endif
 
 void
-Symbol::print()
+Symbol::print(const char *spacer)
 {
 #ifdef SYMBOL_DEBUG
-    DPRINT("Symbol %p: '%s', scope: %d, type: %s\n", this, name(), scope, dname(dataType()));
+    DPRINT("%sSymbol %p: '%s', scope: %d, type: %s\n", spacer, this, name(), scope(), dname(dataType()));
 #endif
 }
 

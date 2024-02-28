@@ -19,7 +19,7 @@
 #include <ugens.h>
 #include <Instrument.h>
 #include <PField.h>
-#include <Option.h>	// for fastUpdate
+#include <RTOption.h>	// for fastUpdate
 #include <rt.h>
 #include <rtdefs.h>
 #include "MIX.h"
@@ -44,7 +44,7 @@ MIX::~MIX()
 
 void MIX::initamp(float dur, double p[], int ampindex, int ampgenslot)
 {
-	fastUpdate = Option::fastUpdate();
+	fastUpdate = RTOption::fastUpdate();
 	if (fastUpdate) {
 		// Prefer PField table, otherwise makegen
 		int tablen = 0;

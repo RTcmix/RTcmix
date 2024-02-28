@@ -12,7 +12,7 @@
 
 char Trace::sMsgbuf[256];
 int Trace::sTraceDepth = 0;
-char Trace::spaces[128];
+char Trace::spaces[MAX_SPACES+1];
 
 #endif
 

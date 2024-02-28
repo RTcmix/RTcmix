@@ -5,7 +5,6 @@
 #include <string.h>
 #include <math.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <rt.h>
 #include <rtdefs.h>
 
@@ -21,16 +20,8 @@
 #endif
 
 extern "C" int get_path_params(double *rhos, double *thetas, int *cartesian, double *mdiff);
-
-extern double SINARRAY[1025], COSARRAY[1025], ATANARRAY[1025];
-
 static const double radpt = 162.99746617261;   /* converts rads to 1024-element array ptr */
 static const double radpt2 = 325.9493234522;
-
-inline double SIN(double x) { return SINARRAY[(int)(wrap(x) * radpt + 0.5)]; }
-inline double COS(double x) { return COSARRAY[(int)(wrap(x) * radpt + 0.5)]; }
-inline double ATAN(double x) { return ATANARRAY[(int)((x) * radpt2) + 512]; }
-
 static const double LocationUnset = -999999.999999;
 
 /* ------------------------------------------------------------ makeMOVE --- */
@@ -65,7 +56,6 @@ MOVE::MOVE()
     T_old = 0.0;
     m_updateCount = 0;
     m_updateSamps = BUFLEN;
-    setup_trigfuns();
     rholoc = new double[ARRAYSIZE];
     thetaloc = new double[ARRAYSIZE];
     for (int n = 0; n < 2; n++)
@@ -155,7 +145,7 @@ void MOVE::get_tap(int currentSamp, int chan, int path, int len)
    double incr = 1.0 + delta / len;
 
    const int tap = currentSamp % m_tapsize;
-   register double otap = (double) tap - outloc;
+   double otap = (double) tap - outloc;
    if (otap < 0.0) otap += m_tapsize;
    double otapPlusOne = otap + 1.0;
    if (otapPlusOne >= (double) m_tapsize) otapPlusOne -= m_tapsize;
@@ -166,8 +156,8 @@ void MOVE::get_tap(int currentSamp, int chan, int path, int len)
 
    int len1 = min(len, m_tapsize - (int) closestToEnd);
 
-   register double *tapdel = m_tapDelay;
-   register double *Sig = vec->Sig;
+   double *tapdel = m_tapDelay;
+   double *Sig = vec->Sig;
    int out = 0;
    
    while (out < len)

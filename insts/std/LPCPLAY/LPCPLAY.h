@@ -3,7 +3,7 @@
 
 #define MAXVALS 2000
 
-class DataSet;
+class LPCDataSet;
 
 class LPCINST : public Instrument {
 public:
@@ -18,7 +18,7 @@ protected:
 	public:
 		WarpFilter();
 		float set(float warp, float *c, int npoles);
-		void run(float *sig, float warp, float *c, float *out, int nvals);
+		void run(float *sig, float warp, float * const c, float *out, int outlen);
 	private:
 		int _npoles;
 		float _cq;
@@ -34,12 +34,13 @@ protected:
 	virtual void	SetupArrays(int frameCount) = 0;
 
 	// These are set via external routines and copied in during init.
-	DataSet	*_dataSet;
+	LPCDataSet	*_dataSet;
 
 	// These are set and used within subclasses.
 	double	_amp;
 	int		_nPoles;
-	float	_lpcFrames, _lpcFrameno;
+    float	_lpcFrames;
+    double  _lpcFrameno;
 	int		_lpcFrame1;
 	double	_ampmlt;
 	double	_warpFactor;
@@ -83,14 +84,19 @@ private:
 	float	_maxdev;
 	float	_perperiod;
 	float	_hnfactor;							// harmonic count multiplier
-	float	_thresh, _randamp;
+	float	_randamp;
 	bool	_unvoiced_rate;
 	float	_risetime, _decaytime;				// enveloping
 
 	// These are set and used within LPCPLAY.
+    float   _actualWeight;
 	double	_pitch;
 	double	_transposition;
+    double  _voicedFrameIncrement;
+    double  _unvoicedFrameIncrement;
 	bool	_voiced;
+    bool    _usesFrameTranspositions;
+    bool    _useTranspositionAsPitch;
 	float	_evals[5];
 	double	*_pchvals;						// pitch table
 	float	*_noisvals;						// signal arrays
@@ -98,11 +104,6 @@ private:
 	float	_srd2, _phs, _magic;
 	double	*_sineFun, *_envFun;
 	int		_datafields;
-
-#ifdef EMBEDDED
-// see note in LPCPLAY.cpp
-	int CLASSBRADSSTUPIDUNVOICEDFLAG;
-#endif
 };
 
 class LPCIN : public LPCINST {

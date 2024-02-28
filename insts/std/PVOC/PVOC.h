@@ -20,7 +20,7 @@ protected:
 	int		_inputchannel;
 	int		_inputFrames;	// total number of frames of input
 	int		_currentInputFrame;	// where we are now in the input
-	int		R, N, N2, Nw, Nw2, D, I, i, _in, _on, obank, Np;
+	int		R, _fftLen, N2, _windowLen, Nw2, _decimation, _interpolation, i, _in, _on, obank, Np;
 	float	_amp;
 	float	P, *Hwin, *Wanal, *Wsyn, *_pvInput, *winput;
 	float 	*lpcoef, *_fftBuf, *channel, *_pvOutput;

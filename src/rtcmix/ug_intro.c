@@ -25,6 +25,9 @@ ug_intro()
    UG_INTRO_DOUBLE_RETURN("samptable", samptable);
    UG_INTRO_DOUBLE_RETURN("dumptable", dumptable);
    UG_INTRO_DOUBLE_RETURN("plottable", plottable);
+   UG_INTRO_DOUBLE_RETURN("pvinput", pvinput);
+   UG_INTRO_DOUBLE_RETURN("pvgetbincount", pvgetbincount);
+   UG_INTRO_DOUBLE_RETURN("pvgetframerate", pvgetframerate);
    UG_INTRO_HANDLE_RETURN("mul", opmul);
    UG_INTRO_HANDLE_RETURN("add", opadd);
    UG_INTRO_HANDLE_RETURN("div", opdiv);
@@ -37,6 +40,12 @@ ug_intro()
    UG_INTRO_HANDLE_RETURN("makeconverter", makeconverter);
    UG_INTRO_HANDLE_RETURN("makemonitor", makemonitor);
 	UG_INTRO_HANDLE_RETURN("makeinstrument", makeinstrument);
+    UG_INTRO_HANDLE_RETURN("pvgetframe", pvgetframe);
+    UG_INTRO_HANDLE_RETURN("pvgetframeamps", pvgetframeamps);
+    UG_INTRO_HANDLE_RETURN("pvgetframefreqs", pvgetframefreqs);
+    UG_INTRO_HANDLE_RETURN("lpcgetamps", lpcgetamps);
+    UG_INTRO_HANDLE_RETURN("lpcgetpitches", lpcgetpitches);
+    UG_INTRO_HANDLE_RETURN("pvgetbin", pvgetbin);
 	UG_INTRO_DOUBLE_RETURN("filedur", filedur);
 	UG_INTRO_DOUBLE_RETURN("filechans", filechans);
 	UG_INTRO_DOUBLE_RETURN("filesr", filesr);
@@ -46,6 +55,8 @@ ug_intro()
 	UG_INTRO_DOUBLE_RETURN("bus_exists", bus_exists);
 	UG_INTRO_DOUBLE_RETURN("bus_link", bus_link);
 	UG_INTRO_DOUBLE_RETURN("getPFval", getPFval);
+    UG_INTRO_DOUBLE_RETURN("stringtofloat", m_stringtofloat);
+    UG_INTRO_DOUBLE_RETURN("stringcontains", m_stringcontains);
 	UG_INTRO("makegen", makegen);
 	UG_INTRO("open",m_open);
 	UG_INTRO("peakoff",peak_off);
@@ -112,6 +123,7 @@ ug_intro()
 	UG_INTRO("round",m_round);
 	UG_INTRO("print",m_print);
 	UG_INTRO("wrap",m_wrap);
+    UG_INTRO("fwrap",m_fwrap);
 	UG_INTRO("abs",m_abs);
 	UG_INTRO("f_arg",f_arg); /* to return float from command line */
 	UG_INTRO("i_arg",i_arg); /* to return int from command line */
@@ -119,7 +131,6 @@ ug_intro()
 	UG_INTRO("n_arg",n_arg); /* to return num args from command line */
 	UG_INTRO("print_on",m_print_is_on); /* to turn on printing*/
 	UG_INTRO("print_off",m_print_is_off); /* to turn off printing*/
-	UG_INTRO("str_num",str_num); /* string,num,strin,num, etc print out */
 	UG_INTRO("get_spray",m_get_spray);
 	UG_INTRO("spray_init",m_spray_init);
 	UG_INTRO("pchmidi", m_pchmidi);
@@ -141,7 +152,6 @@ ug_intro()
 	UG_INTRO("irand", m_irand);
 	UG_INTRO("trand", m_trand);
 	UG_INTRO("chance", m_chance);
-//	UG_INTRO("grand", m_grand);
 	UG_INTRO("setexp", m_setexp);
 	UG_INTRO("addgens", m_addgens);
 	UG_INTRO("multgens", m_multgens);

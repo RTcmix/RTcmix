@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <Option.h>
+#include <RTOption.h>
 #include <ugens.h>
 #include <rtdefs.h>
 
@@ -22,33 +22,39 @@
 */
 
 /* builtin function prototypes */
-static MincFloat _minc_print(const MincValue args[], const int nargs);
-static MincFloat _minc_printf(const MincValue args[], const int nargs);
-static MincFloat _minc_len(const MincValue args[], const int nargs);
-static MincFloat _minc_interp(const MincValue args[], const int nargs);
-static MincFloat _minc_index(const MincValue args[], const int nargs);
-static MincString _minc_type(const MincValue args[], const int nargs);
-static MincString _minc_tostring(const MincValue args[], const int nargs);
+static MincFloat _minc_print(const MincValue args[], int nargs);
+static MincFloat _minc_printf(const MincValue args[], int nargs);
+static MincFloat _minc_error(const MincValue args[], int nargs);
+static MincFloat _minc_len(const MincValue args[], int nargs);
+static MincFloat _minc_interp(const MincValue args[], int nargs);
+static MincFloat _minc_index(const MincValue args[], int nargs);
+static MincFloat _minc_contains(const MincValue args[], int nargs);
+static MincString _minc_type(const MincValue args[], int nargs);
+static MincString _minc_tostring(const MincValue args[], int nargs);
+static MincString _minc_substring(const MincValue args[], int nargs);
 
 /* other prototypes */
 static int _find_builtin(const char *funcname);
-static void _do_print(const MincValue args[], const int nargs);
-static MincString _make_type_string(const MincDataType type);
+static void _do_print(const MincValue args[], int nargs);
+static MincString _make_type_string(MincDataType type);
 
 
 /* list of builtin functions, searched by _find_builtin */
 static struct _builtins {
    const char *label;
-   MincFloat (*number_return)(const MincValue *, const int); /* func name for those returning MincFloat */
-   MincString (*string_return)(const MincValue *, const int);   /* func name for those returning char * */
+   MincFloat (*number_return)(const MincValue *, int); /* func name for those returning MincFloat */
+   MincString (*string_return)(const MincValue *, int);   /* func name for those returning char * */
 } builtin_funcs[] = {
    { "print",     _minc_print,   NULL },
    { "printf",    _minc_printf,  NULL },
+   { "error",     _minc_error,   NULL },
    { "len",       _minc_len,     NULL },
    { "interp",    _minc_interp,  NULL },
    { "index",     _minc_index,   NULL },
+   { "contains", _minc_contains, NULL },
    { "type",      NULL,          _minc_type },
    { "tostring",  NULL,          _minc_tostring },
+   { "substring", NULL,          _minc_substring },
    { NULL,        NULL,          NULL }         /* marks end of list */
 };
 
@@ -58,7 +64,7 @@ static int
 _find_builtin(const char *funcname)
 {
    int i = 0;
-   while (1) {
+   while (true) {
       if (builtin_funcs[i].label == NULL)
          break;
       if (strcmp(builtin_funcs[i].label, funcname) == 0)
@@ -70,7 +76,7 @@ _find_builtin(const char *funcname)
 
 int
 call_builtin_function(const char *funcname, const MincValue arglist[],
-   const int nargs, MincValue *retval)
+   int nargs, MincValue *retval)
 {
    int index = _find_builtin(funcname);
    if (index < 0)
@@ -91,7 +97,7 @@ call_builtin_function(const char *funcname, const MincValue arglist[],
 
 /* ----------------------------------------------------- _make_type_string -- */
 static MincString
-_make_type_string(const MincDataType type)
+_make_type_string(MincDataType type)
 {
    char *str = NULL;
 
@@ -128,7 +134,7 @@ _make_type_string(const MincDataType type)
 
 /* ------------------------------------------------------------- _do_print -- */
 static void
-_do_print(const MincValue args[], const int nargs)
+_do_print(const MincValue args[], int nargs)
 {
    int i, last_arg;
 
@@ -153,8 +159,15 @@ _do_print(const MincValue args[], const int nargs)
 			  MincList *list = (MincList *)args[i];
 			if (list != NULL) {
 				RTPrintfCat("[");
-				_do_print(list->data, list->len);
-                RTPrintfCat("]%s", delimiter);
+                unsigned printLimit = (unsigned)RTOption::printListLimit();
+                if (printLimit < list->len) {
+                    _do_print(list->data, printLimit);
+                    RTPrintfCat(", ...]%s", delimiter);
+                }
+                else {
+                    _do_print(list->data, list->len);
+                    RTPrintfCat("]%s", delimiter);
+                }
 			}
 			else {
                 RTPrintfCat("NULL%s", delimiter);
@@ -206,6 +219,7 @@ void    MincStruct::print()
         }
         member = next;
     }
+//    RTPrintf("\n");
 }
 
 void    MincMap::print()
@@ -220,12 +234,13 @@ void    MincMap::print()
             RTPrintfCat(", ");
         }
     }
+    RTPrintf("\n");
 }
 
 
 /* ----------------------------------------------------------------- print -- */
 MincFloat
-_minc_print(const MincValue args[], const int nargs)
+_minc_print(const MincValue args[], int nargs)
 {
    if (get_print_option() < MMP_PRINTS) return 0.0;
 
@@ -261,9 +276,9 @@ _minc_print(const MincValue args[], const int nargs)
       a=1, a=1.2345, b=[-2, -1, 0, 1, 2, 99.99], c=boo!, type of c: string
 */
 
-#if defined(EMBEDDED)
+#if defined(EMBEDDED) && !FORCE_EMBEDDED_PRINTF
 MincFloat
-_minc_printf(const MincValue args[], const int nargs)
+_minc_printf(const MincValue args[], int nargs)
 {
    int n;
    const char *p;
@@ -385,7 +400,7 @@ err:
 
 #else
 MincFloat
-_minc_printf(const MincValue args[], const int nargs)
+_minc_printf(const MincValue args[], int nargs)
 {
    int n;
    const char *p;
@@ -501,19 +516,27 @@ err:
 }
 #endif // EMBEDDED
 
+MincFloat
+_minc_error(const MincValue args[], int nargs)
+{
+    MincString p = (MincString) args[0];
+    minc_die("%s", p);
+    return -1.0;
+}
 
 /* ------------------------------------------------------------------- len -- */
 /* Print the length of the argument.  This is useful for getting the number
-   of items in a list or the number of characters in a string.
+   of items in a list or map, or the number of characters in a string.
 */
 MincFloat
-_minc_len(const MincValue args[], const int nargs)
+_minc_len(const MincValue args[], int nargs)
 {
    unsigned long len = 0;
 
-   if (nargs != 1)
+    if (nargs != 1) {
       minc_warn("len: must have one argument");
-   else {
+    }
+    else {
       switch (args[0].dataType() ) {
          case MincFloatType:
             len = 1;
@@ -540,12 +563,15 @@ _minc_len(const MincValue args[], const int nargs)
               len = map ? map->len() : 0;
           }
           break;
+          case MincStructType:
+              minc_warn("len: cannot ask for length of a struct");
+              break;
          default:
             minc_warn("len: invalid argument");
             break;
       }
-   }
-   return (MincFloat) len;
+    }
+    return (MincFloat) len;
 }
 
 // BGGx ww seems to be a min() already?
@@ -556,7 +582,7 @@ static int mymin(int x, int y) { return (x <= y) ? x : y; }
    "distance" through the list.
  */
 MincFloat
-_minc_interp(const MincValue args[], const int nargs)
+_minc_interp(const MincValue args[], int nargs)
 {
 	MincFloat outValue = -1;
 	if (nargs != 2)
@@ -574,7 +600,7 @@ _minc_interp(const MincValue args[], const int nargs)
 			return 0.0;
 		else if (len == 1)
 			return (MincFloat)data[0];
-		float fraction = (MincFloat)args[1];
+		MincFloat fraction = (MincFloat)args[1];
 		fraction = (fraction < 0.0) ? 0.0 : (fraction > 1.0) ? 1.0 : fraction;
 		int lowIndex = (int)((len - 1) * fraction);
 		int highIndex = mymin(len - 1, lowIndex + 1);
@@ -588,7 +614,7 @@ _minc_interp(const MincValue args[], const int nargs)
 }
 
 /* ----------------------------------------------------------------- index -- */
-/* Given an item (float, string, list, or handle), return the index of the item within
+/* Given an item (float, string, list, handle, etc.), return the index of the item within
    the given list, or -1 if the item is not in the list.  Example:
 
       list = {1, 2, "three", 4}
@@ -597,7 +623,7 @@ _minc_interp(const MincValue args[], const int nargs)
    <id> equals 1 after this call.
 */
 MincFloat
-_minc_index(const MincValue args[], const int nargs)
+_minc_index(const MincValue args[], int nargs)
 {
    int i, len, index = -1;
    MincDataType argtype;
@@ -612,8 +638,7 @@ _minc_index(const MincValue args[], const int nargs)
       return -1.0;
    }
    argtype = args[1].dataType() ;
-   assert(argtype == MincFloatType || argtype == MincStringType
-            || argtype == MincHandleType || argtype == MincListType);
+   assert(argtype != MincVoidType);
 
    len = ((MincList *)args[0])->len;
    data = ((MincList *)args[0])->data;
@@ -651,25 +676,62 @@ _minc_index(const MincValue args[], const int nargs)
    return (MincFloat) index;
 }
 
+/* ---------------------------------------------------------------- contains -- */
+/* Given an item (float, string, list, handle, etc.), return 1 if the item is contained
+   in the given list or map, or 0 if the item is not found.
+ */
+MincFloat
+_minc_contains(const MincValue args[], int nargs)
+{
+    if (nargs != 2) {
+        minc_warn("contains: must have two arguments (container, item_to_find)");
+        return 0;
+    }
+    MincDataType argtype = args[1].dataType() ;
+    assert(argtype != MincVoidType);
+
+    switch(args[0].dataType()) {
+        case MincListType:
+            return _minc_index(args, nargs) != -1.0;
+        case MincMapType: {
+            MincMap *theMap = (MincMap *) args[0];
+            return theMap ? theMap->contains(args[1]) : 0;
+        }
+        case MincStringType:
+            if (args[1].dataType() != MincStringType) {
+                minc_warn("contains: second argument must be a string if examining a string");
+                return 0;
+            }
+            else {
+                MincString theString = (MincString) args[0];
+                MincString theNeedle = (MincString) args[1];
+                return (theNeedle != NULL) ? strstr(theString, theNeedle) != NULL ? 1 : 0 : 0;
+            }
+            break;
+        default:
+            minc_warn("contains: first argument must be a string, list, or map");
+            return 0;
+    }
+}
 
 /* ------------------------------------------------------------------ type -- */
-/* Print the object type of the argument: float, string, handle, list.
+/* Print the object type of the argument: float, string, handle, list, mincfunction, struct.
 */
 MincString
-_minc_type(const MincValue args[], const int nargs)
+_minc_type(const MincValue args[], int nargs)
 {
    if (nargs != 1) {
       minc_warn("type: must have one argument");
       return NULL;
    }
-   return _make_type_string(args[0].dataType() );
+   return _make_type_string(args[0].dataType());
 }
 
 /* ------------------------------------------------------------------ tostring -- */
 /* Return the passed in (double) argument as a string type.
  */
 MincString
-_minc_tostring(const MincValue args[], const int nargs)
+_minc_tostring(const MincValue args[], int nargs)
 {
 	if (nargs != 1) {
 		minc_warn("tostring: must have one argument");
@@ -683,3 +745,39 @@ _minc_tostring(const MincValue args[], const int nargs)
 	return _strdup(convertedString);
 }
 
+/* ------------------------------------------------------------------ substring -- */
+/* Return the portion of the string between index0 and index1.
+*/
+MincString
+_minc_substring(const MincValue args[], int nargs)
+{
+    if (nargs != 3) {
+        minc_warn("substring: must have three arguments (string, start_index, end_index)");
+        return NULL;
+    }
+    if (args[0].dataType() != MincStringType) {
+        minc_warn("substring: first argument must be a string");
+        return 0;
+    }
+    if (args[1].dataType() != MincFloatType || args[2].dataType() != MincFloatType) {
+        minc_warn("substring: second and third arguments must be floats");
+        return 0;
+    }
+    int startIdx = (int)(MincFloat)args[1];
+    int endIdx = (int)(MincFloat)args[2];
+    MincString theString = (MincString) args[0];
+    int len = strlen(theString);
+    if (startIdx < 0 || endIdx <= startIdx) {
+        minc_warn("substring: illegal indices");
+        return 0;
+    }
+    if (endIdx > len - 1) {
+        minc_warn("substring: end index out of range - using string endpoint");
+        endIdx = len - 1;
+    }
+    int newlen = len - startIdx + 1;
+    char *sbuffer = new char [newlen];
+    strncpy(sbuffer, &theString[startIdx], newlen);
+    sbuffer[endIdx - startIdx] = '\0';
+    return strdup(sbuffer);
+}

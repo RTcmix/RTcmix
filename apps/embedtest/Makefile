@@ -1,13 +1,14 @@
-#HAVE_PORTAUDIO = TRUE	# uncomment if you have it
+include ../../makefile.conf
+
+# HAVE_PORTAUDIO = TRUE	# uncomment if you have it
 
 PROGS = scoreplayer
 ifdef HAVE_PORTAUDIO
 PROGS += embedtest patest scoretrigger
 endif
 
-CFLAGS = -g -Wall
-INCLUDES = -I../../src/rtcmix
-LDFLAGS = -L../../lib -lrtcmix_embedded
+#CFLAGS = -g -Wall -target x86_64-apple-macos11.6
+INCLUDES = -I../../src/rtcmix -I/opt/local/include
 ifdef HAVE_PORTAUDIO
 INCLUDES += -I/usr/local/include
 LDFLAGS += -L/usr/local/lib -lportaudio

@@ -10,6 +10,10 @@
 # To run this script, type: "PYCMIX < synthclass.py"
 #
 # John Gibson, 8 Jan 2004
+#
+# I converted this to use tables instead of gens, and the rhythm
+# changed noticeably, and not for the better. But I left it, because
+# makegen should go away.  -JG, 9/25/20 (gasp)
 
 from rtcmix import *
 
@@ -50,44 +54,41 @@ class Synth:
       shspeed = 1 / tb(shspeed)
 
       # synthesizer -----------------------------------------------------------
-      makegen(2, 10, 2000, 1,0,1,0,1,0,1,0,1,0,1,0,1)
-      makegen(3, 18, 2000, 0,0, 1,0)
-      makegen(4, 20, 15, 1, self.__vibseed)
-      makegen(5, 18, 2000, 0,modfreq, 1,modfreq)
-      makegen(6, 18, 2000, 0,moddepth, 1,moddepth)
-      WIGGLE(start, dur, self.__wigamp, pitch, self.__modtype)
-      WIGGLE(start, dur, self.__wigamp, pitch + self.__detune, self.__modtype)
+      carwave = maketable("wave", 2000, 1,0,1,0,1,0,1,0,1,0,1,0,1)
+      cargliss = maketable("line", 2000, 0,0, 1,0)
+      modwave = maketable("random", 15, "low", -1, 1, self.__vibseed)
+      WIGGLE(start, dur, self.__wigamp, pitch, self.__modtype, 0, 0, 0, carwave, modwave, modfreq, moddepth)
+      WIGGLE(start, dur, self.__wigamp, pitch + self.__detune, self.__modtype, 0, 0, 0, carwave, modwave, modfreq, moddepth)
 
       # wave shaper -----------------------------------------------------------
-      makegen(2, 4, 1000, 0,-1,self.__shwarp, 1,0,-self.__shwarp, 2,1)
+      func = maketable("curve", 1000, 0,-1,self.__shwarp, 1,0,-self.__shwarp, 2,1)
       shsize = dur * shspeed
-      makegen(3, 20, shsize, 1, shseed)
-      copygen(3, 3, shsize * self.__shjaggedness, 0)
-      quantizegen(3, self.__shquantum)
-      #fplot(3, 5, "with lines")
-      makegen(99, 4, 1000, 0,1,-2, 1,0)  # normalization function
-      #fplot(99, 5)
-      reset(20000)
+      guide = maketable("random", shsize, "low", 0, 1, shseed)
+      guide = copytable(guide, shsize * self.__shjaggedness, "nointerp")
+      guide = makefilter(guide, "quantize", self.__shquantum)
+      #plottable(guide, 5, "with lines")
+      normtab = maketable("curve", 1000, 0,1,-2, 1,0)  # normalization function
+      #plottable(normtab, 5, "with lines")
+      control_rate(20000)
       amp = ampdb(gain)
-      SHAPE(start, 0, dur, amp, self.__shminindex, shmaxindex, 99, 0, 1)
+      SHAPE(start, 0, dur, amp, self.__shminindex, shmaxindex, normtab, 0, 1, func, guide)
       # vary distortion index for other channel
-      makegen(3, 20, shsize, 1, shseed + 1)
-      copygen(3, 3, shsize * self.__shjaggedness, 0)
-      quantizegen(3, self.__shquantum)
-      SHAPE(start, 0, dur, amp, self.__shminindex, maxindex, 99, 0, 0)
+      guide = maketable("random", shsize, "low", 0, 1, shseed + 1)
+      guide = copytable(guide, shsize * self.__shjaggedness, "nointerp")
+      guide = makefilter(guide, "quantize", self.__shquantum)
+      SHAPE(start, 0, dur, amp, self.__shminindex, maxindex, normtab, 0, 0, func, guide)
 
       # filter ----------------------------------------------------------------
       reset(5000)
       amp = 3.0
       speed = shspeed * 0.8
       shsize = dur * shspeed
-      makegen(-2, 20, shsize, 1, fseed, self.__mincf, self.__maxcf) 
-      copygen(2, 2, shsize * self.__shjaggedness, 0)
-      quantizegen(2, self.__shquantum)
-      #fplot(2, 5, "with lines")
-      makegen(-3, 18, 1000, 0,self.__bwpct, 1,self.__bwpct)
-      BUTTER(start, 0, dur, amp, self.__ftype, self.__fsteep, 0, 0, 1)
-      BUTTER(start, 0, dur, amp, self.__ftype, self.__fsteep, 0, 1, 0)
+      cf = maketable("random", "nonorm", shsize, "low", self.__mincf, self.__maxcf, fseed)
+      cf = copytable(cf, shsize * self.__shjaggedness, "nointerp")
+      cf = makefilter(cf, "quantize", self.__shquantum)
+      #plottable(cf, 5, "with lines")
+      BUTTER(start, 0, dur, amp, self.__ftype, self.__fsteep, 0, 0, 1, 0, cf, self.__bwpct)
+      BUTTER(start, 0, dur, amp, self.__ftype, self.__fsteep, 0, 1, 0, 0, cf, self.__bwpct)
 
       return bt(start + dur)
 

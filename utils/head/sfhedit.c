@@ -34,7 +34,7 @@ main(int argc, char *argv[])
 	SFCOMMENT sfcm;
 	SFCODE *sizer;
 	FILE *fcom;
-	char *sfname,*cp,*getsfcode();
+	char *sfname,*cp,*getsfcode(SFHEADER *, int);
 	int length,newchans,newclass,newpeak,result,i,n,tfd,tn,nchars=MINCOMM;
 	float newsrate;
 	int zap;

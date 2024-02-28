@@ -6,7 +6,6 @@
 #include <string.h>
 #include <math.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <assert.h>
 #include "common.h"
 #include <rt.h>
@@ -224,7 +223,7 @@ int BASE::configure()
 	in = new float [RTBUFSAMPS * inputChannels()];
 	status = alloc_delays();			/* allocates memory for delays */
 
-	rvb_reset(m_tapDelay);				  // resets reverb & tap delay
+	rvb_reset();				  // resets reverb & tap delay
 
 	if (status == 0 && m_binaural) {
 		status = alloc_firfilters();	// allocates memory for FIRs
@@ -345,7 +344,7 @@ int BASE::run()
 			DBG(printf("right signal:\n"));
 			DBG(PrintSig(roomsig[1], bufsamps, 0.1));
 			/* sum the early response & reverbed sigs  */
-			register float *outptr = &this->outbuf[i*2];
+			float *outptr = &this->outbuf[i*2];
 			for (int n = 0; n < bufsamps; n++) {
 				*outptr++ = roomsig[0][n] + rvbsig[0][n];
 				*outptr++ = roomsig[1][n] + rvbsig[1][n];
@@ -357,7 +356,7 @@ int BASE::run()
 		else {		 /* flushing reverb */
 			// this is the current location in the main output buffer
 			// to write to now
-			register float *outptr = &this->outbuf[i*2];
+			float *outptr = &this->outbuf[i*2];
 			DBG1(printf("  flushing reverb: i = %d, bufsamps = %d\n", i, bufsamps));
 			for (int n = 0; n < bufsamps; n++) {
 				if (m_rvbamp > 0.0) {
@@ -643,7 +642,7 @@ void BASE::matrix_mix()
 inline double
 delpipe(double sig, int *counter, double nsdel, int delsize, double *delay)
 {
-   register int intap, tap1, tap2, del1;
+   int intap, tap1, tap2, del1;
 
    intap = *counter;
    if (intap >= delsize)
@@ -668,7 +667,7 @@ delpipe(double sig, int *counter, double nsdel, int delsize, double *delay)
 inline double
 Allpass(double sig, int *counter, double *data)
 {
-   register int nsdel, intap, length, outtap;
+   int nsdel, intap, length, outtap;
    double gsig;
    double *delay = &data[2];
 
@@ -702,7 +701,7 @@ Allpass(double sig, int *counter, double *data)
 */
 void BASE::RVB(double *input, double *output, long counter)
 {
-   register int i, j;
+   int i, j;
    double sig, delsig;
 
    for (i = 0; i < 2; ++i) {				/* loop for 2 output chans */
@@ -760,7 +759,7 @@ int BASE::roomtrig(double A,				 /* 'rho' or 'x' */
 					double H,
 					int	cart)
 {
-   register int i;
+   int i;
    double x[13], y[13], r[13], t[13], d[4], Ra[2], Ta[2];
    double X, Y, R, T;
    const double z = 0.017453292;  /* Pi / 180 */
@@ -880,8 +879,8 @@ int BASE::roomtrig(double A,				 /* 'rho' or 'x' */
    /* calculate stereo vector pairs for each of these */
    for (i = 0; i < 13; ++i) {
 	  binaural(r[i], t[i], x[i], y[i], H, Ra, Ta);
-	  register Vector *lvec = &m_vectors[0][i];
-	  register Vector *rvec = &m_vectors[1][i];
+	  Vector *lvec = &m_vectors[0][i];
+	  Vector *rvec = &m_vectors[1][i];
 	  lvec->Rho = Ra[0];
 	  rvec->Rho = Ra[1];
 	  lvec->Theta = Ta[0];
@@ -923,9 +922,9 @@ int BASE::roomtrig(double A,				 /* 'rho' or 'x' */
 /* reset zeroes out all delay and filter histories in move and reverb
    each time move is called
 */
-void BASE::rvb_reset(double *m_tapDelay)
+void BASE::rvb_reset()
 {
-	register int i, j, k;
+	int i, j, k;
 
 	/* reset wall filter hists */
 
@@ -942,7 +941,7 @@ void BASE::rvb_reset(double *m_tapDelay)
 			r->delin = r->delout = 0.0;
 			r->deltap = 0;	// index for each delay unit
 			r->Rvb_air[2] = 0.0;
-			register double *point = r->Rvb_del;
+			double *point = r->Rvb_del;
 			while (k < rvbdelsize)
 				point[k++] = 0.0;
 		}
@@ -1008,7 +1007,7 @@ void BASE::airfil_set(int flag)
 
 void BASE::put_tap(int intap, float *Sig, int len)
 {
-	register double *tapdel = m_tapDelay;
+	double *tapdel = m_tapDelay;
 	int tap = intap;
 	while (tap >= m_tapsize)
 		tap -= m_tapsize;

@@ -4,14 +4,12 @@
 #include <math.h>
 #include <stdio.h>
 
-double SINARRAY[1025], COSARRAY[1025], ATANARRAY[1025];
-
 /* ----------------------------------------------------------------- wrap --- */
 /* Converts negative or large polar angles (in rads) into positive */
 double
 wrap(double x)
 {
-   register double val = x;
+   double val = x;
    while (val < 0.0)
       val += PI2;
    while (val >= PI2)
@@ -247,29 +245,6 @@ check_denormals(double *Sig, int len)
 			Sig[i] = 0.0;
 }
 #endif
-
-/* ------------------------------------------------------- setup_trigfuns --- */
-/* Loads global arrays with sine and cosine functions for macros.
-*/
-void
-setup_trigfuns()
-{
-   static int trigfuns_inited = 0;
-
-   if (trigfuns_inited)
-      return;
-
-   for (int i = 0; i < 1024; i++) {
-      SINARRAY[i] = sin((double) i * PI2 / 1024.0);
-      COSARRAY[i] = cos((double) i * PI2 / 1024.0);
-      ATANARRAY[i] = atan((double) i * PI / 1024.0 - (PI / 2.0));
-   }
-   SINARRAY[1024] = 0.0;
-   COSARRAY[1024] = 1.0;
-   ATANARRAY[1024] = 1.0;
-
-   trigfuns_inited = 1;
-}
 
 /* -------------------------------------------------------------------------- */
 /* The following functions from the original space.c. */
@@ -606,7 +581,7 @@ setfir(double theta, int nterms, int flag, double *coeffs, double *firtap)
 {
     static const double radmax = PI2;  /* 2PI rads */
     double rad_inc, angle, frac;
-    register int lower, upper, skip;
+    int lower, upper, skip;
         
     /* reset filter histories if flag = 1 */
     

@@ -29,7 +29,7 @@
 #include <math.h>
 #include <Instrument.h>
 #include <PField.h>
-#include <Option.h>	// fastUpdate
+#include <RTOption.h>	// fastUpdate
 #include "WAVETABLE.h"
 #include <rt.h>
 #include <rtdefs.h>
@@ -58,7 +58,7 @@ WAVETABLE::~WAVETABLE()
 
 void WAVETABLE::initamp(float dur, double p[], int ampindex, int ampgenslot)
 {
-	fastUpdate = Option::fastUpdate();
+	fastUpdate = RTOption::fastUpdate();
 	if (fastUpdate) {
 		// Prefer PField table, otherwise makegen
 		int tablen = 0;

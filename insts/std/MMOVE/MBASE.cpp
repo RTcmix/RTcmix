@@ -6,7 +6,6 @@
 #include <string.h>
 #include <math.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <assert.h>
 #include <rt.h>
 #include <rtdefs.h>
@@ -263,7 +262,7 @@ int MBASE::configure()
 		for (int j = 0; j < 13; j++)
 			m_vectors[i][j].Sig = new double[getBufferSize()];
 
-	rvb_reset(m_tapDelay);   			// resets tap delay
+	rvb_reset();   			// resets tap delay
 
 	if (status == 0 && m_binaural) {
 		status = alloc_firfilters();	// allocates memory for FIRs
@@ -547,8 +546,8 @@ int MBASE::roomtrig(double A,                 /* 'rho' or 'x' */
    if (X < Dimensions[3] || X > Dimensions[1] || Y > Dimensions[0] ||
        Y < Dimensions[2]) {
 	  char msg[120];
-      if (cart) sprintf(msg, "Source location [%.1f, %.1f] is outside room bounds!!", X, Y);
-      else sprintf(msg, "Source location [%.1f, %.1f] is outside room bounds!!", R, T);
+      if (cart) snprintf(msg, 120, "Source location [%.1f, %.1f] is outside room bounds!!", X, Y);
+      else snprintf(msg, 120, "Source location [%.1f, %.1f] is outside room bounds!!", R, T);
       rterror(name(), msg);
       return (1);
    }
@@ -687,7 +686,7 @@ int MBASE::roomtrig(double A,                 /* 'rho' or 'x' */
 /* reset zeroes out all delay and filter histories in move and reverb
    each time move is called
 */
-void MBASE::rvb_reset(double *m_tapDelay)
+void MBASE::rvb_reset()
 {
 	register int i, j, k;
 

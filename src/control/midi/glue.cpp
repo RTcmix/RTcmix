@@ -7,7 +7,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <rtcmix_types.h>
-#include <Option.h>
+#include <RTOption.h>
 #include <PField.h>
 #include <utils.h>	// in ../../rtcmix
 #include "RTcmixMIDI.h"
@@ -143,7 +143,7 @@ static void
 _read_config()
 {
 #ifdef NOTYET
-	char *names = strdup(Option::midiCntlNames());
+	char *names = strdup(RTOption::midiCntlNames());
 	char *p, buf[128];
 	int i = 0;
 	int j = 0;
@@ -229,21 +229,26 @@ create_pfield(const Arg args[], const int nargs)
 		return NULL;
 	}
 
-	if (args[5].isType(StringType))
+    if (args[5].isType(StringType)) {
 		type = _string_to_type(args[5]);
-	else
+    }
+    else {
 		return _midi_usage();
-	if (type == kMIDIInvalidType)
+    }
+    if (type == kMIDIInvalidType) {
 		return _midi_usage();
-
+    }
 	if (nargs > 6) {
-		if (args[6].isType(StringType))
+        if (args[6].isType(StringType)) {
 			subtype = _string_to_subtype(type, args[6]);
-		else if (args[6].isType(DoubleType))
+        }
+        else if (args[6].isType(DoubleType)) {
 			// NB: this can be a code or a literal int, e.g. note or controller num
 			subtype = (MIDISubType) (int) args[6];
-		else
+        }
+        else {
 			return _midi_usage();
+        }
 		if (subtype == kMIDIInvalidSubType)
 			return _midi_usage();
 	}

@@ -15,6 +15,7 @@ INSTDOBJS = ../../insts/std/AM/AM.o \
 ../../insts/std/IIR/IINOISE.o \
 ../../insts/std/IIR/PULSE.o \
 ../../insts/std/IIR/cfuncs.o \
+../../insts/std/LOOP/LOOP.o \
 ../../insts/std/MARAGRAN/SGRANR.o \
 ../../insts/std/MARAGRAN/STGRANR.o \
 ../../insts/std/METAFLUTE/BSFLUTE.o \

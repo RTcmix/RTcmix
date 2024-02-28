@@ -12,7 +12,7 @@ static SFCODE	ampcode = {
 extern SFHEADER sfdesc[NFILES];
 
 double
-sfprint(float p[], int n_args)
+sfprint(double p[], int n_args)
 {
 	int fno;
 	fno = p[0];

@@ -19,7 +19,7 @@
 #include <rtdefs.h>
 #include <prototypes.h>
 #include <ugens.h>
-#include <Option.h>
+#include <RTOption.h>
 #ifdef MAXMSP
 // BGG -- this is how you print to the console.app now in max/msp
 extern void cpost(const char *fmt, ...);
@@ -143,7 +143,7 @@ void rtcmix_print(const char *format, ...)
 	vsnprintf(buf, BUFSIZE, format, args);
 	va_end(args);
 
-#ifdef USE_SYSLOG
+#if defined(USE_SYSLOG) && !FORCE_EMBEDDED_PRINTF
 	syslog(LOG_NOTICE, "DEBUG: %s", buf);
 #elif defined(USE_POST)
 	cpost("DEBUG: %s", buf);
@@ -187,14 +187,6 @@ rterror(const char *inst_name, const char *format, ...)
 		cpost(PREFIX "ERROR: %s", buf);
 #endif
 	}
-#if 0
-// allow embedded system to bail out of parser on all errorss
-    if (get_bool_option(kOptionBailOnError)) {
-        if (!rtsetparams_was_called())
-            closesf_noexit();
-        throw(SYSTEM_ERROR);
-    }
-#endif
 }
 
 /* ------------------------------------------------------------------ die --- */

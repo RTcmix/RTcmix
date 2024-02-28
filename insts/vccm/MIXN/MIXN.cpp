@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <mixerr.h>
 #include <Instrument.h>
-#include <notetags.h>
 #include <rt.h>
 #include <rtdefs.h>
 #include "MIXN.h"

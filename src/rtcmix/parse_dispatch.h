@@ -7,7 +7,7 @@ extern "C" {
 
 #include "rtcmix_types.h"
 
-int parse_dispatch(const char *funcname, const Arg arglist[], const int n_args,
+int parse_dispatch(const char *funcname, const Arg arglist[], int n_args,
    Arg *return_val);
 
 #ifdef __cplusplus

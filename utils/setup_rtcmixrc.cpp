@@ -5,7 +5,7 @@
 // Write a basic .rtcmixrc file in the user's home directory.
 // -JGG, 7/1/04; rev. for MIDI/audio devices, 7/29/05.
 
-#include <Option.h>
+#include <RTOption.h>
 #include <stdio.h>
 #include "../src/control/midi/portmidi/pm_common/portmidi.h"
 
@@ -41,11 +41,11 @@ void makeMIDIChoice(const PmDeviceInfo *info[], const int numDevices,
 		if (scanf("%d", &chosenID) == 1) {
 			if (chosenID >= 0 && chosenID < numDevices && info[chosenID] != NULL) {
 				if (input && info[chosenID]->input) {
-					Option::midiInDevice(info[chosenID]->name);
+					RTOption::midiInDevice(info[chosenID]->name);
 					trying = false;
 				}
 				else if (!input && info[chosenID]->output) {
-					Option::midiOutDevice(info[chosenID]->name);
+					RTOption::midiOutDevice(info[chosenID]->name);
 					trying = false;
 				}
 			}
@@ -110,17 +110,17 @@ int chooseMIDIDevices()
 
 int main()
 {
-	Option::init();
+	RTOption::init();
 
 	if (chooseAudioDevices() != 0)
 		return -1;
 	if (chooseMIDIDevices() != 0)
 		return -1;
 
-	if (Option::writeConfigFile(Option::rcName()) != 0)
+	if (RTOption::writeConfigFile(RTOption::rcName()) != 0)
 		return -1;
 	printf("Configuration file \"%s\" successfully written.\n",
-	                                                Option::rcName());
+	                                                RTOption::rcName());
 	return 0;
 }
 
