@@ -401,7 +401,7 @@ Node *	OperationBase::do_op_string(Node *node, const char *str1, const char *str
       case OpMod:
       case OpPow:
         minc_warn("invalid '%s' operator for two strings", printOpKind(op));
-        node->v = (char *)NULL;
+        node->v = (MincString)NULL;
         break;
       case OpNeg:
 		minc_warn("invalid negation of string");
@@ -534,6 +534,11 @@ Node *	OperationBase::do_op_list_float(Node *node, const MincList *srcList, cons
 {
 	ENTER();
    int i;
+   if (srcList == NULL) {
+       minc_warn("Null list in binary operation");
+       node->setValue(MincValue((MincList *)NULL));
+       return node;
+   }
    const int len = srcList->len;
    MincValue *src = srcList->data;
    MincList *destList = new MincList(len);
@@ -654,6 +659,11 @@ Node *    OperationBase::do_op_float_list(Node *node, const MincFloat val, const
     ENTER();
     int i;
     MincValue *dest;
+    if (srcList == NULL) {
+        minc_warn("Null list in binary operation");
+        node->setValue(MincValue((MincList *)NULL));
+        return node;
+    }
     const int len = srcList->len;
     MincValue *src = srcList->data;
     MincList *destList = new MincList(len);
@@ -1091,7 +1101,6 @@ Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char 
     catch (Node * returned) {    // This catches return statements!
         TPRINT("MincFunctionHandler::callMincFunction caught Node %p as return stmt throw - restoring call depth %d\n",
                returned, savedCallDepth);
-        assert(returned->dataType() != MincVoidType);
         returnedNode = returned;
         sFunctionCallDepth = savedCallDepth;
         sIfElseBlockDepth = savedIfElseDepth;
@@ -1211,7 +1220,6 @@ Node *	NodeFunctionCall::doExct() {
                     Node *returned = callMincFunction(theFunction, functionName);
                     if (returned != NULL) {
                         TPRINT("NodeFunctionCall copying Minc function call results into self\n");
-                        assert(returned->dataType() != MincVoidType);
                         copyValue(returned);
                     }
                 }
@@ -1247,7 +1255,6 @@ Node *	NodeFunctionCall::doExct() {
         }
     }
     pop_list();
-    assert(this->dataType() != MincVoidType);
     return this;
 }
 

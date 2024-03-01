@@ -585,11 +585,14 @@ _minc_interp(const MincValue args[], int nargs)
 	if (nargs != 2)
 		minc_warn("interp: must have two arguments (list, fraction)");
 	else {
-		assert(args[1].dataType() == MincFloatType);	// must pass a float as fractional value
 		if (args[0].dataType() != MincListType) {
 			minc_warn("interp: first argument must be a list");
 			return -1.0;
 		}
+        if (args[1].dataType() != MincFloatType) {    // must pass a float as fractional value
+            minc_warn("interp: second argument must be a float");
+            return -1.0;
+        }
 		MincValue *data = ((MincList*)args[0])->data;
 		int len = ((MincList*)args[0])->len;
 		// Deal with degenerate cases
