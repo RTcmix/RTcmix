@@ -824,7 +824,7 @@ MincValue Subscript::readValueAtIndex(Node *listNode, Node *indexNode) {
         index = len - 1;
         frac = 0;
     } else if (fltindex > (MincFloat) (len - 1)) {
-        minc_warn("attempt to index past the end of list '%s': returning last element", listNode->symbol()->name());
+        minc_warn("attempt to index past the end of list '%s': returning last element", listNode->name());
         index = len - 1;
         frac = 0;
     }
@@ -869,7 +869,7 @@ void Subscript::writeValueToIndex(Node *listNode, Node *indexNode, const MincVal
         return;
     }
     int len = 0;
-    MincList *theList = (MincList *) listNode->symbol()->value();
+    MincList *theList =  listNode->symbol() ? (MincList *) listNode->symbol()->value() : (MincList *) listNode->value();
     MincFloat fltindex = (MincFloat) indexNode->value();
     int index = (int) fltindex;
     if (fltindex - (MincFloat) index > 0.0)
@@ -1720,6 +1720,7 @@ Node *	NodeArgListElem::doExct()
             case MincMapType:
             case MincStructType:
             case MincFunctionType:
+            case MincVoidType:
 				if (argSym->dataType() != argValue.dataType()) {
 					minc_die("%s() arg %d ('%s') passed as %s, expecting %s",
 								sCalledFunctions.back(), sArgListIndex, argSym->name(), MincTypeName(argValue.dataType()), MincTypeName(argSym->dataType()));
