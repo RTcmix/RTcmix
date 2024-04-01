@@ -35,6 +35,7 @@ enum ParamType {
 	AUTO_LOAD,
 	FAST_UPDATE,
 	REQUIRE_SAMPLE_RATE,
+    PRINT_SUPPRESS_UNDERBAR,
 	BUFFER_FRAMES,
 	BUFFER_COUNT,
 	OSC_INPORT,
@@ -77,6 +78,7 @@ static Param _param_list[] = {
 	{ kOptionAutoLoad, AUTO_LOAD, false},
 	{ kOptionFastUpdate, FAST_UPDATE, false},
 	{ kOptionRequireSampleRate, REQUIRE_SAMPLE_RATE, true},
+    { kOptionPrintSuppressUnderbar, PRINT_SUPPRESS_UNDERBAR, false },
 
 	// number options
 	{ kOptionBufferFrames, BUFFER_FRAMES, false},
@@ -262,6 +264,10 @@ static int _set_key_value_option(const char *key, const char *sval,
 			status = _str_to_bool(sval, bval);
 			RTOption::requireSampleRate(bval);
 			break;
+        case PRINT_SUPPRESS_UNDERBAR:
+            status = _str_to_bool(sval, bval);
+            RTOption::printSuppressUnderbar(bval);
+            break;
 
 		// number options
 

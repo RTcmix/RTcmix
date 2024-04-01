@@ -229,18 +229,6 @@ static const char *methodNameFromStructAndFunction(const char *structName, const
     return strsave(sMethodNameBuffer);
 }
 
-static const char *nameFromMangledName(const char *mangledName)
-{
-    if (*mangledName == '#') {
-        static char sMethodNameBuffer[128];
-        strncpy(sMethodNameBuffer, mangledName+1, 128);
-        return sMethodNameBuffer;
-    }
-    else {
-        return mangledName;
-    }
-}
-
 /* prototypes for local functions */
 static void push_list(void);
 static void pop_list(void);
@@ -1075,9 +1063,13 @@ Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char 
     int savedLineNo=0, savedScope=0, savedCallDepth=0, savedIfElseDepth=0, savedForWhileDepth=0;
     try {
         // This replicates the argument-printing mechanism used by compiled-in functions.
+        // Functions beginning with underbar can be "privatized" using set_option()
         if (RTOption::print() >= MMP_PRINTS) {
-            RTPrintf("============================\n");
-            RTPrintfCat("%s: ", nameFromMangledName(sCalledFunctions.back()));
+            const char *functionName = sCalledFunctions.back();
+            if (functionName[0] != '_' || !RTOption::printSuppressUnderbar()) {
+                RTPrintf("============================\n");
+                RTPrintfCat("%s: ", functionName);
+            }
             MincValue retval;
             call_builtin_function("print", sMincList, sMincListLen, &retval);
         }

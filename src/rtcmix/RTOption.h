@@ -100,6 +100,7 @@
 #define kOptionAutoLoad         "auto_load"
 #define kOptionFastUpdate       "fast_update"
 #define kOptionRequireSampleRate	"require_sample_rate"
+#define kOptionPrintSuppressUnderbar "print_suppress_underbar"
 
 // number options
 #define kOptionBufferFrames     "buffer_frames"
@@ -183,6 +184,10 @@ public:
 	static bool requireSampleRate(const bool setIt) { _requireSampleRate = setIt;
 		return _requireSampleRate; }
 
+    static bool printSuppressUnderbar() { return _printSuppressUnderbar; }
+    static bool printSuppressUnderbar(const bool setIt) { _printSuppressUnderbar = setIt;
+        return _printSuppressUnderbar; }
+
 	// number options
 
 	static double bufferFrames() { return _bufferFrames; }
@@ -260,6 +265,7 @@ private:
 	static bool _autoLoad;
 	static bool _fastUpdate;
 	static bool _requireSampleRate;
+    static bool _printSuppressUnderbar;
 
 	// number options
 	static double _bufferFrames;

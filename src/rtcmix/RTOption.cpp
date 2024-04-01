@@ -32,6 +32,7 @@ bool RTOption::_bailOnParserWarning = false;
 bool RTOption::_autoLoad = false;
 bool RTOption::_fastUpdate = false;
 bool RTOption::_requireSampleRate = true;
+bool RTOption::_printSuppressUnderbar = false;
 
 double RTOption::_bufferFrames = DEFAULT_BUFFER_FRAMES;
 int RTOption::_bufferCount = DEFAULT_BUFFER_COUNT;
@@ -209,6 +210,13 @@ int RTOption::readConfigFile(const char *fileName)
 	else if (result != kConfigNoValueForKey)
 		reportError("%s: %s.", conf.getLastErrorText(), key);
 
+    key = kOptionPrintSuppressUnderbar;
+    result = conf.getValue(key, bval);
+    if (result == kConfigNoErr)
+        printSuppressUnderbar(bval);
+    else if (result != kConfigNoValueForKey)
+        reportError("%s: %s.", conf.getLastErrorText(), key);
+
 	// number options .........................................................
 
 	double dval;
@@ -370,6 +378,8 @@ int RTOption::writeConfigFile(const char *fileName)
 										fastUpdate() ? "true" : "false");
 	fprintf(stream, "%s = %s\n", kOptionRequireSampleRate,
 										requireSampleRate() ? "true" : "false");
+    fprintf(stream, "%s = %s\n", kOptionPrintSuppressUnderbar,
+                                        printSuppressUnderbar() ? "true" : "false");
 
 	// write number options
 	fprintf(stream, "\n# Number options: key = value\n");
@@ -522,8 +532,10 @@ void RTOption::dump()
 	cout << kOptionAutoLoad << ": " << _autoLoad << endl;
 	cout << kOptionFastUpdate << ": " << _fastUpdate << endl;
 	cout << kOptionRequireSampleRate << ": " << _requireSampleRate << endl;
+    cout << kOptionPrintSuppressUnderbar << ": " << _printSuppressUnderbar << endl;
 	cout << kOptionBufferFrames << ": " << _bufferFrames << endl;
 	cout << kOptionBufferCount << ": " << _bufferCount << endl;
+    cout << kOptionPrintListLimit << ": " << _printSuppressUnderbar << endl;
 	cout << kOptionMuteThreshold << ": " << _muteThreshold << endl;
 	cout << kOptionOSCInPort << ": " << _oscInPort << endl;
 	cout << kOptionDevice << ": " << _device << endl;
@@ -587,6 +599,8 @@ int get_bool_option(const char *option_name)
 		return (int) RTOption::fastUpdate();
 	else if (!strcmp(option_name, kOptionRequireSampleRate))
 		return (int) RTOption::requireSampleRate();
+    else if (!strcmp(option_name, kOptionPrintSuppressUnderbar))
+        return (int) RTOption::printSuppressUnderbar();
 
 	assert(0 && "unsupported option name");		// program error
 	return 0;
@@ -618,6 +632,8 @@ void set_bool_option(const char *option_name, int value)
 		RTOption::fastUpdate((bool) value);
 	else if (!strcmp(option_name, kOptionRequireSampleRate))
 		RTOption::requireSampleRate((bool) value);
+    else if (!strcmp(option_name, kOptionPrintSuppressUnderbar))
+        RTOption::printSuppressUnderbar((bool) value);
 	else
 		assert(0 && "unsupported option name");
 }
