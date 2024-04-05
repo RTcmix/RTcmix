@@ -26,8 +26,6 @@ static const char *dname(int x);
 #include "Node.h"
 #include <RefCounted.h>
 
-#define NO_EMALLOC_DEBUG
-
 static Symbol *freelist = NULL;  /* free list of unused entries */
 
 /* prototypes for local functions */
@@ -173,12 +171,11 @@ strsave(const char *str)
         if (strcmp(str, p->str) == 0)
             return (p->str);
     p = (struct str *) emalloc(sizeof(struct str));
-    if (p == NULL)
-        return NULL;
-    p->str = (char *) emalloc(strlen(str) + 1);
-    if (p->str == NULL) {
+    try {
+        p->str = (char *) emalloc(strlen(str) + 1);
+    } catch (...) {
         efree(p);
-        return NULL;
+        throw;
     }
     strcpy(p->str, str);
     p->next = stab[h];

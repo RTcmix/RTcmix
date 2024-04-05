@@ -6,6 +6,9 @@
 #include "MincValue.h"
 #include <math.h>
 #include <stdlib.h>
+#include <new>          // std::bad_alloc
+
+#define NO_EMALLOC_DEBUG
 
 /* Minc utilities.  By John Gibson, 1/24/2004 */
 
@@ -40,8 +43,6 @@ float_list_to_array(const MincList *list)
    MincFloat *array = NULL;
    if (list->len > 0)
 	  array = (MincFloat *) emalloc(list->len * sizeof(MincFloat));
-   if (array == NULL)
-      return NULL;
    for (i = 0; i < list->len; i++) {
       if (list->data[i].dataType() != MincFloatType) {
          free(array);
@@ -99,11 +100,9 @@ const char *MincTypeName(MincDataType type)
 char *
 emalloc(long nbytes)
 {
-    char *s;
-    
-    s = (char *) malloc(nbytes);
+    char *s = (char *) malloc(nbytes);
     if (s == NULL)
-        sys_error("system out of memory");
+        throw std::bad_alloc();
     
 #ifndef NO_EMALLOC_DEBUG
     DPRINT("emalloc: nbytes=%d, ptr=%p\n", nbytes, s);

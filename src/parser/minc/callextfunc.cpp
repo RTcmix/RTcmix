@@ -123,8 +123,6 @@ call_external_function(const char *funcname, const MincValue arglist[],
 			// If list contains only floats, convert and pass it along.
 			else {
 				Array *newarray = (Array *) emalloc(sizeof(Array));
-				if (newarray == NULL)
-					throw std::bad_alloc();
 				assert(sizeof(*newarray->data) == sizeof(double));	// because we cast MincFloat to double here
 				newarray->data = (double *) float_list_to_array(list);
 				if (newarray->data != NULL) {
