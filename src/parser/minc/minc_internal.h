@@ -17,6 +17,7 @@
 #include <vector>
 #include <string.h>
 #include <stdio.h>      // snprintf
+#include <new>          // std::bad_alloc
 
 #ifdef DEBUG
    #define DPRINT(...) rtcmix_print(__VA_ARGS__)
@@ -61,7 +62,6 @@ typedef enum {
 #define EPSILON DBL_EPSILON
 
 /* error.cpp */
-void sys_error(const char *msg);
 void minc_advise(const char *msg, ...);
 void minc_warn(const char *msg, ...);
 void minc_die(const char *msg, ...);
@@ -91,6 +91,13 @@ class RTFatalException : public RTException
 {
 public:
 	RTFatalException(const char *msg) : RTException(msg) {}
+};
+
+class MemoryException : public std::bad_alloc, public RTFatalException
+{
+public:
+    MemoryException(const char *msg) : RTFatalException(msg) {}
+    virtual const char* what() const throw() { return mesg(); }     // This will need its signature changed for C++11
 };
 
 // Code that has not been finished (DAS HACK)

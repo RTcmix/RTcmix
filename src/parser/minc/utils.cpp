@@ -6,7 +6,6 @@
 #include "MincValue.h"
 #include <math.h>
 #include <stdlib.h>
-#include <new>          // std::bad_alloc
 
 #define NO_EMALLOC_DEBUG
 
@@ -101,9 +100,11 @@ char *
 emalloc(long nbytes)
 {
     char *s = (char *) malloc(nbytes);
-    if (s == NULL)
-        throw std::bad_alloc();
-    
+    if (s == NULL) {
+        char msg[128];
+        snprintf(msg, 128, "Failed to allocate %ld bytes", nbytes);
+        throw MemoryException(msg);
+    }
 #ifndef NO_EMALLOC_DEBUG
     DPRINT("emalloc: nbytes=%d, ptr=%p\n", nbytes, s);
 #endif

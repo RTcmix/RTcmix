@@ -19,13 +19,6 @@ extern void rterror(const char *inst_name, const char *format, ...);
 extern int die(const char *inst_name, const char *format, ...);
 extern "C" int yy_get_stored_lineno();
 
-void
-sys_error(const char *msg)
-{
-	die("parser", "%s", msg);
-	throw(MincSystemError);
-}
-
 char *concat_error_message(char *outbuf, int maxLen, const char *message, ...)
 {
     va_list args;
