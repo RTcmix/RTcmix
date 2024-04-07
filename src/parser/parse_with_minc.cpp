@@ -38,7 +38,11 @@ run_parser(const char *caller)
 //        yydebug = 1;
         status = yyparse();
     }
-    catch (const RTException rtex) {
+    catch (std::bad_alloc &ba) {
+        rterror(caller, "Caught memory exception: %s", ba.what());
+        status = MEMORY_ERROR;
+    }
+    catch (const RTException &rtex) {
         rterror(caller, rtex.mesg());
         status = -1;    // TODO: Add status to RTException?
     }
@@ -93,10 +97,6 @@ run_parser(const char *caller)
         }
         rterror(caller, "Caught exception: %s", errname);
         status = otherError;
-    }
-    catch (std::bad_alloc &ba) {
-        rterror(caller, "Caught memory exception: %s", ba.what());
-        status = MEMORY_ERROR;
     }
     catch (...) {
         rterror(caller, "Caught unknown exception");
