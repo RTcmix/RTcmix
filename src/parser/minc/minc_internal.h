@@ -160,7 +160,9 @@ class MincObject
 {
 public:
     void *operator new(size_t size);
+    void *operator new[](size_t size);
     void operator delete(void *);
+    void operator delete[](void *);
 };
 
 typedef double MincFloat;
@@ -235,9 +237,19 @@ inline void *	MincObject::operator new(size_t size)
 	return (void *) emalloc(size);
 }
 
+inline void *	MincObject::operator new[](size_t size)
+{
+    return (void *) emalloc(size);
+}
+
 inline void	MincObject::operator delete(void *ptr)
 {
 	efree(ptr);
+}
+
+inline void	MincObject::operator delete[](void *ptr)
+{
+    efree(ptr);
 }
 
 #endif /* _MINC_INTERNAL_H_ */
