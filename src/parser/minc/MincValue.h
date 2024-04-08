@@ -101,6 +101,8 @@ private:
 
 class MincValue {
 public:
+    inline void *operator new(size_t size) { return (void *) emalloc(size); }
+    inline void	operator delete(void *ptr) { efree(ptr); }
     MincValue() : type(MincVoidType) { _u.list = NULL; }
     MincValue(MincFloat f) : type(MincFloatType) { _u.number = f; }
     MincValue(MincString s) : type(MincStringType) { _u.string = s; }
