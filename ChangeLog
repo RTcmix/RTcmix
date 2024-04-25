@@ -5,7 +5,7 @@ fixes that we don't bother putting here.
 	* Finished parser expansion to allow things like mylist[3] += 10 and mystruct.member /= 4
 	* MIDI Output system now sends note-offs for any "hanging" notes when RTcmix is shut down.
 	* Fixed a number of scoping issues introduced in 5.4.
-	* Bumped version to 5.4.1 for new stuff and bug fixes.
+	* Bumped version to 5.4.1 for new stuff and bug fixes.  
 
 2024-01-26 Douglas Scott <netdscott-at-netscape.net>
 	* Renamed some source files to better describe their use, and moved maxdispargs.h to a better include dir.
