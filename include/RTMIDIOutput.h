@@ -18,6 +18,7 @@ public:
     virtual void sendControl(long timestamp, unsigned char chan, unsigned char control, unsigned value)=0;
     virtual void sendPitchBend(long timestamp, unsigned char chan, unsigned value)=0;
     virtual void sendProgramChange(long timestamp, unsigned char chan, unsigned char program)=0;
+    virtual void sendSysEx(long timestamp, unsigned char *msg)=0;
 };
 
 #endif	// RTMIDIOUTPUT_H

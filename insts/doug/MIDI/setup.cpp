@@ -86,6 +86,7 @@ int profile()
 
 }
 
+extern Instrument *makeSYSEX();
 extern Instrument *makePITCHBEND();
 extern Instrument *makeCONTROLLER();
 extern Instrument *makePROGRAM();
@@ -93,6 +94,7 @@ extern Instrument *makeNOTE();
 
 void rtprofile()
 {
+    RT_INTRO("SYSEX", makeSYSEX);
     RT_INTRO("PITCHBEND", makePITCHBEND);
     RT_INTRO("CONTROLLER", makeCONTROLLER);
     RT_INTRO("PROGRAM", makePROGRAM);
