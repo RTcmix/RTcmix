@@ -8,7 +8,7 @@
 # from the configure process, but we don't, at least for now.
 # -JGG, 7/29/04
 
-AC_INIT([RTcmix],[4.0])
+AC_INIT([RTcmix],[5.1])
 AC_CONFIG_SRCDIR(src/rtcmix/main.cpp)
 
 CMIXDIR=`pwd`
@@ -319,6 +319,23 @@ AC_ARG_WITH(fftw,
 )
 AC_SUBST(FFTW_SUPPORT)
 
+# portmidi options, allowing linking of an external portmidi library
+USE_EXTERNAL_PMLIB=FALSE                         # default
+WITH_EXTERNAL_PMLIB="false"                          # just for summary display below
+AC_ARG_WITH(pmlib,
+   AS_HELP_STRING([--with-pmlib],[use externally-compiled portmidi library (rather than older internal one)]),
+   [if test "$withval" != "no"; then
+      USE_EXTERNAL_PMLIB=TRUE
+      WITH_EXTERNAL_PMLIB="true"
+      AC_CHECK_HEADER(portmidi.h, [], USE_EXTERNAL_PMLIB=FALSE)
+   	  if test "$USE_EXTERNAL_PMLIB" = "FALSE"; then
+		  AC_MSG_WARN([portmidi.h not present; using internal portmidi library])
+		  WITH_EXTERNAL_PMLIB="false"
+	  fi
+   fi]
+)
+AC_SUBST(USE_EXTERNAL_PMLIB)
+
 # liblo options, for OSC server plugin (in src/control/osc)
 OSC_SUPPORT=FALSE                         # default
 WITH_OSC="false"                          # just for summary display below
@@ -414,6 +431,7 @@ echo "  " Build with ALSA support............................... : $WITH_ALSA
 echo "  " Build with JACK support............................... : $WITH_JACK
 echo "  " Build with NetPlay support............................ : $WITH_NPLAY
 echo "  " Build with FFTW support............................... : $WITH_FFTW
+echo "  " Build with external PortMIDI library.................. : $WITH_EXTERNAL_PMLIB
 echo "  " Build with OSC support................................ : $WITH_OSC
 echo
 
