@@ -6,9 +6,9 @@
 #ifndef _RTCMIXMIDI_H_
 #define _RTCMIXMIDI_H_
 
-#include "portmidi.h"
-#include "porttime.h"
-#include "pmutil.h"
+#include <portmidi.h>
+#include <porttime.h>
+#include <pmutil.h>
 #include <RTMIDIOutput.h>
 #include <Lockable.h>
 #include <list>
@@ -116,6 +116,7 @@ public:
     virtual void sendControl(long timestamp, uchar chan, uchar control, unsigned value);
     virtual void sendPitchBend(long timestamp, uchar chan, unsigned value);
     virtual void sendProgramChange(long timestamp, uchar chan, uchar program);
+    virtual void sendSysEx(long timestamp, unsigned char *msg);
 
 protected:
     static void _midiCallback(PtTimestamp timestamp, void *context);

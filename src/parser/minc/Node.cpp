@@ -417,6 +417,9 @@ Node *	OperationBase::do_op_num(Node *node, const MincFloat val1, const MincFloa
           node->v = val1 * val2;
          break;
       case OpDiv:
+          if (val2 == 0.0f) {
+              minc_warn("Divide-by-zero will return 'inf'!");
+          }
           node->v = val1 / val2;
          break;
       case OpMod:
@@ -1069,9 +1072,9 @@ Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char 
             if (functionName[0] != '_' || !RTOption::printSuppressUnderbar()) {
                 RTPrintf("============================\n");
                 RTPrintfCat("%s: ", functionName);
+                MincValue retval;
+                call_builtin_function("print", sMincList, sMincListLen, &retval);
             }
-            MincValue retval;
-            call_builtin_function("print", sMincList, sMincListLen, &retval);
         }
         // Create a symbol for 'this' within the function's scope if this is a method.
         function->handleThis(thisSymbol);
