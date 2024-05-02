@@ -217,10 +217,12 @@ AC_ARG_WITH(multithread,
 AC_SUBST(MULTI_THREAD_SUPPORT)
 AC_SUBST(THREAD_COUNT)
 
+USE_OSX_DISPATCH=FALSE					# default
 # Enable use of GCD on OSX versions that support it
 if test "$ARCH" = "MACOSX"; then
    AC_CHECK_HEADER(dispatch/dispatch.h, USE_OSX_DISPATCH=TRUE, [])
 fi
+AC_SUBST(USE_OSX_DISPATCH)
 
 # Audio driver options
 AUDIODRIVER=AUTO                          # default
@@ -327,14 +329,20 @@ AC_ARG_WITH(pmlib,
    [if test "$withval" != "no"; then
       USE_EXTERNAL_PMLIB=TRUE
       WITH_EXTERNAL_PMLIB="true"
+	  CFLAGS="$CFLAGS -I/usr/local/include -I/opt/local/include"
       AC_CHECK_HEADER(portmidi.h, [], USE_EXTERNAL_PMLIB=FALSE)
    	  if test "$USE_EXTERNAL_PMLIB" = "FALSE"; then
 		  AC_MSG_WARN([portmidi.h not present; using internal portmidi library])
 		  WITH_EXTERNAL_PMLIB="false"
+	  else
+	     PMLIB_CFLAGS="-I/usr/local/include -I/opt/local/include" 
+	     PMLIB_LDFLAGS="-L/usr/local/lib -L/opt/local/lib -lportmidi" 
 	  fi
    fi]
 )
 AC_SUBST(USE_EXTERNAL_PMLIB)
+AC_SUBST(PMLIB_CFLAGS)
+AC_SUBST(PMLIB_LDFLAGS)
 
 # liblo options, for OSC server plugin (in src/control/osc)
 OSC_SUPPORT=FALSE                         # default
