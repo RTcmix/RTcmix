@@ -107,19 +107,45 @@ sys/param.h sys/socket.h sys/time.h termios.h unistd.h values.h)
 #AC_SUBST(PTRSIZEFLAG)
 
 #############################################################################
+# If a compiler does not support -m32 and -m64, it only builds its native format.
+
+AC_MSG_CHECKING([whether the C compiler accepts -mXX flag])
+old_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -m64"
+AC_TRY_COMPILE([],
+               [],
+               [ac_cv_c_compiler_m64=yes],
+               [ac_cv_c_compiler_m64=no])
+CFLAGS="$old_CFLAGS"
+AC_MSG_RESULT([$ac_cv_c_compiler_m64])
+if test "x$ac_cv_c_compiler_m64" = xyes; then
+SUPPORTS_MXX_FLAG="yes"
+else
+SUPPORTS_MXX_FLAG="no"
+fi
+
+#############################################################################
 # Architecture -- pointer size
 # This is set up to allow compiling fat (64/32) binaries eventually.  -JG
 
 # First find out which ptr sizes we can support
 # NB: Must do AC_PROG_CC above this, or it will fail on Slack 10.2.
 TMP_CFLAGS="$CFLAGS"
-CFLAGS="-m64"
+if test "$SUPPORTS_MXX_FLAG" == "yes"; then
+   CFLAGS="-m64"
+else
+   CFLAGS="$TMP_CFLAGS";
+fi
 AC_RUN_IFELSE(
    [AC_LANG_PROGRAM([], [return sizeof(void *) == 8 ? 0 : 1;])],
    [CAN_BUILD_64BIT="yes"],
    [CAN_BUILD_64BIT="no"]
 )
-CFLAGS="-m32"
+if test "$SUPPORTS_MXX_FLAG" == "yes"; then
+   CFLAGS="-m32"
+else
+   CFLAGS="$TMP_CFLAGS";
+fi
 AC_RUN_IFELSE(
    [AC_LANG_PROGRAM([], [return sizeof(void *) == 4 ? 0 : 1;])],
    [CAN_BUILD_32BIT="yes"],
