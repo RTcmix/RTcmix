@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
    int nskips, nprints, nstars, sampleflag;
    SFMAXAMP sfm;
    struct stat sfst;
-   char *cp, *sfname, *str, *getsfcode();
+   char *cp, *sfname, *str;
    short *ipoint;
    float *xpoint;
    float dur, sample, jpeak, opeak;
