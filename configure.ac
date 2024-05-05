@@ -108,6 +108,7 @@ sys/param.h sys/socket.h sys/time.h termios.h unistd.h values.h)
 
 #############################################################################
 # If a compiler does not support -m32 and -m64, it only builds its native format.
+# This affects all the logic below (unfortunately).  -DS
 
 AC_MSG_CHECKING([whether the C compiler accepts -mXX flag])
 old_CFLAGS="$CFLAGS"
@@ -185,6 +186,7 @@ AC_ARG_WITH(32bit,
 ARCH_64BIT=""
 ARCH_32BIT=""
 if test "$CAN_BUILD_64BIT" = "yes" \
+        -a "$SUPPORTS_MXX_FLAG" == "yes" \
 		-a "$WANTS_32BIT" != "yes" \
 		-a "$WANTS_64BIT" != "no"; then
   	ARCH_64BIT="-m64"
@@ -192,7 +194,9 @@ else
    if test "$CAN_BUILD_32BIT" = "no"; then
       AC_MSG_ERROR([Don't know how to build a 32-bit object.])
    fi
-   ARCH_32BIT="-m32"
+   if test "$SUPPORTS_MXX_FLAG" = "yes"; then
+       ARCH_32BIT="-m32"
+   fi
 fi
 
 # Set up summary display for user and export variables.
