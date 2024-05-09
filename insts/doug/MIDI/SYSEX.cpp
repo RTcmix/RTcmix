@@ -19,6 +19,7 @@
 #include <rt.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define DEBUG 0
 

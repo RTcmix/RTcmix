@@ -644,7 +644,7 @@ void AppleAudioDevice::Impl::propertyListenerProc(void *inRefCon,
 				DPRINT(">>>> AppleAudioDevice: got hardware stream format notification -- sr = %f\n", theProp.desc.mSampleRate);
 				impl->gotFormatNotification = true;
 			}
-			if (device->isRunning() && theProp.desc.mSampleRate != device->getSamplingRate()) {
+			if (device->isRunning() && theProp.desc.mSampleRate != device->getSamplingRate() && theProp.desc.mSampleRate != 0.0) {
 				needToStop = true;
 			}
 			break;

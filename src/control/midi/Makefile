@@ -3,24 +3,35 @@ include ../../../makefile.conf
 OBJS = RTcmixMIDI.o RTMidiPField.o glue.o
 SRCS = RTcmixMIDI.cpp RTMidiPField.cpp glue.cpp
 
-PTLIB = portmidi/porttime/libporttime.a
+EXTRA_PMINCLUDES =
+PMLIB =
+PTLIB =
+
+ifneq ($(USE_EXTERNAL_PMLIB), TRUE)
+	PTLIB = portmidi/porttime/libporttime.a
+	EXTRA_PMINCLUDES = -Iportmidi/pm_common -Iportmidi/porttime
+endif
 
 ifeq ($(ARCH), MACOSX)
-	PMLIB = portmidi/pm_mac/libportmidi.a
+	ifneq ($(USE_EXTERNAL_PMLIB), TRUE)
+		PMLIB = portmidi/pm_mac/libportmidi.a
+	endif
 	MIDISYSLIB = -framework CoreFoundation -framework CoreAudio -framework CoreMIDI
 endif
 ifeq ($(ARCH), LINUX)
-	PMLIB = portmidi/pm_linux/libportmidi.a
+	ifneq ($(USE_EXTERNAL_PMLIB), TRUE)
+		PMLIB = portmidi/pm_linux/libportmidi.a
+	endif
 #	MIDISYSLIB = -lasound
 endif
 
-CXXFLAGS += -I. -I../../rtcmix -Iportmidi/pm_common -Iportmidi/porttime
+CXXFLAGS += -I. -I../../rtcmix $(EXTRA_PMINCLUDES)
 
 LIBMIDI = libmidiconn.so
 
 all: $(LIBMIDI)
 
-$(LIBMIDI): depend $(OBJS) $(PMLIB)
+$(LIBMIDI): depend $(OBJS) $(PMLIB) $(PTLIB)
 	$(RM) $@
 	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(PMLIB) $(PTLIB) $(MIDISYSLIB)
 

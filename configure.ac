@@ -8,7 +8,7 @@
 # from the configure process, but we don't, at least for now.
 # -JGG, 7/29/04
 
-AC_INIT([RTcmix],[4.0])
+AC_INIT([RTcmix],[5.1])
 AC_CONFIG_SRCDIR(src/rtcmix/main.cpp)
 
 CMIXDIR=`pwd`
@@ -107,19 +107,46 @@ sys/param.h sys/socket.h sys/time.h termios.h unistd.h values.h)
 #AC_SUBST(PTRSIZEFLAG)
 
 #############################################################################
+# If a compiler does not support -m32 and -m64, it only builds its native format.
+# This affects all the logic below (unfortunately).  -DS
+
+AC_MSG_CHECKING([whether the C compiler accepts -mXX flag])
+old_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -m64"
+AC_TRY_COMPILE([],
+               [],
+               [ac_cv_c_compiler_m64=yes],
+               [ac_cv_c_compiler_m64=no])
+CFLAGS="$old_CFLAGS"
+AC_MSG_RESULT([$ac_cv_c_compiler_m64])
+if test "x$ac_cv_c_compiler_m64" = xyes; then
+    SUPPORTS_MXX_FLAG="yes"
+else
+    SUPPORTS_MXX_FLAG="no"
+fi
+
+#############################################################################
 # Architecture -- pointer size
 # This is set up to allow compiling fat (64/32) binaries eventually.  -JG
 
 # First find out which ptr sizes we can support
 # NB: Must do AC_PROG_CC above this, or it will fail on Slack 10.2.
 TMP_CFLAGS="$CFLAGS"
-CFLAGS="-m64"
+if test "$SUPPORTS_MXX_FLAG" == "yes"; then
+   CFLAGS="-m64"
+else
+   CFLAGS="$TMP_CFLAGS";
+fi
 AC_RUN_IFELSE(
    [AC_LANG_PROGRAM([], [return sizeof(void *) == 8 ? 0 : 1;])],
    [CAN_BUILD_64BIT="yes"],
    [CAN_BUILD_64BIT="no"]
 )
-CFLAGS="-m32"
+if test "$SUPPORTS_MXX_FLAG" == "yes"; then
+   CFLAGS="-m32"
+else
+   CFLAGS="$TMP_CFLAGS";
+fi
 AC_RUN_IFELSE(
    [AC_LANG_PROGRAM([], [return sizeof(void *) == 4 ? 0 : 1;])],
    [CAN_BUILD_32BIT="yes"],
@@ -159,9 +186,9 @@ AC_ARG_WITH(32bit,
 ARCH_64BIT=""
 ARCH_32BIT=""
 if test "$CAN_BUILD_64BIT" = "yes" \
-		-a "$WANTS_32BIT" != "yes" \
-		-a "$WANTS_64BIT" != "no"; then
-  	ARCH_64BIT="-m64"
+        -a "$WANTS_32BIT" != "yes" \
+        -a "$WANTS_64BIT" != "no"; then
+   ARCH_64BIT="-m64"
 else
    if test "$CAN_BUILD_32BIT" = "no"; then
       AC_MSG_ERROR([Don't know how to build a 32-bit object.])
@@ -188,8 +215,11 @@ if test "$ARCH_64BIT" != ""; then
 fi
 AC_SUBST(PICFLAGS)
 
-#echo "****** ARCH_64BIT: $ARCH_64BIT" 
-#echo "****** ARCH_32BIT: $ARCH_32BIT" 
+# if -mXX flag not supported, strip it back out
+if test "$SUPPORTS_MXX_FLAG" == "no"; then
+    ARCH_64BIT=""
+    ARCH_32BIT=""
+fi
 
 # Combine the bit flags into one symbol to be added to ARCHFLAGS later
 ARCH_BITFLAGS="$ARCH_64BIT $ARCH_32BIT"
@@ -217,10 +247,12 @@ AC_ARG_WITH(multithread,
 AC_SUBST(MULTI_THREAD_SUPPORT)
 AC_SUBST(THREAD_COUNT)
 
+USE_OSX_DISPATCH=FALSE					# default
 # Enable use of GCD on OSX versions that support it
 if test "$ARCH" = "MACOSX"; then
    AC_CHECK_HEADER(dispatch/dispatch.h, USE_OSX_DISPATCH=TRUE, [])
 fi
+AC_SUBST(USE_OSX_DISPATCH)
 
 # Audio driver options
 AUDIODRIVER=AUTO                          # default
@@ -319,6 +351,29 @@ AC_ARG_WITH(fftw,
 )
 AC_SUBST(FFTW_SUPPORT)
 
+# portmidi options, allowing linking of an external portmidi library
+USE_EXTERNAL_PMLIB=FALSE                         # default
+WITH_EXTERNAL_PMLIB="false"                          # just for summary display below
+AC_ARG_WITH(pmlib,
+   AS_HELP_STRING([--with-pmlib],[use externally-compiled portmidi library (rather than older internal one)]),
+   [if test "$withval" != "no"; then
+      USE_EXTERNAL_PMLIB=TRUE
+      WITH_EXTERNAL_PMLIB="true"
+	  CFLAGS="$CFLAGS -I/usr/local/include -I/opt/local/include"
+      AC_CHECK_HEADER(portmidi.h, [], USE_EXTERNAL_PMLIB=FALSE)
+   	  if test "$USE_EXTERNAL_PMLIB" = "FALSE"; then
+		  AC_MSG_WARN([portmidi.h not present; using internal portmidi library])
+		  WITH_EXTERNAL_PMLIB="false"
+	  else
+	     PMLIB_CFLAGS="-I/usr/local/include -I/opt/local/include" 
+	     PMLIB_LDFLAGS="-L/usr/local/lib -L/opt/local/lib -lportmidi" 
+	  fi
+   fi]
+)
+AC_SUBST(USE_EXTERNAL_PMLIB)
+AC_SUBST(PMLIB_CFLAGS)
+AC_SUBST(PMLIB_LDFLAGS)
+
 # liblo options, for OSC server plugin (in src/control/osc)
 OSC_SUPPORT=FALSE                         # default
 WITH_OSC="false"                          # just for summary display below
@@ -414,6 +469,7 @@ echo "  " Build with ALSA support............................... : $WITH_ALSA
 echo "  " Build with JACK support............................... : $WITH_JACK
 echo "  " Build with NetPlay support............................ : $WITH_NPLAY
 echo "  " Build with FFTW support............................... : $WITH_FFTW
+echo "  " Build with external PortMIDI library.................. : $WITH_EXTERNAL_PMLIB
 echo "  " Build with OSC support................................ : $WITH_OSC
 echo
 

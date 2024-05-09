@@ -13,17 +13,23 @@ OPTION_O = ../src/rtcmix/RTOption.o
 LIBCONF = ../src/conf/libconf.a
 
 # MIDI libraries for SETUP program
-PTLIB = ../src/control/midi/portmidi/porttime/libporttime.a
+ifneq ($(USE_EXTERNAL_PMLIB), TRUE)
+	PTLIB = ../src/control/midi/portmidi/porttime/libporttime.a
+endif
 ifeq ($(ARCH), LINUX)
 	ifeq ($(AUDIODRIVER), ALSA)
-		PMLIB = ../src/control/midi/portmidi/pm_linux/libportmidi.a
-		MIDISYSLIB = -lasound -lpthread
+		ifneq ($(USE_EXTERNAL_PMLIB), TRUE)
+			PMLIB = ../src/control/midi/portmidi/pm_linux/libportmidi.a
+		endif
+		MIDISYSLIB = $(PMLIB_LDFLAGS) -lasound -lpthread
 		CXXFLAGS += -DALSA
 	endif
 endif
 ifeq ($(ARCH), MACOSX)
-	PMLIB = ../src/control/midi/portmidi/pm_mac/libportmidi.a
-	MIDISYSLIB = -framework CoreFoundation -framework CoreAudio -framework CoreMIDI
+	ifneq ($(USE_EXTERNAL_PMLIB), TRUE)
+		PMLIB = ../src/control/midi/portmidi/pm_mac/libportmidi.a
+	endif
+	MIDISYSLIB = $(PMLIB_LDFLAGS) -framework CoreFoundation -framework CoreAudio -framework CoreMIDI
 endif
 
 INCLUDES += -I$(AUDIODIR) -I$(SRCDIR)/sndlib -I$(SRCDIR)/rtcmix

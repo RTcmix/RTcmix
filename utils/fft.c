@@ -2,11 +2,7 @@
 #include "fft.h"
 #include "../genlib/complexf.h"
 
-int
-fft(isi,nl,s) 
-long isi;
-long nl;
-complex s[8192];
+int fft(long isi, long nl, complex s[8192]) 
 {
 	complex w,t;
 	long n,nv2;
