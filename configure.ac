@@ -120,9 +120,9 @@ AC_TRY_COMPILE([],
 CFLAGS="$old_CFLAGS"
 AC_MSG_RESULT([$ac_cv_c_compiler_m64])
 if test "x$ac_cv_c_compiler_m64" = xyes; then
-SUPPORTS_MXX_FLAG="yes"
+    SUPPORTS_MXX_FLAG="yes"
 else
-SUPPORTS_MXX_FLAG="no"
+    SUPPORTS_MXX_FLAG="no"
 fi
 
 #############################################################################
@@ -186,17 +186,14 @@ AC_ARG_WITH(32bit,
 ARCH_64BIT=""
 ARCH_32BIT=""
 if test "$CAN_BUILD_64BIT" = "yes" \
-        -a "$SUPPORTS_MXX_FLAG" == "yes" \
-		-a "$WANTS_32BIT" != "yes" \
-		-a "$WANTS_64BIT" != "no"; then
-  	ARCH_64BIT="-m64"
+        -a "$WANTS_32BIT" != "yes" \
+        -a "$WANTS_64BIT" != "no"; then
+   ARCH_64BIT="-m64"
 else
    if test "$CAN_BUILD_32BIT" = "no"; then
       AC_MSG_ERROR([Don't know how to build a 32-bit object.])
    fi
-   if test "$SUPPORTS_MXX_FLAG" = "yes"; then
-       ARCH_32BIT="-m32"
-   fi
+   ARCH_32BIT="-m32"
 fi
 
 # Set up summary display for user and export variables.
@@ -218,8 +215,11 @@ if test "$ARCH_64BIT" != ""; then
 fi
 AC_SUBST(PICFLAGS)
 
-#echo "****** ARCH_64BIT: $ARCH_64BIT" 
-#echo "****** ARCH_32BIT: $ARCH_32BIT" 
+# if -mXX flag not supported, strip it back out
+if test "$SUPPORTS_MXX_FLAG" == "no"; then
+    ARCH_64BIT=""
+    ARCH_32BIT=""
+fi
 
 # Combine the bit flags into one symbol to be added to ARCHFLAGS later
 ARCH_BITFLAGS="$ARCH_64BIT $ARCH_32BIT"
