@@ -89,8 +89,8 @@ public:
     void                setValue(const MincValue &value) { v = value; }
 	const MincValue&	value() const { return v; }
 	Node*				exct();
-    
-    Node *              copyValue(Node *, bool allowTypeOverwrite=true);
+
+    Node *              copyValue(Node *, bool allowTypeOverwrite=true, bool suppressOverwriteWarning=false);
     Node *              copyValue(Symbol *, bool allowTypeOverwrite=true, bool suppressOverwriteWarning=false);
 	void				print();
 protected:

@@ -298,6 +298,9 @@ Node *	Node::exct()
 #ifdef DEBUG_FILENAME_INCLUDES
     printf("%s::exct(%p) setting current location to '%s', current_lineno to %d\n", classname(), this, includeFilename, lineno);
 #endif
+    if (RTOption::parserWarnings() < MincAllWarnings) {
+        sMincWarningLevel = MincNoDefaultedArgWarnings;
+    }
     yy_store_lineno(lineno);
     yy_set_current_include_filename(includeFilename);
 	Node *outNode = doExct();	// this is redefined on all subclasses
@@ -311,7 +314,7 @@ Node *	Node::exct()
 
 /* This copies a node's value and handles ref counting when necessary */
 Node *
-Node::copyValue(Node *source, bool allowTypeOverwrite)
+Node::copyValue(Node *source, bool allowTypeOverwrite, bool suppressOverwriteWarning)
 {
     TPRINT("Node::copyValue(this=%p, Node=%p)\n", this, source);
 #ifdef EMBEDDED
@@ -322,7 +325,10 @@ Node::copyValue(Node *source, bool allowTypeOverwrite)
 #endif
     if (dataType() != MincVoidType && source->dataType() != dataType()) {
         if (allowTypeOverwrite) {
-            minc_warn("Overwriting %s variable '%s' with a %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
+            if (!suppressOverwriteWarning) {
+                minc_warn("Overwriting %s variable '%s' with a %s", MincTypeName(dataType()), name(),
+                          MincTypeName(source->dataType()));
+            }
         }
         else {
             minc_die("Cannot overwrite '%s' (type %s) with a %s", name(), MincTypeName(dataType()), MincTypeName(source->dataType()));
@@ -768,7 +774,8 @@ Node *	NodeListElem::doExct()
 		Node * tmp = child(1)->exct();
 		/* Copy entire MincValue union from expr to this and to stack. */
 		TPRINT("NodeListElem %p copying child value into self and to arguments MincList[%d]\n", this, sMincListLen);
-		copyValue(tmp);
+        // We always allow overwrites of any list element with any other
+		copyValue(tmp, /* allowTypeOverwrite=*/ true, /* suppressOverwriteWarning=*/ true);
 		copyNodeToMincList(&sMincList[sMincListLen], tmp);
 		sMincListLen++;
 		TPRINT("NodeListElem: list at level %d now len %d\n", list_stack_ptr, sMincListLen);
@@ -977,7 +984,8 @@ Node *	NodeSubscriptWrite::doExct()	// was exct_subscript_write()
             minc_die("attempt to index or store into L-variable '%s' which is not a list or map", object->name());
             break;
     }
-	copyValue(child(2));
+    // Copying new variable types into a list is always OK
+	copyValue(child(2), /* allowTypeOverwrite=*/ true, /* suppressOverwriteWarning=*/ true);
 	return this;
 }
 
