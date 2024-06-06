@@ -1074,10 +1074,19 @@ Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char 
     int savedLineNo=0, savedScope=0, savedCallDepth=0, savedIfElseDepth=0, savedForWhileDepth=0;
     try {
         // This replicates the argument-printing mechanism used by compiled-in functions.
-        // Functions beginning with underbar can be "privatized" using set_option()
+        // Functions beginning with underbar, or those in a "suppressed list", can be "privatized" using set_option()
         if (RTOption::print() >= MMP_PRINTS) {
             const char *functionName = sCalledFunctions.back();
-            if (functionName[0] != '_' || !RTOption::printSuppressUnderbar()) {
+            bool isSuppressed = functionName[0] == '_' && RTOption::printSuppressUnderbar();
+            if (!isSuppressed) {
+                const char *suppressedList = RTOption::suppressedFunNamelist();
+                if (suppressedList != NULL) {
+                    char nameWithComma[128];    // there better not be a function name longer than this!
+                    snprintf(nameWithComma, 128, "%s,", functionName);
+                    isSuppressed = (strstr(suppressedList, nameWithComma) != NULL);
+                }
+            }
+            if (!isSuppressed) {
                 RTPrintf("============================\n");
                 RTPrintfCat("%s: ", functionName);
                 MincValue retval;

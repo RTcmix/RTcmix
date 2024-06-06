@@ -123,6 +123,7 @@
 #define kOptionDSOPath          "dso_path"
 #define kOptionRCName           "rcname"
 #define kOptionHomeDir          "homedir"
+#define kOptionSuppressedFunNames "suppressed_fun_names"
 
 
 #ifdef __cplusplus
@@ -247,6 +248,9 @@ public:
 	static char *rcName() { return _rcName; }
 	static char *rcName(const char *rcName);
 
+    static char *suppressedFunNamelist() { return _suppressedNamelist; };
+    static char *suppressedFunNamelist(const char *nameList);
+
 	static void dump();
 
 private:
@@ -286,6 +290,7 @@ private:
 	static char _dsoPath[];
 	static char _homeDir[];
 	static char _rcName[];
+    static char _suppressedNamelist[];
 };
 
 extern "C" {

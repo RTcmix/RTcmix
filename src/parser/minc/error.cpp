@@ -48,7 +48,13 @@ minc_advise(const char *msg, ...)
    vsnprintf(buf, BUFSIZE, msg, args);
    va_end(args);
 
-	rtcmix_advise("parser", buf);
+    const char *includedFile = yy_get_current_include_filename();
+    if (includedFile) {
+        rtcmix_advise("parser", "%s ('%s', near line %d)", buf, includedFile, yy_get_stored_lineno());
+    }
+    else {
+        rtcmix_advise("parser", "%s (near line %d)", buf, yy_get_stored_lineno());
+    }
 }
 
 void

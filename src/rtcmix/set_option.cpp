@@ -50,7 +50,8 @@ enum ParamType {
 	MIDI_OUTDEVICE,
 	OSC_HOST,
 	DSOPATH,
-	RCNAME
+	RCNAME,
+    SUPPRESSED_FUN_NAMES
 };
 
 #define OPT_STRLEN 128
@@ -98,6 +99,7 @@ static Param _param_list[] = {
 	{ kOptionOSCHost, OSC_HOST, false},
 	{ kOptionDSOPath, DSOPATH, false},
 	{ kOptionRCName, RCNAME, false},
+    { kOptionSuppressedFunNames, SUPPRESSED_FUN_NAMES, false },
 
 	// These are the deprecated single-value option strings.
 	// Please don't add more.
@@ -338,6 +340,9 @@ static int _set_key_value_option(const char *key, const char *sval,
 		case RCNAME:
 			RTOption::rcName(sval);
 			break;
+        case SUPPRESSED_FUN_NAMES:
+            RTOption::suppressedFunNamelist(sval);
+            break;
 		default:
 			break;
 	}
