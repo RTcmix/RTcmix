@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2024-07-22 Douglas Scott <netdscott-at-netscape.net>
+	* Many small bug fixes.
+	* Bumped version to 5.4.2.
+
 2024-02-16 Douglas Scott <netdscott-at-netscape.net>
 	* Finished parser expansion to allow things like mylist[3] += 10 and mystruct.member /= 4
 	* MIDI Output system now sends note-offs for any "hanging" notes when RTcmix is shut down.

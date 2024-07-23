@@ -113,7 +113,7 @@ RTcmix::setparams(float sr, int nchans, int bufsamps, bool recording, int bus_co
 #ifdef EMBEDDED
     if (verbose >= MMP_PRINTALL)
 #endif
-        rtcmix_advise("rtsetparams", "Audio set:  %g sampling rate, %d channels\n", RTcmix::sr(), NCHANS);
+        rtcmix_advise("rtsetparams", "Audio set:  %g sampling rate, %d channels", RTcmix::sr(), NCHANS);
     
 	/* inTraverse waits for this. Set it even if play_audio is false! */
 	pthread_mutex_lock(&audio_config_lock);
