@@ -238,7 +238,7 @@ makeinstrument(const Arg arglist[], int nargs)
         if (rv != 0) { // only schedule if no setup() error
 			Iptr->unref();
 			mixerr = MX_FAIL;
-            rtOptionalThrow((RTCmixStatus)rv);
+            rtOptionalThrow((RTcmixStatus)rv);
 			return NULL;
 		}
 		mixerr = MX_NOERR;

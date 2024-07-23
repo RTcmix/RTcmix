@@ -44,7 +44,7 @@ Handle getlpcframedata(const char *filename, const char *functionname, int npole
             ::rterror(functionname, "End frame must be > start frame");
             throw PARAM_ERROR;
         }
-    } catch (RTCmixStatus status) {
+    } catch (RTcmixStatus status) {
         dataSet->unref();
         rtOptionalThrow(status);
         return NULL;

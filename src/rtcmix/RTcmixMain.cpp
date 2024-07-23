@@ -775,7 +775,7 @@ RTcmixMain::sockit(void *arg)
                 }
               }
 #ifdef DBUG
-              rtcmix_debug(NULL, "RTCmixMain::sockit: RECIEVED command during audio_configure loop");
+              rtcmix_debug(NULL, "RTcmixMain::sockit: RECIEVED command during audio_configure loop");
               rtcmix_debug(NULL, "sinfo->name = %s", sinfo->name);
               rtcmix_debug(NULL, "sinfo->n_args = %d", (int)sinfo->n_args);
               for (i=0;i<sinfo->n_args;i++) {
@@ -845,7 +845,7 @@ RTcmixMain::sockit(void *arg)
 #ifdef DBUG
 		  RTPrintf("sockit(): elapsed = %llu\n", (unsigned long long)getElapsed());
 		  RTPrintf("SR = %f\n", SR());
-          rtcmix_debug(NULL, "RTCmixMain::sockit: RECIEVED command");
+          rtcmix_debug(NULL, "RTcmixMain::sockit: RECIEVED command");
           rtcmix_debug(NULL, "sinfo->name = %s", sinfo->name);
           rtcmix_debug(NULL, "sinfo->n_args = %d", (int)sinfo->n_args);
           for (i=0;i<sinfo->n_args;i++) {

@@ -174,7 +174,7 @@ typedef enum {
     SYSTEM_ERROR            = -6,   /* unspecified fatal error */
     RESOURCE_ERROR          = -7,   /* exceeded file limit, etc. */
     MEMORY_ERROR            = -8
-} RTCmixStatus;
+} RTcmixStatus;
     
 
 /*
@@ -225,7 +225,7 @@ void rterror(const char *inst_name, const char *format, ...);
 void rtcmix_print(const char *format, ...);
 /* returns DONT_SCHEDULE if !RTOption::exitOnError() */
 int die(const char *inst_name, const char *format, ...);
-RTCmixStatus rtOptionalThrow(RTCmixStatus status);
+RTcmixStatus rtOptionalThrow(RTcmixStatus status);
 
 /* handle the fact that IOS does not allow a call to system() */
 #ifndef IOS
