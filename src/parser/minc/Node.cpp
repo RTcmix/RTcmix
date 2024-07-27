@@ -1209,6 +1209,10 @@ void NodeFunctionCall::callBuiltinFunction(const char *functionName)
         case FUNCTION_NOT_FOUND:
 #if defined(ERROR_FAIL_ON_UNDEFINED_FUNCTION)
             throw result;
+#else
+        if (RTOption::bailOnUndefinedFunction()) {
+            throw result;
+        }
 #endif
             break;
         default:

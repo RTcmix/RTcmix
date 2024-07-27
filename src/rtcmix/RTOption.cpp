@@ -34,6 +34,7 @@ bool RTOption::_autoLoad = false;
 bool RTOption::_fastUpdate = false;
 bool RTOption::_requireSampleRate = true;
 bool RTOption::_printSuppressUnderbar = false;
+bool RTOption::_bailOnUndefinedFunction = false;
 
 double RTOption::_bufferFrames = DEFAULT_BUFFER_FRAMES;
 int RTOption::_bufferCount = DEFAULT_BUFFER_COUNT;
@@ -220,7 +221,14 @@ int RTOption::readConfigFile(const char *fileName)
     else if (result != kConfigNoValueForKey)
         reportError("%s: %s.", conf.getLastErrorText(), key);
 
-	// number options .........................................................
+    key = kOptionBailOnUndefinedFunction;
+    result = conf.getValue(key, bval);
+    if (result == kConfigNoErr)
+        bailOnUndefinedFunction(bval);
+    else if (result != kConfigNoValueForKey)
+        reportError("%s: %s.", conf.getLastErrorText(), key);
+
+    // number options .........................................................
 
 	double dval;
 
@@ -383,6 +391,8 @@ int RTOption::writeConfigFile(const char *fileName)
 										requireSampleRate() ? "true" : "false");
     fprintf(stream, "%s = %s\n", kOptionPrintSuppressUnderbar,
                                         printSuppressUnderbar() ? "true" : "false");
+    fprintf(stream, "%s = %s\n", kOptionBailOnUndefinedFunction,
+            bailOnUndefinedFunction() ? "true" : "false");
 
 	// write number options
 	fprintf(stream, "\n# Number options: key = value\n");
@@ -547,9 +557,10 @@ void RTOption::dump()
 	cout << kOptionFastUpdate << ": " << _fastUpdate << endl;
 	cout << kOptionRequireSampleRate << ": " << _requireSampleRate << endl;
     cout << kOptionPrintSuppressUnderbar << ": " << _printSuppressUnderbar << endl;
+    cout << kOptionBailOnUndefinedFunction << ": " << _bailOnUndefinedFunction << endl;
 	cout << kOptionBufferFrames << ": " << _bufferFrames << endl;
 	cout << kOptionBufferCount << ": " << _bufferCount << endl;
-    cout << kOptionPrintListLimit << ": " << _printSuppressUnderbar << endl;
+    cout << kOptionPrintListLimit << ": " << _printListLimit << endl;
 	cout << kOptionMuteThreshold << ": " << _muteThreshold << endl;
 	cout << kOptionOSCInPort << ": " << _oscInPort << endl;
 	cout << kOptionDevice << ": " << _device << endl;
@@ -615,6 +626,8 @@ int get_bool_option(const char *option_name)
 		return (int) RTOption::requireSampleRate();
     else if (!strcmp(option_name, kOptionPrintSuppressUnderbar))
         return (int) RTOption::printSuppressUnderbar();
+    else if (!strcmp(option_name, kOptionBailOnUndefinedFunction))
+        return (int)RTOption::bailOnUndefinedFunction();
 
 	assert(0 && "unsupported option name");		// program error
 	return 0;

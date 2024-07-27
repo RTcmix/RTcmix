@@ -101,6 +101,7 @@
 #define kOptionFastUpdate       "fast_update"
 #define kOptionRequireSampleRate	"require_sample_rate"
 #define kOptionPrintSuppressUnderbar "print_suppress_underbar"
+#define kOptionBailOnUndefinedFunction "bail_on_undefined_function"
 
 // number options
 #define kOptionBufferFrames     "buffer_frames"
@@ -189,6 +190,10 @@ public:
     static bool printSuppressUnderbar(const bool setIt) { _printSuppressUnderbar = setIt;
         return _printSuppressUnderbar; }
 
+    static bool bailOnUndefinedFunction() { return _bailOnUndefinedFunction; }
+    static bool bailOnUndefinedFunction(const bool setIt) { _bailOnUndefinedFunction = setIt;
+        return _bailOnUndefinedFunction; }
+
 	// number options
 
 	static double bufferFrames() { return _bufferFrames; }
@@ -270,6 +275,7 @@ private:
 	static bool _fastUpdate;
 	static bool _requireSampleRate;
     static bool _printSuppressUnderbar;
+    static bool _bailOnUndefinedFunction;
 
 	// number options
 	static double _bufferFrames;
