@@ -1169,7 +1169,7 @@ bool NodeFunctionCall::callConstructor(const char *functionName)
             initList->data = sMincList;
             initList->len = sMincListLen;
             TPRINT("NodeFunctionCall::callConstructor -- initializing struct members from sMincList\n");
-            sym->initAsStruct(structType, initList);
+            sym->initAsStruct(structType, initList, true);  // Default args allowed for constructor functions
             copyValue(sym, false);
             initList->data = NULL;
             initList->len = 0;

@@ -105,7 +105,8 @@ Symbol::copyValue(Node *source, bool allowTypeOverwrite)
 class ElementFun
 {
 public:
-    ElementFun(Symbol *rootSym, MincList *memberInitList) : _root(rootSym), _initValues(NULL), _initIndex(0) {
+    ElementFun(Symbol *rootSym, MincList *memberInitList, bool allowDefaultValue)
+            : _root(rootSym), _initValues(NULL), _initIndex(0), _allowDefaultValue(allowDefaultValue) {
         _initValues = (memberInitList) ? memberInitList->data : NULL;
         _initValueCount = (memberInitList) ? memberInitList->len : 0;
     }
@@ -117,15 +118,25 @@ public:
         else {
             if (_initValues != NULL) {
                 if (_initIndex >= _initValueCount) {
-                    minc_die("struct initializer is missing arguments for some members");
+                    if (!_allowDefaultValue) {
+                        minc_die("struct initializer is missing argument for '%s'", memberName);
+                    }
+                    else {
+                        minc_advise("struct initializer argument for '%s' defaulting to 0/null", memberName);
+                    }
+                    // Initialize with default value for type
+                    mstruct->addMember(memberName, MincValue(type), _root->scope(), structTypename);
                 }
-                // Initialize with provided initializer value
-                const MincValue memberValue = _initValues[_initIndex++];
-                // Type check.  Eventually this will be handled directly by the operator =.
-                if (memberValue.dataType() != type) {
-                    minc_die("struct member '%s' initialized with a %s but requires a %s", memberName, MincTypeName(memberValue.dataType()), MincTypeName(type));
+                else {
+                    // Initialize with provided initializer value
+                    const MincValue memberValue = _initValues[_initIndex++];
+                    // Type check.  Eventually this will be handled directly by the operator =.
+                    if (memberValue.dataType() != type) {
+                        minc_die("struct member '%s' initialized with a %s but requires a %s", memberName,
+                                 MincTypeName(memberValue.dataType()), MincTypeName(type));
+                    }
+                    mstruct->addMember(memberName, memberValue, _root->scope(), structTypename);
                 }
-                mstruct->addMember(memberName, memberValue, _root->scope(), structTypename);
             }
             else {
                 // Initialize with default value for type
@@ -138,17 +149,18 @@ private:
     MincValue *_initValues;
     int _initValueCount;
     int _initIndex;
+    bool _allowDefaultValue;
 };
 
 // The use of a "visitor" functor allows a separation between the StructType and the symbol for the actual struct instance.
 // When the functor is invoked on a StructType's members, it instantiates instances of the members with proper names, types,
 // etc., based on the information for each.
 
-void Symbol::initAsStruct(const StructType *structType, MincList *initList)
+void Symbol::initAsStruct(const StructType *structType, MincList *initList, bool allowDefaultCtorArgs)
 {
     DPRINT("Symbol::initAsStruct(this=%p, structType=%p) - creating struct and adding all members\n", this, structType);
     this->v = MincValue(new MincStruct(structType->name()));
-    ElementFun functor(this, initList);
+    ElementFun functor(this, initList, allowDefaultCtorArgs);
     structType->forEachMember(functor);
 }
 

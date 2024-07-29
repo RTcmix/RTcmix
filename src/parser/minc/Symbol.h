@@ -18,7 +18,7 @@ class Symbol {               /* symbol table entries */
 public:
     static Symbol *    create(const char *name);
     ~Symbol();
-    void                initAsStruct(const StructType *structType, MincList *memberInitList=NULL);
+    void                initAsStruct(const StructType *structType, MincList *memberInitList=NULL, bool allowDefaultCtorArgs=false);
     MincDataType        dataType() const { return v.dataType(); }
     void                setValue(const MincValue &value) { v = value; }
     const MincValue&    value() const { return v; }
