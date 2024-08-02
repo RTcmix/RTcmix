@@ -402,6 +402,7 @@ protected:
 private:
     bool                callConstructor(const char *functionName);
     void                callBuiltinFunction(const char *functionName);
+    void                callInitMethodIfPresent(MincStruct *theStruct, Symbol *thisSymbol);
 };
 
 //  Method call node

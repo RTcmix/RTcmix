@@ -1142,6 +1142,22 @@ Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char 
     return returnedNode;
 }
 
+void NodeFunctionCall::callInitMethodIfPresent(MincStruct *theStruct, Symbol *thisSymbol)
+{
+    const char *initName = strsave("_init");
+    Symbol *memberSymbol = theStruct->lookupMember(initName);
+    if (!memberSymbol) {
+        TPRINT("NodeMethodCall: member with that name not found - attempting to retrieve symbol for method\n");
+        const char *methodName = methodNameFromStructAndFunction(theStruct->typeName(), initName);
+        Symbol *methodSymbol = lookupSymbol(methodName, AnyLevel);
+        if (methodSymbol) {
+            MincFunction *theMethod = (MincFunction *)methodSymbol->value();
+            Node *functionRet = callMincFunction(theMethod, methodSymbol->name(), thisSymbol);
+//            setValue(functionRet->value());     // store value from Minc method call to us
+        }
+    }
+}
+
 // In this special case, the function name is the struct type name
 
 bool NodeFunctionCall::callConstructor(const char *functionName)
@@ -1170,6 +1186,7 @@ bool NodeFunctionCall::callConstructor(const char *functionName)
             initList->len = sMincListLen;
             TPRINT("NodeFunctionCall::callConstructor -- initializing struct members from sMincList\n");
             sym->initAsStruct(structType, initList, true);  // Default args allowed for constructor functions
+            callInitMethodIfPresent((MincStruct *)sym->value(), sym);
             copyValue(sym, false);
             initList->data = NULL;
             initList->len = 0;
