@@ -480,8 +480,12 @@ void RTcmixMIDIOutput::sendNoteOff(long timestamp, uchar chan, uchar pitch, ucha
     buffer.timestamp = timestamp;
     PRINT("RTcmixMIDIOutput::sendNoteOff: sending event with ts = %ld\n", timestamp);
     AutoLock al(this);
-    _noteList.remove(MidiItem(chan, pitch));
-    Pm_Write(outstream(), &buffer, 1);
+    // The following prevents us from sending a note-off when there are no active notes
+    std::list<MidiItem>::iterator ni = std::find(_noteList.begin(), _noteList.end(), MidiItem(chan, pitch));
+    if (ni != _noteList.end()) {
+        _noteList.erase(ni);
+        Pm_Write(outstream(), &buffer, 1);
+    }
 }
 
 void RTcmixMIDIOutput::sendControl(long timestamp, uchar chan, uchar control, unsigned value)
@@ -525,9 +529,9 @@ void RTcmixMIDIOutput::sendSysEx(long timestamp, unsigned char *msg)
 void RTcmixMIDIOutput::sendMIDIStart(long timestamp)
 {
     PmEvent startEvent, SPPEvent;
-    startEvent.message = Pm_Message(0xFA, 0, 0);
-    startEvent.timestamp = timestamp;
-    SPPEvent.message = Pm_Message(0xF2, 0, 0);
+//    startEvent.message = Pm_Message(0xFA, 0, 0);
+//    startEvent.timestamp = timestamp;
+//    SPPEvent.message = Pm_Message(0xF2, 0, 0);
     SPPEvent.timestamp = timestamp;
     PmEvent buffers[16];
     for (int chan = 0; chan < 16; ++chan) {
@@ -541,8 +545,8 @@ void RTcmixMIDIOutput::sendMIDIStart(long timestamp)
 //   Pm_Write(outstream(), &SPPEvent, 1);
 //   Pm_Write(outstream(), &startEvent, 1);
     // MMC MIDI sysex for "go to beginning of track"
-    unsigned char msg[14] = { 0xF0, 0x7F, 0x7F, 0x06, 0x44, 0x06, 0x01, 0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF7 };
-    Pm_WriteSysEx(outstream(), timestamp, msg);
+//    unsigned char msg[14] = { 0xF0, 0x7F, 0x7F, 0x06, 0x44, 0x06, 0x01, 0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF7 };
+//    Pm_WriteSysEx(outstream(), timestamp, msg);
     PRINT("RTcmixMIDIOutput::sendMIDIStart: Done\n");
 }
 
