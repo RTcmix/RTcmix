@@ -27,6 +27,8 @@ private:
     int _controllerNumber;
     float _controllerValue;
     unsigned _uControllerValue;
+    bool    _cancelPending;
+    bool    _cancelled;
 };
 
 

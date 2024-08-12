@@ -19,6 +19,9 @@
 #include "RTMIDIOutput.h"
 #include <ugens.h>
 #include <rt.h>
+#include <vector>
+#include <algorithm>
+#include <Lockable.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -30,7 +33,42 @@
 #define PRINT if (0) printf
 #endif
 
-CONTROLLER::CONTROLLER() : MIDIBase(), _controllerNumber(0), _controllerValue(0.0), _uControllerValue(0)
+struct CancelInfo {
+    CancelInfo(int chan, int num) : channel(chan), number(num) {}
+    bool operator == (const CancelInfo &rhs) { return rhs.number == number && rhs.channel == channel; }
+    int channel;
+    int number;
+};
+
+static std::vector<CancelInfo> sPendingCancels;
+typedef std::vector<CancelInfo>::iterator CancelIter;
+static bool sCancelPending = false;
+static Lockable sCancelLock;
+
+static void setCancel(int channel, int controllerNumber)
+{
+    AutoLock a(sCancelLock);
+    sPendingCancels.push_back(CancelInfo(channel, controllerNumber));
+    sCancelPending = true;
+}
+
+static bool wasCancelled(int channel, int controllerNumber)
+{
+    if (sCancelPending) {           // NOTE!! For now, checking this outside the lock
+        AutoLock a(sCancelLock);
+        CancelIter ci = std::find(sPendingCancels.begin(), sPendingCancels.end(), CancelInfo(channel, controllerNumber));
+        if (ci != sPendingCancels.end()) {
+            PRINT("wasCancelled(%d, %d): sCancelPending was set and cancel request found\n", channel, controllerNumber);
+            sPendingCancels.erase(ci);
+            sCancelPending = !sPendingCancels.empty();  // if NO cancels waiting, unset flag
+            return true;
+        }
+    }
+    return false;
+}
+
+
+CONTROLLER::CONTROLLER() : MIDIBase(), _controllerNumber(0), _controllerValue(0.0), _uControllerValue(0), _cancelPending(false), _cancelled(false)
 {
 }
 
@@ -54,6 +92,14 @@ int CONTROLLER::init(double p[], int n_args)
     _controllerNumber = (int)(p[3]);
     _controllerValue = p[4];
 
+    // A fixed -1 value passed-in at initialization tells the system to cancel all active CONTROLLERs with
+    // the same channel and controller number.  This happens on the RT thread.
+
+    if (_controllerValue == -1.0) {
+        rtcmix_advise("CONTROLLER", "Setting up cancel for controller %d on channel %d", _controllerNumber, _midiChannel);
+        _cancelPending = true;  // alerts runtime thread
+        return nSamps();
+    }
     if (_controllerNumber < 0) {
         rtcmix_warn("CONTROLLER", "Controller number limited to 0");
         _controllerNumber = 0;
@@ -71,17 +117,20 @@ int CONTROLLER::init(double p[], int n_args)
         _controllerValue = 1.0;
     }
     
-    PRINT("Chan %d ctrlr %d value %f (normalized)\n", _midiChannel, _controllerNumber, _controllerValue);
+    PRINT("CONTROLLER:init(%p): chan %d ctrlr %d value %f (normalized)\n", this, _midiChannel, _controllerNumber, _controllerValue);
 
     return nSamps();
 }
 
-void CONTROLLER::doStart(FRAMETYPE frameOffset)
-{
-    long timestamp = getEventTimestamp(frameOffset);
-    unsigned value = unsigned(0.5 + (_controllerValue * 127));
-    PRINT("doStart sending on chan %d: ctrlr %d value %u at timestamp %ld\n", _midiChannel, _controllerNumber, value, timestamp);
-    _outputPort->sendControl(timestamp, (unsigned char)_midiChannel, (unsigned char)_controllerNumber, value);
+void CONTROLLER::doStart(FRAMETYPE frameOffset) {
+    if (!_cancelPending) {
+        long timestamp = getEventTimestamp(frameOffset);
+        unsigned value = unsigned(0.5 + (_controllerValue * 127));
+        PRINT("doStart(%p) sending on chan %d: ctrlr %d value %u at timestamp %ld\n", this, _midiChannel, _controllerNumber,
+              value, timestamp);
+        _outputPort->sendControl(timestamp, (unsigned char) _midiChannel, (unsigned char) _controllerNumber, value);
+        _uControllerValue = value;
+    }
 }
 
 // Called at the control rate to update parameters like amplitude, pan, etc.
@@ -95,22 +144,39 @@ void CONTROLLER::doupdate(FRAMETYPE currentFrame)
     
     double p[5];
     update(p, 5, 1 << 4);
-    
+
+    // The following happens in the CONTROLLER which was given the -1 value.
+    if (_cancelPending) {
+ //       rtcmix_advise("CONTROLLER", "%p: Cancelling ctlr %d on channel %d (curframe %d)", this, _controllerNumber, _midiChannel, (int)currentFrame);
+        setCancel(_midiChannel, _controllerNumber);     // set up the globals to indicate cancel-in-progress
+        _cancelPending = false;
+        _cancelled = true;      // The next call to doupdate() will just return below
+        setendsamp(0);          // Cause this inst to exit ASAP
+        return;
+    }
+    else if (_cancelled) {
+        return;     // nothing more to do here
+    }
     _controllerValue = p[4];
-    if (_controllerValue < 0.0) {
+
+    // This happens in the CONTROLLER which picks up the cancel request
+    if (wasCancelled(_midiChannel, _controllerNumber)) {
+//        rtcmix_advise("CONTROLLER", "%p: Ctlr %d on channel %d cancelled (curframe %d)", this, _controllerNumber, _midiChannel, (int)currentFrame);
+        _cancelled = true;  // avoids duplicate messages
+        setendsamp(0);
+    } else if (_controllerValue < 0.0) {
         rtcmix_warn("CONTROLLER", "Controller value limited to 0.0");
         _controllerValue = 0;
-    }
-    else if (_controllerValue > 1.0) {
+    } else if (_controllerValue > 1.0) {
         rtcmix_warn("CONTROLLER", "Controller value limited to 1.0");
         _controllerValue = 1.0;
     }
     unsigned value = unsigned(0.5 + (_controllerValue * 127));
     if (value != _uControllerValue) {
         long timestamp = getEventTimestamp(currentFrame);
-        PRINT("doUpdate sending MIDI ctrlr %d with MIDI value %u to MIDI chan %d with timestamp %ld ms\n",
-              _controllerNumber, value, _midiChannel, timestamp);
-        _outputPort->sendControl(timestamp, (unsigned char)_midiChannel, (unsigned char)_controllerNumber, value);
+        PRINT("doUpdate(%p) sending MIDI ctrlr %d with MIDI value %u to MIDI chan %d with timestamp %ld ms\n",
+              this, _controllerNumber, value, _midiChannel, timestamp);
+        _outputPort->sendControl(timestamp, (unsigned char) _midiChannel, (unsigned char) _controllerNumber, value);
         _uControllerValue = value;
     }
 }
