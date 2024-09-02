@@ -1719,7 +1719,7 @@ Node *	NodeArgList::doExct()
 	inCalledFunctionArgList = false;
     // Create a special function block symbol storing the function's argument count.
     Symbol *n_args = installSymbol(strsave("_n_args"), NO);
-    n_args->setValue(MincValue((MincFloat) sArgListLen));
+    n_args->setValue(MincValue((MincFloat) sMincListLen));
 	return this;
 }
 
