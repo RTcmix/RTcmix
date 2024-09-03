@@ -152,6 +152,8 @@ private:
     bool _allowDefaultValue;
 };
 
+// initAsStruct() performs all symbol creation and value initialization for the members of the particular struct when
+// and instance of it is created.
 // The use of a "visitor" functor allows a separation between the StructType and the symbol for the actual struct instance.
 // When the functor is invoked on a StructType's members, it instantiates instances of the members with proper names, types,
 // etc., based on the information for each.
@@ -159,7 +161,7 @@ private:
 void Symbol::initAsStruct(const StructType *structType, MincList *initList, bool allowDefaultCtorArgs)
 {
     DPRINT("Symbol::initAsStruct(this=%p, structType=%p) - creating struct and adding all members\n", this, structType);
-    this->v = MincValue(new MincStruct(structType->name()));
+    this->setValue(MincValue(new MincStruct(structType->name(), structType->baseName())));
     ElementFun functor(this, initList, allowDefaultCtorArgs);
     structType->forEachMember(functor);
 }

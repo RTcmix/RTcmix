@@ -325,17 +325,19 @@ private:
 
 // Struct definition node.  Stores "template" for a just-declared struct.
 //  n1 NodeSeq of NodeDecls for elements
+//  basename name of struct from which this is derived (optional)
 
 class NodeStructDef : public Node1Child
 {
 public:
-    NodeStructDef(const char *name, Node *n1) : Node1Child(OpFree, eNodeStructDef, n1), _typeName(name) {
+    NodeStructDef(const char *name, Node *n1, const char *basename=NULL) : Node1Child(OpFree, eNodeStructDef, n1), _typeName(name), _baseName(basename) {
         NPRINT("NodeStructDef(%s, %p) => %p\n", name, n1, this);
     }
 protected:
     virtual Node*        doExct();
 private:
     const char *    _typeName;
+    const char *    _baseName;
 };
 
 class NodeFuncBodySeq : public Node2Children

@@ -64,8 +64,9 @@ class Symbol;
 class MincStruct : public MincObject, public RefCounted
 {
 public:
-    MincStruct(const char *typeName) : _typeName(typeName), _memberList(NULL) {}
+    MincStruct(const char *typeName, const char *baseTypeName=NULL) : _typeName(typeName), _baseTypeName(baseTypeName), _memberList(NULL) {}
     const char *typeName() const { return _typeName; }
+    const char *baseTypeName() const { return _baseTypeName; }
     Symbol *    addMember(const char *name, const MincValue &value, int scope, const char *structTypeName);
     Symbol *    lookupMember(const char *name);
     Symbol *    members() { return _memberList; }
@@ -74,6 +75,7 @@ protected:
     virtual ~MincStruct();
 protected:
     const char *    _typeName;
+    const char *    _baseTypeName;
     Symbol *        _memberList;
 };
 

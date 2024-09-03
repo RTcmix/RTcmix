@@ -1142,19 +1142,32 @@ Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char 
     return returnedNode;
 }
 
+// TODO: Operations which involve struct methods and members in base classes should be handled in a single location
+// which can recursively handle bases of bases, etc.
+
 void NodeFunctionCall::callInitMethodIfPresent(MincStruct *theStruct, Symbol *thisSymbol)
 {
     const char *initName = strsave("_init");
     Symbol *memberSymbol = theStruct->lookupMember(initName);
     if (!memberSymbol) {
-        TPRINT("NodeMethodCall: member with that name not found - attempting to retrieve symbol for method\n");
         const char *methodName = methodNameFromStructAndFunction(theStruct->typeName(), initName);
-        Symbol *methodSymbol = lookupSymbol(methodName, AnyLevel);
+        Symbol *methodSymbol = lookupSymbol(methodName, AnyLevel), *baseMethodSymbol = NULL;
+        if (theStruct->baseTypeName() != NULL) {
+            // Look for base class _init() if base is present and call it.
+            baseMethodSymbol = lookupSymbol(methodNameFromStructAndFunction(theStruct->baseTypeName(), initName), AnyLevel);
+            if (baseMethodSymbol) {
+                MincFunction *theMethod = (MincFunction *)baseMethodSymbol->value();
+                (void) callMincFunction(theMethod, baseMethodSymbol->name(), thisSymbol);
+            }
+        }
+        // For the _init method, we call it on both the base (if present) and the derived.
         if (methodSymbol) {
             MincFunction *theMethod = (MincFunction *)methodSymbol->value();
-            Node *functionRet = callMincFunction(theMethod, methodSymbol->name(), thisSymbol);
-//            setValue(functionRet->value());     // store value from Minc method call to us
+            (void) callMincFunction(theMethod, methodSymbol->name(), thisSymbol);
         }
+    }
+    else {
+        minc_warn("This struct's member '%s' overrides presence of a initializer method!", initName);
     }
 }
 
@@ -1349,9 +1362,13 @@ Node *	NodeMethodCall::doExct()
             } else {
                 // This is a "real method", so look for matching method symbol.
                 TPRINT("NodeMethodCall: member with that name not found - attempting to retrieve symbol for method\n");
-                const char *methodName = methodNameFromStructAndFunction(theStruct->typeName(), _methodName);
                 Symbol *objectSymbol = object->symbol();
+                const char *methodName = methodNameFromStructAndFunction(theStruct->typeName(), _methodName);
                 Symbol *methodSymbol = lookupSymbol(methodName, AnyLevel);
+                if (methodSymbol == NULL && theStruct->baseTypeName() != NULL) {
+                    // Look for base class method if base is present
+                    methodSymbol = lookupSymbol(methodNameFromStructAndFunction(theStruct->baseTypeName(), _methodName), AnyLevel);
+                }
                 if (methodSymbol) {
                     MincFunction *theMethod = (MincFunction *)methodSymbol->value();
                     Node *functionRet = callMincFunction(theMethod, methodSymbol->name(), objectSymbol);
@@ -1871,9 +1888,15 @@ Node *  NodeStructDef::doExct()
 {
     TPRINT("NodeStructDef(%p) -- installing struct type '%s'\n", this, _typeName);
     if (current_scope() == 0) {    // until I allow nested structs
-        sNewStructType = installStructType(_typeName, YES);  // all structs global for now
+        sNewStructType = registerStructType(_typeName, YES, _baseName);  // all structs global for now
         if (sNewStructType) {
-            TPRINT("-- walking struct's element list\n");
+            // If there is a base class, access its StructType and copy its MemberInfo
+            if (_baseName != NULL) {
+                const StructType *baseType = lookupStructType(_baseName, GlobalLevel);
+                sNewStructType->copyMembers(baseType);
+            }
+            // Now handle this struct's members
+            TPRINT("-- walking struct's member decl list\n");
             child(0)->exct();
             sNewStructType = NULL;
         }
@@ -1884,7 +1907,8 @@ Node *  NodeStructDef::doExct()
     return this;
 }
 
-// NodeMemberDecl is invoked once for each struct member listed in the struct definition.  sNewStructType was set in NodeStructDef.
+// NodeMemberDecl is invoked once for each struct member listed in the struct definition.
+// sNewStructType was set in NodeStructDef, and represents the full definition of the struct.
 
 Node *  NodeMemberDecl::doExct()
 {

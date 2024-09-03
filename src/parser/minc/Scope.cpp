@@ -30,7 +30,7 @@ public:
     Symbol *            install(const char *name);
     Symbol *            lookup(const char *name) const;
     int                 depth() const { return _depth; }
-    StructType *        installStructType(const char *name);
+    StructType *        registerStructType(const char *name, const char *baseName=NULL);
     const StructType *  lookupStructType(const char *name) const;
     void                dump(const char *spacer="");
 protected:
@@ -93,9 +93,9 @@ Scope::lookup(const char *name) const
     return p;
 }
 
-StructType *    Scope::installStructType(const char *name)
+StructType *    Scope::registerStructType(const char *name, const char *baseName)
 {
-    _structTypes.push_back(StructType(name));
+    _structTypes.push_back(StructType(name, baseName));
     return &_structTypes.back();
 }
 
@@ -360,10 +360,14 @@ void free_scopes()
 }
 
 StructType *
-installStructType(const char *typeName, Bool isGlobal)
+registerStructType(const char *typeName, Bool isGlobal, const char *baseTypeName)
 {
     if (ScopeManager::globalScope()->lookupStructType(typeName) == NULL) {
-        return ScopeManager::globalScope()->installStructType(typeName);
+        // Check for existence of declared base struct type
+        if (baseTypeName != NULL && ScopeManager::globalScope()->lookupStructType(baseTypeName) == NULL) {
+            minc_die("base struct type '%s' is not declared", baseTypeName);
+        }
+        return ScopeManager::globalScope()->registerStructType(typeName, baseTypeName);
     }
     else {
         minc_die("struct %s is already declared", typeName);

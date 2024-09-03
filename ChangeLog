@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2024-09-03 Douglas Scott <netdscott-at-netscape.net>
+	* Added advanced support for MinC struct base classes using 'structbase' keyword
+	* Bumped version to 5.5
+
 2024-07-22 Douglas Scott <netdscott-at-netscape.net>
 	* Many small bug fixes.
 	* Bumped version to 5.4.2.

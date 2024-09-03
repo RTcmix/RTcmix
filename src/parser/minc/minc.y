@@ -92,6 +92,7 @@ static Node * go(Node * t1);
 %left  <ival> CASTTOKEN
 
 %right <ival> TOK_STRUCT_DECL
+%right <ival> TOK_BASE_DECL
 
 %token <ival> TOK_FLOAT_DECL
 %token <ival> TOK_STRING_DECL
@@ -105,7 +106,7 @@ static Node * go(Node * t1);
 
 %type  <node> stml stmt rstmt bexp expl exp expblk str ret bstml obj fexp fexpl func fcall mcall subscript
 %type  <node> fdecl sdecl hdecl ldecl mapdecl structdecl structinit mfuncdecl arg argl funcdef fstml fblock fargl funcname mbr mbrl structdef methodname methoddef
-%type  <str> id structname
+%type  <str> id structname basename
 
 %destructor { MPRINT1("yydestruct unref'ing node %p\n", $$); RefCounted::unref($$); } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl mapdecl structdecl structinit mfuncdecl funcdef fstml arg argl fargl funcname mbr mbrl structdef obj fexp fexpl fblock expblk subscript methodname methoddef
 
@@ -427,12 +428,21 @@ mbrl: mbr               { MPRINT("mbrl: mbr"); $$ = new NodeSeq(new NodeNoop(), 
 structname: TOK_STRUCT_DECL id %prec CASTTOKEN { MPRINT("structname"); $$ = $2; setStructName($2); }
     ;
 
+/* A basename is the rule for the base struct type when declaring a new struct type */
+
+basename: TOK_BASE_DECL id %prec CASTTOKEN { MPRINT("basename"); $$ = $2;  }
+    ;
+
 /* A structdef is complete rule for a struct declaration, i.e., "struct Foo { <member decls> }" */
 
 structdef: structname '{' mbrl '}'  { MPRINT("structdef");
                                         setStructName(NULL);
                                         $$ = go(new NodeStructDef($1, $3));
                                     }
+    |      structname basename '{' mbrl '}'  { MPRINT("structdef (with base class)");
+                                               setStructName(NULL);
+                                               $$ = go(new NodeStructDef($1, $4, $2));
+                                             }
     ;
 
 /* A structdecl is a declaration of an object or list of objects to be type 'struct <SomeStructName>' */

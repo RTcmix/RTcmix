@@ -135,14 +135,15 @@ num   {dig}+
 <INIT>false             return TOK_FALSE;
 <INIT>FALSE             return TOK_FALSE;
 <INIT>struct            return TOK_STRUCT_DECL;
+<INIT>structbase        return TOK_BASE_DECL;
 <INIT>float             return TOK_FLOAT_DECL;
 <INIT>string            return TOK_STRING_DECL;
 <INIT>handle            return TOK_HANDLE_DECL;
 <INIT>list            	return TOK_LIST_DECL;
 <INIT>map               return TOK_MAP_DECL;
 <INIT>mfunction         return TOK_MFUNC_DECL;
-<INIT>return		return TOK_RETURN;
-<INIT>method		return TOK_METHOD;
+<INIT>return		    return TOK_RETURN;
+<INIT>method		    return TOK_METHOD;
 <INIT>[%={}><,.;*+-]    return (*yytext);
 <INIT>"["|"]"|"/"       return (*yytext);
 <INIT>"("|")"           return (*yytext);

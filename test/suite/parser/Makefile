@@ -1,6 +1,12 @@
 CMIX = CMIX
 
 PASS_SCORES = \
+base_init.sco \
+base_no_initializer01.sco \
+basetest01.sco \
+basetest03.sco \
+base_method_override.sco \
+base_no_initializer02.sco \
 bool_checks.sco \
 builtin_function.sco \
 check_arg_order.sco \
@@ -17,6 +23,7 @@ include_at_line7.sco \
 if_else_scope.sco \
 list_compare.sco \
 list_increment_element.sco \
+list_operate_element.sco \
 list_read_write.sco \
 maptest2.sco \
 maptest3.sco \
@@ -53,7 +60,9 @@ two_methods.sco \
 unaryop.sco
 
 FAIL_SCORES = \
+base_unknown.sco \
 block_scope.sco \
+derived_duplicate_member.sco \
 for_scope.sco \
 function_scope.sco \
 func_errortests1.sco \
