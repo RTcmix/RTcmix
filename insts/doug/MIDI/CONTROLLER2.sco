@@ -17,8 +17,11 @@ chan = 0;
 pitch = 8.00;
 vel = 0.8;
 
-PROGRAM(0, 0, 1, chan, 23);	// load accordian
+PROGRAM(0, 0, 1, chan, 23);	// load accordian (if we are talking to a GM synth)
 
 CONTROLLER(start, dur, chan, expr, exprvolume);
 NOTE(start, dur, chan, pitch, vel);
+
+// CANCEL THIS CONTROLLER
+CONTROLLER(2, 0.1, chan, expr, -1);
 
