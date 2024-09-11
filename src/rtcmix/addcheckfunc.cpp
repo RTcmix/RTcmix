@@ -208,33 +208,33 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
     case DoubleType:
     try {
         if (func->legacy) {
-         /* for old (double p[], int nargs) signature (now minus the float[] array -- DAS) */
-         #include <maxdispargs.h>
-         double p[MAXDISPARGS];
-         for (int i = 0; i < nargs; i++) {
-			const Arg &theArg = arglist[i];
-			switch (theArg.type()) {
-            case DoubleType:
-               p[i] = (double) theArg;
-			   break;
-            case StringType:
-               p[i] = STRING_TO_DOUBLE(theArg);
-			   break;
-            default:
-                die(NULL, "%s: arguments must be numbers or strings.", funcname);
-                return PARAM_ERROR;
+            /* for old (double p[], int nargs) signature (now minus the float[] array -- DAS) */
+#include <maxdispargs.h>
+            double p[MAXDISPARGS];
+            for (int i = 0; i < nargs; i++) {
+                const Arg &theArg = arglist[i];
+                switch (theArg.type()) {
+                    case DoubleType:
+                        p[i] = (double) theArg;
+                        break;
+                    case StringType:
+                        p[i] = STRING_TO_DOUBLE(theArg);
+                        break;
+                    default:
+                        die(NULL, "%s: arguments must be numbers or strings.", funcname);
+                        return PARAM_ERROR;
+                }
             }
-         }
-         /* some functions rely on zero contents of args > nargs */
-         for (int i = nargs; i < MAXDISPARGS; i++) {
-            p[i] = 0.0;
-         }
-         *retval = (double) (*(func->func_ptr.legacy_return))
-                                                      (p, nargs);
-      }
-      else
-         *retval = (double) (*(func->func_ptr.number_return))
-                                                      (arglist, nargs);
+            /* some functions rely on zero contents of args > nargs */
+            for (int i = nargs; i < MAXDISPARGS; i++) {
+                p[i] = 0.0;
+            }
+            *retval = (double) (*(func->func_ptr.legacy_return))
+                    (p, nargs);
+        }
+        else
+            *retval = (double) (*(func->func_ptr.number_return))
+                    (arglist, nargs);
     }
     catch (int err) {
         rtcmix_debug("checkfunc", "Caught exception %d", (int)err);

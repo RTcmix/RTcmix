@@ -417,39 +417,42 @@ static int _parse_arg(const char *arg, const bool rtsetparams_called)
 	// as "MOTU 828".  Store result into <opt>.
 
 	long len = arg ? strlen(arg) : 0;
-	if (len > OPT_STRLEN - 1)
-		len = OPT_STRLEN - 1;
-
-	char opt[OPT_STRLEN];
-	char *p = opt;
-	int space_state = 0;
-	for (int j = 0; j < len; j++) {
+	char key[OPT_STRLEN];
+	char *kp = key;
+	int space_state = 0, j;
+	for (j = 0; j < len && j < OPT_STRLEN; j++) {
 		if (space_state > 1)
-			*p++ = arg[j];
+			*kp++ = arg[j];
 		else if (!isspace(arg[j])) {
 			if (space_state == 1)
 				space_state++;
-			else if (arg[j] == '=')
-				space_state = 1;
-			*p++ = arg[j];
+			else if (arg[j] == '=') {
+                break;
+            }
+			*kp++ = arg[j];
 		}
 	}
-	*p = '\0';
+    // Terminate 'key' string
+	*kp = '\0';
 
 	// Two styles of option string: a single "value" and a "key=value" pair.
 	int status = 0;
-	p = strchr(opt, '=');				// check for "key=value"
-	if (p) {
-		*p++ = '\0';						// <opt> is now key only
-		if (*p == '\0')					// p now points to value string
-			return die("set_option", "Missing value for key \"%s\"", opt);
-		status = _set_key_value_option(opt, p, rtsetparams_called);
+	const char *eqloc = strchr(&arg[j], '=');				// check for "key=value"
+	if (eqloc) {
+        // skip any space after '=' but leave any after first non-space
+        const char *value = eqloc + 1;
+        while (isspace(*value)) { ++value; }
+        if (*value == '\0')					// value now points to value string
+			return die("set_option", "Missing value for key \"%s\"", key);
+		status = _set_key_value_option(key, value, rtsetparams_called);
 	}
-	else										// check for single "value"
-		status = _set_value_option(opt, rtsetparams_called);
+	else {                                        // check for single "value"
+        const char *value = key;
+        status = _set_value_option(value, rtsetparams_called);
+    }
 
     if (status == -1) {
-		rtcmix_warn("set_option", "Unrecognized option \"%s\" ignored", opt);
+		rtcmix_warn("set_option", "Unrecognized option \"%s\" ignored", key);
         return rtOptionalThrow(PARAM_ERROR);
     }
 	return 0;
