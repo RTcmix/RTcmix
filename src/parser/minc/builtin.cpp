@@ -23,12 +23,14 @@
 /* builtin function prototypes */
 static MincFloat _minc_print(const MincValue args[], int nargs);
 static MincFloat _minc_printf(const MincValue args[], int nargs);
+static MincFloat _minc_print_if(const MincValue args[], int nargs);
 static MincFloat _minc_error(const MincValue args[], int nargs);
 static MincFloat _minc_len(const MincValue args[], int nargs);
 static MincFloat _minc_interp(const MincValue args[], int nargs);
 static MincFloat _minc_index(const MincValue args[], int nargs);
 static MincFloat _minc_contains(const MincValue args[], int nargs);
 static MincFloat _minc_remove(const MincValue args[], int nargs);
+static MincFloat _minc_insert(const MincValue args[], int nargs);
 static MincString _minc_type(const MincValue args[], int nargs);
 static MincString _minc_tostring(const MincValue args[], int nargs);
 static MincString _minc_substring(const MincValue args[], int nargs);
@@ -47,12 +49,14 @@ static struct _builtins {
 } builtin_funcs[] = {
    { "print",     _minc_print,   NULL },
    { "printf",    _minc_printf,  NULL },
+   { "print_if",   _minc_print_if, NULL },
    { "error",     _minc_error,   NULL },
    { "len",       _minc_len,     NULL },
    { "interp",    _minc_interp,  NULL },
    { "index",     _minc_index,   NULL },
    { "contains",  _minc_contains, NULL },
    { "remove",    _minc_remove,   NULL },
+   { "insert",    _minc_insert,   NULL },
    { "type",      NULL,          _minc_type },
    { "tostring",  NULL,          _minc_tostring },
    { "substring", NULL,          _minc_substring },
@@ -517,6 +521,16 @@ err:
 #endif // EMBEDDED
 
 MincFloat
+_minc_print_if(const MincValue args[], int nargs)
+{
+    MincFloat ret = 0.0;
+    if ((MincFloat)args[0] > 0.0) {
+        ret = _minc_printf(&args[1], nargs-1);
+    }
+    return ret;
+}
+
+MincFloat
 _minc_error(const MincValue args[], int nargs)
 {
     MincString p = (MincString) args[0];
@@ -591,6 +605,10 @@ _minc_interp(const MincValue args[], int nargs)
 			minc_warn("interp: first argument must be a list");
 			return -1.0;
 		}
+        else if (!(bool)args[0]) {
+            minc_warn("interp: list is NULL");
+            return -1.0;
+        }
         if (args[1].dataType() != MincFloatType) {    // must pass a float as fractional value
             minc_warn("interp: second argument must be a float");
             return -1.0;
@@ -635,15 +653,20 @@ _minc_index(const MincValue args[], int nargs)
       minc_warn("index: must have two arguments (list, item_to_find)");
       return -1.0;
    }
-   if (args[0].dataType() != MincListType) {
+   if (!(bool)args[0]) {
+      minc_warn("index: container is NULL");
+      return -1.0;
+   }
+   else if (args[0].dataType() != MincListType) {
       minc_warn("index: container must be a list");
       return -1.0;
    }
    argtype = args[1].dataType() ;
    assert(argtype != MincVoidType);
-
-   len = ((MincList *)args[0])->len;
-   data = ((MincList *)args[0])->data;
+   MincList *list = (MincList *)args[0];
+   assert(list != NULL);
+   len = list->len;
+   data = list->data;
 
    for (i = 0; i < len; i++) {
       if (data[i].dataType() == argtype) {
@@ -689,15 +712,20 @@ _minc_contains(const MincValue args[], int nargs)
         minc_warn("contains: must have two arguments (container, item_to_find)");
         return 0;
     }
+    if (!(bool)args[0]) {
+        minc_warn("contains: container is NULL");
+        return -1.0;
+    }
     MincDataType argtype = args[1].dataType() ;
     assert(argtype != MincVoidType);
 
     switch(args[0].dataType()) {
-        case MincListType:
+        case MincListType: {
             return _minc_index(args, nargs) != -1.0;
+        }
         case MincMapType: {
             MincMap *theMap = (MincMap *) args[0];
-            return theMap ? theMap->contains(args[1]) : 0;
+            return theMap->contains(args[1]);
         }
         case MincStringType:
             if (args[1].dataType() != MincStringType) {
@@ -721,6 +749,10 @@ _minc_remove(const MincValue args[], int nargs) {
         minc_warn("remove: must have two arguments (container, item_to_remove)");
         return 0;
     }
+    else if (!(bool)args[0]) {
+        minc_warn("remove: container is NULL");
+        return -1.0;
+    }
     MincDataType argtype = args[1].dataType();
     assert(argtype != MincVoidType);
     switch (args[0].dataType()) {
@@ -728,17 +760,44 @@ _minc_remove(const MincValue args[], int nargs) {
             int item_index = (int)_minc_index(args, nargs);
             if (item_index != -1.0) {
                 MincList *theList = (MincList *) args[0];
-                theList ? theList->removeAtIndex(item_index) : 0;
+                return theList->removeAtIndex(item_index);
             }
             return 0;
         }
         case MincMapType: {
             MincMap *theMap = (MincMap *) args[0];
-            return theMap ? theMap->remove(args[1]) : 0;
+            return theMap->remove(args[1]);
         }
         default:
-            minc_warn("remove: container must be a map");
-            return 0;
+            minc_warn("remove: container must be a list or a map");
+            return -1;
+    }
+}
+
+MincFloat
+_minc_insert(const MincValue args[], int nargs) {
+    if (nargs != 3) {
+        minc_warn("insert: must have three arguments (container, item_to_insert, insert_index)");
+        return 0;
+    }
+    else if (!(bool)args[0]) {
+        minc_warn("insert: container is NULL");
+        return -1.0;
+    }
+    int insert_index = (int)(MincFloat)args[2];
+    MincDataType insertType = args[1].dataType();
+    assert(insertType != MincVoidType);
+    switch (args[0].dataType()) {
+        case MincListType: {
+            if (insert_index >= 0) {
+                MincList *theList = (MincList *) args[0];
+                return theList->insertAtIndex(args[1], insert_index);
+            }
+            return -1;
+        }
+        default:
+            minc_warn("remove: container must be a list");
+            return -1;
     }
 }
 
@@ -828,6 +887,9 @@ int call_list_method(MincValue &object, const char *methodName, const MincValue 
     if (strcmp (methodName, "append") == 0) {
         *retval = list_append(theList, arglist);
     }
+    else if (strcmp (methodName, "insert") == 0) {
+        *retval = list_append(theList, arglist);
+    }
     else {
         found = 0;
     }
@@ -857,6 +919,11 @@ int call_object_method(MincValue &object, const char *methodName, const MincValu
         MincValue args[2];
         concatArgs(args, object, arglist, nargs);
         *retval = (MincFloat) _minc_remove(args, 2);
+    }
+    else if (strcmp (methodName, "insert") == 0) {
+        MincValue args[3];
+        concatArgs(args, object, arglist, nargs);
+        *retval = (MincFloat) _minc_insert(args, 3);
     }
     else if (strcmp (methodName, "index") == 0) {
         MincValue args[2];

@@ -81,6 +81,30 @@ bool MincList::removeAtIndex(int itemIndex)
     return true;
 }
 
+bool MincList::insertAtIndex(const MincValue &item, int itemIndex)
+{
+    MincValue *oldList = data;
+    int newLen = std::max(len + 1, itemIndex + 1);
+    data = new MincValue[newLen];
+    int i;
+    // Copy items from before insert
+    for (i = 0; i < itemIndex && i < len; ++i) {
+        data[i] = oldList[i];
+    }
+    // Pad if necessary with 0's to match other list functionality
+    for (; i < itemIndex; ++i) {
+        data[i] = MincValue(0.0);
+    }
+    data[itemIndex] = item;
+    // Copy items after the insert
+    for (i = itemIndex+1; i <= len; ++i) {
+        data[i] = oldList[i-1];
+    }
+    len = newLen;
+    delete [] oldList;
+    return true;
+}
+
 bool
 MincList::operator == (const MincList &rhs)
 {

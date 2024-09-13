@@ -26,6 +26,7 @@ public:
     MincList(int len=0);
     void resize(int newLen);
     bool removeAtIndex(int itemIndex);
+    bool insertAtIndex(const MincValue &item, int itemIndex);
     bool operator == (const MincList &rhs);
     bool operator < (const MincList &rhs);
     bool operator > (const MincList &rhs);
