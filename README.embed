@@ -14,10 +14,12 @@ and change the "BUILDTYPE".  In site.conf, the relevant lines are:
 
 	# for building embedded RTcmix libs.  Uncomment the one to build
 	# see the README.embed file for more information
-	BUILDTYPE = STANDALONE
-	#BUILDTYPE = MAXMSP
-	#BUILDTYPE = PD
-	#BUILDTYPE = IOS
+    BUILDTYPE = STANDALONE
+    #BUILDTYPE = OSXEMBEDDED
+    #BUILDTYPE = LINUXEMBEDDED
+    #BUILDTYPE = MAXMSP
+    #BUILDTYPE = PD
+    #BUILDTYPE = IOS
 	# if selecting "IOS", then one of the following two has to be uncommented
 	#IPHONE_TYPE = SIMULATOR
 	#IPHONE_TYPE = DEVICE
@@ -28,10 +30,12 @@ object, comment-out the "BUILDTYPE = STANDALONE" line and uncomment the
 
 	# for building embedded RTcmix libs.  Uncomment the BUILDTYPE to build
 	# see the README.embed file for more information
-	#BUILDTYPE = STANDALONE
-	BUILDTYPE = MAXMSP
-	#BUILDTYPE = PD
-	#BUILDTYPE = IOS
+    #BUILDTYPE = STANDALONE
+    #BUILDTYPE = OSXEMBEDDED
+    #BUILDTYPE = LINUXEMBEDDED
+    BUILDTYPE = MAXMSP
+    #BUILDTYPE = PD
+    #BUILDTYPE = IOS
 	# if selecting "IOS", then one of the following two has to be uncommented
 	#IPHONE_TYPE = SIMULATOR
 	#IPHONE_TYPE = DEVICE
@@ -42,13 +46,30 @@ separate libraries can be combined (see below).
 
 Some specific information about each buildtype:
 
+BUILDTYPE = OSXEMBEDDED
+
+-- This will create a dylib file, librtcmix_embedded.dylib, which can be used to
+create a MacOS program or application which uses RTcmix's public API (see RTcmix_API.h)
+to create, control, and stream audio to and from an RTcmix object.  The installation
+command via 'make install' puts a copy of this library into $(TOP)/lib, which you
+can then link against.
+
+BUILDTYPE = LINUXEMBEDDED
+
+-- This works identically to OSXEMBEDDED but on a Linux platform.
 
 BUILDTYPE = MAXMSP
 
--- This will create a file, "rtcmixdylib.so" in the src/rtcmix/ directory.
-To use this loadable library, it will need to be placed into the
-RTcmix/rtcmix-dylibs/ subdirectory with the [rtcmix~] object.
+-- This will create a dylib file, "rtcmixdylib.so" in the src/rtcmix/ directory and
+will create the rtcmix~.mxo object bundle in src/maxmsp.  The configuration macros
+for installing both of these must to be set in your site.conf file.  Once
+that is done, you can just do a "make install" at the top level and the two items
+will be placed in their correct locations for use with MaxMSP.
 
+BUILDTYPE = PD
+
+-- This works very similarly to MAXMSP, but builds libs and objects which can
+be installed in used in the PD system.
 
 
 BUILDTYPE = IOS
@@ -72,16 +93,18 @@ the proper architectures for all iOS uses.
 
 
 These libraries are also generally distributed pre-built with the
-applications they are intended to accompany ([rtcmix~], iRTcmix).  I
-could probably 'automate' the install of the libraries, but I am assuming
-that if you are building these for development you know what you are
-doing.
+applications they are intended to accompany ([rtcmix~], iRTcmix).  The install of the
+libraries can be automated, assuming that if you are building these for development
+you know what you are doing.
 
-Coming soon:  static RTcmix library for OpenFrameworks standalone
-OSX app development; rtcmixdylib.so for the Pd environment and
-the appropriate lib for Android OS development (the last two thanks
-to Joel Matthys!).  All of these are currently working separately
-but need to be joined to this build process.
+Coming soon:
+The appropriate lib for Android OS development (the last two thanks
+to Joel Matthys!).  This currently works separately but needs to be joined
+to this build process.
 
 Brad Garton
 June, 2013
+
+Updated by Doug Scott
+September 2024
+
