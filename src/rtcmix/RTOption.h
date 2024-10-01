@@ -102,6 +102,7 @@
 #define kOptionRequireSampleRate	"require_sample_rate"
 #define kOptionPrintSuppressUnderbar "print_suppress_underbar"
 #define kOptionBailOnUndefinedFunction "bail_on_undefined_function"
+#define kOptionSendMIDIRecordAutoStart "send_midi_record_auto_start"
 
 // number options
 #define kOptionBufferFrames     "buffer_frames"
@@ -194,6 +195,10 @@ public:
     static bool bailOnUndefinedFunction(const bool setIt) { _bailOnUndefinedFunction = setIt;
         return _bailOnUndefinedFunction; }
 
+    static bool sendMIDIRecordAutoStart() { return _sendMIDIRecordAutoStart; }
+    static bool sendMIDIRecordAutoStart(const bool setIt) { _sendMIDIRecordAutoStart = setIt;
+        return _sendMIDIRecordAutoStart; }
+
 	// number options
 
 	static double bufferFrames() { return _bufferFrames; }
@@ -276,6 +281,7 @@ private:
 	static bool _requireSampleRate;
     static bool _printSuppressUnderbar;
     static bool _bailOnUndefinedFunction;
+    static bool _sendMIDIRecordAutoStart;
 
 	// number options
 	static double _bufferFrames;

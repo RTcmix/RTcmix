@@ -37,6 +37,7 @@ enum ParamType {
 	REQUIRE_SAMPLE_RATE,
     PRINT_SUPPRESS_UNDERBAR,
     BAIL_ON_UNDEFINED_FUNCTION,
+    SEND_MIDI_RECORD_AUTOSTART,
 	BUFFER_FRAMES,
 	BUFFER_COUNT,
 	OSC_INPORT,
@@ -82,6 +83,7 @@ static Param _param_list[] = {
 	{ kOptionRequireSampleRate, REQUIRE_SAMPLE_RATE, true},
     { kOptionPrintSuppressUnderbar, PRINT_SUPPRESS_UNDERBAR, false },
     { kOptionBailOnUndefinedFunction, BAIL_ON_UNDEFINED_FUNCTION, false },
+    { kOptionSendMIDIRecordAutoStart, SEND_MIDI_RECORD_AUTOSTART, false },
 
 	// number options
 	{ kOptionBufferFrames, BUFFER_FRAMES, false},
@@ -275,6 +277,10 @@ static int _set_key_value_option(const char *key, const char *sval,
         case BAIL_ON_UNDEFINED_FUNCTION:
             status = _str_to_bool(sval, bval);
             RTOption::bailOnUndefinedFunction(bval);
+            break;
+        case SEND_MIDI_RECORD_AUTOSTART:
+            status = _str_to_bool(sval, bval);
+            RTOption::sendMIDIRecordAutoStart(bval);
             break;
 
 		// number options
