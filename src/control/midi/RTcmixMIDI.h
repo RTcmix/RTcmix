@@ -100,7 +100,7 @@ private:
 
 class RTcmixMIDIOutput : public RTMIDIOutput, private Lockable {
 public:
-    RTcmixMIDIOutput();
+    RTcmixMIDIOutput(const char *portname);
     virtual ~RTcmixMIDIOutput();
     int init();
     
@@ -122,6 +122,7 @@ protected:
     static void _midiCallback(PtTimestamp timestamp, void *context);
     inline PmStream *outstream() { return _outstream; }
 private:
+    const char *                        _portname;
     int                                 _deviceID;
     PmStream *                          _outstream;
     typedef std::pair<uchar, uchar> MidiItem;
@@ -130,6 +131,6 @@ private:
 
 RTcmixMIDIInput *createMIDIInputPort();
 
-RTcmixMIDIOutput *createMIDIOutputPort();
+RTcmixMIDIOutput *createMIDIOutputPort(const char *portname);
 
 #endif // _RTCMIXMIDI_H_

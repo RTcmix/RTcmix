@@ -4368,7 +4368,7 @@ $as_echo "$as_me: WARNING: portmidi.h not present; using internal portmidi libra
 		  WITH_EXTERNAL_PMLIB="false"
 	  else
 	     PMLIB_CFLAGS="-I/usr/local/include -I/opt/local/include"
-	     PMLIB_LDFLAGS="-L/usr/local/lib -L/opt/local/lib -lportmidi"
+	     PMLIB_LDFLAGS="-L/usr/local/lib -L/opt/local/lib -Wl,-rpath,/opt/local/lib -Wl,-rpath,/usr/local/lib -lportmidi"
 	  fi
    fi
 

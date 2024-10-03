@@ -12,26 +12,42 @@
 #include <ugens.h>
 #include <rt.h>
 
-typedef void * (*MIDIOutputCreator)();
+const int kMaxMIDIPorts = 4;
 
-static RTMIDIOutput *gMIDIOutput;
+typedef void * (*MIDIOutputCreator)(const char *);
 
-RTMIDIOutput *getMIDIOutput()
+static RTMIDIOutput *gMIDIOutputs[kMaxMIDIPorts];
+static int gMIDIOutputPortCount;
+
+RTMIDIOutput *getMIDIOutputForChannel(int channel)
 {
-    return gMIDIOutput;
+    int portIndex = channel / 16;
+    if (portIndex < gMIDIOutputPortCount) {
+        return gMIDIOutputs[portIndex];
+    }
 }
 
 void outputDestroyCallback(void *context)
 {
-    RTMIDIOutput *output = gMIDIOutput;
-    gMIDIOutput = NULL;
-    delete output;
+    RTMIDIOutput **outputs = gMIDIOutputs;
+    for (int i = 0; i < gMIDIOutputPortCount; ++i) {
+        gMIDIOutputs[i] = NULL;
+    }
+    for (int i = 0; i < gMIDIOutputPortCount; ++i) {
+        delete outputs[i];
+    }
+    gMIDIOutputPortCount = 0;
 }
+
+// setup_midi([["MIDI_Port1_Name"],"MIDI_Port2_Name", ...])
 
 double
 setup_midi(double *p, int n_args)
 {
 #ifndef EMBEDDED
+    if (gMIDIOutputPortCount > 0) {
+        return 1;   // Don't allow repeated calls
+    }
     char loadPath[1024];
     const char *dsoPath = RTOption::dsoPath();
     if (strlen(dsoPath) == 0) {
@@ -39,16 +55,35 @@ setup_midi(double *p, int n_args)
     }
     snprintf(loadPath, 1024, "%s/libmidiconn.so", dsoPath);
 
+    int portCount;
+    const char *portnames[4];
+
+    if (n_args == 0) {
+        portCount = 1;
+        portnames[0] = NULL;
+    }
+    else {
+        portCount = std::min(kMaxMIDIPorts, n_args);
+        for (int n = 0; n < portCount; ++n) {
+            portnames[n] = DOUBLE_TO_STRING(p[n]);
+            if (portnames[n] == NULL) {
+                die("setup_midi", "If a port name is specified, it cannot be NULL");
+                return rtOptionalThrow(PARAM_ERROR);
+            }
+        }
+    }
     DynamicLib theDSO;
     if (theDSO.load(loadPath) == 0) {
         MIDIOutputCreator creator = NULL;
         if (theDSO.loadFunction(&creator, "create_midi_output") == 0) {
-            // Pass 2nd thru last args, leaving off selector
-            gMIDIOutput = (RTMIDIOutput *)(*creator)();
-            if (gMIDIOutput == NULL) {
-                return rtOptionalThrow(SYSTEM_ERROR);
+            for (int p = 0; p < portCount; ++p) {
+                gMIDIOutputs[p] = (RTMIDIOutput *)(*creator)(portnames[p]);
+                if (gMIDIOutputs[p] == NULL) {
+                    return rtOptionalThrow(SYSTEM_ERROR);
+                }
             }
-            rtcmix_advise("setup_midi", "Created MIDI output");
+            rtcmix_advise("setup_midi", "Created %d MIDI output(s)", portCount);
+            gMIDIOutputPortCount = portCount;
             // This will cause the MIDIOutput to be destroyed when the system is.
             RTcmix::registerDestroyCallback(outputDestroyCallback, NULL);
         }

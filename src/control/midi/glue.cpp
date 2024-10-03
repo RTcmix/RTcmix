@@ -269,7 +269,7 @@ create_pfield(const Arg args[], const int nargs)
 
 extern "C" {
 	Handle create_handle(const Arg args[], const int nargs);
-    void * create_midi_output();
+    void * create_midi_output(const char *portname);
 	int register_dso();
 };
 
@@ -285,13 +285,9 @@ create_handle(const Arg args[], const int nargs)
 }
 
 void *
-create_midi_output()
+create_midi_output(const char *portname)
 {
-    static RTcmixMIDIOutput *sMIDIOutput;
-    if (sMIDIOutput == NULL) {
-        sMIDIOutput = createMIDIOutputPort();   // only create once per processs
-    }
-    return sMIDIOutput;
+    return createMIDIOutputPort(portname);
 }
 
 int register_dso()
