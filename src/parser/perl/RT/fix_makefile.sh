@@ -1,4 +1,7 @@
 # Filter out architectures other than the one we're building.
+#
+# NB: As of Fall 2024, this seems not to be necessary.
+#
 #!/bin/sh
 
 if [ $# -lt 1 ]
