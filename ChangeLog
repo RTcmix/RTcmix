@@ -1,6 +1,9 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2024-10-07 John Gibson <johgibso-at-iu.edu>
+	* Fixed PCMIX compilation on macOS Sonoma and (hopefully) earlier OS versions.
+
 2024-10-03 Douglas Scott <netdscott-at-netscape.net>
 	* Added support for opening multiple MIDI output ports which allow virtual MIDI channels up to 64
 
