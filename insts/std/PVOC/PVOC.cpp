@@ -232,7 +232,7 @@ int PVOC::init(double *p, int n_args)
 	printf("N (fft len) = %d\n", _fftLen );
 	printf("Nw (windowlen) = %d\n", _windowLen );
 	printf("D (decimation) = %d\n", _decimation );
-	printf("I (interpolation) = %d\n", I );
+	printf("I (interpolation) = %d\n", _interpolation );
 	printf("P = %g\n", P );
 	printf("Np = %d\n", Np );
 	printf("thresh = %g\n", _oscThreshold );
@@ -318,8 +318,11 @@ int PVOC::configure()
 	// window of synthesized output to be stored.
 	
 	_outbuf = new BUFTYPE[_windowLen];	// XXX CHECK THIS SIZE
-		
-	return 0;
+
+    if (_pvFilter) {
+        _pvFilter->setFrameDuration(_interpolation/SR);
+    }
+    return 0;
 }
 
 static const int L = 8192;		// also used in initOscBank
