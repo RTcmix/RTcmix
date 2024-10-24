@@ -3,7 +3,6 @@
 void
 rszset(float SR, float cf, float bw, float xinit, float *a)
 {
-      double exp(),cos();
       int i;
       a[0]=exp(-M_PI*bw/SR);
       a[1]=1.-a[0];

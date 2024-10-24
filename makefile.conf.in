@@ -170,14 +170,18 @@ ifeq ($(ARCH),MACOSX)
       ARCHFLAGS += -DMAXCHANS=$(MAXCHANS)
     endif
     ARCHFLAGS += -isysroot `xcrun --show-sdk-path`
-    CC = `xcrun -f cc`
-    CXX = `xcrun -f c++` -Wno-deprecated
+    CC = cc
+    CXX = c++ -Wno-deprecated
 	INSTTYPE = STATIC
 
     SHLIB = rtcmixdylib
 	SHLIB_SUFFIX = so
-	# we override this to remove the "lib" prefix
-	LIBPREFIX =
+	# we override this to override the "lib" prefix
+    ifeq ($(MAX_MAJOR_VERSION), 8)
+        LIBPREFIX = BASE_
+    else
+        LIBPREFIX =
+    endif
 	RTLIB_LDFLAGS = $(UB_CFLAGS) -Wl,-U,_cpost,-bundle,-flat_namespace
 	RTLIBTYPE = DYNAMIC
 	RTLIB_INSTALL_DIR = $(MAX_LIB_INSTALL_DIR)

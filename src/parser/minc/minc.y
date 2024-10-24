@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 #ifdef EMBEDDED
-double minc_memflush();
+double minc_memflush(double p[], int n_args);
 #else
 // in args.cpp
 const char *lookup_token(const char *token, bool printWarning);
@@ -863,7 +863,7 @@ void reset_parser()
 #define USE_YYLEX_DESTROY
 
 // BGG mm -- for dynamic memory mgmt (double return for UG_INTRO() macro)
-double minc_memflush()
+double minc_memflush(double p[], int n_args)
 {
 	rtcmix_debug("minc_memflush", "Freeing parser memory");
     RefCounted::unref(program);

@@ -1,5 +1,5 @@
-// rtcmix~ v 1.81, Brad Garton (2/2011) (OS 10.5/6, Max5 support)
-// uses the RTcmix bundled executable lib, now based on RTcmix-4.0.1.6 (OS 10.5/6 support)
+// rtcmix~ v 2.1, Brad Garton (2/2011)
+// uses the RTcmix bundled executable lib, now based on RTcmix-5.5 (OS 14.5 support)
 // see http://music.columbia.edu/cmc/RTcmix for more info
 //
 // invaluable assistance writing this max/msp object from Dan Trueman, R. Luke Dubois and Joshua Kit Clayton
@@ -92,6 +92,14 @@
 // old dlopen() scheme instead (where it copies the rtcmixdylib.so with
 // a new name in order to get a private name/data space for each [rtcmix~])
 // note:  see the note about rm -f "rtcmixdylib*.so" (tagged with BGGx)
+//
+// 9/21/2024
+// v. 2.1
+// Now runs in native M1 mode on machines at least up through MacOSX 14 using
+// MaxMSP 8.3.1 or earlier.  Updated to support Max SDK 8.2 using "allow deprecated functions".
+// At this point it still will not run under MaxMSP 8.6 due to deprecation of MaxAPI.
+// Cleaned up void function prototypes.  Removed commented-out NS* loader code for clarity.
+//
 
 
 // Hand-defining these here because these will always be true, and are needed to get the right portions of RTcmix_API.h
@@ -99,10 +107,10 @@
 #define EMBEDDEDAUDIO 1
 #define MAXMSP 1
 
-#define VERSION "2.05"
+#define VERSION "2.1"
 #define RTcmixVERSION "RTcmix-maxmsp-5.5.0"
 
-#if MAX_SDK_VERSION==6
+#if MAX_SDK_MAJOR_VERSION==6
 #include <ext.h>
 #include <edit.h>
 #else
@@ -117,6 +125,11 @@
 #include <ext_sysfile.h>
 #include <ext_path.h>
 #endif
+// We force this macro when compiling for Max sdk 8.2 and later.
+#ifdef MAX_USE_NEW_HEADERS
+#include <ext_post.h>
+#endif
+
 #include <ext_obex.h>
 #include <z_dsp.h>
 #include "string.h"
@@ -129,13 +142,6 @@
 #include <math.h>
 #include "buffer.h"
 #include "../../include/RTcmix_API.h"
-
-// for the NSModule stuff
-// NSModule no longer segregates data/name space, back to dlopen()
-// keeping it here just in case (glad I did so with dlopen()!)
-//#include <mach-o/dyld.h>
-// BGG kept the dlopen() stuff in for future use
-// for the dlopen() loader
 
 // BGG using the dlopen stuff for rosetta
 #include <dlfcn.h>
@@ -172,21 +178,21 @@ int dylibincr;
 #undef RESET_AUDIO_ON_DSP_MESSAGE
 
 /******* RTcmix stuff *******/
-typedef int (*rtcmixinitFunctionPtr)();
-typedef int (*rtcmixdestroyFunctionPtr)();
+typedef int (*rtcmixinitFunctionPtr)(void);
+typedef int (*rtcmixdestroyFunctionPtr)(void);
 typedef int (*rtsetparamsFunctionPtr)(float sr, int nchans, int vecsize, int recording, int bus_count);
 typedef void (*rtsetprintlevelFunctionPtr)(int level);
 typedef int (*rtcmixsetaudiobufferformatFunctionPtr)(RTcmix_AudioFormat format, int nchans);
 
 typedef int (*rtcmixrunAudioFunctionPtr)(void *inAudioBuffer, void *outAudioBuffer, int nframes);
 typedef int (*rtresetaudioFunctionPtr)(float sr, int nchans, int vecsize, int recording);
-typedef int (*parse_scoreFunctionPtr)();
+typedef int (*parse_scoreFunctionPtr)(char *theBuf, int buflen);
 typedef double (*parse_dispatchFunctionPtr)(char *cmd, double *p, int n_args, void *retval);
 typedef void (*pfield_setFunctionPtr)(int inlet, float pval);
 typedef void (*buffer_setFunctionPtr)(char *bufname, float *bufstart, int nframes, int nchans, int modtime);
-typedef int (*flushPtr)();
+typedef int (*flushPtr)(void);
 typedef void (*loadinstFunctionPtr)(char *dsolib);
-typedef void (*unloadinstFunctionPtr)();
+typedef void (*unloadinstFunctionPtr)(void);
 typedef void (*setBangCallbackPtr)(RTcmixBangCallback inBangCallback, void *inContext);
 typedef void (*setValuesCallbackPtr)(RTcmixValuesCallback inValuesCallback, void *inContext);
 typedef void (*setPrintCallbackPtr)(RTcmixPrintCallback inPrintCallback, void *inContext);
@@ -232,15 +238,12 @@ typedef struct _rtcmix
 	
 	// for load of the rtcmixdylib.so
 	// now use dlopen()
-	// NSObjectFileImage objectFileImage;
-	// NSModule module;
-	// NSSymbol symbol;
-	// BGG kept the dlopen() stuff in for future use
 	// for the load of rtcmixdylibN.so
 	 int dylibincr; // the instance copy of dylibincr for ths dlopen()
 	 void *rtcmixdylib;
 	 // for the full path to the rtcmixdylib.so file
-	 char pathname[1024]; // probably should be malloc'd
+#define PATHNAME_LEN 1024
+	 char pathname[PATHNAME_LEN]; // probably should be malloc'd
 	
 	// space for these malloc'd in rtcmix_dsp()
 	float *maxmsp_outbuf;
@@ -532,10 +535,6 @@ void *rtcmix_new(long num_inoutputs, long num_additional)
 		x->in[i] = 0.0; // this is just arbitrary to initialize
 	}
 
-	// load the dylib
-// BGG -- not using NSModule an more
-//	x->module = NULL; // new object, first time
-	
 	// This calls RTcmix_init() internally -- should we make this explicit?
 	if (rtcmix_load_dylib(x) == -1) {
 		error("RTcmix dylib not loaded properly -- this won't work!");
@@ -685,11 +684,6 @@ void rtcmix_dsp64(t_rtcmix *x, t_object *dsp64, short *count, double samplerate,
 int rtcmix_load_dylib(t_rtcmix *x)
 {
 	rtcmix_dprint(x, "rtcmix_load_dylib() called");
-
-	// BGG -- this "pathname" was used in the NSModule stuff
-	// for the full path to the rtcmixdylib.so file
-	//char pathname[1000]; // probably should be malloc'd
-	
 	// these are the entry function pointers in to the rtcmixdylib.so lib
 	x->rtcmixinit = NULL;
 	x->rtcmixdestroy = NULL;
@@ -709,216 +703,23 @@ int rtcmix_load_dylib(t_rtcmix *x)
 	x->setvaluescallback = NULL;
 	x->setprintcallback = NULL;
 	
-	// RTcmix stuff
+	// RTcmix stuff: dlsym code
 
-// beginning of NSModule stuff
-/*
- *
- *
- *
-  ok -- I'm commenting ot the NSModule stuff because we have to go  back
-  to dlopen() (and counting the dylib loads).  the dlopen() code is below 
-  all this -- BGG 9/2020
-	// full path to the rtcmixdylib.so file
-	sprintf(pathname, "%s/rtcmixdylib.so", mpathptr);
-	
-	// not sure if this is necessary, but what the heck
-	if (x->module)
-		NSUnLinkModule(x->module, NSUNLINKMODULE_OPTION_RESET_LAZY_REFERENCES);
-	x->module = NULL;
-	
-	if (NSCreateObjectFileImageFromFile(pathname, &(x->objectFileImage)) != NSObjectFileImageSuccess) {
-		error("could not find the rtcmixdylib.so, looked here: %s", pathname);
-		return(-1);
-	}
-	
-	if (x->loadinstflag == 0)  // normal operation, private loading
-		x->module = NSLinkModule(x->objectFileImage, pathname, NSLINKMODULE_OPTION_PRIVATE | NSLINKMODULE_OPTION_BINDNOW);
-	else // in 'load' mode, allow RTcmix instruments to be dynloaded (only 1 rtcmix~ object allowed!)
-		x->module = NSLinkModule(x->objectFileImage, pathname, NSLINKMODULE_OPTION_BINDNOW);
-
-	if (x->module == NULL) {
-		error("could not link the rtcmixdylib.so");
-		return(-1);
-	}
-	
-	NSDestroyObjectFileImage(x->objectFileImage);
-	
-	// find the main entry to be sure we're cool...
-	x->symbol = NSLookupSymbolInModule(x->module, "_RTcmix_init");
-	if (x->symbol == NULL) {
-		error("cannot find RTcmix_init");
-		return(-1);
-	} else {
-		x->rtcmixinit = NSAddressOfSymbol(x->symbol);
-		if (x->rtcmixinit)	x->rtcmixinit();
-		else error("rtcmix~ could not call RTcmix_init()");
-	}
-	x->symbol = NSLookupSymbolInModule(x->module, "_RTcmix_destroy");
-	if (x->symbol == NULL) {
-		error("cannot find RTcmix_destroy");
-		return(-1);
-	} else {
-		x->rtcmixdestroy = NSAddressOfSymbol(x->symbol);
-		if (!(x->rtcmixdestroy))
-			error("rtcmix~ could not find RTcmix_destroy()");
-	}
-	x->symbol = NSLookupSymbolInModule(x->module, "_RTcmix_setparams");
-	if (x->symbol == NULL) {
-		error("cannot find RTcmix_setparams");
-		return(-1);
-	} else {
-		x->rtsetparams = NSAddressOfSymbol(x->symbol);
-		if (!(x->rtsetparams))
-			error("rtcmix~ could not find RTcmix_setparams()");
-	}
-	x->symbol = NSLookupSymbolInModule(x->module, "_RTcmix_setAudioBufferFormat");
-	if (x->symbol == NULL) {
-		error("cannot find RTcmix_setAudioBufferFormat");
-		return(-1);
-	} else {
-		x->rtsetaudiobufferformat = NSAddressOfSymbol(x->symbol);
-		if (!(x->rtsetaudiobufferformat))
-			error("rtcmix~ could not find RTcmix_setAudioBufferFormat()");
-	}
-	x->symbol = NSLookupSymbolInModule(x->module, "_RTcmix_runAudio");
-	if (x->symbol == NULL) {
-		error("cannot find RTcmix_runAudio");
-		return(-1);
-	} else {
-		x->rtrunaudio = NSAddressOfSymbol(x->symbol);
-		if (!(x->rtrunaudio))
-			error("rtcmix~ could not find RTcmix_runAudio()");
-	}
-	x->symbol = NSLookupSymbolInModule(x->module, "_RTcmix_resetAudio");
-	if (x->symbol == NULL) {
-		error("cannot find RTcmix_resetAudio");
-		return(-1);
-	} else {
-		x->rtresetaudio = NSAddressOfSymbol(x->symbol);
-		if (!(x->rtresetaudio))
-			error("rtcmix~ could not find RTcmix_resetAudio()");
-	}
-	
-	x->symbol = NSLookupSymbolInModule(x->module, "_RTcmix_parseScore");
-	if (x->symbol == NULL) {
-		error("cannot find RTcmix_parseScore");
-		return(-1);
-	} else {
-		x->parse_score = NSAddressOfSymbol(x->symbol);
-		if (!(x->parse_score))
-			error("rtcmix~ could not find RTcmix_parseScore()");
-	}
-	x->symbol = NSLookupSymbolInModule(x->module, "_RTcmix_setBangCallback");
-	if (x->symbol == NULL) {
-		error("cannot find RTcmix_setBangCallback");
-		return(-1);
-	} else {
-		x->setbangcallback = NSAddressOfSymbol(x->symbol);
-		if (!(x->setbangcallback))
-			error("rtcmix~ could not find RTcmix_setBangCallback()");
-	}
-	
-	x->symbol = NSLookupSymbolInModule(x->module, "_RTcmix_setValuesCallback");
-	if (x->symbol == NULL) {
-		error("cannot find RTcmix_setValuesCallback");
-		return(-1);
-	} else {
-		x->setvaluescallback = NSAddressOfSymbol(x->symbol);
-		if (!(x->setvaluescallback))
-			error("rtcmix~ could not find RTcmix_setValuesCallback()");
-	}
-	
-	x->symbol = NSLookupSymbolInModule(x->module, "_parse_dispatch");
-	if (x->symbol == NULL) {
-		error("cannot find parse_dispatch");
-		return(-1);
-	} else {
-		x->parse_dispatch = NSAddressOfSymbol(x->symbol);
-		if (!(x->parse_dispatch))
-			error("rtcmix~ could not find parse_dispatch()");
-	}
-	
-	x->symbol = NSLookupSymbolInModule(x->module, "_RTcmix_setPrintCallback");
-	if (x->symbol == NULL) {
-		error("cannot find RTcmix_setPrintCallback");
-		return(-1);
-	} else {
-		x->setprintcallback = NSAddressOfSymbol(x->symbol);
-		if (!(x->setprintcallback))
-			error("rtcmix~ could not find RTcmix_setPrintCallback()");
-	}
-	
-	x->symbol = NSLookupSymbolInModule(x->module, "_RTcmix_setPField");
-	if (x->symbol == NULL) {
-		error("cannot find RTcmix_setPField");
-		return(-1);
-	} else {
-		x->pfield_set = NSAddressOfSymbol(x->symbol);
-		if (!(x->pfield_set))
-			error("rtcmix~ could not find RTcmix_setPField()");
-	}
-	
-	x->symbol = NSLookupSymbolInModule(x->module, "_RTcmix_setInputBuffer");
-	if (x->symbol == NULL) {
-		error("cannot find RTcmix_setInputBuffer");
-		return(-1);
-	} else {
-		x->buffer_set = NSAddressOfSymbol(x->symbol);
-		if (!(x->buffer_set))
-			error("rtcmix~ could not find RTcmix_setInputBuffer()");
-	}
-	
-	x->symbol = NSLookupSymbolInModule(x->module, "_RTcmix_flushScore");
-	if (x->symbol == NULL) {
-		error("cannot find RTcmix_flushScore");
-		return(-1);
-	} else {
-		x->flush = NSAddressOfSymbol(x->symbol);
-		if (!(x->flush))
-			error("rtcmix~ could not find RTcmix_flushScore()");
-	}
-	
-	x->symbol = NSLookupSymbolInModule(x->module, "_loadinst");
-	if (x->symbol == NULL) {
-		error("cannot find loadinst");
-		return(-1);
-	} else {
-		x->loadinst = NSAddressOfSymbol(x->symbol);
-		if (!(x->loadinst))
-			error("rtcmix~ could not find loadinst()");
-	}
-	
-	x->symbol = NSLookupSymbolInModule(x->module, "_unloadinst");
-	if (x->symbol == NULL) {
-		error("cannot find unloadinst");
-		return(-1);
-	} else {
-		x->unloadinst = NSAddressOfSymbol(x->symbol);
-		if (!(x->unloadinst))
-			error("rtcmix~ could not find unloadinst()");
-	}
-*
-*
-*
-*/
-// end of the NSModule stuff
-	
-	// BGG kept this in for dlopen() stuff, future if NSLoad gets dropped
-	 char cp_command[1024]; // should probably be malloc'd
+	 char cp_command[PATHNAME_LEN]; // should probably be malloc'd
 	 
 	 // first time around:
 	 x->dylibincr = dylibincr++; // keep track of rtcmixdylibN.so for copy/load
 	 
 	 // full path to the rtcmixdylib.so file
-	 sprintf(x->pathname, "%s/rtcmixdylib%d.so", mpathptr, x->dylibincr);
+	 snprintf(x->pathname, PATHNAME_LEN, "%s/rtcmixdylib%d.so", mpathptr, x->dylibincr);
 
 	 // ok, this is fairly insane.  To guarantee a fully-isolated namespace with dlopen(), we need
 	 // a totally *unique* dylib, so we copy this.  Deleted in rtcmix_free() below
-	 // RTLD_LOCAL doesn't do it all - probably the global vars in RTcmix
-	 sprintf(cp_command, "cp \"%s/BASE_rtcmixdylib.so\" \"%s\"", mpathptr,x->pathname);
-	 system(cp_command);
-	 
+	 // RTLD_LOCAL doesn't do it all - probably the global vars in RTcmix.
+
+     const char *rtlib_name = "BASE_rtcmixdylib.so";
+     snprintf(cp_command, PATHNAME_LEN, "cp \"%s/%s\" \"%s\"", mpathptr, rtlib_name, x->pathname);
+     system(cp_command);
 	 
 	 // reload, this reinits the RTcmix queue, etc.
 	 dlclose(x->rtcmixdylib);
@@ -1108,13 +909,7 @@ void rtcmix_free(t_rtcmix *x)
 	free(x->maxmsp_inbuf);
 	free(x->maxmsp_outbuf);
 	x->maxmsp_inbuf = x->maxmsp_outbuf = NULL;
-	
-	// BGG -- not using NSModule stuff any more
-	// not a bad idea to do this
-//	if (x->module)
-//		NSUnLinkModule(x->module, NSUNLINKMODULE_OPTION_RESET_LAZY_REFERENCES);
-//	x->module = NULL;
-	
+
 	dsp_free((t_pxobject *)x);
 	
 	rtcmix_dprint(x, "rtcmix_free() complete");
@@ -1525,15 +1320,7 @@ void rtcmix_loadset(t_rtcmix *x, long fl)
 	if (sys_getdspobjdspstate((t_object *)x) == 1) {
 		dspmess(gensym("stop"));
 	}
-	
-	// BGG -- not using NSModule stuff any more
-	// and unload them (to prevent bad accesses to no-longer-existing functions)
-//	if (x->module) {
-//		x->unloadinst(); // this is necessary to do the dlclose() "inside" RTcmix
-//		NSUnLinkModule(x->module, NSUNLINKMODULE_OPTION_RESET_LAZY_REFERENCES);
-//	}
-//	x->module = NULL;
-	
+
 	if (fl == 0) {
 		x->loadinstflag = 0;
 		post("load mode unset, dynloading of RTcmix instruments turned off");

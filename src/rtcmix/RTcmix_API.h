@@ -13,16 +13,16 @@ extern "C" {
 	typedef void (*RTcmixPrintCallback)(const char *printBuffer, void *inContext);
 	typedef void (*RTcmixFinishedCallback)(long long frameCount, void *inContext);
 	void RTcmix_setPrintLevel(int level);
-	int RTcmix_init();
-	int RTcmix_destroy();
+	int RTcmix_init(void);
+	int RTcmix_destroy(void);
 	int RTcmix_setparams(float sr, int nchans, int vecsize, int recording, int bus_count);
 	void RTcmix_setBangCallback(RTcmixBangCallback inBangCallback, void *inContext);
 	void RTcmix_setValuesCallback(RTcmixValuesCallback inValuesCallback, void *inContext);
 	void RTcmix_setPrintCallback(RTcmixPrintCallback inPrintCallback, void *inContext);
 	void RTcmix_setFinishedCallback(RTcmixFinishedCallback inFinishedCallback, void *inContext);
 #ifdef IOS
-	int RTcmix_startAudio();
-	int RTcmix_stopAudio();
+	int RTcmix_startAudio(void);
+	int RTcmix_stopAudio(void);
 #endif
 	int RTcmix_resetAudio(float sr, int nchans, int vecsize, int recording);
 #ifdef EMBEDDEDAUDIO
@@ -41,7 +41,7 @@ extern "C" {
 	int RTcmix_runAudio(void *inAudioBuffer, void *outAudioBuffer, int nframes);
 #endif
 	int RTcmix_parseScore(char *theBuf, int buflen);
-	void RTcmix_flushScore();
+	void RTcmix_flushScore(void);
 	int RTcmix_setInputBuffer(char *bufname, float *bufstart, int nframes, int nchans, int modtime);
 	int RTcmix_getBufferFrameCount(char *bufname);
 	int RTcmix_getBufferChannelCount(char *bufname);
@@ -49,11 +49,11 @@ extern "C" {
 	void pfield_set(int inlet, float pval);
 #ifdef MAXMSP
 	void loadinst(char *dsoname);
-	void unloadinst();
+	void unloadinst(void);
 #endif
-	void checkForBang();
-	void checkForVals();
-	void checkForPrint();
+	void checkForBang(void);
+	void checkForVals(void);
+	void checkForPrint(void);
 	void notifyIsFinished(long long);
 #ifdef __cplusplus
 }

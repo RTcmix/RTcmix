@@ -7,16 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A20C1D1F12AD8284007932FD /* MaxAPI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A20C1D1E12AD8284007932FD /* MaxAPI.framework */; };
+		593050362CA5079800B46CDE /* rtcmix~.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 593050352CA5079800B46CDE /* rtcmix~.cpp */; };
 		A20C1D6512AD829C007932FD /* MaxAudioAPI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A20C1D6412AD829C007932FD /* MaxAudioAPI.framework */; };
-		A2EBD8150BA99EB100D3279D /* rtcmix~.c in Sources */ = {isa = PBXBuildFile; fileRef = A2EBD8140BA99EB100D3279D /* rtcmix~.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		593050352CA5079800B46CDE /* rtcmix~.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "rtcmix~.cpp"; sourceTree = "<group>"; };
 		A20C1D1E12AD8284007932FD /* MaxAPI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MaxAPI.framework; path = "$(MAX_SDK_PATH)/c74support/max-includes/MaxAPI.framework"; sourceTree = SOURCE_ROOT; };
 		A20C1D6412AD829C007932FD /* MaxAudioAPI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MaxAudioAPI.framework; path = "$(MAX_SDK_PATH)/c74support/msp-includes/MaxAudioAPI.framework"; sourceTree = SOURCE_ROOT; };
 		A2EBD8120BA99E0C00D3279D /* rtcmix~.mxo */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "rtcmix~.mxo"; sourceTree = BUILT_PRODUCTS_DIR; };
-		A2EBD8140BA99EB100D3279D /* rtcmix~.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = "rtcmix~.c"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -24,7 +23,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A20C1D1F12AD8284007932FD /* MaxAPI.framework in Frameworks */,
 				A20C1D6512AD829C007932FD /* MaxAudioAPI.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -54,7 +52,7 @@
 		08FB77ADFE841716C02AAC07 /* Source */ = {
 			isa = PBXGroup;
 			children = (
-				A2EBD8140BA99EB100D3279D /* rtcmix~.c */,
+				593050352CA5079800B46CDE /* rtcmix~.cpp */,
 			);
 			name = Source;
 			sourceTree = "<group>";
@@ -109,7 +107,7 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1540;
 			};
-			buildConfigurationList = 0FFBC544097463A900D78707 /* Build configuration list for PBXProject "rtcmix~" */;
+			buildConfigurationList = 0FFBC544097463A900D78707 /* Build configuration list for PBXProject "min-rtcmix~" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 1;
@@ -153,7 +151,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A2EBD8150BA99EB100D3279D /* rtcmix~.c in Sources */,
+				593050362CA5079800B46CDE /* rtcmix~.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -164,6 +162,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ANALYZER_SECURITY_INSECUREAPI_STRCPY = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUGGING_SYMBOLS = YES;
@@ -172,7 +171,9 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(MAX_SDK_PATH)/c74support/max-includes",
 					"$(MAX_SDK_PATH)/c74support/msp-includes",
+					"$(MIN_SDK_PATH)/include",
 				);
+				GCC_C_LANGUAGE_STANDARD = c17;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_TRIGRAPHS = NO;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
@@ -185,13 +186,16 @@
 				GCC_WARN_UNKNOWN_PRAGMAS = NO;
 				GENERATE_PKGINFO_FILE = YES;
 				HEADER_SEARCH_PATHS = (
+					"$(MAX_SDK_PATH)/c74support",
 					"$(MAX_SDK_PATH)/c74support/max-includes",
 					"$(MAX_SDK_PATH)/c74support/msp-includes",
+					"$(MIN_SDK_PATH)/include",
 				);
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "/../../../sysbuild/$(CONFIGURATION)/Cycling '74/externals";
 				LIBRARY_SEARCH_PATHS = "";
 				LIBRARY_STYLE = Bundle;
+				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
 				OTHER_CFLAGS = (
 					"-g",
 					"-DDEBUG_LOGGING",
@@ -218,6 +222,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ANALYZER_SECURITY_INSECUREAPI_STRCPY = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				COPY_PHASE_STRIP = YES;
 				DEPLOYMENT_LOCATION = NO;
@@ -225,7 +230,9 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(MAX_SDK_PATH)/c74support/max-includes",
 					"$(MAX_SDK_PATH)/c74support/msp-includes",
+					"$(MIN_SDK_PATH)/include",
 				);
+				GCC_C_LANGUAGE_STANDARD = c17;
 				GCC_ENABLE_TRIGRAPHS = NO;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_OPTIMIZATION_LEVEL = 3;
@@ -237,13 +244,16 @@
 				GCC_WARN_UNKNOWN_PRAGMAS = NO;
 				GENERATE_PKGINFO_FILE = YES;
 				HEADER_SEARCH_PATHS = (
+					"$(MAX_SDK_PATH)/c74support",
 					"$(MAX_SDK_PATH)/c74support/max-includes",
 					"$(MAX_SDK_PATH)/c74support/msp-includes",
+					"$(MIN_SDK_PATH)/include",
 				);
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "/../../../sysbuild/$(CONFIGURATION)/Cycling '74/externals";
 				LIBRARY_SEARCH_PATHS = "";
 				LIBRARY_STYLE = Bundle;
+				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
 				OTHER_CFLAGS = "-g";
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";
@@ -267,13 +277,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ANALYZER_SECURITY_INSECUREAPI_STRCPY = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				DEPLOYMENT_LOCATION = NO;
 				DSTROOT = "$(PROJECT_DIR)";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(MAX_SDK_PATH)/c74support/max-includes",
 					"$(MAX_SDK_PATH)/c74support/msp-includes",
+					"$(MIN_SDK_PATH)/include",
 				);
+				GCC_C_LANGUAGE_STANDARD = c17;
 				GCC_ENABLE_TRIGRAPHS = NO;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_OPTIMIZATION_LEVEL = 3;
@@ -285,13 +298,18 @@
 				GCC_WARN_UNKNOWN_PRAGMAS = NO;
 				GENERATE_PKGINFO_FILE = YES;
 				HEADER_SEARCH_PATHS = (
+					"$(MAX_SDK_PATH)/c74support",
 					"$(MAX_SDK_PATH)/c74support/max-includes",
 					"$(MAX_SDK_PATH)/c74support/msp-includes",
+					"$(MIN_SDK_PATH)/include",
 				);
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "/../../../sysbuild/$(CONFIGURATION)/Cycling '74/externals";
 				LIBRARY_SEARCH_PATHS = "";
 				LIBRARY_STYLE = Bundle;
+				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
+				MAX_SDK_PATH = "";
+				MIN_SDK_PATH = "";
 				OTHER_CFLAGS = "-g";
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";
@@ -342,6 +360,7 @@
 				FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_PROJECT_1 = "“$(MAX_SDK_PATH)/c74support/msp-includes\"";
 				FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_PROJECT_2 = "“$(MAX_SDK_PATH)/c74support/max-includes\"";
 				GCC_ALTIVEC_EXTENSIONS = YES;
+				GCC_C_LANGUAGE_STANDARD = c11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_DEPRECATED_FUNCTIONS = NO;
@@ -392,6 +411,7 @@
 				FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_PROJECT_1 = "“$(MAX_SDK_PATH)/c74support/msp-includes\"";
 				FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_PROJECT_2 = "“$(MAX_SDK_PATH)/c74support/max-includes\"";
 				GCC_ALTIVEC_EXTENSIONS = NO;
+				GCC_C_LANGUAGE_STANDARD = c11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_DEPRECATED_FUNCTIONS = NO;
@@ -441,6 +461,7 @@
 				FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_PROJECT_1 = "“$(MAX_SDK_PATH)/c74support/msp-includes\"";
 				FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_PROJECT_2 = "“$(MAX_SDK_PATH)/c74support/max-includes\"";
 				GCC_ALTIVEC_EXTENSIONS = YES;
+				GCC_C_LANGUAGE_STANDARD = c11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_DEPRECATED_FUNCTIONS = NO;
@@ -472,7 +493,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Default;
 		};
-		0FFBC544097463A900D78707 /* Build configuration list for PBXProject "rtcmix~" */ = {
+		0FFBC544097463A900D78707 /* Build configuration list for PBXProject "min-rtcmix~" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				0FFBC545097463A900D78707 /* Development */,

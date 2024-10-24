@@ -1,6 +1,6 @@
 float randf(float *oldval, float factor)
 {
-      float ccrandom(),range, xlowb, upb, temp;
+      float ccrandom(float),range, xlowb, upb, temp;
       range = 2.0 - (2.0 * factor);
       xlowb = *oldval - range;
       if(xlowb < -1.) xlowb = -1; 
@@ -12,8 +12,7 @@ float randf(float *oldval, float factor)
 }
 
 
-float ccrandom(x)
-float x;
+float ccrandom(float x)
 {
 	int n;
 	n=x*1048576.;
