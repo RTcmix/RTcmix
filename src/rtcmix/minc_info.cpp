@@ -5,6 +5,7 @@
 #include <sfheader.h>
 #include "rtdefs.h"
 #include "InputFile.h"
+#include "handle.h"
 #include <stdio.h>
 #include <sys/file.h>
 #include <sys/types.h>
@@ -81,6 +82,7 @@ extern "C" {
 	double filepeak(const Arg args[], const int nargs);
 	double filerms(const Arg args[], const int nargs);
 	double filedc(const Arg args[], const int nargs);
+    Handle filebreakpoints(const Arg args[], const int nargs);
 };
 
 double filedur(const Arg args[], const int nargs)
@@ -266,6 +268,100 @@ double filedc(const Arg args[], const int nargs)
 	return dc;
 }
 
+#define DEFAULT_FRAMESIZE 0.01
+#define DEFAULT_THRESHOLD 0.01
+
+Handle filebreakpoints(const Arg args[], const int nargs)
+{
+    if (nargs < 1) {
+        die("filebreakpoints", "Usage:  "
+                      "breakpoints_array = filebreakpoints(\"filename\", start, end, framedur, thresh_percent)");
+        RTExit(PARAM_ERROR);
+    }
+    const char *fname = args[0];
+    const double starttime = (nargs > 1) ? args[1] : 0.0;
+    const double endtime = (nargs > 2 && double(args[2]) > 0.0) ? args[2] : -1.0;
+    const double frametime = (nargs > 3) ? double(args[3]) : DEFAULT_FRAMESIZE;     // in fractions of second
+    const double thresh = (nargs > 4) ? double(args[4]) : DEFAULT_THRESHOLD;
+
+    int format, dataloc, nchans;
+    double srate;
+    long nsamps;
+    int fd = open_sound_file("filebreakpoints", fname, NULL, &format, &dataloc,
+                             &srate, &nchans, &nsamps);
+    if (fd == -1)
+        return NULL;
+
+    long startframe = long((starttime * srate) + 0.5);
+    long nframes = (nsamps / nchans) - startframe;
+
+    if (startframe >= nframes) {
+        rterror("filebreakpoints", "Specified start time is at or past the end of the file.");
+        sndlib_close(fd, 0, 0, 0, 0);
+        return NULL;
+    }
+
+    if (endtime != -1.0) {
+        nframes = long((endtime * srate) + 0.5) + startframe;
+    }
+
+    long windowCount = long((frametime * srate) + 0.5);
+    if (windowCount < 2) windowCount = 2;
+    long offset = windowCount/2;     // overlap by 50%
+
+    int pointCount = nframes / windowCount;
+
+    // Create Array
+
+    Array *outPoints = (Array *)malloc(sizeof(Array));
+    outPoints->len = pointCount;
+    outPoints->data = (double *)malloc(pointCount * sizeof(double));
+    int pointIndex = 0;
+
+    double runningRMS = 0.0;
+    bool wasSilent = true;
+
+    for (long frm = startframe; frm < nframes; frm += offset) {
+        float peak[nchans];
+        long peakloc[nchans];
+        double ampavg[nchans];
+        double dcavg[nchans];
+        double rms[nchans];
+        int result = sndlib_findpeak(fd, -1, dataloc, -1, format, nchans,
+                                     frm, windowCount, peak, peakloc, ampavg, dcavg, rms);
+        if (result == -1) {
+            sndlib_close(fd, 0, 0, 0, 0);
+            RTExit(SYSTEM_ERROR);
+        }
+        double maxpeak = 0.0;
+        double maxrms = 0.0;
+        for (int i = 0; i < nchans; i++) {
+            if (peak[i] > maxpeak)
+                maxpeak = peak[i];
+            if (rms[i] > maxrms)
+                maxrms = rms[i];
+        }
+        printf("Scanned frames %ld - %ld -- maxpeak %f, maxrms %f\n", frm, frm + windowCount, maxpeak, maxrms);
+        double curRMS = maxrms;
+        if (curRMS > thresh) {
+            if (wasSilent) {
+                wasSilent = false;
+                printf("Adding up breakpoint %d at time %f\n", pointIndex, frm / srate);
+                outPoints->data[pointIndex++] = frm / srate;
+            }
+        }
+        else {
+            if (!wasSilent) {
+                wasSilent = true;
+                printf("Adding down breakpoint %d at time %f\n", pointIndex, frm / srate);
+                outPoints->data[pointIndex++] = frm / srate;
+            }
+        }
+    }
+    outPoints->len = pointIndex;    // truncate to used portion
+    // Wrap Array in Handle, and return.  This will return a 'list' to MinC.
+    return createArrayHandle(outPoints);
+}
 
 double
 RTcmix::input_chans(double *p, int n_args)   /* returns chans for rtinput() files */
