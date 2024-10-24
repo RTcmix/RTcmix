@@ -22,7 +22,7 @@ rand1(double *x)
    a[4] is the seed, set externally.
 */
 double
-randi(double a[6])
+randi(double *a)
 {
    /* advance counter by fraction of 512 (SI) */
    a[2] += a[1] / 512.0;

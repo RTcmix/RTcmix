@@ -170,8 +170,8 @@ ifeq ($(ARCH),MACOSX)
       ARCHFLAGS += -DMAXCHANS=$(MAXCHANS)
     endif
     ARCHFLAGS += -isysroot `xcrun --show-sdk-path`
-    CC = `xcrun -f cc`
-    CXX = `xcrun -f c++` -Wno-deprecated
+    CC = cc
+    CXX = c++ -Wno-deprecated
 	INSTTYPE = STATIC
 
     SHLIB = rtcmixdylib

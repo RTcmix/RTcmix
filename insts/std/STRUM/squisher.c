@@ -3,13 +3,10 @@
 #include "strums.h"
 
 void
-squisher(squish,q) 
- strumq *q;
- int squish;
+squisher(int squish, strumq *q)
 {
    int i,j,p1,p2;
    float mult;
-   double fabs(),cos();
 
 /* Routine for use with 'strum' plucked string.  Called by randfill */
 /* Low- pass filters vales of string, squish times. */

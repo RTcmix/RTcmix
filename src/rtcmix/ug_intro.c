@@ -5,7 +5,7 @@ extern void rt_ug_intro();
 
 #ifdef EMBEDDED
 // BGG mm -- for dynamic memory mgmt (in src/parser/minc/y.tab.c)
-extern double minc_memflush();
+extern double minc_memflush(double p[], int n_args);
 #endif
 
 void

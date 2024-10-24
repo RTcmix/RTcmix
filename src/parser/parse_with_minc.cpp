@@ -192,7 +192,7 @@ use_script_file(char *fname)
 }
 
 #ifdef EMBEDDED
-extern "C" double minc_memflush(void);                                    // minc/minc.cpp (from minc.y)
+extern "C" double minc_memflush(double p[], int n_args);                                    // minc/minc.cpp (from minc.y)
 #endif
 
 /* ------------------------------------------------------- destroy_parser --- */
@@ -201,7 +201,7 @@ destroy_parser()
 {
 	yylex_destroy();
 #ifdef EMBEDDED
-	(void)minc_memflush();
+	(void)minc_memflush(NULL, 0);
 	clear_tree_state();
 #endif
 }
