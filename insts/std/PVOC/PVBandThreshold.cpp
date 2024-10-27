@@ -7,6 +7,7 @@
 #include <ugens.h>
 #include <string.h>
 #include <stdio.h>
+#include <cmath>
 
 PVFilter *
 PVBandThreshold::create()
