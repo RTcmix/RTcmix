@@ -9,6 +9,7 @@
 #include <string.h>
 #include <limits.h>
 #include <assert.h>
+#include <algorithm>
 #include <RTOption.h>
 #include <RTcmix.h>
 #include <ugens.h>
