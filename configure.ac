@@ -365,7 +365,20 @@ AC_ARG_WITH(fftw,
 )
 AC_SUBST(FFTW_SUPPORT)
 
+# MIDI options
+MIDI_SUPPORT=TRUE                           # default
+WITH_MIDI="true"                            # for summary
+AC_ARG_WITH(midi,
+   AS_HELP_STRING([--with-midi], [support MIDI input and output]),
+   [if test "$withval" == "no"; then
+      MIDI_SUPPORT=FALSE
+      WITH_MIDI="false"
+   fi]
+)
+AC_SUBST(MIDI_SUPPORT)
+
 # portmidi options, allowing linking of an external portmidi library
+# ignored if MIDI_SUPPORT is FALSE
 USE_EXTERNAL_PMLIB=FALSE                         # default
 WITH_EXTERNAL_PMLIB="false"                          # just for summary display below
 AC_ARG_WITH(pmlib,
@@ -484,6 +497,7 @@ echo "  " Build with ALSA support............................... : $WITH_ALSA
 echo "  " Build with JACK support............................... : $WITH_JACK
 echo "  " Build with NetPlay support............................ : $WITH_NPLAY
 echo "  " Build with FFTW support............................... : $WITH_FFTW
+echo "  " Build with MIDI support............................... : $WITH_MIDI
 echo "  " Build with external PortMIDI library.................. : $WITH_EXTERNAL_PMLIB
 echo "  " Build with OSC support................................ : $WITH_OSC
 echo

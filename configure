@@ -614,6 +614,7 @@ OSC_SUPPORT
 PMLIB_LDFLAGS
 PMLIB_CFLAGS
 USE_EXTERNAL_PMLIB
+MIDI_SUPPORT
 FFTW_SUPPORT
 JACK_SUPPORT
 NPLAY_SUPPORT
@@ -708,6 +709,7 @@ with_docdir
 with_netplay
 with_jack
 with_fftw
+with_midi
 with_pmlib
 with_osc
 '
@@ -1364,6 +1366,7 @@ Optional Packages:
   --with-netplay          support NetPlay
   --with-jack             support JACK
   --with-fftw             use FFTW (alternative FFT library)
+  --with-midi             support MIDI input and output
   --with-pmlib            use externally-compiled portmidi library (rather
                           than older internal one)
   --with-osc              support OSC (Open Sound Control)
@@ -4353,7 +4356,23 @@ fi
 
 
 
+# MIDI options
+MIDI_SUPPORT=TRUE                           # default
+WITH_MIDI="true"                            # for summary
+
+# Check whether --with-midi was given.
+if test "${with_midi+set}" = set; then :
+  withval=$with_midi; if test "$withval" == "no"; then
+      MIDI_SUPPORT=FALSE
+      WITH_MIDI="false"
+   fi
+
+fi
+
+
+
 # portmidi options, allowing linking of an external portmidi library
+# ignored if MIDI_SUPPORT is FALSE
 USE_EXTERNAL_PMLIB=FALSE                         # default
 WITH_EXTERNAL_PMLIB="false"                          # just for summary display below
 
@@ -6457,6 +6476,7 @@ echo "  " Build with ALSA support............................... : $WITH_ALSA
 echo "  " Build with JACK support............................... : $WITH_JACK
 echo "  " Build with NetPlay support............................ : $WITH_NPLAY
 echo "  " Build with FFTW support............................... : $WITH_FFTW
+echo "  " Build with MIDI support............................... : $WITH_MIDI
 echo "  " Build with external PortMIDI library.................. : $WITH_EXTERNAL_PMLIB
 echo "  " Build with OSC support................................ : $WITH_OSC
 echo
