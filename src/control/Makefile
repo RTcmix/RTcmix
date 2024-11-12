@@ -1,7 +1,15 @@
 include ../../makefile.conf
 
 ifeq ($(BUILDTYPE), STANDALONE)
-	DIRS = common midi mouse display datafile pfbus
+	DIRS = common midi datafile pfbus
+    ifeq ($(ARCH), MACOSX)
+	    DIRS += mouse display
+    endif
+    ifneq ($(ARCH), MACOSX)
+        ifeq ($(XWINDOWS_SUPPORT), TRUE)
+            DIRS += mouse display
+        endif
+    endif
 else
 	DIRS = maxmsp pfbus
 endif

@@ -8,7 +8,7 @@
 # from the configure process, but we don't, at least for now.
 # -JGG, 7/29/04
 
-AC_INIT([RTcmix],[5.1])
+AC_INIT([RTcmix],[5.5])
 AC_CONFIG_SRCDIR(src/rtcmix/main.cpp)
 
 CMIXDIR=`pwd`
@@ -30,6 +30,9 @@ case "$host" in
       ;;
    *-*-freebsd*)
       ARCH=FREEBSD
+      ;;
+   *-*-msys* | *-*-mingw*)
+      ARCH=MSYS2
       ;;
    *)
       ARCH=LINUX
@@ -55,13 +58,27 @@ AC_SUBST([BUILD_ARCH])
 AC_PROG_CC
 AC_PROG_CXX
 
-# Check for libraries.
+# Check for X11 support.
+XMKMF='false'
 AC_PATH_X
-AC_SUBST(x_libraries)
+
+WITH_X=""
+if test "$no_x" == "yes"; then
+    if test "$with_x" == "yes"; then
+        AC_MSG_FAILURE([--with-x was given, but test for X11 failed - add --x-includes=<dir> and --x-libraries=<dir> to specify])
+    else
+        XWINDOWS_SUPPORT="FALSE"
+        WITH_X="false"
+    fi
+else
+    XWINDOWS_SUPPORT="TRUE"
+    WITH_X="true"
+fi
+
+AC_SUBST(XWINDOWS_SUPPORT)
+AC_SUBST(XLIBDIR, $x_libraries)
 
 # Check for header files.
-# Recent autoconf says we don't need to check STDC headers any more,
-# and AC_HEADER_STDC is now obsolete.
 AC_CHECK_HEADERS(fcntl.h float.h limits.h mach/mach.h netdb.h netinet/in.h \
 stddef.h stdint.h stdlib.h string.h strings.h sys/file.h sys/ioctl.h \
 sys/param.h sys/socket.h sys/time.h termios.h unistd.h values.h)
@@ -80,7 +97,7 @@ sys/param.h sys/socket.h sys/time.h termios.h unistd.h values.h)
 # For perl and python options, we must be prepared to see any one of these
 # three values of <withval>.  -JGG
 #
-# Note that the order of options appearing in "configure --help" output 
+# Note that the order of options appearing in "configure --help" output
 # follows the order of AC_ARG_WITH() calls below.
 #
 # There is a similar set of flags for enabling and disabling features...
@@ -113,10 +130,7 @@ sys/param.h sys/socket.h sys/time.h termios.h unistd.h values.h)
 AC_MSG_CHECKING([whether the C compiler accepts -mXX flag])
 old_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS -m64"
-AC_TRY_COMPILE([],
-               [],
-               [ac_cv_c_compiler_m64=yes],
-               [ac_cv_c_compiler_m64=no])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[ac_cv_c_compiler_m64=yes],[ac_cv_c_compiler_m64=no])
 CFLAGS="$old_CFLAGS"
 AC_MSG_RESULT([$ac_cv_c_compiler_m64])
 if test "x$ac_cv_c_compiler_m64" = xyes; then
@@ -463,6 +477,7 @@ elif test "$WITH_32BIT" = "true"; then
 echo "  " Building 32-bit binaries for "$BUILD_ARCH"
 fi
 echo "  " Build with multi-threaded support..................... : $WITH_MULTI_THREAD
+echo "  " Build with X Windows support.......................... : $WITH_X
 echo "  " Build with Perl support............................... : $WITH_PERL
 echo "  " Build with Python support............................. : $WITH_PYTHON
 echo "  " Build with ALSA support............................... : $WITH_ALSA

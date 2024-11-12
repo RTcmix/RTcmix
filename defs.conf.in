@@ -32,6 +32,10 @@ LIBLO_LIBS = @LIBLO_LIBS@
 SDIF_SUPPORT = @SDIF_SUPPORT@
 SDIF_CFLAGS = @SDIF_CFLAGS@
 SDIF_LIBS = @SDIF_LIBS@
+MIDI_SUPPORT = @MIDI_SUPPORT@
+XWINDOWS_SUPPORT = @XWINDOWS_SUPPORT@
+XLIBDIR = @XLIBDIR@
+
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
@@ -41,7 +45,6 @@ datarootdir = @datarootdir@
 MANDESTDIR = @mandir@
 HTMLDESTDIR = @HTMLDESTDIR@
 
-XLIBDIR = @x_libraries@
 
 # for debugging configure.ac
 #WITH_VAL = @WITH_VAL@
