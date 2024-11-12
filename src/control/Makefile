@@ -14,7 +14,7 @@ else
 	DIRS = maxmsp pfbus
 endif
 
-ifeq ($(MIDI_SUPPORT), TRUE
+ifeq ($(MIDI_SUPPORT), TRUE)
 	DIRS += midi
 endif
 

@@ -393,7 +393,7 @@ AC_ARG_WITH(pmlib,
 		  WITH_EXTERNAL_PMLIB="false"
 	  else
 	     PMLIB_CFLAGS="-I/usr/local/include -I/opt/local/include" 
-	     PMLIB_LDFLAGS="-L/usr/local/lib -L/opt/local/lib -lportmidi" 
+	     PMLIB_LDFLAGS="-L/usr/local/lib -L/opt/local/lib -Wl,-rpath,/usr/local/lib -Wl,-rpath,/opt/local/lib -lportmidi"
 	  fi
    fi]
 )
@@ -409,9 +409,12 @@ AC_ARG_WITH(osc,
    [if test "$withval" != "no"; then
       OSC_SUPPORT=TRUE
       WITH_OSC="true"
+	  LIBLO_LIBS="-llo"
    fi]
 )
 AC_SUBST(OSC_SUPPORT)
+AC_SUBST(LIBLO_CFLAGS)
+AC_SUBST(LIBLO_LIBS)
 
 #AC_SUBST(WITH_VAL, "$withval")    # for debugging this script
 
@@ -466,14 +469,6 @@ if test "$FFTW_SUPPORT" = "TRUE"; then
    AC_SUBST(FFTW_CFLAGS)
    AC_SUBST(FFTW_LIBS)
 fi
-
-# OSC
-if test "$OSC_SUPPORT" = "TRUE"; then
-   PKG_CHECK_MODULES(LIBLO,liblo)
-   AC_SUBST(LIBLO_CFLAGS)
-   AC_SUBST(LIBLO_LIBS)
-fi
-
 
 # Write output files -----------------------------------------------------------
 AC_CONFIG_HEADERS([config.h])
