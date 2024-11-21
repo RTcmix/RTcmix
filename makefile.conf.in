@@ -351,9 +351,9 @@ endif
 
 ifeq ($(ARCH),LINUX)
   ifeq ($(AUDIODRIVER),ALSA)
-    SYS_LDFLAGS = -lasound -lpthread -lm -ldl #-lefence
+    SYS_LDFLAGS = -lasound -lpthread -lm -ldl
   else
-    SYS_LDFLAGS = -lpthread -lm -ldl #-lefence
+    SYS_LDFLAGS = -lpthread -lm -ldl
   endif
   DSO_LDFLAGS = $(OPT) $(SYSLIBS)
   SHARED_LDFLAGS = -shared -Wl,-soname,$(RTLIB)

@@ -869,7 +869,7 @@ _minc_substring(const MincValue args[], int nargs)
     return strdup(sbuffer);
 }
 
-// Utilities for calling methods on Minc objects
+// Utilities for calling methods on MincList objects
 
 static float list_append(MincList *inList, const MincValue arglist[])
 {
@@ -880,15 +880,45 @@ static float list_append(MincList *inList, const MincValue arglist[])
     return 1;
 }
 
+static MincValue list_min(MincList *inList)
+{
+    MincValue &val = inList->data[0];
+    for (int i = 0; i < inList->len; ++i) {
+        MincValue &item = inList->data[i];
+        if (item < val) {
+            val = item;
+        }
+    }
+    return val;
+}
+
+static MincValue list_max(MincList *inList)
+{
+    MincValue &val = inList->data[0];
+    for (int i = 0; i < inList->len; ++i) {
+        MincValue &item = inList->data[i];
+        if (item > val) {
+            val = item;
+        }
+    }
+    return val;
+}
+
 int call_list_method(MincValue &object, const char *methodName, const MincValue arglist[], int nargs, MincValue *retval)
 {
     MincList *theList = (MincList *)object;
+    if (theList == NULL) {
+        minc_die("%s: NULL list", methodName);
+    }
     int found = 1;
     if (strcmp (methodName, "append") == 0) {
         *retval = list_append(theList, arglist);
     }
-    else if (strcmp (methodName, "insert") == 0) {
-        *retval = list_append(theList, arglist);
+    else if (strcmp (methodName, "min") == 0) {
+        *retval = list_min(theList);
+    }
+    else if (strcmp (methodName, "max") == 0) {
+        *retval = list_max(theList);
     }
     else {
         found = 0;
