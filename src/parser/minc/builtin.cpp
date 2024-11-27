@@ -904,6 +904,15 @@ static MincValue list_max(MincList *inList)
     return val;
 }
 
+static MincValue list_copy(MincList *inList)
+{
+    MincList *listCopy = new MincList(inList->len);
+    for (int item = 0; item < listCopy->len; ++item) {
+        listCopy->data[item] = inList->data[item];
+    }
+    return MincValue(listCopy);
+}
+
 int call_list_method(MincValue &object, const char *methodName, const MincValue arglist[], int nargs, MincValue *retval)
 {
     MincList *theList = (MincList *)object;
@@ -919,6 +928,9 @@ int call_list_method(MincValue &object, const char *methodName, const MincValue 
     }
     else if (strcmp (methodName, "max") == 0) {
         *retval = list_max(theList);
+    }
+    else if (strcmp(methodName, "copy") == 0) {
+        *retval = list_copy(theList);
     }
     else {
         found = 0;
