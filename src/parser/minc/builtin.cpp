@@ -882,9 +882,9 @@ static float list_append(MincList *inList, const MincValue arglist[])
 
 static MincValue list_min(MincList *inList)
 {
-    MincValue &val = inList->data[0];
+    MincValue val = inList->data[0];
     for (int i = 0; i < inList->len; ++i) {
-        MincValue &item = inList->data[i];
+        const MincValue &item = inList->data[i];
         if (item < val) {
             val = item;
         }
@@ -894,9 +894,9 @@ static MincValue list_min(MincList *inList)
 
 static MincValue list_max(MincList *inList)
 {
-    MincValue &val = inList->data[0];
+    MincValue val = inList->data[0];
     for (int i = 0; i < inList->len; ++i) {
-        MincValue &item = inList->data[i];
+        const MincValue &item = inList->data[i];
         if (item > val) {
             val = item;
         }
