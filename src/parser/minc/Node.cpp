@@ -379,8 +379,11 @@ Node *	OperationBase::do_op_string(Node *node, const char *str1, const char *str
 	ENTER();
    char *s;
    unsigned long   len;
-
-   switch (op) {
+   if (str1 == NULL) {
+       minc_warn("invalid operation on null string");
+       node->v = (MincString)NULL;
+   }
+   else switch (op) {
       case OpPlus:   /* concatenate */
          len = (strlen(str1) + strlen(str2)) + 1;
          s = (char *) emalloc(sizeof(char) * len);
