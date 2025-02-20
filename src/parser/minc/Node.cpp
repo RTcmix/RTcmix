@@ -71,9 +71,9 @@ extern int call_object_method(MincValue &object, const char *methodName, const M
 /* callextfunc.cpp */
 extern int call_external_function(const char *funcname, const MincValue arglist[],
                            const int nargs, MincValue *return_value);
-extern MincHandle minc_binop_handle_float(const MincHandle handle, const MincFloat val, OpKind op);
-extern MincHandle minc_binop_float_handle(const MincFloat val, const MincHandle handle, OpKind op);
-extern MincHandle minc_binop_handles(const MincHandle handle1, const MincHandle handle2, OpKind op);
+extern MincHandle minc_binop_handle_float(MincHandle  handle, MincFloat val, OpKind op);
+extern MincHandle minc_binop_float_handle(MincFloat val, MincHandle  handle, OpKind op);
+extern MincHandle minc_binop_handles(MincHandle  handle1, MincHandle  handle2, OpKind op);
 
 #ifdef SCOPE_DEBUG
 static char ssBuf[256];
@@ -412,7 +412,7 @@ Node *	OperationBase::do_op_string(Node *node, const char *str1, const char *str
 
 
 /* ------------------------------------------------------------- do_op_num -- */
-Node *	OperationBase::do_op_num(Node *node, const MincFloat val1, const MincFloat val2, OpKind op)
+Node *	OperationBase::do_op_num(Node *node, MincFloat val1, MincFloat val2, OpKind op)
 {
 	ENTER();
    switch (op) {
@@ -455,7 +455,7 @@ Node *	OperationBase::do_op_num(Node *node, const MincFloat val1, const MincFloa
 
 
 /* ------------------------------------------------------ do_op_handle_num -- */
-Node *	OperationBase::do_op_handle_num(Node *node, const MincHandle val1, const MincFloat val2,
+Node *	OperationBase::do_op_handle_num(Node *node, MincHandle  val1, MincFloat val2,
       OpKind op)
 {
 	ENTER();
@@ -480,7 +480,7 @@ Node *	OperationBase::do_op_handle_num(Node *node, const MincHandle val1, const 
 
 
 /* ------------------------------------------------------ do_op_num_handle -- */
-Node *	OperationBase::do_op_num_handle(Node *node, const MincFloat val1, const MincHandle val2,
+Node *	OperationBase::do_op_num_handle(Node *node, MincFloat val1, MincHandle  val2,
       OpKind op)
 {
 	ENTER();
@@ -504,7 +504,7 @@ Node *	OperationBase::do_op_num_handle(Node *node, const MincFloat val1, const M
 
 
 /* --------------------------------------------------- do_op_handle_handle -- */
-Node *	OperationBase::do_op_handle_handle(Node *node, const MincHandle val1, const MincHandle val2,
+Node *	OperationBase::do_op_handle_handle(Node *node, MincHandle  val1, MincHandle  val2,
       OpKind op)
 {
 	ENTER();
@@ -530,7 +530,7 @@ Node *	OperationBase::do_op_handle_handle(Node *node, const MincHandle val1, con
    using the scalar <val>, for each list element - with the element first in the equation.  Store the result into a
    new list for <this>, so that child's list is unchanged.
 */
-Node *	OperationBase::do_op_list_float(Node *node, const MincList *srcList, const MincFloat val, const OpKind op)
+Node *	OperationBase::do_op_list_float(Node *node, const MincList *srcList, MincFloat val, OpKind op)
 {
 	ENTER();
    int i;
@@ -616,7 +616,7 @@ Node *	OperationBase::do_op_list_float(Node *node, const MincList *srcList, cons
  new list for <this>, so that child's list is unchanged.  N.B. This will operate on zero-length
  and NULL lists as well.
  */
-Node *	OperationBase::do_op_list_list(Node *node, const MincList *list1, const MincList *list2, const OpKind op)
+Node *	OperationBase::do_op_list_list(Node *node, const MincList *list1, const MincList *list2, OpKind op)
 {
 	ENTER();
 	int i, n;
@@ -654,7 +654,7 @@ Node *	OperationBase::do_op_list_list(Node *node, const MincList *list1, const M
  new list for <this>, so that child's list is unchanged.  NOTE:  This is only used
  for asymmetrical operations -, /, %, **.
  */
-Node *    OperationBase::do_op_float_list(Node *node, const MincFloat val, const MincList *srcList, const OpKind op)
+Node *    OperationBase::do_op_float_list(Node *node, MincFloat val, const MincList *srcList, OpKind op)
 {
     ENTER();
     int i;

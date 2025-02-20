@@ -653,12 +653,12 @@ bool MincValue::operator == (const MincValue &rhs) const
             return same(_u.string, rhs._u.string);
         case MincHandleType:
         case MincFunctionType:
+        case MincMapType:
+        case MincStructType:
             return (rawValue() == rhs.rawValue());
         case MincListType:
             return (_u.list == NULL || rhs._u.list == NULL) ?
                 _u.list == rhs._u.list : *_u.list == *rhs._u.list;
-        case MincMapType:
-        case MincStructType:
        default:
             throw InvalidTypeException("Can't compare objects of this type");
     }

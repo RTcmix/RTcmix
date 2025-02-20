@@ -167,13 +167,13 @@ public:
     Node *doOperation(Node *node, const MincValue &lhs, const MincValue &rhs, OpKind op);
 private:
     Node* do_op_string(Node *node, const char *str1, const char *str2, OpKind op);
-    Node* do_op_num(Node *node, const MincFloat val1, const MincFloat val2, OpKind op);
-    Node* do_op_handle_num(Node *node, const MincHandle val1, const MincFloat val2, OpKind op);
-    Node* do_op_num_handle(Node *node, const MincFloat val1, const MincHandle val2, OpKind op);
-    Node* do_op_handle_handle(Node *node, const MincHandle val1, const MincHandle val2, OpKind op);
-    Node* do_op_list_float(Node *node, const MincList *srcList, const MincFloat val, const OpKind op);
-    Node* do_op_list_list(Node *node, const MincList *list1, const MincList *list2, const OpKind op);
-    Node* do_op_float_list(Node *node, const MincFloat val, const MincList *srcList, const OpKind op);
+    Node* do_op_num(Node *node, MincFloat val1, MincFloat val2, OpKind op);
+    Node* do_op_handle_num(Node *node, MincHandle  val1, MincFloat val2, OpKind op);
+    Node* do_op_num_handle(Node *node, MincFloat val1, MincHandle  val2, OpKind op);
+    Node* do_op_handle_handle(Node *node, MincHandle  val1, MincHandle  val2, OpKind op);
+    Node* do_op_list_float(Node *node, const MincList *srcList, MincFloat val, OpKind  op);
+    Node* do_op_list_list(Node *node, const MincList *list1, const MincList *list2, OpKind  op);
+    Node* do_op_float_list(Node *node, MincFloat val, const MincList *srcList, OpKind  op);
 };
 
 class NodeOp : public Node2Children, private OperationBase
