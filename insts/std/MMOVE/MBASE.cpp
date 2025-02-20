@@ -463,7 +463,7 @@ void MBASE::get_lengths(long m_length)
 void MBASE::set_gains()
 {
    int    i, nvals = 16;
-   static const float array[16] = {
+   static double array[16] = {
       0, .001, 10, .1, 25, .225, 35, .28, 50, .35, 65, .4, 85, .45, 95, .475
    };
 
@@ -471,7 +471,7 @@ void MBASE::set_gains()
    double adjust = 1.0 - (0.42 * (SR - 25000) / 25000.0);
 
    /* create scaled curve for coeffs */
-   setline((float *)array, nvals, NCOEFFS, AIRCOEFFS);
+   setline(array, nvals, NCOEFFS, AIRCOEFFS);
 
    for (i = 0; i < NCOEFFS; i++)
       AIRCOEFFS[i] = pow(AIRCOEFFS[i], adjust);

@@ -24,7 +24,7 @@ extern int resetval;
 struct gen {
            int size;           /* size of array to load up */
            int nargs;          /* number of arguments passed in p array */
-           float *pvals;       /* address of array of p values */
+           double *pvals;       /* address of array of p values */
            double *array;       /* address of array to be loaded up */
            int slot;	       /* slot number, for fnscl test */
            };
@@ -120,7 +120,7 @@ void rszset(float SR, float, float, float, float*);
 float resonz(float, float*);
 void bresonz(float*, float*, float*, int);
 float reverb(float, float*);
-int setline(float [], short, int, double []);
+int setline(double [], int, int, double []);
 void srrand(unsigned int);
 void rvbset(float SR, float, int, float*);
 #ifdef EMBEDDED

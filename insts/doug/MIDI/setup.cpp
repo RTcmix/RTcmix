@@ -25,6 +25,7 @@ RTMIDIOutput *getMIDIOutputForChannel(int channel)
     if (portIndex < gMIDIOutputPortCount) {
         return gMIDIOutputs[portIndex];
     }
+    return NULL;
 }
 
 void outputDestroyCallback(void *context)

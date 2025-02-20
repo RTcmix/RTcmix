@@ -12,7 +12,7 @@ double mindiff;
 double
 path (double p[], int n_args)		/* for polar coordinates */
 {
-    float rhos[100], thetas[100];
+    double rhos[100], thetas[100];
     int i, t;
     static double z = 0.017453292;    /* Pi/180 */
 
@@ -44,7 +44,7 @@ path (double p[], int n_args)		/* for polar coordinates */
 double
 cpath (double p[], int n_args) 	/* for cartesian coordinates */
 {
-    float rhos[100], thetas[100];
+    double rhos[100], thetas[100];
     int i, t;
 
     /* check for proper input triplets */
