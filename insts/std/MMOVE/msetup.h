@@ -10,10 +10,10 @@ struct AttenuationParams {
 };
 
 int get_setup_params(double dimensions[], AttenuationParams *params,
-					 float *rvbTime, float *absorb,
+                     double *rvbTime, double *absorb,
 					 int *useMikes, double *micAngle, double *micPat);
 int get_rvb_setup_params(double dimensions[], double matrix[12][12], 
-						 float *rvbTime);
+						 double *rvbTime);
 
 void increment_users();
 void decrement_users();

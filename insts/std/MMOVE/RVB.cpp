@@ -3,7 +3,6 @@
 
 #include "RVB.h"
 #include "common.h"
-#include <rtdefs.h>
 #include <ugens.h>
 #include <string.h>
 #include <stdio.h>
@@ -81,17 +80,16 @@ RVB::~RVB()
 	}
 }
 
-int RVB::init(double p[], int n_args)
-{
-    float  outskip, inskip, rvb_time;
+int RVB::init(double p[], int n_args) {
+    double outskip, inskip, rvb_time;
 
     outskip = p[0];
     inskip = p[1];
     m_dur = p[2];
-    if (m_dur < 0)                      /* "dur" represents timend */
+    if (m_dur < 0) {                     /* "dur" represents timend */
         m_dur = -m_dur - inskip;
-
-	if (rtsetinput(inskip, this) == -1) { // no input
+    }
+	if (rtsetinput((float)inskip, this) == -1) { // no input
 	  return(DONT_SCHEDULE);
 	}
 
@@ -110,7 +108,7 @@ int RVB::init(double p[], int n_args)
     if (get_rvb_setup_params(Dimensions, Matrix, &rvb_time) == -1)
        return die(name(), "You must call setup routine `space' first.");
     /* (perform some initialization that used to be in space.c) */
-    int meanLength = MFP_samps(SR, Dimensions); // mean delay length for reverb
+    long meanLength = MFP_samps(SR, Dimensions); // mean delay length for reverb
     get_lengths(meanLength);              /* sets up delay lengths */
     set_gains(rvb_time);                		/* sets gains for filters */
 	set_random();                       /* sets up random variation of delays */

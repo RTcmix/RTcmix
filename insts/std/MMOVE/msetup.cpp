@@ -74,7 +74,7 @@ check_users()
 int
 get_rvb_setup_params(double Dimensions[],       /* array of 5 elements */
                  double Matrix[12][12],
-                 float  *rvb_time)
+                 double  *rvb_time)
 {
    int    i, j;
 
@@ -115,8 +115,6 @@ get_setup_params(double Dimensions[],       /* array of 5 elements */
                  double *MikeAngle,
                  double *MikePatternFactor)
 {
-   int    i, j;
-
    if (!space_called)
       return -1;
 
@@ -255,15 +253,15 @@ double
 m_oldmatrix(double p[], int n_args)
 {
    int   i, j;
-   float amp, val;
+   double amp, val;
 
    amp = p[0];
 
-   if (amp) {
+   if (amp != 0.0) {
       /* loop for 12 by 12 values on screen */
       for (i = 0; i < 12; i++) {
          for (j = 0; j < 12; j++) {
-            scanf(" %f ", &val);
+            scanf(" %lf ", &val);
             _Matrix[i][j] = val * amp;
          }
       }
@@ -279,12 +277,9 @@ m_oldmatrix(double p[], int n_args)
 double
 m_matrix(double p[], int n_args)
 {
-   int   i, j;
-   float amp, val;
+   double amp = p[0];
 
-   amp = p[0];
-
-   if (amp) {
+   if (amp != 0.0) {
 	  if (n_args == 1)
 	  {
 	   	_Matrix_Gain = amp;
@@ -297,8 +292,8 @@ m_matrix(double p[], int n_args)
 		return 0;
 	  }
       /* loop for 12 by 12 args */
-      for (i = 0; i < 12; i++) {
-         for (j = 0; j < 12; j++) {
+      for (int i = 0; i < 12; i++) {
+         for (int j = 0; j < 12; j++) {
             _Matrix[i][j] = p[12*i+j+1] * amp;
          }
       }

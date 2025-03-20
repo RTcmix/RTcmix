@@ -50,8 +50,8 @@ fill_matrix()
 int
 get_setup_params(double Dimensions[],       /* array of 5 elements */
                  double Matrix[12][12],
-                 float  *abs_factor,
-                 float  *rvb_time,
+                 double  *abs_factor,
+                 double  *rvb_time,
                  int    *UseMikes,
                  double *MikeAngle,
                  double *MikePatternFactor)

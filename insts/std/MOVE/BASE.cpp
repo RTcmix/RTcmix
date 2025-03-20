@@ -74,7 +74,7 @@ BASE::~BASE()
 int BASE::init(double p[], int n_args)
 {
 	int	UseMikes;
-	float  outskip, inskip, abs_factor, rvb_time;
+	double  outskip, inskip, abs_factor, rvb_time;
 
 	outskip = p[0];
 	inskip = p[1];

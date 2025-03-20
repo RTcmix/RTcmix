@@ -83,7 +83,7 @@ MBASE::~MBASE()
 int MBASE::init(double p[], int n_args)
 {
     int    UseMikes;
-    float  outskip, inskip, abs_factor, dummy;
+    double  outskip, inskip, abs_factor, dummy;
 
     outskip = p[0];
     inskip = p[1];
@@ -125,7 +125,7 @@ int MBASE::init(double p[], int n_args)
 		return die(name(), "Output must be 4-channel (2 signal, 2 reverb feed).");
 	
     /* (perform some initialization that used to be in space.c) */
-    int meanLength = MFP_samps(SR, Dimensions); // mean delay length for reverb
+    long meanLength = MFP_samps(SR, Dimensions); // mean delay length for reverb
     get_lengths(meanLength);              /* sets up delay lengths */
     set_gains();                		/* sets gains for filters */
     set_walls(abs_factor);              /* sets wall filts for move routine */
