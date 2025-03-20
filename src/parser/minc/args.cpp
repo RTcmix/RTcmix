@@ -66,7 +66,7 @@ lookup_token(const char *token, bool printWarning)
 	std::map<size_t, const char *>::iterator it = sTokenMap.find((size_t)token);
 	if (it == sTokenMap.end()) {
 		if (printWarning) {
-			minc_warn("$%s was not passed to CMIX as an argument", token);
+            minc_advise("$%s was not passed to CMIX as an argument", token);
 		}
 		return NULL;
 	}

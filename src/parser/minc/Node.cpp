@@ -1755,7 +1755,7 @@ Node *	NodeArgListElem::doExct()
 		minc_die("%s() takes %d arguments but was passed %d!", sCalledFunctions.back(), sArgListLen, sMincListLen);
 	}
 	else if (sArgListIndex >= sMincListLen) {
-        if (sMincWarningLevel > MincNoDefaultedArgWarnings) {
+        if (sMincWarningLevel >= MincNoDefaultedArgWarnings) {
             minc_warn("%s(): arg %d ('%s') not provided - defaulting to 0", sCalledFunctions.back(), sArgListIndex, argSym->name());
         }
 		/* Copy zeroed MincValue to us and then to sym. */

@@ -156,6 +156,7 @@ public:
     bool operator >= (const MincValue &rhs) const;
     
     MincDataType    dataType() const { return type; }
+    bool isZero() const { return _u.raw == 0ULL; }
     void zero() { _u.list = NULL; }        // zeroes without changing type
     void print() const;
 private:

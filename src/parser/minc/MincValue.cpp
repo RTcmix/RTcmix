@@ -645,6 +645,10 @@ MincValue& MincValue::operator[] (const MincValue &index)
 
 bool MincValue::operator == (const MincValue &rhs) const
 {
+    // Allow a zero check
+    if (rhs.isZero()) {
+        return rawValue() == 0ULL;
+    }
     ThrowIf(rhs.type != this->type, NonmatchingTypeException("Attempt to compare variables having different types"));
     switch (type) {
         case MincFloatType:
