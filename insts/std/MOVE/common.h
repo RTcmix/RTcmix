@@ -34,7 +34,7 @@ extern "C" {
 /* common non-inline functions */
 
 extern long MFP_samps(float, double []);
-extern int close_prime(int, int, int []);
+extern int close_prime(int, int, int *);
 extern float cycle(float, double, int);
 extern void binaural(double, double, double, double, double,
                                                           double *, double *);

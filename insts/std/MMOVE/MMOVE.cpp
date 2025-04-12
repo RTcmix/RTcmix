@@ -22,8 +22,6 @@
 
 extern "C" int get_path_params(double *rhos, double *thetas, int *cartesian, double *mdiff);
 
-static const double radpt = 162.99746617261;   /* converts rads to 1024-element array ptr */
-static const double radpt2 = 325.9493234522;
 static const double LocationUnset = -999999.999999;
 
 /* ------------------------------------------------------------ makeMOVE --- */
@@ -60,7 +58,7 @@ MMOVE::MMOVE()
     thetaloc = new double[ARRAYSIZE];
     for (int n = 0; n < 2; n++)
         for (int o = 0; o < 13; o++)
-	    oldOutlocs[n][o] = LocationUnset;	// to force update
+	        oldOutlocs[n][o] = LocationUnset;	// to force update
 }
 
 MMOVE::~MMOVE()
@@ -73,11 +71,15 @@ MMOVE::~MMOVE()
 
 int MMOVE::localInit(double *p, int n_args)
 {
-    if (n_args < 6)
+    if (n_args < 5)
         return die(name(), "Wrong number of args.");
     m_dist = p[4];
     m_inchan = n_args > 5 ? (int)p[5] : AVERAGE_CHANS;
-    
+
+    if (alloc_vectors() == DONT_SCHEDULE) {
+        return DONT_SCHEDULE;
+    }
+
     // copy global params into instrument
     
     if (get_path_params(&rholoc[0], &thetaloc[0], &m_cartflag, &mindiff) < 0)
@@ -124,13 +126,13 @@ int MMOVE::localInit(double *p, int n_args)
 int MMOVE::finishInit(double *ringdur)
 {
     *ringdur = (float)m_tapsize / SR;	// max possible room delay
-	tapcount = updatePosition(0);
+    tapcount = updatePosition(0);
     return 0;
 }
 
 void MMOVE::get_tap(int currentSamp, int chan, int path, int len)
 {
-   Vector *vec = &m_vectors[chan][path];
+   SVector vec = m_vectors[chan][path];
    const double outloc = (double) vec->outloc;
    const double oldOutloc = oldOutlocs[chan][path];
    const double delta = (oldOutloc == LocationUnset) ? 0.0 : outloc - oldOutloc;
@@ -194,10 +196,10 @@ int MMOVE::updatePosition(int currentSamp)
             return (-1);
 		}
         // set taps, return max samp
-        maxtap = tap_set(m_binaural);
+        maxtap = tap_set(binaural());
  	    int resetFlag = (currentSamp == 0);
 		airfil_set(resetFlag);
-		if (m_binaural)
+		if (binaural())
 		   earfil_set(resetFlag);
 		else
 		   mike_set();

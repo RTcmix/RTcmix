@@ -50,7 +50,10 @@ int MPLACE::localInit(double p[], int n_args)
         m_dist *= -1.0;
         rtcmix_advise(name(), "Using cartesian coordinate system.");
     }
-	// convert angle to radians before passing in if polar
+    if (alloc_vectors() == DONT_SCHEDULE) {
+        return DONT_SCHEDULE;
+    }
+    // convert angle to radians before passing in if polar
     if (roomtrig(R , m_cartflag ? T : T * conv, m_dist, m_cartflag)) {
 		  die(name(), "roomtrig failed.");
         return(DONT_SCHEDULE);
@@ -61,7 +64,7 @@ int MPLACE::localInit(double p[], int n_args)
 int MPLACE::finishInit(double *ringdur)
 {
    /* set taps, return max samp */
-   tapcount = tap_set(m_binaural);
+   tapcount = tap_set(binaural());
 
    // Set up air and other filters.
    int resetFlag = 1;
@@ -74,12 +77,12 @@ int MPLACE::finishInit(double *ringdur)
 
 int MPLACE::configure()
 {
-	int status = MBASE::configure();
+	int status = MSTEREOBASE::configure();
 	if (status == 0) {
-		// MPLACE sets all filters just once, so we clear them at this time
+        // MPLACE sets all filters just once, so we clear them at this time
 		int flag = 1;
 		airfil_set(flag);
-		if (m_binaural)
+		if (binaural())
 		   earfil_set(flag);
 		else
 		   mike_set();
@@ -119,7 +122,7 @@ void rtprofile()
 
 void MPLACE::get_tap(int intap, int chan, int path, int len)
 {
-	Vector *vec = &m_vectors[chan][path];
+	SVector vec = m_vectors[chan][path];
 	register double *tapdel = m_tapDelay;
 	register double *Sig = vec->Sig;
 	register int tap = intap % m_tapsize;

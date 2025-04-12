@@ -3,15 +3,16 @@
 #ifndef _DMOVE_H_
 #define _DMOVE_H_
 
-#include "MBASE.h"
+#include "MSTEREOBASE.h"
+#include "MOVEBASE.h"
 
-class DMOVE : public MBASE {
+class DMOVE : public MSTEREOBASE, public MOVEBASE<2> {
 public:
     DMOVE();
     virtual ~DMOVE();
 protected:
-    virtual int localInit(double *, int);
-    virtual int finishInit(double *);
+    virtual int localInit(double *p, int n_args);
+    virtual int finishInit(double *ringdur);
     virtual int updatePosition(int);
     virtual void get_tap(int, int, int, int);
 private:

@@ -4,60 +4,18 @@
 #ifndef _RTCMIX_RVB_H_
 #define _RTCMIX_RVB_H_
 
-#include <Instrument.h>
+#include <RVBBASE.h>
 
-#define NCOEFFS   512
-#define NPRIMES   5000
-#define MAX_INPUTS  4
+#define RVB_CHANS 2
+#define RVB_DELCOUNT 6
 
-class RVB : public Instrument {
+class RVB : public RVBBASE<RVB_CHANS, RVB_DELCOUNT> {
 public:
 	RVB();
 	virtual ~RVB();
-	virtual int init(double *, int);
-	virtual int configure();
-	virtual int run();
 protected:
-	void set_random();
-	void get_lengths(long);
-	void set_gains(float);
-	void alloc_delays();
-	void set_allpass();
-	void wire_matrix(double [12][12]);
-	void rvb_reset();
-	void doRun(double *, double *, long);	// was BASE::RVB()
-	void matrix_mix();
-    void uninit();
-private:
-	struct ReverbPatch {
-		int incount;
-		double *inptrs[MAX_INPUTS];
-		double gains[MAX_INPUTS];
-		double *outptr;
-	} ReverbPatches[12];
-	struct ReverbData {
-		double delin;
-		double Rand_info[6];
-		double *Rvb_del;
-		int deltap;
-		double Rvb_air[3];
-		double delout;
-	} m_rvbData[2][6];
-	double		Allpass_del[2][502];
-	int			allpassTap[2];
-	double		m_rvbPast[2];	// For hi-pass filter
-	double		AIRCOEFFS[NCOEFFS];
-	double		Dimensions[5];
-	double		Nsdelay[2][6];
-	double		m_dur, m_amp;
-	float		*in;
-	int			insamps, rvbdelsize;
-	int			_branch;
-	// static methods
-	static void get_primes(int x, int p[]);
-	// static data
-	static int	primes[NPRIMES + 2];
-	static AtomicInt primes_gotten;
+    virtual void get_lengths(long);
+    virtual void set_random();
 };
 
 #endif	// _RTCMIX_RVB_H_
