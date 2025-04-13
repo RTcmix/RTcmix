@@ -32,8 +32,30 @@ outsk=0
 amp = 1000
 
 dur = DUR();
-dist_mikes = 30
 inchan = 0
+
+// If dist-to-mike was 1.0, the sides of the square would be 1/sqrt(2)
+// If dist-to-mike was sqrt(2), sides of square would be 1.0
+
+/*
+                                    20
+                          x--------------------x
+                          |                    |
+                          |                    |
+                          |                    |
+                          |       {0,0}        |
+                          |         *--------->|
+                          |             10     |
+                          |                    |
+                          |                    |
+                          |                    |
+                          x--------------------x
+
+*/
+
+// TEST DIMENSIONS
+dist_mikes = 10 * sqrt(2);	
+// box is 20 x 20, so listener is at 0,0 and box corners are -10,10  10,10  10,-10  -10,-10
 
 mindist = 12
 maxdist = 80
@@ -42,6 +64,8 @@ maxdist = 80
 threshold(0.1);
 //reset(44100);
 
+QMOVE(outsk,insk,dur,amp,xpos=0,ypos=20,-dist_mikes,inchan);
+/*
 QMOVE(outsk,insk,dur,amp,xpos=-50,ypos=35,-dist_mikes,inchan);
 outsk += 2;
 QMOVE(outsk,insk,dur,amp,xpos=50,ypos=35,-dist_mikes,inchan);
@@ -49,5 +73,6 @@ outsk += 2;
 QMOVE(outsk,insk,dur,amp,xpos=50,ypos=-35,-dist_mikes,inchan);
 outsk += 2;
 QMOVE(outsk,insk,dur,amp,xpos=-50,ypos=-35,-dist_mikes,inchan);
+*/
 
 QRVB(0, 0, 7+rvbtime, 0.3);
