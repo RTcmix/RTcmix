@@ -124,7 +124,6 @@ int DMOVE::finishInit(double *ringdur)
 
 int DMOVE::updatePosition(int currentSamp)
 {
-    static double z = 0.017453292;    /* Pi/180 */
     double p[6];
     update(p, 6, 1 << 4 | 1 << 5);
     double R = p[4];

@@ -184,15 +184,16 @@ void MMOVE::get_tap(int currentSamp, int chan, int path, int len)
 
 int MMOVE::updatePosition(int currentSamp)
 {
+    const double z = 0.017453292;  /* Pi / 180 */
     double R = tablei(currentSamp, rholoc, tabr);
     double T = tablei(currentSamp, thetaloc, tabt);
     int maxtap = tapcount;
 	m_updateCount -= getBufferSize();
     if (m_updateCount <= 0 && (R != R_old || T != T_old)) {
 #ifdef debug
-        printf("updatePosition[%d]:\t\tR: %f  T: %f\n", currentSamp, R, T);
+        printf("updatePosition[%d]:\t\tR: %f  T: %f\n", currentSamp, R, T/z);
 #endif
-		if (roomtrig(R , T, m_dist, m_cartflag)) {
+		if (roomtrig(R , T/z, m_dist, m_cartflag)) {
             return (-1);
 		}
         // set taps, return max samp

@@ -326,7 +326,7 @@ int MBASE::roomtrig(double A,                 /* 'rho' or 'x' */
 
    if (!cart) {                 /* polar coordinates */
       R = A;
-      T = B;	/* B already in radians */
+      T = B * z;                /* passed-in angle is degrees */
       X = A * sin(T);
       Y = A * cos(T);
    }

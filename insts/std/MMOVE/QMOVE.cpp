@@ -161,7 +161,6 @@ void QMOVE::get_tap(int currentSamp, int chan, int path, int len) {
 int QMOVE::updatePosition(int currentSamp)
 {
     const int totalSamps = insamps + tapcount;
-    static double z = 0.017453292;    /* Pi/180 */
     double p[6];
     double R = update(4, totalSamps);
     double T = update(5, totalSamps);
@@ -170,7 +169,7 @@ int QMOVE::updatePosition(int currentSamp)
 //#ifdef debug
         printf("updatePosition[%d]:\t\tR: %f  T: %f\n", currentSamp, R, T);
 //#endif
-        if (roomtrig(R , T*z, m_dist, m_cartflag)) {
+        if (roomtrig(R , T, m_dist, m_cartflag)) {
             return (-1);
         }
         // set taps, return max samp
