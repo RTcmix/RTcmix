@@ -310,8 +310,6 @@ binaural(double R,
    h = H / 2.;
    Ys = Y * Y;
 
-   /* distance to left ear */
-
    if (H > 0.8 || H == 0.0) {                          /* mike mode */
       rho[0] = sqrt(Ys + ((X + h) * (X + h)));
       rho[1] = sqrt(Ys + ((X - h) * (X - h)));

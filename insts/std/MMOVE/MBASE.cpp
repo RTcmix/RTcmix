@@ -33,8 +33,6 @@
 #define DBG1(stmt)
 #endif
 
-#define SQRT_TWO 1.4142136
-
 extern "C" {
    #include "cmixfuns.h"
 }
@@ -314,154 +312,165 @@ void MBASE::set_walls(float wallfac)
 */
 int MBASE::roomtrig(double A,                 /* 'rho' or 'x' */
                     double B,                 /* 'theta' or 'y' */
-                    double H,
+                    double H,                 /* x distance between ears or mikes */
+                    double Yoffsets[],        /* offsets for quad, etc. mikes */
                     int    cart)
 {
    int i;
    double x[13], y[13], r[13], t[13], d[4], Ra[4], Ta[4];
    double X, Y, R, T;
    const double z = 0.017453292;  /* Pi / 180 */
+   const double mike_pairs = m_chans / 2;
 
-   /* calc. X & Y if entered in polar form only */
+    /* multiply global dimension array by 2 to save calc. time */
+    for (i = 0; i < 4; ++i)
+        d[i] = Dimensions[i] * 2.0;
 
-   if (!cart) {                 /* polar coordinates */
-      R = A;
-      T = B * z;                /* passed-in angle is degrees */
-      X = A * sin(T);
-      Y = A * cos(T);
-   }
-   else {
-      R = hypot(A, B);
-      T = atan(A / B);
-      if (B < 0.0)
-         T += M_PI;
-      X = A;
-      Y = B;
-   }
+    for (int pair = 0; pair < mike_pairs; ++pair) {
+       const double yOffset = Yoffsets[pair];
 
-   /* Check to see that source loc. is inside room bounds */
-
-   if (X < Dimensions[3] || X > Dimensions[1] || Y > Dimensions[0] ||
-       Y < Dimensions[2]) {
-	  char msg[120];
-      if (cart) snprintf(msg, 120, "Source location [%.1f, %.1f] is outside room bounds!!", X, Y);
-      else snprintf(msg, 120, "Source location [%.1f, %.1f] is outside room bounds!!", R, T);
-      rterror(name(), msg);
-      return (1);
-   }
-
-   /* multiply global dimension array by 2 to save calc. time */
-
-   for (i = 0; i < 4; ++i)
-      d[i] = Dimensions[i] * 2.0;
-
-   /* image calculations */
-
-   /* source vector */
-   x[0] = X;
-   y[0] = Y;
-   t[0] = T;
-   r[0] = R;
-
-   /* front wall vector */
-   x[1] = X;
-   y[1] = d[0] - Y;
-   t[1] = atan(x[1] / y[1]);
-   r[1] = y[1] / cos(t[1]);
-
-   /* right wall vector */
-   x[2] = d[1] - X;
-   y[2] = Y;
-   t[2] = PI / 2.0 - atan(y[2] / x[2]);
-   r[2] = x[2] / sin(t[2]);
-
-   /* back wall vector */
-   x[3] = X;
-   y[3] = d[2] - Y;
-   t[3] = PI + atan(x[3] / y[3]);
-   r[3] = y[3] / cos(t[3]);
-
-   /* left wall vector */
-   x[4] = d[3] - X;
-   y[4] = Y;
-   t[4] = 3. * PI / 2. - atan(y[4] / x[4]);
-   r[4] = x[4] / sin(t[4]);
-
-   /* 2nd gen. images: 4 opposing wall, 4 adjacent wall reflections */
-
-   /* front wall vector */
-   x[5] = X;
-   y[5] = d[0] - d[2] + Y;
-   t[5] = atan(x[5] / y[5]);
-   r[5] = hypot(X, y[5]);
-
-   /* right wall vector */
-   x[6] = d[1] - d[3] + X;
-   y[6] = Y;
-   t[6] = PI / 2.0 - atan(y[6] / x[6]);
-   r[6] = hypot(x[6], Y);
-
-   /* back wall vector */
-   x[7] = X;
-   y[7] = d[2] - d[0] + Y;
-   t[7] = PI + atan(x[7] / y[7]);
-   r[7] = hypot(X, y[7]);
-
-   /* left wall vector */
-   x[8] = d[3] - d[1] + X;
-   y[8] = Y;
-   t[8] = 3.0 * PI / 2.0 - atan(y[8] / x[8]);
-   r[8] = hypot(x[8], Y);
-
-   /* fr. rt. vector - double image in rectangular room, as are next 3 */
-   x[9] = x[2];
-   y[9] = y[1];
-   t[9] = atan(x[9] / y[9]);
-   r[9] = hypot(x[9], y[9]);
-
-   /* back rt. vector */
-   x[10] = x[2];
-   y[10] = y[3];
-   t[10] = PI / 2.0 - atan(y[10] / x[10]);
-   r[10] = hypot(x[10], y[10]);
-
-   /* back lft. vector */
-   x[11] = x[4];
-   y[11] = y[3];
-   t[11] = PI + atan(x[11] / y[11]);
-   r[11] = hypot(x[11], y[11]);
-
-   /* front lft. vector */
-   x[12] = x[4];
-   y[12] = y[1];
-   t[12] = 3.0 * PI / 2.0 - atan(y[12] / x[12]);
-   r[12] = hypot(x[12], y[12]);
-
-   /* calculate stereo vector pairs for each of these. */
-   for (i = 0; i < 13; ++i) {
-       double yoffset = (m_chans == 2) ? 0 : -0.5 * H / SQRT_TWO;
-       ::binaural(r[i], t[i], x[i], y[i]+yoffset, H, Ra, Ta);
-       int ch;
-       for (ch = 0; ch < 2; ++ch) {
-           SVector vec = m_vectors[ch][i];
-           vec->Rho = Ra[ch];
-           vec->Theta = Ta[ch];
-       }
-       if (m_chans > 2) {
-           double yoffset = 0.5 * H / SQRT_TWO;
-           ::binaural(r[i], t[i], x[i], y[i]+yoffset, H, &Ra[2], &Ta[2]);
-           for (; ch < m_chans; ++ch) {
-               SVector vec = m_vectors[ch][i];
-               vec->Rho = Ra[ch];
-               vec->Theta = Ta[ch];
+       /* calc. X & Y if entered in polar form only */
+       if (!cart) {
+           R = A;
+           T = B * z;           /* convert passed-in angle B into radians */
+           X = A * sin(T);
+           Y = A * cos(T);
+           // Recalculate Rho, Theta based on offset to Y
+           if (yOffset != 0) {
+               double offsetY = Y + yOffset;
+               R = hypot(X, offsetY);
+               T = atan(A / offsetY);
+               if (offsetY < 0.0) {
+                   T += M_PI;
+               }
+               Y = offsetY;
            }
-#if defined(debug) || 1
-           printf("Vector %d: FL: r %f t %f  FR: r %f t %f  BL: r %f t %f  BR: r %f t %f\n",
-                  i, Ra[0],Ta[0]/z,Ra[1],Ta[1]/z,Ra[2],Ta[2]/z,Ra[3],Ta[3]/z);
+       } else {
+           /* calc. R & T if entered in cartesian.  multi-speaker configs will have offsets */
+           double offsetY = B + yOffset;
+           R = hypot(A, offsetY);
+           T = atan(A / offsetY);
+           if (offsetY < 0.0)
+               T += M_PI;
+           X = A;
+           Y = offsetY;
+       }
+
+       /* Check to see that source loc. is inside room bounds */
+
+       if (X < Dimensions[3] || X > Dimensions[1] || Y > Dimensions[0] ||
+           Y < Dimensions[2]) {
+           char msg[120];
+           if (cart) snprintf(msg, 120, "Source location [%.1f, %.1f] is outside room bounds!!", X, Y);
+           else snprintf(msg, 120, "Source location [%.1f, %.1f] is outside room bounds!!", R, T);
+           rterror(name(), msg);
+           return (1);
+       }
+
+       /* image calculations */
+
+       /* source vector */
+       x[0] = X;
+       y[0] = Y;
+       t[0] = T;
+       r[0] = R;
+
+#if defined(debug)
+       printf("roomtrig: source vector[0]: x=%f, y=%f rho=%f theta=%f\n", X, Y, R, T / z);
+#endif
+       /* front wall vector */
+       x[1] = X;
+       y[1] = d[0] - Y;
+       t[1] = atan(x[1] / y[1]);
+       r[1] = y[1] / cos(t[1]);
+
+       /* right wall vector */
+       x[2] = d[1] - X;
+       y[2] = Y;
+       t[2] = PI / 2.0 - atan(y[2] / x[2]);
+       r[2] = x[2] / sin(t[2]);
+
+       /* back wall vector */
+       x[3] = X;
+       y[3] = d[2] - Y;
+       t[3] = PI + atan(x[3] / y[3]);
+       r[3] = y[3] / cos(t[3]);
+
+       /* left wall vector */
+       x[4] = d[3] - X;
+       y[4] = Y;
+       t[4] = 3. * PI / 2. - atan(y[4] / x[4]);
+       r[4] = x[4] / sin(t[4]);
+
+       /* 2nd gen. images: 4 opposing wall, 4 adjacent wall reflections */
+
+       /* front wall vector */
+       x[5] = X;
+       y[5] = d[0] - d[2] + Y;
+       t[5] = atan(x[5] / y[5]);
+       r[5] = hypot(X, y[5]);
+
+       /* right wall vector */
+       x[6] = d[1] - d[3] + X;
+       y[6] = Y;
+       t[6] = PI / 2.0 - atan(y[6] / x[6]);
+       r[6] = hypot(x[6], Y);
+
+       /* back wall vector */
+       x[7] = X;
+       y[7] = d[2] - d[0] + Y;
+       t[7] = PI + atan(x[7] / y[7]);
+       r[7] = hypot(X, y[7]);
+
+       /* left wall vector */
+       x[8] = d[3] - d[1] + X;
+       y[8] = Y;
+       t[8] = 3.0 * PI / 2.0 - atan(y[8] / x[8]);
+       r[8] = hypot(x[8], Y);
+
+       /* fr. rt. vector - double image in rectangular room, as are next 3 */
+       x[9] = x[2];
+       y[9] = y[1];
+       t[9] = atan(x[9] / y[9]);
+       r[9] = hypot(x[9], y[9]);
+
+       /* back rt. vector */
+       x[10] = x[2];
+       y[10] = y[3];
+       t[10] = PI / 2.0 - atan(y[10] / x[10]);
+       r[10] = hypot(x[10], y[10]);
+
+       /* back lft. vector */
+       x[11] = x[4];
+       y[11] = y[3];
+       t[11] = PI + atan(x[11] / y[11]);
+       r[11] = hypot(x[11], y[11]);
+
+       /* front lft. vector */
+       x[12] = x[4];
+       y[12] = y[1];
+       t[12] = 3.0 * PI / 2.0 - atan(y[12] / x[12]);
+       r[12] = hypot(x[12], y[12]);
+
+       /* calculate stereo vector pairs for each of these. */
+       for (i = 0; i < 13; ++i) {
+           ::binaural(r[i], t[i], x[i], y[i], H, Ra, Ta);
+           for (int v = pair * 2, n = 0; v < (pair * 2) + 2; ++v, ++n) {     // 0-1 for first pair, 2-3 for second
+               SVector vec = m_vectors[v][i];
+               vec->Rho = Ra[n];
+               vec->Theta = Ta[n];
+           }
+#if defined(debug)
+           if (pair == 0) {
+               printf("Vector %d: FL: r %f t %f  FR: r %f t %f\n",
+                      i, Ra[0], Ta[0] / z, Ra[1], Ta[1] / z);
+           } else {
+               printf("Vector %d: BL: r %f t %f  BR: r %f t %f\n",
+                      i, Ra[0], Ta[0] / z, Ra[1], Ta[1] / z);
+           }
 #endif
        }
    }
-
    /* Check to see that source distance is not "zero" unless we have a min distance */
 
    if (m_attenParams.minDistance == 0.0 && 

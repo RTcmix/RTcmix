@@ -29,16 +29,16 @@ space(dist_front,dist_right,dist_rear,dist_left,height,abs_fac,rvbtime)
 
 insk=0
 outsk=0
-amp = 10
+amp = 1
 
 dur = DUR();
 dist_mikes = 30
 inchan = 0
 
-mindist = 12
-maxdist = 80
+mindist = 30
+maxdist = 110
 
-//set_attenuation_params(mindist, maxdist, 1.0);
+set_attenuation_params(mindist, maxdist, 1.5);
 threshold(0.001);
 reset(44100);
 

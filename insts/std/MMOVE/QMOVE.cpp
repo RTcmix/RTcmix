@@ -166,10 +166,13 @@ int QMOVE::updatePosition(int currentSamp)
     double T = update(5, totalSamps);
     int maxtap = tapcount;
     if (R != R_old || T != T_old) {
-//#ifdef debug
+#ifdef debug
         printf("updatePosition[%d]:\t\tR: %f  T: %f\n", currentSamp, R, T);
-//#endif
-        if (roomtrig(R , T, m_dist, m_cartflag)) {
+#endif
+        double yOffets[2];
+        yOffets[0] = -m_dist / SQRT_TWO;
+        yOffets[1] = -yOffets[0];
+        if (roomtrig(R , T, 2 * m_dist / SQRT_TWO, yOffets, m_cartflag)) {
             return (-1);
         }
         // set taps, return max samp

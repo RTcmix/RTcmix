@@ -38,7 +38,7 @@ inchan = 0
 mindist = 12
 maxdist = 80
 
-set_attenuation_params(mindist, maxdist, 1.0);
+set_attenuation_params(mindist, maxdist, 1.4);
 threshold(0.01);
 //reset(44100);
 
@@ -52,4 +52,4 @@ QMOVE(outsk,insk,dur,amp,xpos=50,ypos=-35,-dist_mikes,inchan);
 outsk += 3;
 QMOVE(outsk,insk,dur,amp,xpos=-50,ypos=-35,-dist_mikes,inchan);
 
-QRVB(0, 0, dur+7+rvbtime+0.5, 0.1);
+QRVB(0, 0, outsk+rvbtime, 0.4);

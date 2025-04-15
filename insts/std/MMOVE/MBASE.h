@@ -7,6 +7,7 @@
 #define NCOEFFS   512
 #define MAX_INPUTS  4
 #define AVERAGE_CHANS   -1           /* average input chans flag value */
+#define SQRT_TWO 1.4142136
 #define SIG_THRESH 100000000.0
 
 #include <Instrument.h>
@@ -75,7 +76,7 @@ protected:
    void set_gains();
    void set_walls(float);
    void put_tap(int, float *, int);
-   int  roomtrig(double, double, double, int);
+   int  roomtrig(double A, double B, double H, double Yoffsets[], int useCartesian);
    void rvb_reset();
    void setair(double, int, double *, bool);
    void airfil_set(int);

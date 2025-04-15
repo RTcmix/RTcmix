@@ -53,9 +53,9 @@ int MPLACE::localInit(double p[], int n_args)
     if (alloc_vectors() == DONT_SCHEDULE) {
         return DONT_SCHEDULE;
     }
-    // convert angle to radians before passing in if polar
-    if (roomtrig(R , m_cartflag ? T : T * conv, m_dist, m_cartflag)) {
-		  die(name(), "roomtrig failed.");
+    double noOffset[] = {0.0};
+    if (roomtrig(R , T, m_dist, noOffset, m_cartflag)) {
+        die(name(), "roomtrig failed.");
         return(DONT_SCHEDULE);
     }
     return 0;

@@ -193,7 +193,8 @@ int MMOVE::updatePosition(int currentSamp)
 #ifdef debug
         printf("updatePosition[%d]:\t\tR: %f  T: %f\n", currentSamp, R, T/z);
 #endif
-		if (roomtrig(R , T/z, m_dist, m_cartflag)) {
+        double noOffset[] = {0};
+		if (roomtrig(R , T/z, m_dist, noOffset, m_cartflag)) {
             return (-1);
 		}
         // set taps, return max samp
