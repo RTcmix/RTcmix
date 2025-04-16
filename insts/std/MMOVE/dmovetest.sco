@@ -30,9 +30,9 @@ dist2sound=20
 
 // test moving source via angle range described via a list
 
-angle_sound={0, 60}
-//dist_mikes=2
-dist_mikes=0.67	/* binaural */
+angle_sound={-60, 60}
+dist_mikes=4
+//dist_mikes=0.67	/* binaural */
 inchan=0
 WAVETABLE(0, dur, 5000, 440, 0, wavet);
 DMOVE(outsk,insk,dur,pre_amp,dist2sound,angle_sound,dist_mikes,inchan);
