@@ -317,7 +317,7 @@ int MBASE::roomtrig(double A,                 /* 'rho' or 'x' */
                     int    cart)
 {
    int i;
-   double x[13], y[13], r[13], t[13], d[4], Ra[4], Ta[4];
+   double x[13], y[13], r[13], t[13], d[4], Ra[2], Ta[2];
    double X, Y, R, T;
    const double z = 0.017453292;  /* Pi / 180 */
    const double mike_pairs = m_chans / 2;
@@ -604,11 +604,21 @@ void MBASE::put_tap(int intap, float *Sig, int len)
  */
 void MBASE::mike_set()
 {
-   double OmniFactor = 1.0 - MikePatternFactor;
-   for (int i = 0; i < m_chans; ++i)
-      for (int j = 0; j < m_paths; ++j)
-         m_vectors[i][j]->MikeAmp = 
-		     OmniFactor + (MikePatternFactor * cos(m_vectors[i][j]->Theta - MikeAngle));
+   double omniFactor = 1.0 - MikePatternFactor;
+   double patternFactor = MikePatternFactor;
+   double angleOffset = -MikeAngle;
+   for (int i = 0; i < m_chans; ++i) {
+       // Any channel other than front 2 are set to Omni
+       if (i >= 2) {
+           omniFactor = 1;
+           patternFactor = 0;
+       }
+       for (int j = 0; j < m_paths; ++j) {
+           m_vectors[i][j]->MikeAmp =
+                   omniFactor + (patternFactor * cos(m_vectors[i][j]->Theta + angleOffset));
+       }
+       angleOffset = -angleOffset;
+   }
 }
 
 

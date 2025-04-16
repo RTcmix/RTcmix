@@ -17,8 +17,11 @@ DOBJS = DMOVE.o $(SBASE_OBJS) $(MBASE_OBJS) dmoveprof.o path.o $(COMMON_OBJS) $(
 QOBJS = QMOVE.o $(MBASE_OBJS) qmoveprof.o path.o $(QCOMMON_OBJS) $(EXTERN_OBJS)
 #PROF = -pg
 PROF =
+# If sanitize is turned on, make sure to add this to the environment:
+# DYLD_INSERT_LIBRARIES=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/lib/darwin/libclang_rt.asan_osx_dynamic.dylib
+
 #OPT = -g -fsanitize=address
-OPT = -g
+#OPT = -g
 ifeq ($(ARCH),LINUX)
    CXXFLAGS += -funroll-loops $(PROF)
 endif
