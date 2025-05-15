@@ -165,10 +165,10 @@ void CONTROLLER::doupdate(FRAMETYPE currentFrame)
         _cancelled = true;  // avoids duplicate messages
         setendsamp(0);
     } else if (_controllerValue < 0.0) {
-        rtcmix_warn("CONTROLLER", "Controller value limited to 0.0");
+//        rtcmix_warn("CONTROLLER", "Controller value limited to 0.0");
         _controllerValue = 0;
     } else if (_controllerValue > 1.0) {
-        rtcmix_warn("CONTROLLER", "Controller value limited to 1.0");
+//        rtcmix_warn("CONTROLLER", "Controller value limited to 1.0");
         _controllerValue = 1.0;
     }
     unsigned value = unsigned(0.5 + (_controllerValue * 127));

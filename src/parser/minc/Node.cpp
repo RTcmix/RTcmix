@@ -1066,6 +1066,28 @@ Node *  NodeMemberAccess::doExct()
     return this;
 }
 
+bool functionPrintIsSuppressed(const char *functionName)
+{
+    const char *baseName;
+    // Method names begin with the struct name followed by dot.  Suppression is based on post-dot portion.
+    if ((baseName = strchr(functionName, '.')) != NULL) {
+        ++baseName;
+    }
+    else {
+        baseName = functionName;
+    }
+    bool isSuppressed = baseName[0] == '_' && RTOption::printSuppressUnderbar();
+    if (!isSuppressed) {
+        const char *suppressedList = RTOption::suppressedFunNamelist();
+        if (suppressedList != NULL) {
+            char nameWithComma[128];    // there better not be a function name longer than this!
+            snprintf(nameWithComma, 128, "%s,", baseName);
+            isSuppressed = (strstr(suppressedList, nameWithComma) != NULL);
+        }
+    }
+    return isSuppressed;
+}
+
 Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char *functionName, Symbol *thisSymbol)
 {
     Node *returnedNode = NULL;
@@ -1079,24 +1101,7 @@ Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char 
         // This replicates the argument-printing mechanism used by compiled-in functions.
         // Functions beginning with underbar, or those in a "suppressed list", can be "privatized" using set_option()
         if (RTOption::print() >= MMP_PRINTS) {
-            const char *functionName = sCalledFunctions.back(), *baseName;
-            // Method names begin with the struct name followed by dot.  Suppression is based on post-dot portion.
-            if ((baseName = strchr(functionName, '.')) != NULL) {
-                ++baseName;
-            }
-            else {
-                baseName = functionName;
-            }
-            bool isSuppressed = baseName[0] == '_' && RTOption::printSuppressUnderbar();
-            if (!isSuppressed) {
-                const char *suppressedList = RTOption::suppressedFunNamelist();
-                if (suppressedList != NULL) {
-                    char nameWithComma[128];    // there better not be a function name longer than this!
-                    snprintf(nameWithComma, 128, "%s,", baseName);
-                    isSuppressed = (strstr(suppressedList, nameWithComma) != NULL);
-                }
-            }
-            if (!isSuppressed) {
+            if (!functionPrintIsSuppressed(sCalledFunctions.back())) {
                 RTPrintf("============================\n");
                 RTPrintfCat("%s: ", functionName);
                 MincValue retval;
@@ -1183,7 +1188,7 @@ bool NodeFunctionCall::callConstructor(const char *functionName)
     if (structType) {
         TPRINT("NodeFunctionCall::callConstructor -- creating a value with type struct %s\n", functionName);
         // This replicates the argument-printing mechanism used by compiled-in functions.
-        if (RTOption::print() >= MMP_PRINTS) {
+        if (RTOption::print() >= MMP_PRINTS && !functionPrintIsSuppressed(functionName)) {
             RTPrintf("============================\n");
             RTPrintfCat("%s: ", functionName);
             MincValue retval;
