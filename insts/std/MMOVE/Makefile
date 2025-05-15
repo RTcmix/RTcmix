@@ -21,7 +21,6 @@ PROF =
 # DYLD_INSERT_LIBRARIES=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/lib/darwin/libclang_rt.asan_osx_dynamic.dylib
 
 #OPT = -g -fsanitize=address
-#OPT = -g
 ifeq ($(ARCH),LINUX)
    CXXFLAGS += -funroll-loops $(PROF)
 endif
