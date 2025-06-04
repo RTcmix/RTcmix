@@ -124,26 +124,13 @@ static void copyBufTo(T *to, double *from, int len)
 
 void copyBuf(double *to, double *from, int len) { copyBufTo<double>(to, from, len); }
 
+// Copy one-channel input buffer into an interleaved 'toChannels' output buffer
+
 void copyBufToOut(float *to, double *from, int toChannels, int len)
 {
-	const int len4 = len >> 2;
-	int i;
-	const int second = toChannels;
-	const int third = toChannels * 2;
-	const int fourth = toChannels * 3;
-	const int stride = toChannels * 4;
-	for (i = 0; i < len4; i++) {
-	    to[0] = from[0];
-	    to[second] = from[1];
-	    to[third] = from[2];
-	    to[fourth] = from[3];
-		to += stride;
-		from += 4;
-	}
-	const int extra = len - (len4<<2);
-	for (int n = 0; n < extra; ++n) {
-	    *to += *from++;
-		to += toChannels;
+	for (int i = 0; i < len; i++) {
+        *to += *from++;
+        to += toChannels;
 	}
 }
 
@@ -287,7 +274,7 @@ MFP_samps(float SR, double dim[])
    For use in determining delay lengths.
 */
 int
-close_prime(int x, int n, int p[])
+close_prime(int x, int n, int *p)
 {
    for (int i = 0; i < n; i++) {
       if (p[i] >= x)
@@ -322,8 +309,6 @@ binaural(double R,
 
    h = H / 2.;
    Ys = Y * Y;
-
-   /* distance to left ear */
 
    if (H > 0.8 || H == 0.0) {                          /* mike mode */
       rho[0] = sqrt(Ys + ((X + h) * (X + h)));

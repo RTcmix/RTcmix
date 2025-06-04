@@ -52,6 +52,7 @@ struct_as_func_return.sco \
 struct_as_member.sco \
 struct_copy.sco \
 struct_increment_element.sco \
+struct_increment_element_via_method.sco \
 struct_var_scope.sco \
 struct_initializer.sco \
 struct_with_same_as_member.sco \

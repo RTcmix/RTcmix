@@ -33,7 +33,7 @@ char *concat_error_message(char *outbuf, int maxLen, const char *message, ...)
         snprintf(outbuf+newLen, maxLen-newLen, " ('%s', near line %d)", includedFile, yy_get_stored_lineno());
     }
     else {
-        snprintf(outbuf+newLen, maxLen-newLen, " (near line %d)", yy_get_stored_lineno());
+        snprintf(outbuf+newLen, maxLen-newLen, " (top level score, near line %d)", yy_get_stored_lineno());
     }
     return outbuf;
 }
@@ -53,7 +53,7 @@ minc_advise(const char *msg, ...)
         rtcmix_advise("parser", "%s ('%s', near line %d)", buf, includedFile, yy_get_stored_lineno());
     }
     else {
-        rtcmix_advise("parser", "%s (near line %d)", buf, yy_get_stored_lineno());
+        rtcmix_advise("parser", "%s (top level score, near line %d)", buf, yy_get_stored_lineno());
     }
 }
 
@@ -72,7 +72,7 @@ minc_warn(const char *msg, ...)
         rtcmix_warn("parser", "%s ('%s', near line %d)", buf, includedFile, yy_get_stored_lineno());
     }
     else {
-        rtcmix_warn("parser", "%s (near line %d)", buf, yy_get_stored_lineno());
+        rtcmix_warn("parser", "%s (top level score, near line %d)", buf, yy_get_stored_lineno());
     }
     if (RTOption::bailOnParserWarning()) {
         throw(MincParserError);
@@ -94,7 +94,7 @@ minc_die(const char *msg, ...)
         rterror("parser", "%s ('%s', near line %d)", buf, includedFile, yy_get_stored_lineno());
     }
     else {
-        rterror("parser", "%s (near line %d)", buf, yy_get_stored_lineno());
+        rterror("parser", "%s (top level score, near line %d)", buf, yy_get_stored_lineno());
     }
 
 	throw(MincParserError);
@@ -115,7 +115,7 @@ minc_internal_error(const char *msg, ...)
         rterror("parser-program", "%s ('%s', near line %d)", buf, includedFile, yy_get_stored_lineno());
     }
     else {
-        rterror("parser-program", "%s (near line %d)", buf, yy_get_stored_lineno());
+        rterror("parser-program", "%s (top level score, near line %d)", buf, yy_get_stored_lineno());
     }
 	throw(MincInternalError);
 }
@@ -128,7 +128,7 @@ yyerror(const char *msg)
         rterror("parser-yyerror", "'%s', near line %d: %s", includedFile, yyget_lineno(), msg);
     }
     else {
-        rterror("parser-yyerror", "near line %d: %s", yyget_lineno(), msg);
+        rterror("parser-yyerror", "top level score, near line %d: %s", yyget_lineno(), msg);
     }
 	throw(MincParserError);
 }
@@ -141,7 +141,7 @@ yyfatalerror(const char *msg)
         rterror("parser-yyfatalerror", "'%s', near line %d: %s", includedFile, yyget_lineno(), msg);
     }
     else {
-        rterror("parser-yyfatalerror", "near line %d: %s", yyget_lineno(), msg);
+        rterror("parser-yyfatalerror", "top level score, near line %d: %s", yyget_lineno(), msg);
     }
     throw(MincParserError);
 }
