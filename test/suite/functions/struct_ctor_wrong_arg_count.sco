@@ -1,4 +1,4 @@
-// Test for correct error-checking of argument count
+// Test for allowed default argument for constructor functions
 
 struct MyStruct {float f, string s};
 
