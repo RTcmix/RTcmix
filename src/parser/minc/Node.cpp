@@ -1096,8 +1096,6 @@ Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char 
     push_function_stack();
     push_scope();           // move into function-body scope
     int savedLineNo=0, savedScope=0, savedCallDepth=0, savedIfElseDepth=0, savedForWhileDepth=0;
-    static int savedTopLevelLineNumber=0;
-    static const char *savedTopLevelFunction = NULL;
     try {
         // This replicates the argument-printing mechanism used by compiled-in functions.
         // Functions beginning with underbar, or those in a "suppressed list", can be "privatized" using set_option()
@@ -1115,12 +1113,6 @@ Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char 
         savedScope = current_scope();
         savedIfElseDepth = sIfElseBlockDepth;
         savedForWhileDepth = sForWhileBlockDepth;
-        // Save the line number of the topmost call level so we can report it.  More useful sometimes than
-        // the line number of the actual error.
-        if (sFunctionCallDepth == 0) {
-            savedTopLevelLineNumber = savedLineNo;
-            savedTopLevelFunction = sCalledFunctions.back();
-        }
         sIfElseBlockDepth = 0;
         sForWhileBlockDepth = 0;
         incrementFunctionCallDepth();
@@ -1144,18 +1136,20 @@ Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char 
         restore_scope(savedScope);
     }
     catch (MincError err) {
-//        printf("DEBUG: caught MincError exception %d in '%s'. savedCallDepth: %d.  savedTopLevelLineNumber: %d rethrowing.\n", err, sCalledFunctions.back(), savedCallDepth, savedTopLevelLineNumber);
-        if (savedCallDepth == 1) { RTFPrintf(stderr, "[Error during top-level call to '%s' at line %d]\n", savedTopLevelFunction, savedTopLevelLineNumber); }
         pop_function_stack();
         sCalledFunctions.pop_back();
+        if (!sCalledFunctions.empty()) {
+            RTFPrintf(stderr, "[During call to '%s']\n", sCalledFunctions.back());
+        }
         decrementFunctionCallDepth();
         throw;
     }
     catch(...) {    // Anything else is an error
- //       printf("DEBUG: caught other exception in '%s'. savedCallDepth: %d. savedTopLevelLineNumber: %d rethrowing.\n", sCalledFunctions.back(), savedCallDepth, savedTopLevelLineNumber);
-        if (savedCallDepth == 1) { RTFPrintf(stderr, "[Error during top-level call to '%s' at line %d]\n", savedTopLevelFunction, savedTopLevelLineNumber); }
         pop_function_stack();
         sCalledFunctions.pop_back();
+        if (!sCalledFunctions.empty()) {
+            RTFPrintf(stderr, "[During call to '%s']\n", sCalledFunctions.back());
+        }
         decrementFunctionCallDepth();
         throw;
     }
