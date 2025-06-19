@@ -1,7 +1,7 @@
 POSITIVE_TESTS = bexp default-args typereturn handle if-bstml ifrand iftrue exit exit2 \
 	manysymbols toofewargs undefined_func var-redeclare struct_ctor_wrong_arg_count 
 NEGATIVE_TESTS = too-many-args function-symbol arg-symbol lineno \
-struct_ctor_wrong_arg_type two-bad-functions null_struct
+struct_ctor_wrong_arg_type two-bad-functions null_struct undefined_func
 COMPAT_TESTS = compat compat1 compat2 compat3
 BLOCK_TESTS = block block01 block01a block02 block02a block02c block03 block03a block03c block_list
 FUNC_TESTS = argtest call-stack func_call func_return funclevel1 func_call2 funcdecl \

@@ -60,6 +60,7 @@ typedef enum {
 	eNodeWhile,
 	eNodeFor,
 	eNodeIfElse,
+    eNodeTernary,
 	eNodeDecl,
     eNodeStructDecl,
 	eNodeFuncDecl,
@@ -598,6 +599,16 @@ public:
 	}
 protected:
 	virtual Node*		doExct();
+};
+
+class NodeTernary : public Node3Children
+{
+public:
+    NodeTernary(Node *n1, Node *n2, Node *n3) : Node3Children(OpFree, eNodeTernary, n1, n2, n3) {
+        NPRINT("NodeTernary(%p, %p, %p) => %p\n", n1, n2, n3, this);
+    }
+protected:
+    virtual Node*		doExct();
 };
 
 class NodeDecl : public Node

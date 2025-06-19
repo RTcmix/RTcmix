@@ -182,6 +182,7 @@ static const char *s_NodeKinds[] = {
    "NodeWhile",
    "NodeFor",
    "NodeIfElse",
+   "NodeTernary",
    "NodeDecl",
    "NodeStructDecl",
    "NodeFuncDecl",
@@ -1743,6 +1744,19 @@ Node *	NodeWhile::doExct()
     }
     decrementForWhileBlockDepth();
 	return this;
+}
+
+Node *	NodeTernary::doExct()
+{
+    if ((bool)child(0)->exct()->value() == true) {
+        child(1)->exct();
+        setValue(child(1)->value());
+    }
+    else {
+        child(2)->exct();
+        setValue(child(2)->value());
+    }
+    return this;
 }
 
 Node *	NodeArgList::doExct()

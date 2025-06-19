@@ -90,6 +90,7 @@ static Node * go(Node * t1);
 %left  <ival> '*' '/'
 %left  <ival> TOK_POW
 %left  <ival> CASTTOKEN
+%left  <ival> '?' ':'
 
 %right <ival> TOK_STRUCT_DECL
 %right <ival> TOK_BASE_DECL
@@ -104,11 +105,11 @@ static Node * go(Node * t1);
 %token <ival> TOK_IDENT TOK_NUM TOK_ARG_QUERY TOK_ARG TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
 
-%type  <node> stml stmt rstmt bexp expl exp expblk str ret bstml obj fexp fexpl func fcall mcall subscript
+%type  <node> stml stmt rstmt bexp expl exp expblk str ret bstml obj fexp fexpl func fcall mcall subscript ternary
 %type  <node> fdecl sdecl hdecl ldecl mapdecl structdecl structinit mfuncdecl arg argl funcdef fstml fblock fargl funcname mbr mbrl structdef methodname methoddef
 %type  <str> id structname basename
 
-%destructor { MPRINT1("yydestruct unref'ing node %p\n", $$); RefCounted::unref($$); } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl mapdecl structdecl structinit mfuncdecl funcdef fstml arg argl fargl funcname mbr mbrl structdef obj fexp fexpl fblock expblk subscript methodname methoddef
+%destructor { MPRINT1("yydestruct unref'ing node %p\n", $$); RefCounted::unref($$); } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl ternary mapdecl structdecl structinit mfuncdecl funcdef fstml arg argl fargl funcname mbr mbrl structdef obj fexp fexpl fblock expblk subscript methodname methoddef
 
 %error-verbose
 
@@ -285,6 +286,10 @@ fcall:  id func       {    MPRINT("fcall: id func"); $$ = new NodeFunctionCall(n
 mcall: obj '.' id func {  MPRINT("mcall: obj.id func"); $$ = new NodeMethodCall($1, $3, $4); }
     ;
 
+/* New ternary statement - Doug likes having these */
+ternary: exp '?' exp ':' exp { $$ = new NodeTernary($1, $3, $5); }
+    ;
+
 /* An rstmt is statement returning a value, such as assignments, function calls, etc. */
 rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAutoDeclLoadSym($1), $3); }
 	| obj TOK_PLUSEQU exp {	MPRINT("rstmt: obj TOK_PLUSEQU exp");
@@ -384,6 +389,8 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 							double f = atof(yytext);
 							$$ = new NodeConstf(f);
 						}
+    | ternary   {  MPRINT("rstmt: ternary"); $$ = $1; }
+
     /* DAS THESE ARE NOW PURE RIGHT-HAND-SIDE */
     | obj                   { MPRINT("exp: obj");   $$ = $1; }
     | expblk                { MPRINT("exp: expblk");   $$ = $1; }   // for list initialization
