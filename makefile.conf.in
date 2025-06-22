@@ -177,7 +177,7 @@ ifeq ($(ARCH),MACOSX)
     SHLIB = rtcmixdylib
 	SHLIB_SUFFIX = so
 	# we override this to override the "lib" prefix
-    ifeq ($(MAX_MAJOR_VERSION), 8)
+	ifeq ($(filter $(MAX_MAJOR_VERSION), 8 9),$(MAX_MAJOR_VERSION))
         LIBPREFIX = BASE_
     else
         LIBPREFIX =

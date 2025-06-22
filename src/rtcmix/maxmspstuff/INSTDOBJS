@@ -75,7 +75,12 @@ INSTDOBJS += \
 ../../insts/std/MMOVE/MBASE.o \
 ../../insts/std/MMOVE/DMOVE.o \
 ../../insts/std/MMOVE/MMOVE.o \
+../../insts/std/MMOVE/MOVEBASE.o \
 ../../insts/std/MMOVE/MPLACE.o \
+../../insts/std/MMOVE/MSTEREOBASE.o \
+../../insts/std/MMOVE/QMOVE.o \
+../../insts/std/MMOVE/QRVB.o \
+../../insts/std/MMOVE/RVBBASE.o \
 ../../insts/std/MMOVE/RVB.o \
 ../../insts/std/MOVE/cmixfuns.o \
 ../../insts/std/MOVE/common.o \

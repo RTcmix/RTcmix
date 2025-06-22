@@ -7,14 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A20C1D1F12AD8284007932FD /* MaxAPI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A20C1D1E12AD8284007932FD /* MaxAPI.framework */; };
-		A20C1D6512AD829C007932FD /* MaxAudioAPI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A20C1D6412AD829C007932FD /* MaxAudioAPI.framework */; };
 		A2EBD8150BA99EB100D3279D /* rtcmix~.c in Sources */ = {isa = PBXBuildFile; fileRef = A2EBD8140BA99EB100D3279D /* rtcmix~.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		A20C1D1E12AD8284007932FD /* MaxAPI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MaxAPI.framework; path = "$(MAX_SDK_PATH)/c74support/max-includes/MaxAPI.framework"; sourceTree = SOURCE_ROOT; };
-		A20C1D6412AD829C007932FD /* MaxAudioAPI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MaxAudioAPI.framework; path = "$(MAX_SDK_PATH)/c74support/msp-includes/MaxAudioAPI.framework"; sourceTree = SOURCE_ROOT; };
 		A2EBD8120BA99E0C00D3279D /* rtcmix~.mxo */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "rtcmix~.mxo"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A2EBD8140BA99EB100D3279D /* rtcmix~.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = "rtcmix~.c"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -24,8 +20,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A20C1D1F12AD8284007932FD /* MaxAPI.framework in Frameworks */,
-				A20C1D6512AD829C007932FD /* MaxAudioAPI.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -45,8 +39,6 @@
 		089C1671FE841209C02AAC07 /* External Frameworks and Libraries */ = {
 			isa = PBXGroup;
 			children = (
-				A20C1D1E12AD8284007932FD /* MaxAPI.framework */,
-				A20C1D6412AD829C007932FD /* MaxAudioAPI.framework */,
 			);
 			name = "External Frameworks and Libraries";
 			sourceTree = "<group>";
@@ -169,10 +161,7 @@
 				DEBUGGING_SYMBOLS = YES;
 				DEPLOYMENT_LOCATION = NO;
 				DSTROOT = "$(PROJECT_DIR)";
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(MAX_SDK_PATH)/c74support/max-includes",
-					"$(MAX_SDK_PATH)/c74support/msp-includes",
-				);
+				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_TRIGRAPHS = NO;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
@@ -196,7 +185,10 @@
 					"-g",
 					"-DDEBUG_LOGGING",
 				);
-				OTHER_LDFLAGS = "";
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
 				OTHER_REZFLAGS = "";
 				PRODUCT_NAME = "rtcmix~";
 				SDKROOT = macosx;
@@ -222,10 +214,7 @@
 				COPY_PHASE_STRIP = YES;
 				DEPLOYMENT_LOCATION = NO;
 				DSTROOT = "$(PROJECT_DIR)";
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(MAX_SDK_PATH)/c74support/max-includes",
-					"$(MAX_SDK_PATH)/c74support/msp-includes",
-				);
+				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_ENABLE_TRIGRAPHS = NO;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_OPTIMIZATION_LEVEL = 3;
@@ -245,7 +234,10 @@
 				LIBRARY_SEARCH_PATHS = "";
 				LIBRARY_STYLE = Bundle;
 				OTHER_CFLAGS = "-g";
-				OTHER_LDFLAGS = "";
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
 				OTHER_REZFLAGS = "";
 				PRODUCT_NAME = "rtcmix~";
 				SDKROOT = macosx;
@@ -270,10 +262,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				DEPLOYMENT_LOCATION = NO;
 				DSTROOT = "$(PROJECT_DIR)";
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(MAX_SDK_PATH)/c74support/max-includes",
-					"$(MAX_SDK_PATH)/c74support/msp-includes",
-				);
+				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_ENABLE_TRIGRAPHS = NO;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_OPTIMIZATION_LEVEL = 3;
@@ -293,7 +282,10 @@
 				LIBRARY_SEARCH_PATHS = "";
 				LIBRARY_STYLE = Bundle;
 				OTHER_CFLAGS = "-g";
-				OTHER_LDFLAGS = "";
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
 				OTHER_REZFLAGS = "";
 				PRODUCT_NAME = "rtcmix~";
 				SDKROOT = macosx;
