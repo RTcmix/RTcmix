@@ -567,9 +567,9 @@ AudioDeviceImpl::limitFrame(void *frameBuffer, int frames, bool doClip, bool che
 	}
 	if (frameMuting && clipmax >= _muteThreshold) {
 		if (reportClipping) {
-			float loc1 = bufStartSamp / getSamplingRate();
-			float loc2 = loc1 + (frames / getSamplingRate());
-			fprintf(stderr, "\n  MUTING frame due to samps exceeding %g, time range: %f - %f\n",
+			double loc1 = bufStartSamp / getSamplingRate();
+            double loc2 = loc1 + (frames / getSamplingRate());
+			fprintf(stderr, "\n  MUTING frame due to samps exceeding %g, time range: %g - %g\n",
 					_muteThreshold, loc1, loc2);
 		}
 		if (isFrameInterleaved()) {

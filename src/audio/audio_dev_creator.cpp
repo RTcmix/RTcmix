@@ -5,7 +5,6 @@
 // based upon the compile options, and uses that to determine which object
 // to build based on the passed-in descriptor.
 
-#include <ugens.h>
 #include <stdio.h>
 
 #ifdef OSS
@@ -93,7 +92,7 @@ createAudioDevice(const char *inputDesc,
 			 currentEntry->recognizer != NULL;
 			 ++currentEntry)
 		{
-			if (currentEntry->recognizer(inputDesc) == true) {
+			if (currentEntry->recognizer(inputDesc)) {
 				iCreator = currentEntry->creator;
 				break;
 			}
@@ -110,7 +109,7 @@ createAudioDevice(const char *inputDesc,
 			 currentEntry->recognizer != NULL;
 			 ++currentEntry)
 		{
-			if (currentEntry->recognizer(outputDesc) == true) {
+			if (currentEntry->recognizer(outputDesc)) {
 				oCreator = currentEntry->creator;
 				break;
 			}

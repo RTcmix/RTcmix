@@ -26,6 +26,14 @@ LIBDESTDIR = $(CMIXDIR)/shlib
 # for any other symbol defined above (such as LIBDESTDIR).
 include $(CMIXDIR)/site.conf
 
+ifndef ARCH
+	$(error ARCH must be defined by configure)
+endif
+
+ifndef BUILDTYPE
+	$(error BUILDTYPE must be defined)
+endif
+
 # The path to this file
 MAKEFILE_CONF = $(CMIXDIR)/makefile.conf
 
@@ -57,13 +65,16 @@ LIBPREFIX = lib
 ifeq ($(ARCH),LINUX)
   ARCHFLAGS = -DLINUX $(ARCH_BITFLAGS)
   ARCH_RTLDFLAGS = -Wl,-rpath $(LIBDIR)
-  RTLIBTYPE = DYNAMIC
+  # This is overridable in site.conf
+  ifndef RTLIBTYPE
+  	RTLIBTYPE = DYNAMIC
+  endif
   ifeq ($(BUILDTYPE), STANDALONE)
     ARCHFLAGS += -DSTANDALONE
     SHLIB = rtcmix
 	INSTTYPE = DYNAMIC
     ifndef AUDIODRIVER
-	    AUDIODRIVER=OSS
+		 AUDIODRIVER=OSS
     endif
   endif
   ifeq ($(BUILDTYPE), LINUXEMBEDDED)
@@ -72,20 +83,16 @@ ifeq ($(ARCH),LINUX)
     CMIX_FLAGS += -DEMBEDDEDAUDIO
     INSTTYPE = STATIC
     SHLIB = rtcmix_embedded
-    # This is overridable in site.conf
-    ifndef RTLIBTYPE
-        RTLIBTYPE = DYNAMIC
-    endif
-       RTLIB_INSTALL_DIR = $(LIBDIR)
-    endif
-    ifeq ($(RTLIBTYPE), DYNAMIC) 
+    RTLIB_INSTALL_DIR = $(LIBDIR)
+    ifeq ($(RTLIBTYPE), DYNAMIC)
         SHLIB_SUFFIX = so
         RTLIB_LDFLAGS = $(DYNAMIC_LDFLAGS)
     else
         ARCH_RTLDFLAGS =
         SHLIB_SUFFIX = a
         RTLIB_LDFLAGS =
-   endif
+    endif
+  endif
   CC = gcc
   CXX = g++ -Wno-deprecated
   LD = ld
@@ -182,7 +189,7 @@ ifeq ($(ARCH),MACOSX)
     else
         LIBPREFIX =
     endif
-	RTLIB_LDFLAGS = $(UB_CFLAGS) -Wl,-U,_cpost,-bundle,-flat_namespace
+	RTLIB_LDFLAGS = $(UB_CFLAGS) -Wl,-U,_cpost,-bundle,-undefined dynamic_lookup
 	RTLIBTYPE = DYNAMIC
 	RTLIB_INSTALL_DIR = $(MAX_LIB_INSTALL_DIR)
     AUDIODRIVER=EMBEDDEDAUDIO
@@ -266,6 +273,42 @@ ifeq ($(ARCH),FREEBSD)
   RTLIB_INSTALL_DIR = $(LIBDIR)
 endif
 
+# -- msys2 ----------------------------------------------------
+ifeq ($(ARCH),MSYS2)
+  ARCHFLAGS = -DMSYS2 $(ARCH_BITFLAGS)
+  ARCH_RTLDFLAGS = -Wl,-rpath $(LIBDIR)
+  RTLIBTYPE = DYNAMIC
+  ifeq ($(BUILDTYPE), STANDALONE)
+    ARCHFLAGS += -DSTANDALONE
+    SHLIB = rtcmix
+	INSTTYPE = DYNAMIC
+    ifndef AUDIODRIVER
+		 AUDIODRIVER=OSS
+    endif
+    SHLIB_SUFFIX = dll
+    RTLIB_LDFLAGS = $(DYNAMIC_LDFLAGS)
+  endif
+  ifeq ($(BUILDTYPE), LINUXEMBEDDED)
+	ARCHFLAGS += -DEMBEDDED
+	AUDIODRIVER=EMBEDDEDAUDIO
+	CMIX_FLAGS += -DEMBEDDEDAUDIO
+	INSTTYPE = STATIC
+	SHLIB = rtcmix_embedded
+	# This is overridable in site.conf
+	ifndef RTLIBTYPE
+		RTLIBTYPE = DYNAMIC
+	endif
+	RTLIB_INSTALL_DIR = $(LIBDIR)
+  endif
+  CC = gcc
+  CXX = g++ -Wno-deprecated
+  LD = ld
+  MAKE = make
+  INSTALL = cp -f
+  RANLIB = touch
+  SHELL = /bin/sh
+endif
+
 # -- Pd -----------------------------------------------------
 ifeq ($(BUILDTYPE), PD)
 	ARCHFLAGS += -DEMBEDDED -DPD -I$(PD_INCLUDES)
@@ -276,6 +319,7 @@ ifeq ($(BUILDTYPE), PD)
 	ifndef RTLIBTYPE
 		RTLIBTYPE = DYNAMIC
 	endif
+
 	ifeq ($(RTLIBTYPE), DYNAMIC)
 		SHLIB = rtcmixdylib
 		SHLIB_SUFFIX = so
@@ -287,7 +331,7 @@ ifeq ($(BUILDTYPE), PD)
 	endif
 	AUDIODRIVER=EMBEDDEDAUDIO
 	CMIX_FLAGS += -DEMBEDDEDAUDIO
-    INSTTYPE = STATIC
+	INSTTYPE = STATIC
 endif
 
 ifeq ($(BUILDTYPE), STANDALONE)
@@ -295,18 +339,18 @@ ifeq ($(BUILDTYPE), STANDALONE)
 	RTLIBTYPE = DYNAMIC
 	RTLIB_INSTALL_DIR = $(LIBDIR)
 	
-    ifeq ($(NPLAY_SUPPORT), TRUE)
-      CMIX_FLAGS += -DNETAUDIO
-    endif
-    ifeq ($(JACK_SUPPORT), TRUE)
-      CMIX_FLAGS += -DJACK
-    endif
-    ifeq ($(FFTW_SUPPORT), TRUE)
-      CMIX_FLAGS += -DFFTW
-    endif
-    ifeq ($(MULTI_THREAD_SUPPORT), TRUE)
-      CMIX_FLAGS += -DMULTI_THREAD
-    endif
+	ifeq ($(NPLAY_SUPPORT), TRUE)
+	  CMIX_FLAGS += -DNETAUDIO
+	endif
+	ifeq ($(JACK_SUPPORT), TRUE)
+	  CMIX_FLAGS += -DJACK
+	endif
+	ifeq ($(FFTW_SUPPORT), TRUE)
+	  CMIX_FLAGS += -DFFTW
+	endif
+	ifeq ($(MULTI_THREAD_SUPPORT), TRUE)
+	  CMIX_FLAGS += -DMULTI_THREAD
+	endif
 endif
 
 INCLUDES = -I. -I$(CMIXDIR)/include $(EXTRA_INCLUDES)
@@ -341,19 +385,19 @@ endif
 
 # Platform-specific library flags Key:
 #
-# SYS_LDFLAGS:          External libraries for each platform.
-# SYSLIBS:              Libraries which DSOs link against.
-# SHARED_LDFLAGS:       Linker flags when creating DSOs.
-# CMIXOBJS:             Non-lib .o files which standalone binaries need.
-# LDFLAGS:              Libraries which standalone binaries link against.
-# IMBCMIXOBJS:          Non-lib .o files which imbedded binaries need.
-# DYNAMIC_LDFLAGS:      Linker flags when creating dynamic shared libraries.
+# SYS_LDFLAGS:		  External libraries for each platform.
+# SYSLIBS:			  Libraries which DSOs link against.
+# SHARED_LDFLAGS:		Linker flags when creating DSOs.
+# CMIXOBJS:			 Non-lib .o files which standalone binaries need.
+# LDFLAGS:			  Libraries which standalone binaries link against.
+# IMBCMIXOBJS:		  Non-lib .o files which imbedded binaries need.
+# DYNAMIC_LDFLAGS:	  Linker flags when creating dynamic shared libraries.
 
 ifeq ($(ARCH),LINUX)
   ifeq ($(AUDIODRIVER),ALSA)
-    SYS_LDFLAGS = -lasound -lpthread -lm -ldl
+	SYS_LDFLAGS = -lasound -lpthread -lm -ldl
   else
-    SYS_LDFLAGS = -lpthread -lm -ldl
+	SYS_LDFLAGS = -lpthread -lm -ldl
   endif
   DSO_LDFLAGS = $(OPT) $(SYSLIBS)
   SHARED_LDFLAGS = -shared -Wl,-soname,$(RTLIB)
@@ -366,9 +410,9 @@ ifeq ($(ARCH),MACOSX)
   ifeq ($(BUILDTYPE), PD)
   	SHARED_LDFLAGS = $(ARCHFLAGS) -bundle
   else
-    	SHARED_LDFLAGS = $(ARCHFLAGS) $(OPT) -bundle -flat_namespace -undefined suppress
+		SHARED_LDFLAGS = $(ARCHFLAGS) $(OPT) -bundle -undefined dynamic_lookup
   endif
-  DYNAMIC_LDFLAGS = $(ARCHFLAGS) -flat_namespace -undefined suppress -dynamiclib -install_name $(LIBDIR)/$(RTLIB)
+  DYNAMIC_LDFLAGS = $(ARCHFLAGS) -undefined dynamic_lookup -dynamiclib -install_name $(LIBDIR)/$(RTLIB)
   DYN = 
 endif
 ifeq ($(ARCH),SGI)
