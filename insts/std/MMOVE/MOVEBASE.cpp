@@ -39,7 +39,7 @@ void MOVEBASE<OutChannels>::getVecTap(double *tapdel, int tapsize, double *Sig, 
     double incr = 1.0 + delta / len;
 
     const int tap = currentSamp % tapsize;
-    register double outTap = (double) tap - outloc;
+    double outTap = (double) tap - outloc;
     if (outTap < 0.0) outTap += tapsize;
     int out = 0;
 

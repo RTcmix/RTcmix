@@ -10,6 +10,7 @@
 #define SQRT_TWO 1.4142136
 #define SIG_THRESH 100000000.0
 
+#include <stdio.h>
 #include <Instrument.h>
 #include <vector>
 #include <memory>
