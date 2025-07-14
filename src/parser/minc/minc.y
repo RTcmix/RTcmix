@@ -215,33 +215,33 @@ id:  TOK_IDENT			{ MPRINT_ID(yytext); $$ = strsave(yytext); }
 
 /* variable declaration lists */
 
-fdecl:	TOK_FLOAT_DECL idl	{ 	MPRINT("fdecl");
+fdecl:	TOK_FLOAT_DECL idl	{ 	MPRINT("stmt: fdecl");
 								$$ = go(declare(MincFloatType));
 								idcount = 0;
 							}	// e.g., "float x, y z"
 	;
-sdecl:	TOK_STRING_DECL idl	{ 	MPRINT("sdecl");
+sdecl:	TOK_STRING_DECL idl	{ 	MPRINT("stmt: sdecl");
 								$$ = go(declare(MincStringType));
 								idcount = 0;
 							}
 	;
-hdecl:	TOK_HANDLE_DECL idl	{ 	MPRINT("hdecl");
+hdecl:	TOK_HANDLE_DECL idl	{ 	MPRINT("stmt: hdecl");
 								$$ = go(declare(MincHandleType));
 								idcount = 0;
 							}
 	;
-ldecl:	TOK_LIST_DECL idl	{ 	MPRINT("ldecl");
+ldecl:	TOK_LIST_DECL idl	{ 	MPRINT("stmt: ldecl");
 								$$ = go(declare(MincListType));
 								idcount = 0;
 							}
     ;
-mapdecl:    TOK_MAP_DECL idl    {     MPRINT("mapdecl");
+mapdecl:    TOK_MAP_DECL idl    {     MPRINT("stmt: mapdecl");
                                 $$ = go(declare(MincMapType));
                                 idcount = 0;
                               }
     ;
 
-mfuncdecl:    TOK_MFUNC_DECL idl    {     MPRINT("mfuncdecl"); $$ = go(declare(MincFunctionType)); idcount = 0; }
+mfuncdecl:    TOK_MFUNC_DECL idl    {     MPRINT("stmt: mfuncdecl"); $$ = go(declare(MincFunctionType)); idcount = 0; }
     ;
     
 /* statement nesting level counter.  This is an inline action between tokens. */
@@ -458,7 +458,7 @@ structdecl: TOK_STRUCT_DECL id idl    { MPRINT("structdecl"); $$ = go(declareStr
     ;
 
 /* A structinit is a struct decl plus an initializer */
-structinit: TOK_STRUCT_DECL id idl '=' expblk {   MPRINT("structinit: struct <type> id = expblk"); $$ = go(initializeStruct($2, $5)); idcount = 0; }
+structinit: TOK_STRUCT_DECL id idl '=' expblk {   MPRINT("stmt: structinit: struct <type> id = expblk"); $$ = go(initializeStruct($2, $5)); idcount = 0; }
 
 /* Rules for declaring and defining functions and methods */
 
