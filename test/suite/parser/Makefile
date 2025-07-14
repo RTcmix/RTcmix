@@ -31,7 +31,6 @@ maptest4.sco \
 maptest5.sco \
 maptest6.sco \
 method_calls_function.sco \
-mfunction01.sco \
 multistruct.sco \
 negative_list_element.sco \
 nested.sco \
@@ -71,6 +70,7 @@ handletest1.sco \
 if_inside_fun_scope.sco \
 include_error.sco \
 list_large_index.sco \
+mfunction01.sco \
 nested_func_decls.sco \
 null_struct.sco \
 struct_dupe_member_method.sco \
@@ -82,23 +82,32 @@ uninit_fun_member.sco \
 uninit_mfunction.sco \
 while_scope.sco
 
+all:	scores_that_pass scores_that_fail
+
+test: all
 
 scores_that_pass:
-	@for SCORE in $(PASS_SCORES); \
-        do \
-          ( echo "running $$SCORE..."; \
-          $(CMIX) -f $$SCORE; \
-		  if [ $$? -eq 0 ]; then echo "SCORE PASSED"; else echo "SCORE '$$SCORE' FAILED" && exit -1; fi ); \
-        done
+	@echo Running positive tests...
+	@for SCORE in $(PASS_SCORES); do \
+	  echo "running $$SCORE..."; \
+	  $(CMIX) -f $$SCORE; \
+	  if [ $$? -eq 0 ]; then \
+	    echo "SCORE PASSED"; \
+	  else \
+	    echo "SCORE '$$SCORE' FAILED"; exit 1; \
+	  fi; \
+	done
 
 scores_that_fail:
-	@for SCORE in $(FAIL_SCORES); \
-        do \
-          ( echo "running $$SCORE..."; \
+	@echo Running negative tests...
+	@for SCORE in $(FAIL_SCORES); do \
+          echo "running $$SCORE..."; \
           $(CMIX) -f $$SCORE; \
-		  if [ $$? -eq 0 ]; then echo "SCORE '$$SCORE' FAILED (BY NOT FAILING)" && exit -1; else echo "SCORE PASSED (BY CORRECTLY FAILING)"; fi ); \
-        done
-
-all:	scores_that_pass scores_that_fail
+          if [ $$? -eq 0 ]; then \
+          	echo "SCORE '$$SCORE' FAILED (BY NOT FAILING)"; exit 1; \
+          else \
+          	echo "SCORE PASSED (BY CORRECTLY FAILING)"; \
+          fi; \
+	done
 
 

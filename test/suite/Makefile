@@ -9,7 +9,7 @@ LDFLAGS = $(ARCH_BITFLAGS)
 
 all:	announce all_tests
 
-test: all
+test: unit_tests
 
 announce:
 	@echo "***************************************************************"
@@ -168,6 +168,17 @@ test_minc:
 	-$(CMD) < test-minc-nestedpfieldlists.sco		
 	-$(CMD) < test-minc-pfieldchain.sco		
 	-$(CMD) < test-minc-samplepfield.sco
+
+unit_announce:
+	@echo "***************************************************************"
+	@echo Running RTcmix Unit Tests
+	@echo "***************************************************************"
+
+unit_tests: unit_announce test_minc
+	@echo Running parser tests
+	@cd parser; $(MAKE);
+	@cd functions; $(MAKE);
+	@echo RTcmix Unit Tests Done
 
 test_embedded:
 	@echo
