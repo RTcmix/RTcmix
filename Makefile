@@ -113,8 +113,10 @@ distclean: cleanall cleanac
 
 ####################################################### for maintainers only ###
 
-test: install
+rawtest:
 	@cd test/suite; $(MAKE) test;
+
+test: install rawtest
 
 configure: configure.ac
 	touch defs.conf
