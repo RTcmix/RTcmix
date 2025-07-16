@@ -8,7 +8,7 @@
 #include <PField.h>
 #include "DataFile.h"
 #include <RTOption.h>		// for clobber
-#include "utils.h"
+#include "handle.h"
 #include <ugens.h>		// for warn, die
 
 // Functions for creating signal monitoring wrapper PFields.  This type of

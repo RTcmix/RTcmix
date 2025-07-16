@@ -50,7 +50,6 @@ sfprint.c \
 sfstats.c \
 sound.c \
 soundio.c \
-tempo.c \
 ug_intro.c
 
 
@@ -121,13 +120,15 @@ set_option.cpp \
 sound_sample_buf_read.cpp \
 table.cpp \
 tableutils.cpp \
+tempo.cpp \
 modtable.cpp \
 ops.cpp \
-utils.cpp \
+handle.cpp \
 rt_ug_intro.cpp \
 connection.cpp \
 converter.cpp \
-monitor.cpp
+monitor.cpp \
+utils.cpp
 
 # Build-based additions to local source files
 

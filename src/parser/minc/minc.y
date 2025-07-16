@@ -103,7 +103,7 @@ static Node * go(Node * t1);
 %token <ival> TOK_IDENT TOK_NUM TOK_ARG_QUERY TOK_ARG TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
 
-%type  <node> stml stmt rstmt bexp expl exp expblk str ret bstml obj fexp fexpl subscript
+%type  <node> stml stmt rstmt bexp expl exp expblk str ret bstml obj fexp fexpl func fcall mcall subscript
 %type  <node> fdecl sdecl hdecl ldecl mapdecl structdecl structinit mfuncdecl arg argl funcdef fstml fblock fargl funcname mbr mbrl structdef methodname methoddef
 %type  <str> id structname
 
@@ -153,10 +153,10 @@ stmt: rstmt					{ MPRINT("stmt: rstmt");	$$ = go($1); }
 								$$ = go(new NodeFor($4, $6, $8, $10));
 								xblock = 0;
 							}
-	| bstml
+	| bstml                 { MPRINT("stmt: bstml"); $$ = $1; }
     | funcdef               { MPRINT("stmt: funcdef"); $$ = go($1); }
-	| ret
-    | structdef
+	| ret                   { MPRINT("stmt: ret"); $$ = $1; }
+    | structdef             { MPRINT("stmt: structdef"); $$ = $1; }
 	;
 
 /* block statement list
@@ -268,6 +268,21 @@ fexpl:  fexp            { MPRINT("fexpl: fexp"); $$ = new NodeListElem(new NodeE
     |   fexpl ',' fexp  {  MPRINT("fexpl: fexpl,fexp"); $$ = new NodeListElem($1, $3); }
     ;
 
+/* A function is a set of function arguments inside parentheses */
+func:   '(' fexpl ')' {    MPRINT("func: (fexpl)"); $$ = $2; }
+    |   '(' ')'       {     MPRINT("func: ()"); $$ = new NodeEmptyListElem();  }
+    ;
+
+/* A function call is an id followed by (args) or () */
+fcall:   id func {    MPRINT("fcall: id func"); $$ = new NodeFunctionCall(new NodeLoadSym($1), $2); }
+    |   obj subscript func { MPRINT("fcall: obj subscript func"); $$ = new NodeFunctionCall(new NodeSubscriptRead($1, $2), $3); }
+    ;
+
+/* A method is a function call on an object using the dot operator. The object can be an id, a member access on a
+   struct/class, or a list element accessed by index.  The id is the string representing the method */
+mcall: obj '.' id func {  MPRINT("mcall: obj.id func"); $$ = new NodeMethodCall($1, $3, $4); }
+    ;
+
 /* An rstmt is statement returning a value, such as assignments, function calls, etc. */
 rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAutoDeclLoadSym($1), $3); }
 	| id TOK_PLUSEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpPlus); }
@@ -293,14 +308,8 @@ rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAuto
         $$ = new NodeOpAssign($2, new NodeConstf(1.0), OpMinusMinus);
     }
 
-    /* A function can be an id, a member access on a struct/class, or a list element accessed by index, that can be followed by (args) or () */
-    | obj '(' fexpl ')' {    MPRINT("rstmt: obj(fexpl)");
-                                    $$ = new NodeCall($1, $3);
-                                }
-    | obj '(' ')'       { MPRINT("rstmt: obj()");
-                                    $$ = new NodeCall($1, new NodeEmptyListElem());
-                                }
-        ;
+    |   fcall        {  MPRINT("rstmt: fcall"); $$ = $1; }
+    |   mcall        {  MPRINT("rstmt: mcall"); $$ = $1; }
 
     /* Special case: Assigning value to an array at an index */
 	| obj '[' exp ']' '=' exp {
@@ -328,7 +337,7 @@ str:	TOK_STRING		{
 	;
 
 /* Boolean expression, before being wrapped in () */
-bexp:	exp %prec LOWPRIO	{ MPRINT("bexp"); $$ = $1; }
+bexp:	exp %prec LOWPRIO	{ MPRINT("bexp: exp"); $$ = $1; }
 	| TOK_NOT bexp %prec TOK_UNEQU { MPRINT("!bexp"); $$ = new NodeNot($2); }
 	| bexp TOK_AND bexp	{ $$ = new NodeAnd($1, $3); }
 	| bexp TOK_OR  bexp	{ $$ = new NodeOr($1, $3); }
@@ -358,8 +367,8 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 						}
     /* DAS THESE ARE NOW PURE RIGHT-HAND-SIDE */
     | obj                   { MPRINT("exp: obj");   $$ = $1; }
-    | expblk                { MPRINT("exp: expblk");   $$ = $1; }
-	| '{' '}'				{ MPRINT("exp: {}");	$$ = new NodeList(new NodeEmptyListElem()); }
+    | expblk                { MPRINT("exp: expblk");   $$ = $1; }   // for list initialization
+	| '{' '}'				{ MPRINT("exp: {}");	$$ = new NodeList(new NodeEmptyListElem()); }   // for empty list initialization
 	| TOK_ARG_QUERY		    { $$ = parseArgumentQuery(yytext, &flerror); }
 	| TOK_ARG			    { $$ = parseScoreArgument(yytext, &flerror); }
     
@@ -503,6 +512,7 @@ fstml:	stml ret			{	MPRINT("fstml: stml ret");
 /* fblock is a function statement block including its curly braces */
 
 fblock: '{' fstml '}' {     MPRINT("fblock"); $$ = $2; }
+    ;
 
 /* funcdef is a complete rule for a function definition, e.g. "list myfunction(string s) { ... }".
  */
@@ -511,10 +521,8 @@ funcdef: funcname fargl fblock	{ MPRINT("funcdef");
                                     decrFunctionLevel();
 									$$ = new NodeFuncDef($1, $2, $3);
 								}
-/* These do not work (yet) and generate warnings, so commenting out for now
 	| error funcname fargl '{' stml '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
 	| error funcname fargl '{' '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
-*/
 	;
 
 /* methoddef is a complete rule for a struct method definition.  Looks the same as funcdef but only occurs within a struct definition.
@@ -600,10 +608,9 @@ static Node * initializeStruct(const char *typeName, Node *initList)
     if (idcount > 1) {
         minc_die("Only one struct variable can be initialized at a time");
     }
-    Node * t = new NodeNoop();    // end of the list
+    Node * end = new NodeNoop();    // end of the list
     Node * decl = new NodeStructDecl(idlist[0], typeName, initList);
-    t = new NodeSeq(t, decl);
-    return t;
+    return new NodeSeq(end, decl);
 }
 
 static Node * parseArgumentQuery(const char *text, int *pOutErr)

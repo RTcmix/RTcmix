@@ -3,6 +3,7 @@ include ../../makefile.conf
 DIRS = minc
 SRCS = parse_with_minc.cpp
 OBJS = parse_with_minc.o
+INCLUDES += -I../rtcmix
 
 ifeq ($(PERL_SUPPORT), TRUE)
   DIRS += perl

@@ -588,11 +588,14 @@ _minc_interp(const MincValue args[], int nargs)
 	if (nargs != 2)
 		minc_warn("interp: must have two arguments (list, fraction)");
 	else {
-		assert(args[1].dataType() == MincFloatType);	// must pass a float as fractional value
 		if (args[0].dataType() != MincListType) {
 			minc_warn("interp: first argument must be a list");
 			return -1.0;
 		}
+        if (args[1].dataType() != MincFloatType) {    // must pass a float as fractional value
+            minc_warn("interp: second argument must be a float");
+            return -1.0;
+        }
 		MincValue *data = ((MincList*)args[0])->data;
 		int len = ((MincList*)args[0])->len;
 		// Deal with degenerate cases
@@ -781,3 +784,43 @@ _minc_substring(const MincValue args[], int nargs)
     sbuffer[endIdx - startIdx] = '\0';
     return strdup(sbuffer);
 }
+
+// Utilities for calling methods on Minc objects
+
+// concatArgs puts the method object on the beginning of the arglist so we can use the
+// older builtin functions.
+
+void concatArgs(MincValue newArgs[], MincValue &object, const MincValue arglist[], int nargs)
+{
+    newArgs[0] = object;
+    for (int in = 0, out = 1; in < nargs; ++in, ++out) {
+        newArgs[out] = arglist[in];
+    }
+}
+
+int call_object_method(MincValue &object, const char *methodName, const MincValue arglist[], int nargs, MincValue *retval)
+{
+    if (strcmp (methodName, "contains") == 0) {
+        MincValue args[2];
+        concatArgs(args, object, arglist, nargs);
+        *retval = (MincFloat) _minc_contains(args, 2);
+    }
+    else if (strcmp (methodName, "index") == 0) {
+        MincValue args[2];
+        concatArgs(args, object, arglist, nargs);
+        *retval = (MincFloat) _minc_index(args, 2);
+    }
+    else if (strcmp (methodName, "len") == 0) {
+        *retval = (MincFloat) _minc_len((const MincValue *) &object, 1);
+    }
+    else if (strcmp (methodName, "print") == 0) {
+        *retval = (MincFloat) _minc_print((const MincValue *) &object, 1);
+    }
+    else if (strcmp(methodName, "type") == 0) {
+        *retval = (MincString) _minc_type((const MincValue *) &object, 1);
+    }
+    else
+        return false;
+    return true;
+}
+

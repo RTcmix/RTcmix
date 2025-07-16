@@ -10,7 +10,7 @@
 #include <DisplayPField.h>
 #include <RTcmixDisplay.h>
 #include <ugens.h>		// for warn, die
-#include <utils.h>		// for createPFieldHandle
+#include <handle.h>		// for createPFieldHandle
 
 
 // -----------------------------------------------------------------------------

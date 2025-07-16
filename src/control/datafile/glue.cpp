@@ -9,7 +9,7 @@
 #include <PField.h>
 #include <DataFileReaderPField.h>
 #include <ugens.h>		// for warn, die
-#include <utils.h>
+#include <handle.h>
 
 extern int resetval;		// declared in src/rtcmix/minc_functions.c
 

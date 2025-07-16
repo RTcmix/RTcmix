@@ -2,6 +2,8 @@
 //  thread_tester.cpp
 //
 
+#if 0
+
 #include <libkern/OSAtomic.h>
 #include <sys/types.h>
 #include <dispatch/dispatch.h>
@@ -693,4 +695,4 @@ int main(int argc, char **argv)
     }
     return 0;
 }
-
+#endif

@@ -9,7 +9,7 @@
 #include "prototypes.h"
 #include "sfheader.h"
 #include "sndlibsupport.h"
-#include "utils.h"
+#include "handle.h"
 #include <sys/file.h>
 #include <sys/types.h>
 #include <unistd.h>

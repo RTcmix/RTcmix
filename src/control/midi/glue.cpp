@@ -9,7 +9,7 @@
 #include <rtcmix_types.h>
 #include <RTOption.h>
 #include <PField.h>
-#include <utils.h>	// in ../../rtcmix
+#include <handle.h>	// in ../../rtcmix
 #include "RTcmixMIDI.h"
 #include "RTMidiPField.h"
 #include <ugens.h>		// for warn, die

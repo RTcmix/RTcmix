@@ -1,10 +1,13 @@
-POSITIVE_TESTS = bexp default-args typereturn handle if-bstml ifrand iftrue 
-NEGATIVE_TESTS = too-many-args function-symbol arg-symbol lineno
+POSITIVE_TESTS = bexp default-args typereturn handle if-bstml ifrand iftrue exit exit2 \
+	manysymbols toofewargs undefined_func var-redeclare
+NEGATIVE_TESTS = too-many-args function-symbol arg-symbol lineno \
+struct_ctor_wrong_arg_count struct_ctor_wrong_arg_type two-bad-functions null_struct
 COMPAT_TESTS = compat compat1 compat2 compat3
-BLOCK_TESTS = block block01 block01a block02 block02a block02c block03 block03a block03c
+BLOCK_TESTS = block block01 block01a block02 block02a block02c block03 block03a block03c block_list
 FUNC_TESTS = argtest call-stack func_call func_return funclevel1 func_call2 funcdecl \
 	recursivefun03 recursivefun04 recursivefun1 recursivefun2 func_auto_locals \
-	func_local_scopes scope01 scope02 scopetest
+	nested_builtin_functions func_local_scopes scope01 scope02 scopetest struct_ctor1 \
+	two_returns two_returns_b
 	
 
 CMIX = CMIX -P

@@ -10,7 +10,7 @@
 
 #include "MincValue.h"
 #include "debug.h"
-#include "handle.h"
+#include "minc_handle.h"
 #include "Node.h"
 #include "Scope.h"
 #include "Symbol.h"
@@ -239,12 +239,10 @@ MincFunction::~MincFunction()
 }
 
 void
-MincFunction::handleThis(std::vector<Symbol *> &symbolStack)
+MincFunction::handleThis(Symbol *symbolForThis)
 {
     if (_type == Method) {
-        Symbol *symbolForThis = (symbolStack.empty()) ? NULL : symbolStack.back();
         if (symbolForThis) {
-            symbolStack.pop_back();     // remove symbol once it is used
             MincStruct *structForThis = (MincStruct *) symbolForThis->value();
             Node *nodeStructDecl = new NodeStructDecl(strsave("this"), structForThis->typeName());
             nodeStructDecl->ref();

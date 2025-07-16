@@ -119,13 +119,13 @@ public:
         else {
             if (_initValues != NULL) {
                 if (_initIndex >= _initValueCount) {
-                    minc_die("struct initializer list is missing member values");
+                    minc_die("struct initializer is missing arguments for some members");
                 }
                 // Initialize with provided initializer value
                 const MincValue memberValue = _initValues[_initIndex++];
                 // Type check.  Eventually this will be handled directly by the operator =.
                 if (memberValue.dataType() != type) {
-                    minc_die("struct member '%s' initialized with a %s but needs a %s", memberName, MincTypeName(memberValue.dataType()), MincTypeName(type));
+                    minc_die("struct member '%s' initialized with a %s but requires a %s", memberName, MincTypeName(memberValue.dataType()), MincTypeName(type));
                 }
                 mstruct->addMember(memberName, memberValue, _root->scope(), structTypename);
             }

@@ -49,7 +49,8 @@ typedef enum {
 	eNodeArgListElem,
 	eNodeRet,
 	eNodeFuncBodySeq,
-	eNodeCall,
+	eNodeFuncCall,
+    eNodeMethodCall,
 	eNodeAnd,
 	eNodeOr,
 	eNodeOperator,
@@ -91,7 +92,7 @@ public:
 	Node*				exct();
     
     Node *              copyValue(Node *, bool allowTypeOverwrite=true);
-    Node *              copyValue(Symbol *, bool allowTypeOverwrite=true);
+    Node *              copyValue(Symbol *, bool allowTypeOverwrite=true, bool suppressOverwriteWarning=false);
 	void				print();
 protected:
     virtual             ~Node();
@@ -371,22 +372,49 @@ public:
     }
 };
 
-// Function call node
-//  n1 Function definition node
-//  n2 Function arguments list
+// Private base class to allow sharing of functionality
 
-class NodeCall : public Node2Children
+class MincFunctionHandler
 {
 public:
-	NodeCall(Node *func, Node *args) : Node2Children(OpFree, eNodeCall, func, args) {
-		NPRINT("NodeCall(%p, %p) => %p\n", func, args, this);
+    MincFunctionHandler() {}
+    Node *                callMincFunction(MincFunction *function, const char *functionName, Symbol *thisSymbol=NULL);
+};
+
+//  Function call node
+//  n1 Function symbol node
+//  n2 Function arguments list
+
+class NodeFunctionCall : public Node2Children, private MincFunctionHandler
+{
+public:
+    NodeFunctionCall(Node *func, Node *args) : Node2Children(OpFree, eNodeFuncCall, func, args) {
+		NPRINT("NodeFunctionCall(%p, %p) => %p\n", func, args, this);
 	}
 protected:
 	virtual Node*		doExct();
 private:
-    void                callMincFunctionFromNode(Node *functionNode);
-    void                callListFunction(const char *functionName);
+    bool                callConstructor(const char *functionName);
     void                callBuiltinFunction(const char *functionName);
+};
+
+//  Method call node
+//  n1 Object for method
+//  s  Method name
+//  n2 Function arguments list
+
+class NodeMethodCall : public Node2Children, private MincFunctionHandler
+{
+public:
+    NodeMethodCall(Node *obj, const char *methodName, Node *args) : Node2Children(OpFree, eNodeMethodCall, obj, args), _methodName(methodName) {
+        NPRINT("NodeMethodCall(%p, '%s', %p) => %p\n", obj, methodName, args, this);
+    }
+protected:
+    virtual Node *  doExct();
+private:
+    bool            callObjectMethod(Symbol *thisSymbol, const char *methodName);
+private:
+    const char *    _methodName;
 };
 
 class NodeAnd : public Node2Children

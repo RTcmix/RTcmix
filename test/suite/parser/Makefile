@@ -5,14 +5,16 @@ bool_checks.sco \
 builtin_function.sco \
 check_arg_order.sco \
 double_include.sco \
+for_while_score.sco \
 functest1.sco \
 functest2.sco \
 functest3.sco \
 functest4.sco \
 functest5.sco \
 func_with_undef_struct_arg.sco \
-if_else_scope.sco \
+function_calls_method.sco \
 include_at_line7.sco \
+if_else_scope.sco \
 list_compare.sco \
 list_increment_element.sco \
 list_read_write.sco \
@@ -21,9 +23,8 @@ maptest3.sco \
 maptest4.sco \
 maptest5.sco \
 maptest6.sco \
-function_calls_method.sco \
 method_calls_function.sco \
-two_methods.sco \
+mfunction01.sco \
 multistruct.sco \
 negative_list_element.sco \
 nested.sco \
@@ -33,6 +34,8 @@ new_features.sco \
 newfunction01.sco \
 newfunction02.sco \
 newfunction03.sco \
+null_list.sco \
+object_methods.sco \
 sanity_check.sco \
 struct01.sco \
 struct02.sco \
@@ -44,6 +47,7 @@ struct_increment_element.sco \
 struct_initializer.sco \
 struct_with_same_as_member.sco \
 test_double_include.sco \
+two_methods.sco \
 unaryop.sco
 
 FAIL_SCORES = \
@@ -52,12 +56,16 @@ handletest1.sco \
 include_error.sco \
 list_large_index.sco \
 nested_func_decls.sco \
+nested_if_in_for.sco \
+null_struct.sco \
+struct_dupe_member_method.sco \
 struct_duplicate_member.sco \
 struct_duplicate_membername.sco \
 struct_init_wrong_type.sco \
 struct_init_insufficient_args.sco \
 struct_var_scope.sco \
-uninit_fun_member.sco
+uninit_fun_member.sco \
+uninit_mfunction.sco
 
 
 scores_that_pass:

@@ -39,15 +39,9 @@
 #endif
 
 // these are to enable dynamic maketable() construction
-#include "../../../src/include/maxdispargs.h"
-#include "../../../src/rtcmix/rtcmix_types.h"
-
-// BGGx ww
-//int _dispatch_table(const Arg *args, const int nargs, const int startarg, double **array, int *len);
-extern "C" {
-int _dispatch_table(const Arg *args, const int nargs, const int startarg, double **array, int *len);
-}
-
+#include <maxdispargs.h>
+#include <rtcmix_types.h>
+extern "C" "int _dispatch_table(const Arg *args, const int nargs, const int startarg, double **array, int *len);
 Handle createPFieldHandle(class PField *);
 
 // BGG -- this is from src/rtcmix/table.cpp, but renamed slightly in case

@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <PField.h>
-#include "utils.h"
+#include "handle.h"
 #include "tableutils.h"
 #include <ugens.h>		// for warn, die
 

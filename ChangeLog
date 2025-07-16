@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2024-01-26 Douglas Scott <netdscott-at-netscape.net>
+	* Renamed some source files to better describe their use, and moved maxdispargs.h to a better include dir.
+	* Major feature: All built-in types now support some basic object features (ex., l = { 1, 2 }; x = l.len()).
+	* Updated scope rules: if/else blocks remain global for backwards-compat, but for/while blocks are local.
+	* Bumped version to 5.4 for new features.
+
 2023-12-20 Douglas Scott <netdscott-at-netscape.net>
 	* Changed symbol and display names for methods to <struct name>.<method name>.
 	* Finished addition of parser code to handle "++someArray[someIndex]".

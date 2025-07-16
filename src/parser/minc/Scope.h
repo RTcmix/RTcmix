@@ -75,7 +75,7 @@ void restore_scope(int scope);
 class Symbol;
 Symbol *installSymbol(const char *name, Bool isGlobal);
 Symbol *lookupSymbol(const char *name, ScopeLookupType lookupType);
-Symbol * lookupOrAutodeclare(const char *name, Bool inFunctionCall);
+Symbol * lookupOrAutodeclare(const char *name, Bool useLocalScope);
 
 void dump_symbols();
 

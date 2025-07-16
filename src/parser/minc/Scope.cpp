@@ -274,9 +274,9 @@ lookupSymbol(const char *name, ScopeLookupType lookupType)
     return p;
 }
 
-Symbol * lookupOrAutodeclare(const char *name, Bool inFunctionCall)
+Symbol * lookupOrAutodeclare(const char *name, Bool useLocalScope)
 {
-    DPRINT("lookupOrAutodeclare('%s')\n", name);
+    DPRINT("lookupOrAutodeclare('%s', %d)\n", name, useLocalScope);
     Symbol *sym = lookupSymbol(name, ThisLevel);    // Check at current scope *only*
     if (sym != NULL) {
         DPRINT("\tfound it at same scope\n");
@@ -288,14 +288,14 @@ Symbol * lookupOrAutodeclare(const char *name, Bool inFunctionCall)
         if (sym) {
             DPRINT("\tfound it\n");
             // lookupOrAutodeclare is only used for lvalues, so we know we're going to modify this
-            if (inFunctionCall && sym->scope() == 0 && RTOption::parserWarnings() > 1) {
+            if (useLocalScope && sym->scope() == 0 && RTOption::parserWarnings() > 1) {
                 minc_advise("Careful -- modifying global variable '%s' within a function", name);
             }
         }
         else {
-            DPRINT("\tnot found - installing %s\n", inFunctionCall ? "at current scope" : "at global scope");
+            DPRINT("\tnot found - installing %s\n", useLocalScope ? "at current scope" : "at global scope");
         }
-        return (sym) ? sym : installSymbol(name, inFunctionCall ? NO : YES);
+        return (sym) ? sym : installSymbol(name, useLocalScope ? NO : YES);
     }
 }
 
