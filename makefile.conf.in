@@ -317,6 +317,14 @@ RTLDFLAGS = -L$(LIBDIR) -l$(SHLIB) -lgen
 
 CMIX_FLAGS += -DMINCLUDEDIR=\"$(MINCLUDEDIR)\"
 
+# Multi-platform MIDI support via portmidi.  If not set, older internal lib
+# compiled and used.
+
+ifeq ($(USE_EXTERNAL_PMLIB), TRUE)
+	CMIX_FLAGS += $(PMLIB_CFLAGS)
+	RTLDFLAGS += $(PMLIB_LDFLAGS)
+endif
+
 # Multi-platform OSC server support
 
 ifeq ($(OSC_SUPPORT), TRUE)

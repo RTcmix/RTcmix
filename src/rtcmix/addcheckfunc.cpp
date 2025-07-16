@@ -159,12 +159,15 @@ RTcmix::printargs(const char *funcname, const Arg arglist[], const int nargs)
    Arg arg;
 
    if (RTOption::print() >= MMP_PRINTALL) {
-      RTPrintf("============================\n");
-      RTPrintfCat("%s:  ", funcname);
-      for (i = 0; i < nargs; i++) {
-         arglist[i].printInline(stdout);
-      }
-      RTPrintf("\n");
+       // Functions which begin with an underbar can be silenced using set_option()
+       if (funcname[0] != '_' || !RTOption::printSuppressUnderbar()) {
+           RTPrintf("============================\n");
+           RTPrintfCat("%s:  ", funcname);
+           for (i = 0; i < nargs; i++) {
+               arglist[i].printInline(stdout);
+           }
+           RTPrintf("\n");
+       }
    }
 }
 

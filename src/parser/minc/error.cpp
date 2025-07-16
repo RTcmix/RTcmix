@@ -19,13 +19,6 @@ extern void rterror(const char *inst_name, const char *format, ...);
 extern int die(const char *inst_name, const char *format, ...);
 extern "C" int yy_get_stored_lineno();
 
-void
-sys_error(const char *msg)
-{
-	die("parser", "%s", msg);
-	throw(MincSystemError);
-}
-
 char *concat_error_message(char *outbuf, int maxLen, const char *message, ...)
 {
     va_list args;
@@ -55,7 +48,13 @@ minc_advise(const char *msg, ...)
    vsnprintf(buf, BUFSIZE, msg, args);
    va_end(args);
 
-	rtcmix_advise("parser", buf);
+    const char *includedFile = yy_get_current_include_filename();
+    if (includedFile) {
+        rtcmix_advise("parser", "%s ('%s', near line %d)", buf, includedFile, yy_get_stored_lineno());
+    }
+    else {
+        rtcmix_advise("parser", "%s (near line %d)", buf, yy_get_stored_lineno());
+    }
 }
 
 void

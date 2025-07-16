@@ -19,6 +19,7 @@ using namespace std;
 
 #define DSOPATH_MAX  PATH_MAX * 2
 #define OSCHOST_MAX  128
+#define SUPPRESSED_NAMELIST_MAX 32768
 
 bool RTOption::_audio = true;
 bool RTOption::_play = true;
@@ -32,6 +33,7 @@ bool RTOption::_bailOnParserWarning = false;
 bool RTOption::_autoLoad = false;
 bool RTOption::_fastUpdate = false;
 bool RTOption::_requireSampleRate = true;
+bool RTOption::_printSuppressUnderbar = false;
 
 double RTOption::_bufferFrames = DEFAULT_BUFFER_FRAMES;
 int RTOption::_bufferCount = DEFAULT_BUFFER_COUNT;
@@ -57,7 +59,7 @@ char RTOption::_oscHost[OSCHOST_MAX];
 char RTOption::_dsoPath[DSOPATH_MAX];
 char RTOption::_homeDir[PATH_MAX];
 char RTOption::_rcName[PATH_MAX];
-
+char RTOption::_suppressedNamelist[SUPPRESSED_NAMELIST_MAX];
 
 void RTOption::init()
 {
@@ -95,6 +97,7 @@ void RTOption::init()
 	_dsoPath[0] = 0;
 	_homeDir[0] = 0;
 	_rcName[0] = 0;
+    _suppressedNamelist[0] = 0;
 
 	// initialize home directory and full path of user's configuration file
 
@@ -106,10 +109,11 @@ void RTOption::init()
 	strncpy(_homeDir, dir, PATH_MAX);
 	_homeDir[PATH_MAX - 1] = 0;
 
-	char *rc = new char[strlen(dir) + 1 + strlen(CONF_FILENAME) + 1];
-	strcpy(rc, dir);
-	strcat(rc, "/");
-	strcat(rc, CONF_FILENAME);
+    size_t rclen = strlen(dir) + 1 + strlen(CONF_FILENAME) + 1;
+	char *rc = new char[rclen];
+	strncpy(rc, dir, rclen);
+	strncat(rc, "/", rclen);
+	strncat(rc, CONF_FILENAME, rclen);
 	strncpy(_rcName, rc, PATH_MAX);
 	_rcName[PATH_MAX - 1] = 0;
 	delete [] rc;
@@ -208,6 +212,13 @@ int RTOption::readConfigFile(const char *fileName)
 		requireSampleRate(bval);
 	else if (result != kConfigNoValueForKey)
 		reportError("%s: %s.", conf.getLastErrorText(), key);
+
+    key = kOptionPrintSuppressUnderbar;
+    result = conf.getValue(key, bval);
+    if (result == kConfigNoErr)
+        printSuppressUnderbar(bval);
+    else if (result != kConfigNoValueForKey)
+        reportError("%s: %s.", conf.getLastErrorText(), key);
 
 	// number options .........................................................
 
@@ -370,6 +381,8 @@ int RTOption::writeConfigFile(const char *fileName)
 										fastUpdate() ? "true" : "false");
 	fprintf(stream, "%s = %s\n", kOptionRequireSampleRate,
 										requireSampleRate() ? "true" : "false");
+    fprintf(stream, "%s = %s\n", kOptionPrintSuppressUnderbar,
+                                        printSuppressUnderbar() ? "true" : "false");
 
 	// write number options
 	fprintf(stream, "\n# Number options: key = value\n");
@@ -476,11 +489,12 @@ char *RTOption::dsoPath(const char *pathName)
 
 char *RTOption::dsoPathPrepend(const char *pathName)
 {
-	char *str = new char[strlen(pathName) + 1 + strlen(_dsoPath) + 1];
-	strcpy(str, pathName);
+    size_t strlength = strlen(pathName) + 1 + strlen(_dsoPath) + 1;
+	char *str = new char[strlength];
+	strncpy(str, pathName, strlength);
 	if (strlen(_dsoPath)) {
-		strcat(str, ":");
-		strcat(str, _dsoPath);
+		strncat(str, ":", strlength);
+		strncat(str, _dsoPath, strlength);
 	}
 	strncpy(_dsoPath, str, DSOPATH_MAX);
 	_dsoPath[DSOPATH_MAX - 1] = 0;
@@ -490,11 +504,12 @@ char *RTOption::dsoPathPrepend(const char *pathName)
 
 char *RTOption::dsoPathAppend(const char *pathName)
 {
-	char *str = new char[strlen(_dsoPath) + 1 + strlen(pathName) + 1];
-	strcpy(str, _dsoPath);
+    size_t strlength = strlen(_dsoPath) + 1 + strlen(pathName) + 1;
+	char *str = new char[strlength];
+	strncpy(str, _dsoPath, strlength);
 	if (strlen(_dsoPath))
-		strcat(str, ":");
-	strcat(str, pathName);
+		strncat(str, ":", strlength);
+	strncat(str, pathName, strlength);
 	strncpy(_dsoPath, str, DSOPATH_MAX);
 	_dsoPath[DSOPATH_MAX - 1] = 0;
 	delete [] str;
@@ -507,6 +522,15 @@ char *RTOption::rcName(const char *rcName)
 	_rcName[PATH_MAX - 1] = 0;
 	return _rcName;
 }
+
+char *RTOption::suppressedFunNamelist(const char *nameList)
+{
+    strncpy(_suppressedNamelist, nameList, SUPPRESSED_NAMELIST_MAX-1);
+    strncat(_suppressedNamelist, ",", SUPPRESSED_NAMELIST_MAX);
+    _suppressedNamelist[SUPPRESSED_NAMELIST_MAX - 1] = 0;
+    return _suppressedNamelist;
+}
+
 
 void RTOption::dump()
 {
@@ -522,8 +546,10 @@ void RTOption::dump()
 	cout << kOptionAutoLoad << ": " << _autoLoad << endl;
 	cout << kOptionFastUpdate << ": " << _fastUpdate << endl;
 	cout << kOptionRequireSampleRate << ": " << _requireSampleRate << endl;
+    cout << kOptionPrintSuppressUnderbar << ": " << _printSuppressUnderbar << endl;
 	cout << kOptionBufferFrames << ": " << _bufferFrames << endl;
 	cout << kOptionBufferCount << ": " << _bufferCount << endl;
+    cout << kOptionPrintListLimit << ": " << _printSuppressUnderbar << endl;
 	cout << kOptionMuteThreshold << ": " << _muteThreshold << endl;
 	cout << kOptionOSCInPort << ": " << _oscInPort << endl;
 	cout << kOptionDevice << ": " << _device << endl;
@@ -587,6 +613,8 @@ int get_bool_option(const char *option_name)
 		return (int) RTOption::fastUpdate();
 	else if (!strcmp(option_name, kOptionRequireSampleRate))
 		return (int) RTOption::requireSampleRate();
+    else if (!strcmp(option_name, kOptionPrintSuppressUnderbar))
+        return (int) RTOption::printSuppressUnderbar();
 
 	assert(0 && "unsupported option name");		// program error
 	return 0;
@@ -618,6 +646,8 @@ void set_bool_option(const char *option_name, int value)
 		RTOption::fastUpdate((bool) value);
 	else if (!strcmp(option_name, kOptionRequireSampleRate))
 		RTOption::requireSampleRate((bool) value);
+    else if (!strcmp(option_name, kOptionPrintSuppressUnderbar))
+        RTOption::printSuppressUnderbar((bool) value);
 	else
 		assert(0 && "unsupported option name");
 }

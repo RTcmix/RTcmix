@@ -90,7 +90,7 @@ int RTcmixMIDIInput::init() {
     _MIDIToMain = Pm_QueueCreate(MSG_QUEUE_SIZE, sizeof(RTMQMessage));
     _mainToMIDI = Pm_QueueCreate(MSG_QUEUE_SIZE, sizeof(RTMQMessage));
     if (_mainToMIDI == NULL || _MIDIToMain == NULL) {
-        fprintf(stderr, "Could not create MIDI message queues.\n");
+        rterror("setup_midi", "Could not create MIDI message queues.");
         return -1;
     }
 
@@ -126,19 +126,19 @@ int RTcmixMIDIInput::init() {
     }
     const PmDeviceInfo *info = Pm_GetDeviceInfo(id);
     if (info == NULL) {
-        fprintf(stderr, "Could not open MIDI input device %d.\n", id);
+        rterror("setup_midi", "Could not open MIDI input device %d.", id);
         return -1;
     }
     else if (!devProvided) {
-        fprintf(stderr, "WARNING: using default MIDI input device \"%s\".\n", info->name);
+        rtcmix_warn("setup_midi", "Using default MIDI input device \"%s\".\n", info->name);
     }
     else if (!devFound) {
-        fprintf(stderr, "WARNING: no match for MIDI input device \"%s\""
-                        " ... using default \"%s\".\n", devname, info->name);
+        rtcmix_warn("setup_midi", "No match for MIDI input device \"%s\""
+                        " ... using default \"%s\".", devname, info->name);
     }
 	PmError err = Pm_OpenInput(&_instream, id, NULL, INBUF_SIZE, NULL, NULL);
 	if (err != pmNoError) {
-		fprintf(stderr, "Could not open MIDI input stream: %s.\n",
+        rterror("setup_midi", "Could not open MIDI input stream: %s.",
 									Pm_GetErrorText(err));
 		return -1;
 	}
@@ -419,18 +419,18 @@ int RTcmixMIDIOutput::init()
             }
         }
         if (!found) {
-            fprintf(stderr, "WARNING: no match for MIDI output device \"%s\""
-                    " ... using default.\n", devname);
+            rtcmix_warn("setup_midi", "No match for MIDI output device \"%s\""
+                    " ... using default.", devname);
             _deviceID = Pm_GetDefaultOutputDeviceID();
         }
     }
     else {
-        fprintf(stderr, "WARNING: using default MIDI output device.\n");
+        rtcmix_advise("setup_midi", "Using default MIDI output device.");
         _deviceID = Pm_GetDefaultOutputDeviceID();
     }
     const PmDeviceInfo *info = Pm_GetDeviceInfo(_deviceID);
     if (info == NULL) {
-        fprintf(stderr, "Could not open MIDI output device %d.\n", _deviceID);
+        rterror("setup_midi", "Could not open MIDI output device %d.", _deviceID);
         return -1;
     }
 #if MIDI_TIMER_LOOP
@@ -444,7 +444,7 @@ int RTcmixMIDIOutput::start(long latency)
     PRINT("Opening Portmidi output stream with latency of %ld ms\n", latency);
     PmError err = Pm_OpenOutput(&_outstream, _deviceID, NULL, INBUF_SIZE, NULL, NULL, latency);
     if (err != pmNoError) {
-        fprintf(stderr, "Could not open MIDI output stream: %s.\n", Pm_GetErrorText(err));
+        rterror(NULL,"Could not open MIDI output stream: %s.", Pm_GetErrorText(err));
         return -1;
     }
     return 0;
@@ -469,6 +469,7 @@ void RTcmixMIDIOutput::sendNoteOn(long timestamp, uchar chan, uchar pitch, uchar
     buffer.timestamp = timestamp;
     PRINT("RTcmixMIDIOutput::sendNoteOn: sending event with ts = %ld\n", timestamp);
     lock();
+    _noteList.push_front(MidiItem(chan, pitch));
     Pm_Write(outstream(), &buffer, 1);
     unlock();
 }
@@ -480,6 +481,7 @@ void RTcmixMIDIOutput::sendNoteOff(long timestamp, uchar chan, uchar pitch, ucha
     buffer.timestamp = timestamp;
     PRINT("RTcmixMIDIOutput::sendNoteOff: sending event with ts = %ld\n", timestamp);
     lock();
+    _noteList.remove(MidiItem(chan, pitch));
     Pm_Write(outstream(), &buffer, 1);
     unlock();
 }
@@ -519,26 +521,54 @@ void RTcmixMIDIOutput::sendProgramChange(long timestamp, uchar chan, uchar progr
     unlock();
 }
 
+void RTcmixMIDIOutput::sendSysEx(long timestamp, unsigned char *msg)
+{
+    lock();
+    Pm_WriteSysEx(outstream(), timestamp, msg);
+    unlock();
+}
+
 void RTcmixMIDIOutput::sendMIDIStart(long timestamp)
 {
-    PmEvent buffer;
-    buffer.message = Pm_Message(0xFA, 0, 0);
-    buffer.timestamp = timestamp;
+    PmEvent startEvent, SPPEvent;
+    startEvent.message = Pm_Message(0xFA, 0, 0);
+    startEvent.timestamp = timestamp;
+    SPPEvent.message = Pm_Message(0xF2, 0, 0);
+    SPPEvent.timestamp = timestamp;
     PmEvent buffers[16];
     for (int chan = 0; chan < 16; ++chan) {
         buffers[chan].message = Pm_Message(make_status(kControl, chan), 121, 0);   // ResetAllControllers
         buffers[chan].timestamp = timestamp;
     }
-    PRINT("RTcmixMIDIOutput::sendMIDIStart: sending MIDI Start and ResetAllControllers events with ts = %ld\n", timestamp);
+//    PRINT("RTcmixMIDIOutput::sendMIDIStart: sending MIDI ResetAllControllers, Start and SPP events with ts = %ld\n", timestamp);
+    PRINT("RTcmixMIDIOutput::sendMIDIStart: sending MIDI ResetAllControllers and MTC at ts = %ld\n", timestamp);
     lock();
     Pm_Write(outstream(), buffers, 16);
-    Pm_Write(outstream(), &buffer, 1);
+//   Pm_Write(outstream(), &SPPEvent, 1);
+//   Pm_Write(outstream(), &startEvent, 1);
+    // MMC MIDI sysex for "go to beginning of track"
+    unsigned char msg[14] = { 0xF0, 0x7F, 0x7F, 0x06, 0x44, 0x06, 0x01, 0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF7 };
+    Pm_WriteSysEx(outstream(), timestamp, msg);
     unlock();
     PRINT("RTcmixMIDIOutput::sendMIDIStart: Done\n");
 }
 
+#define SEND_MIDI_NOTE_OFFS
+
 void RTcmixMIDIOutput::sendMIDIStop(long timestamp)
 {
+#ifdef SEND_MIDI_NOTE_OFFS
+    rtcmix_debug(NULL, "Sending MIDI Note Off events for Remaining Notes");
+    lock();
+    for (std::list<MidiItem>::iterator it = _noteList.begin(); it != _noteList.end(); ++it){
+        MidiItem item = *it;
+        PmEvent buffer;
+        buffer.message = Pm_Message(make_status(kNoteOff, item.first), item.second, 0);
+        buffer.timestamp = timestamp;
+        Pm_Write(outstream(), &buffer, 1);
+    }
+    unlock();
+#else
     PmEvent buffer1, buffer2;
     buffer1.message = Pm_Message(0xFF, 0, 0);   // system reset
     buffer1.timestamp = timestamp;
@@ -556,6 +586,7 @@ void RTcmixMIDIOutput::sendMIDIStop(long timestamp)
     Pm_Write(outstream(), &buffer1, 1);
     Pm_Write(outstream(), &buffer2, 1);
     unlock();
+#endif
     PRINT("RTcmixMIDIOutput::sendMIDIStop: Done\n");
 }
 
@@ -563,7 +594,7 @@ RTcmixMIDIOutput *createMIDIOutputPort()
 {
     // We need rtsetparams in order to set the latency of the MIDI system.
     if (!RTcmix::rtsetparams_was_called()) {
-        fprintf(stderr, "You must call rtsetparams before setting up MIDI output\n");
+        rterror(NULL, "You must call rtsetparams before setting up MIDI output.");
         return NULL;
     }
     RTcmixMIDIOutput *midiport = NULL;

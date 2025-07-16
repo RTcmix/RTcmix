@@ -1,4 +1,4 @@
-rtsetparams(44100, 1, 2048);
+rtsetparams(44100, 1, 1024);
 
 rtinput("../../../snd/nucular.wav");
 
@@ -6,6 +6,8 @@ load("TRANS");
 load("EQ");
 load("./libFEEDBACK.so");
 
+if (?fbgain) { fbgain = $fbgain; }
+else { fbgain = 0.1; }
 
 bus_config("TRANS", "in 0", "aux 0 out");
 bus_config("FBRECEIVE", "aux 1 out");	// no apparent input from RTcmix’s point of view
@@ -17,8 +19,8 @@ dur = DUR() * 2;
 bufindex = 0;
 
 TRANS(0, 0, dur, gain=0.4, -1.0);
-FBRECEIVE(0, dur*2, $fbgain, bufindex);
+FBRECEIVE(0, dur*2, fbgain, bufindex);
 MIX(0, 0, dur*2, 1, 0);
-EQ(0, 0, dur*2, gain=0.8, type="lowpass", inchan=0, pan=0, bypass=0, freq=500, Q=2)
+EQ(0, 0, dur*2, gain=0.8, type="lowpass", inchan=0, pan=0, bypass=0, freq=1500, Q=2)
 FBSEND(0, 0, dur*2, 1, bufindex);
 

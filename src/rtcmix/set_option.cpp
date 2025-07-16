@@ -35,6 +35,7 @@ enum ParamType {
 	AUTO_LOAD,
 	FAST_UPDATE,
 	REQUIRE_SAMPLE_RATE,
+    PRINT_SUPPRESS_UNDERBAR,
 	BUFFER_FRAMES,
 	BUFFER_COUNT,
 	OSC_INPORT,
@@ -49,7 +50,8 @@ enum ParamType {
 	MIDI_OUTDEVICE,
 	OSC_HOST,
 	DSOPATH,
-	RCNAME
+	RCNAME,
+    SUPPRESSED_FUN_NAMES
 };
 
 #define OPT_STRLEN 128
@@ -77,6 +79,7 @@ static Param _param_list[] = {
 	{ kOptionAutoLoad, AUTO_LOAD, false},
 	{ kOptionFastUpdate, FAST_UPDATE, false},
 	{ kOptionRequireSampleRate, REQUIRE_SAMPLE_RATE, true},
+    { kOptionPrintSuppressUnderbar, PRINT_SUPPRESS_UNDERBAR, false },
 
 	// number options
 	{ kOptionBufferFrames, BUFFER_FRAMES, false},
@@ -96,6 +99,7 @@ static Param _param_list[] = {
 	{ kOptionOSCHost, OSC_HOST, false},
 	{ kOptionDSOPath, DSOPATH, false},
 	{ kOptionRCName, RCNAME, false},
+    { kOptionSuppressedFunNames, SUPPRESSED_FUN_NAMES, false },
 
 	// These are the deprecated single-value option strings.
 	// Please don't add more.
@@ -272,6 +276,10 @@ static int _set_key_value_option(const char *key, const char *sval,
 			status = _str_to_bool(sval, bval);
 			RTOption::requireSampleRate(bval);
 			break;
+        case PRINT_SUPPRESS_UNDERBAR:
+            status = _str_to_bool(sval, bval);
+            RTOption::printSuppressUnderbar(bval);
+            break;
 
 		// number options
 
@@ -342,6 +350,9 @@ static int _set_key_value_option(const char *key, const char *sval,
 		case RCNAME:
 			RTOption::rcName(sval);
 			break;
+        case SUPPRESSED_FUN_NAMES:
+            RTOption::suppressedFunNamelist(sval);
+            break;
 		default:
 			break;
 	}

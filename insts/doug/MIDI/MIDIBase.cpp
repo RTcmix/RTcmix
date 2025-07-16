@@ -45,7 +45,7 @@ int MIDIBase::init(double p[], int n_args)
 	const float dur = p[1];
     _midiChannel = (int)p[2];
     if (_midiChannel < 0 || _midiChannel > 15) {
-        return die("NOTE", "Illegal MIDI channel");
+        return die(name(), "Illegal MIDI channel");
     }
 
 	if (rtsetoutput(outskip, dur, this) == -1)

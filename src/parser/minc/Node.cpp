@@ -228,18 +228,6 @@ static const char *methodNameFromStructAndFunction(const char *structName, const
     return strsave(sMethodNameBuffer);
 }
 
-static const char *nameFromMangledName(const char *mangledName)
-{
-    if (*mangledName == '#') {
-        static char sMethodNameBuffer[128];
-        strncpy(sMethodNameBuffer, mangledName+1, 128);
-        return sMethodNameBuffer;
-    }
-    else {
-        return mangledName;
-    }
-}
-
 /* prototypes for local functions */
 static void push_list(void);
 static void pop_list(void);
@@ -309,6 +297,9 @@ Node *	Node::exct()
 #ifdef DEBUG_FILENAME_INCLUDES
     printf("%s::exct(%p) setting current location to '%s', current_lineno to %d\n", classname(), this, includeFilename, lineno);
 #endif
+    if (RTOption::parserWarnings() < MincAllWarnings) {
+        sMincWarningLevel = MincNoDefaultedArgWarnings;
+    }
     yy_store_lineno(lineno);
     yy_set_current_include_filename(includeFilename);
 	Node *outNode = doExct();	// this is redefined on all subclasses
@@ -322,7 +313,7 @@ Node *	Node::exct()
 
 /* This copies a node's value and handles ref counting when necessary */
 Node *
-Node::copyValue(Node *source, bool allowTypeOverwrite)
+Node::copyValue(Node *source, bool allowTypeOverwrite, bool suppressOverwriteWarning)
 {
     TPRINT("Node::copyValue(this=%p, Node=%p)\n", this, source);
 #ifdef EMBEDDED
@@ -333,7 +324,10 @@ Node::copyValue(Node *source, bool allowTypeOverwrite)
 #endif
     if (dataType() != MincVoidType && source->dataType() != dataType()) {
         if (allowTypeOverwrite) {
-            minc_warn("Overwriting %s variable '%s' with a %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
+            if (!suppressOverwriteWarning) {
+                minc_warn("Overwriting %s variable '%s' with a %s", MincTypeName(dataType()), name(),
+                          MincTypeName(source->dataType()));
+            }
         }
         else {
             minc_die("Cannot overwrite '%s' (type %s) with a %s", name(), MincTypeName(dataType()), MincTypeName(source->dataType()));
@@ -428,6 +422,9 @@ Node *	OperationBase::do_op_num(Node *node, const MincFloat val1, const MincFloa
           node->v = val1 * val2;
          break;
       case OpDiv:
+          if (val2 == 0.0f) {
+              minc_warn("Divide-by-zero will return 'inf'!");
+          }
           node->v = val1 / val2;
          break;
       case OpMod:
@@ -776,7 +773,8 @@ Node *	NodeListElem::doExct()
 		Node * tmp = child(1)->exct();
 		/* Copy entire MincValue union from expr to this and to stack. */
 		TPRINT("NodeListElem %p copying child value into self and to arguments MincList[%d]\n", this, sMincListLen);
-		copyValue(tmp);
+        // We always allow overwrites of any list element with any other
+		copyValue(tmp, /* allowTypeOverwrite=*/ true, /* suppressOverwriteWarning=*/ true);
 		copyNodeToMincList(&sMincList[sMincListLen], tmp);
 		sMincListLen++;
 		TPRINT("NodeListElem: list at level %d now len %d\n", list_stack_ptr, sMincListLen);
@@ -823,7 +821,7 @@ MincValue Subscript::readValueAtIndex(Node *listNode, Node *indexNode) {
         index = len - 1;
         frac = 0;
     } else if (fltindex > (MincFloat) (len - 1)) {
-        minc_warn("attempt to index past the end of list '%s': returning last element", listNode->symbol()->name());
+        minc_warn("attempt to index past the end of list '%s': returning last element", listNode->name());
         index = len - 1;
         frac = 0;
     }
@@ -868,7 +866,7 @@ void Subscript::writeValueToIndex(Node *listNode, Node *indexNode, const MincVal
         return;
     }
     int len = 0;
-    MincList *theList = (MincList *) listNode->symbol()->value();
+    MincList *theList =  listNode->symbol() ? (MincList *) listNode->symbol()->value() : (MincList *) listNode->value();
     MincFloat fltindex = (MincFloat) indexNode->value();
     int index = (int) fltindex;
     if (fltindex - (MincFloat) index > 0.0)
@@ -985,7 +983,8 @@ Node *	NodeSubscriptWrite::doExct()	// was exct_subscript_write()
             minc_die("attempt to index or store into L-variable '%s' which is not a list or map", object->name());
             break;
     }
-	copyValue(child(2));
+    // Copying new variable types into a list is always OK
+	copyValue(child(2), /* allowTypeOverwrite=*/ true, /* suppressOverwriteWarning=*/ true);
 	return this;
 }
 
@@ -1074,11 +1073,24 @@ Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char 
     int savedLineNo=0, savedScope=0, savedCallDepth=0, savedIfElseDepth=0, savedForWhileDepth=0;
     try {
         // This replicates the argument-printing mechanism used by compiled-in functions.
+        // Functions beginning with underbar, or those in a "suppressed list", can be "privatized" using set_option()
         if (RTOption::print() >= MMP_PRINTS) {
-            RTPrintf("============================\n");
-            RTPrintfCat("%s: ", nameFromMangledName(sCalledFunctions.back()));
-            MincValue retval;
-            call_builtin_function("print", sMincList, sMincListLen, &retval);
+            const char *functionName = sCalledFunctions.back();
+            bool isSuppressed = functionName[0] == '_' && RTOption::printSuppressUnderbar();
+            if (!isSuppressed) {
+                const char *suppressedList = RTOption::suppressedFunNamelist();
+                if (suppressedList != NULL) {
+                    char nameWithComma[128];    // there better not be a function name longer than this!
+                    snprintf(nameWithComma, 128, "%s,", functionName);
+                    isSuppressed = (strstr(suppressedList, nameWithComma) != NULL);
+                }
+            }
+            if (!isSuppressed) {
+                RTPrintf("============================\n");
+                RTPrintfCat("%s: ", functionName);
+                MincValue retval;
+                call_builtin_function("print", sMincList, sMincListLen, &retval);
+            }
         }
         // Create a symbol for 'this' within the function's scope if this is a method.
         function->handleThis(thisSymbol);
@@ -1719,6 +1731,7 @@ Node *	NodeArgListElem::doExct()
             case MincMapType:
             case MincStructType:
             case MincFunctionType:
+            case MincVoidType:
 				if (argSym->dataType() != argValue.dataType()) {
 					minc_die("%s() arg %d ('%s') passed as %s, expecting %s",
 								sCalledFunctions.back(), sArgListIndex, argSym->name(), MincTypeName(argValue.dataType()), MincTypeName(argSym->dataType()));

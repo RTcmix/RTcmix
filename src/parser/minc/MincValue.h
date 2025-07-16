@@ -25,6 +25,7 @@ class MincList : public MincObject, public RefCounted
 public:
     MincList(int len=0);
     void resize(int newLen);
+    bool removeAtIndex(int itemIndex);
     bool operator == (const MincList &rhs);
     bool operator < (const MincList &rhs);
     bool operator > (const MincList &rhs);
@@ -48,6 +49,7 @@ public:
     MincMap();
     int len() const { return (int) map.size(); }
     bool contains(const MincValue &element);
+    bool remove(const MincValue &element);
     std::map<MincValue, MincValue, MincValueCmp> map;
     void        print();
 protected:
@@ -101,6 +103,10 @@ private:
 
 class MincValue {
 public:
+    void *operator new(size_t size) { return (void *) emalloc(size); }
+    void* operator new[]( std::size_t size ) { return (void *) emalloc(size); }
+    void operator delete(void *ptr) { efree(ptr); }
+    void operator delete[](void *ptr) { efree(ptr); }
     MincValue() : type(MincVoidType) { _u.list = NULL; }
     MincValue(MincFloat f) : type(MincFloatType) { _u.number = f; }
     MincValue(MincString s) : type(MincStringType) { _u.string = s; }

@@ -81,6 +81,17 @@
 // 5/30/2020
 // v. 2.01
 // -- now completely 64-bit, with perform64 method, etc.  used max-sdk-7.3.3
+//
+// (did v. 2.03 to fix crashing on Big Sur; an alloc problem in the RTcmix code)
+//  (max_input_fds in RTcmix.cpp)
+//
+// 9/1/2022
+// v. 2.05
+// now works under rosetta on M1 machines, OSX Monterey (or ealier)
+// -- had to ditch NSModule for loading the rtcmixdylib.so, using the
+// old dlopen() scheme instead (where it copies the rtcmixdylib.so with
+// a new name in order to get a private name/data space for each [rtcmix~])
+// note:  see the note about rm -f "rtcmixdylib*.so" (tagged with BGGx)
 
 
 // Hand-defining these here because these will always be true, and are needed to get the right portions of RTcmix_API.h
@@ -88,8 +99,8 @@
 #define EMBEDDEDAUDIO 1
 #define MAXMSP 1
 
-#define VERSION "2.03" // fix for max_input_fds included, Bg Sur + later
-#define RTcmixVERSION "RTcmix-maxmsp-5.4.0"
+#define VERSION "2.05"
+#define RTcmixVERSION "RTcmix-maxmsp-5.4.1"
 
 #if MAX_SDK_VERSION==6
 #include <ext.h>
@@ -119,12 +130,16 @@
 #include "buffer.h"
 #include "../../include/RTcmix_API.h"
 
-// for the NSmodule stuff
-#include <mach-o/dyld.h>
+// for the NSModule stuff
+// NSModule no longer segregates data/name space, back to dlopen()
+// keeping it here just in case (glad I did so with dlopen()!)
+//#include <mach-o/dyld.h>
 // BGG kept the dlopen() stuff in for future use
 // for the dlopen() loader
-//#include <dlfcn.h>
-//int dylibincr;
+
+// BGG using the dlopen stuff for rosetta
+#include <dlfcn.h>
+int dylibincr;
 
 // MAXCHANS can be configured in the build to allow for up to 128 audio channels.
 // If it is defined, use it to configure the input and output count.  Else, default.
@@ -160,6 +175,7 @@
 typedef int (*rtcmixinitFunctionPtr)();
 typedef int (*rtcmixdestroyFunctionPtr)();
 typedef int (*rtsetparamsFunctionPtr)(float sr, int nchans, int vecsize, int recording, int bus_count);
+typedef void (*rtsetprintlevelFunctionPtr)(int level);
 typedef int (*rtcmixsetaudiobufferformatFunctionPtr)(RTcmix_AudioFormat format, int nchans);
 
 typedef int (*rtcmixrunAudioFunctionPtr)(void *inAudioBuffer, void *outAudioBuffer, int nframes);
@@ -198,6 +214,7 @@ typedef struct _rtcmix
 	rtcmixinitFunctionPtr rtcmixinit;
 	rtcmixdestroyFunctionPtr rtcmixdestroy;
 	rtsetparamsFunctionPtr rtsetparams;
+	rtsetprintlevelFunctionPtr rtsetprintlevel;
 	rtcmixsetaudiobufferformatFunctionPtr rtsetaudiobufferformat;
 	rtcmixrunAudioFunctionPtr rtrunaudio;
 	rtresetaudioFunctionPtr rtresetaudio;
@@ -214,17 +231,16 @@ typedef struct _rtcmix
 	
 	
 	// for load of the rtcmixdylib.so
-	NSObjectFileImage objectFileImage;
-	NSModule module;
-	NSSymbol symbol;
+	// now use dlopen()
+	// NSObjectFileImage objectFileImage;
+	// NSModule module;
+	// NSSymbol symbol;
 	// BGG kept the dlopen() stuff in for future use
-	/*
-	 // for the load of rtcmixdylibN.so
-	 int dylibincr;
+	// for the load of rtcmixdylibN.so
+	 int dylibincr; // the instance copy of dylibincr for ths dlopen()
 	 void *rtcmixdylib;
 	 // for the full path to the rtcmixdylib.so file
 	 char pathname[1024]; // probably should be malloc'd
-	 */
 	
 	// space for these malloc'd in rtcmix_dsp()
 	float *maxmsp_outbuf;
@@ -255,7 +271,7 @@ typedef struct _rtcmix
 	
 	// for debugging mode
 	int debugflag;
-	
+
 	int audioConfigured;	// if 1, we have already configured audio at least once
 	
 	// for setting "loadinst" mode, allowing dynamic loading of RTcmix instrumens.
@@ -376,6 +392,9 @@ void ext_main(void *r)
 	int i;
 	short path, rval;
 
+	// BGG used for dlopen(), cp-ing the dylib to a unique name
+	dylibincr = 0;
+
 	t_class *c = class_new("rtcmix~", (method)rtcmix_new, (method)rtcmix_free, (long)sizeof(t_rtcmix), 0L, A_DEFLONG, A_DEFLONG, 0);
 	
 	//standard messages; don't change these
@@ -448,6 +467,18 @@ void ext_main(void *r)
 		}
 		//post("converted to '%s'", mpathptr);
 	}
+
+	// BGG -- clean up any leftover rtcmixdylib.so files from a previous crash
+	char rm_command[1024]; // should probably be malloc'd
+	// BGGx -- for some reason "rm -f rtcmixdylib*.so" doesn't work
+	// so I'm doing 100 'by hand'.  Hopefully no-one will exceed this
+	// it won't be terrible if they do, just some orphan rtcmixdylibs
+	// hanging around.
+	// when I do the uRTcmix load thing instead this will go away
+	for (int ii = 0; ii < 100; ii++)  {
+		sprintf(rm_command, "/bin/rm -f \"%s/rtcmixdylib%d.so\" ", mpathptr, ii);
+		system(rm_command);
+	}
 	
 	ps_buffer = gensym("buffer~"); // for [buffer~]
     
@@ -502,7 +533,8 @@ void *rtcmix_new(long num_inoutputs, long num_additional)
 	}
 
 	// load the dylib
-	x->module = NULL; // new object, first time
+// BGG -- not using NSModule an more
+//	x->module = NULL; // new object, first time
 	
 	// This calls RTcmix_init() internally -- should we make this explicit?
 	if (rtcmix_load_dylib(x) == -1) {
@@ -653,14 +685,16 @@ void rtcmix_dsp64(t_rtcmix *x, t_object *dsp64, short *count, double samplerate,
 int rtcmix_load_dylib(t_rtcmix *x)
 {
 	rtcmix_dprint(x, "rtcmix_load_dylib() called");
-	
+
+	// BGG -- this "pathname" was used in the NSModule stuff
 	// for the full path to the rtcmixdylib.so file
-	char pathname[1000]; // probably should be malloc'd
+	//char pathname[1000]; // probably should be malloc'd
 	
 	// these are the entry function pointers in to the rtcmixdylib.so lib
 	x->rtcmixinit = NULL;
 	x->rtcmixdestroy = NULL;
 	x->rtsetparams = NULL;
+	x->rtsetprintlevel = NULL;
 	x->rtsetaudiobufferformat = NULL;
 	x->rtrunaudio = NULL;
 	x->rtresetaudio = NULL;
@@ -676,6 +710,15 @@ int rtcmix_load_dylib(t_rtcmix *x)
 	x->setprintcallback = NULL;
 	
 	// RTcmix stuff
+
+// beginning of NSModule stuff
+/*
+ *
+ *
+ *
+  ok -- I'm commenting ot the NSModule stuff because we have to go  back
+  to dlopen() (and counting the dylib loads).  the dlopen() code is below 
+  all this -- BGG 9/2020
 	// full path to the rtcmixdylib.so file
 	sprintf(pathname, "%s/rtcmixdylib.so", mpathptr);
 	
@@ -693,7 +736,7 @@ int rtcmix_load_dylib(t_rtcmix *x)
 		x->module = NSLinkModule(x->objectFileImage, pathname, NSLINKMODULE_OPTION_PRIVATE | NSLINKMODULE_OPTION_BINDNOW);
 	else // in 'load' mode, allow RTcmix instruments to be dynloaded (only 1 rtcmix~ object allowed!)
 		x->module = NSLinkModule(x->objectFileImage, pathname, NSLINKMODULE_OPTION_BINDNOW);
-	
+
 	if (x->module == NULL) {
 		error("could not link the rtcmixdylib.so");
 		return(-1);
@@ -855,9 +898,13 @@ int rtcmix_load_dylib(t_rtcmix *x)
 		if (!(x->unloadinst))
 			error("rtcmix~ could not find unloadinst()");
 	}
+*
+*
+*
+*/
+// end of the NSModule stuff
 	
 	// BGG kept this in for dlopen() stuff, future if NSLoad gets dropped
-	/*
 	 char cp_command[1024]; // should probably be malloc'd
 	 
 	 // first time around:
@@ -865,7 +912,7 @@ int rtcmix_load_dylib(t_rtcmix *x)
 	 
 	 // full path to the rtcmixdylib.so file
 	 sprintf(x->pathname, "%s/rtcmixdylib%d.so", mpathptr, x->dylibincr);
-	 
+
 	 // ok, this is fairly insane.  To guarantee a fully-isolated namespace with dlopen(), we need
 	 // a totally *unique* dylib, so we copy this.  Deleted in rtcmix_free() below
 	 // RTLD_LOCAL doesn't do it all - probably the global vars in RTcmix
@@ -880,16 +927,75 @@ int rtcmix_load_dylib(t_rtcmix *x)
 	 x->rtcmixdylib = dlopen(x->pathname,  RTLD_NOW | RTLD_LOCAL);
 	 
 	 // find the main entry to be sure we're cool...
-	 x->rtcmixinit = dlsym(x->rtcmixdylib, "_RTcmix_init");
-	 if (x->rtcmixinit)	x->rtcmixinit();
+	 x->rtcmixinit = dlsym(x->rtcmixdylib, "RTcmix_init");
+	 if (x->rtcmixinit)
+		x->rtcmixinit();
 	 else error("rtcmix~ could not call RTcmix_init()");
+
+	x->rtcmixdestroy = dlsym(x->rtcmixdylib, "RTcmix_destroy");
+	if (!(x->rtcmixdestroy))
+		error("rtcmix~ could not find RTcmix_destroy()");
 	 
 	 x->rtsetparams = dlsym(x->rtcmixdylib, "RTcmix_setparams");
 	 if (!(x->rtsetparams))
-	 error("rtcmix~ could not find RTcmix_setparams()");
-	 
-	 etc...
-	 */
+		 error("rtcmix~ could not find RTcmix_setparams()");
+
+	 x->rtsetprintlevel = dlsym(x->rtcmixdylib, "RTcmix_setPrintLevel");
+	 if (!(x->rtsetprintlevel))
+		 error("rtcmix~ could not find RTcmix_setPrintLevel()");
+
+	x->rtsetaudiobufferformat = dlsym(x->rtcmixdylib, "RTcmix_setAudioBufferFormat");
+	if (!(x->rtsetaudiobufferformat))
+		error("rtcmix~ could not find RTcmix_setAudioBufferFormat()");
+
+	x->rtrunaudio = dlsym(x->rtcmixdylib, "RTcmix_runAudio");
+	if (!(x->rtrunaudio))
+		error("rtcmix~ could not find RTcmix_runAudio()");
+
+	x->rtresetaudio = dlsym(x->rtcmixdylib,  "RTcmix_resetAudio");
+	if (!(x->rtresetaudio))
+		error("rtcmix~ could not find RTcmix_resetAudio()");
+
+	x->parse_score = dlsym(x->rtcmixdylib, "RTcmix_parseScore");
+	if (!(x->parse_score))
+		error("rtcmix~ could not find RTcmix_parseScore");
+
+	x->setbangcallback = dlsym(x->rtcmixdylib, "RTcmix_setBangCallback");
+	if (!(x->setbangcallback))
+		error("rtcmix~ could not find RTcmix_setBangCallback()");
+
+	x->setvaluescallback = dlsym(x->rtcmixdylib, "RTcmix_setValuesCallback");
+	if (!(x->setvaluescallback))
+		error("rtcmix~ could not find RTcmix_setValuesCallback()");
+ 
+	x->parse_dispatch = dlsym(x->rtcmixdylib, "parse_dispatch");
+	if (!(x->parse_dispatch))
+		error("rtcmix~ could not find parse_dispatch()");
+
+	x->setprintcallback = dlsym(x->rtcmixdylib, "RTcmix_setPrintCallback");
+	if (!(x->setprintcallback))
+		error("rtcmix~ could not find RTcmix_setPrintCallback()");
+
+	x->pfield_set = dlsym(x->rtcmixdylib, "RTcmix_setPField");
+	if (!(x->pfield_set))
+		error("rtcmix~ could not find RTcmix_setPField()");
+
+	x->buffer_set = dlsym(x->rtcmixdylib, "RTcmix_setInputBuffer");
+	if (!(x->buffer_set))
+		error("rtcmix~ could not find RTcmix_setInputBuffer()");
+
+	x->flush =  dlsym(x->rtcmixdylib, "RTcmix_flushScore");
+	if (!(x->flush))
+		error("rtcmix~ could not find RTcmix_flushScore()");
+
+	x->loadinst = dlsym(x->rtcmixdylib, "loadinst");
+	if (!(x->loadinst))
+		error("rtcmix~ could not find loadinst()");
+	
+	x->unloadinst = dlsym(x->rtcmixdylib, "unloadinst");
+	if (!(x->unloadinst))
+		error("rtcmix~ could not find unloadinst()");
+
 	
 	rtcmix_dprint(x, "rtcmix_load_dylib() complete");
 	
@@ -978,13 +1084,13 @@ void rtcmix_free(t_rtcmix *x)
 	rtcmix_dprint(x, "rtcmix_free() called");
 	
 	// BGG kept dlopen() stuff in in case NSLoad gets dropped
-	/*
 	 char rm_command[1024]; // should probably be malloc'd
-	 
+
+	// BGG -- remover the dylib cp'd for this instance
 	 dlclose(x->rtcmixdylib);
-	 sprintf(rm_command, "rm -rf \"%s\" ", x->pathname);
+	 sprintf(rm_command, "/bin/rm -f \"%s\" ", x->pathname);
 	 system(rm_command);
-	 */
+	 dlclose(x->rtcmixdylib);
 	
 	// close any open editor windows
 	if (x->m_editor)
@@ -994,7 +1100,8 @@ void rtcmix_free(t_rtcmix *x)
 	// Free the RTcmix system
 	if (x->rtcmixdestroy) {
 		rtcmix_dprint(x, "rtcmix_free calling RTcmix_destroy()");
-		x->rtcmixdestroy();
+// BGGx -- something wrong in the main rtcmix code causing frashes
+//		x->rtcmixdestroy();
 	}
 	
 	// free our transfer buffers
@@ -1002,10 +1109,11 @@ void rtcmix_free(t_rtcmix *x)
 	free(x->maxmsp_outbuf);
 	x->maxmsp_inbuf = x->maxmsp_outbuf = NULL;
 	
+	// BGG -- not using NSModule stuff any more
 	// not a bad idea to do this
-	if (x->module)
-		NSUnLinkModule(x->module, NSUNLINKMODULE_OPTION_RESET_LAZY_REFERENCES);
-	x->module = NULL;
+//	if (x->module)
+//		NSUnLinkModule(x->module, NSUNLINKMODULE_OPTION_RESET_LAZY_REFERENCES);
+//	x->module = NULL;
 	
 	dsp_free((t_pxobject *)x);
 	
@@ -1076,7 +1184,7 @@ void rtcmix_printcallback(const char *printBuffer, void *inContext)
 void rtcmix_bang(t_rtcmix *x)
 {
 	rtcmix_dprint(x, "rtcmix_bang() called");
-	
+
 	Atom a[1];
 	
 	if (x->flushflag == 1) return; // heap and queue being reset
@@ -1418,12 +1526,13 @@ void rtcmix_loadset(t_rtcmix *x, long fl)
 		dspmess(gensym("stop"));
 	}
 	
+	// BGG -- not using NSModule stuff any more
 	// and unload them (to prevent bad accesses to no-longer-existing functions)
-	if (x->module) {
-		x->unloadinst(); // this is necessary to do the dlclose() "inside" RTcmix
-		NSUnLinkModule(x->module, NSUNLINKMODULE_OPTION_RESET_LAZY_REFERENCES);
-	}
-	x->module = NULL;
+//	if (x->module) {
+//		x->unloadinst(); // this is necessary to do the dlclose() "inside" RTcmix
+//		NSUnLinkModule(x->module, NSUNLINKMODULE_OPTION_RESET_LAZY_REFERENCES);
+//	}
+//	x->module = NULL;
 	
 	if (fl == 0) {
 		x->loadinstflag = 0;

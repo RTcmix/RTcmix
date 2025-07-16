@@ -61,12 +61,23 @@ int NOTE::init(double p[], int n_args)
     return nSamps();
 }
 
+// This treats MIDI velocity 0 as a note-off
+
 void NOTE::doStart(FRAMETYPE frameOffset)
 {
     long timestamp = getEventTimestamp(frameOffset);
     int vel = (int)(0.5 + 127.0*_midiVel);
-    PRINT("NOTE: %p sending note on chan %d note %d vel %d with frame offset = %llu => timestamp %ld\n", this, _midiChannel, _midiNote, vel, frameOffset, timestamp);
-    _outputPort->sendNoteOn(timestamp, (unsigned char)_midiChannel, (unsigned char)_midiNote, (unsigned char)vel);
+    if (vel > 0) {
+        PRINT("NOTE: %p sending note on chan %d note %d vel %d with frame offset = %llu => timestamp %ld\n", this,
+              _midiChannel, _midiNote, vel, frameOffset, timestamp);
+        _outputPort->sendNoteOn(timestamp, (unsigned char) _midiChannel, (unsigned char) _midiNote,
+                                (unsigned char) vel);
+    }
+    else {
+        PRINT("NOTE: %p sending note off chan %d note %d (due to zero vel) with frame offset = %llu => timestamp %ld\n", this,
+              _midiChannel, _midiNote, frameOffset, timestamp);
+        _outputPort->sendNoteOff(timestamp, (unsigned char) _midiChannel, (unsigned char) _midiNote, 0);
+    }
 }
 
 // Called at the control rate to update parameters like amplitude, pan, etc.
@@ -75,11 +86,16 @@ void NOTE::doupdate(FRAMETYPE currentFrame)
 {
 }
 
-void NOTE::doStop(FRAMETYPE frameOffset)
-{
+void NOTE::doStop(FRAMETYPE frameOffset) {
     long timestamp = getEventTimestamp(frameOffset);
-    PRINT("NOTE: %p sending note off chan %d note %d with frame offset = %llu => timestamp %ld\n", this, _midiChannel, _midiNote, frameOffset, timestamp);
-    _outputPort->sendNoteOff(timestamp, (unsigned char)_midiChannel, (unsigned char)_midiNote, 0);
+    if ((int) (0.5 + 127.0 * _midiVel) > 0) {
+        PRINT("NOTE: %p sending note off chan %d note %d with frame offset = %llu => timestamp %ld\n", this, _midiChannel,
+               _midiNote, frameOffset, timestamp);
+        _outputPort->sendNoteOff(timestamp, (unsigned char) _midiChannel, (unsigned char) _midiNote, 0);
+    }
+    else {
+        PRINT("NOTE: skipping note-off on stop because this was a zero-velocity event\n");
+    }
 }
 
 Instrument *makeNOTE()

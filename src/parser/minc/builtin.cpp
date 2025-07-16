@@ -29,6 +29,7 @@ static MincFloat _minc_len(const MincValue args[], int nargs);
 static MincFloat _minc_interp(const MincValue args[], int nargs);
 static MincFloat _minc_index(const MincValue args[], int nargs);
 static MincFloat _minc_contains(const MincValue args[], int nargs);
+static MincFloat _minc_remove(const MincValue args[], int nargs);
 static MincString _minc_type(const MincValue args[], int nargs);
 static MincString _minc_tostring(const MincValue args[], int nargs);
 static MincString _minc_substring(const MincValue args[], int nargs);
@@ -51,7 +52,8 @@ static struct _builtins {
    { "len",       _minc_len,     NULL },
    { "interp",    _minc_interp,  NULL },
    { "index",     _minc_index,   NULL },
-   { "contains", _minc_contains, NULL },
+   { "contains",  _minc_contains, NULL },
+   { "remove",    _minc_remove,   NULL },
    { "type",      NULL,          _minc_type },
    { "tostring",  NULL,          _minc_tostring },
    { "substring", NULL,          _minc_substring },
@@ -717,6 +719,33 @@ _minc_contains(const MincValue args[], int nargs)
     }
 }
 
+MincFloat
+_minc_remove(const MincValue args[], int nargs) {
+    if (nargs != 2) {
+        minc_warn("remove: must have two arguments (container, item_to_remove)");
+        return 0;
+    }
+    MincDataType argtype = args[1].dataType();
+    assert(argtype != MincVoidType);
+    switch (args[0].dataType()) {
+        case MincListType: {
+            int item_index = (int)_minc_index(args, nargs);
+            if (item_index != -1.0) {
+                MincList *theList = (MincList *) args[0];
+                theList ? theList->removeAtIndex(item_index) : 0;
+            }
+            return 0;
+        }
+        case MincMapType: {
+            MincMap *theMap = (MincMap *) args[0];
+            return theMap ? theMap->remove(args[1]) : 0;
+        }
+        default:
+            minc_warn("remove: container must be a map");
+            return 0;
+    }
+}
+
 /* ------------------------------------------------------------------ type -- */
 /* Print the object type of the argument: float, string, handle, list, mincfunction, struct.
 */
@@ -804,6 +833,11 @@ int call_object_method(MincValue &object, const char *methodName, const MincValu
         MincValue args[2];
         concatArgs(args, object, arglist, nargs);
         *retval = (MincFloat) _minc_contains(args, 2);
+    }
+    else if (strcmp (methodName, "remove") == 0) {
+        MincValue args[2];
+        concatArgs(args, object, arglist, nargs);
+        *retval = (MincFloat) _minc_remove(args, 2);
     }
     else if (strcmp (methodName, "index") == 0) {
         MincValue args[2];

@@ -102,6 +102,7 @@
 #define kOptionAutoLoad         "auto_load"
 #define kOptionFastUpdate       "fast_update"
 #define kOptionRequireSampleRate	"require_sample_rate"
+#define kOptionPrintSuppressUnderbar "print_suppress_underbar"
 
 // number options
 #define kOptionBufferFrames     "buffer_frames"
@@ -124,6 +125,7 @@
 #define kOptionDSOPath          "dso_path"
 #define kOptionRCName           "rcname"
 #define kOptionHomeDir          "homedir"
+#define kOptionSuppressedFunNames "suppressed_fun_names"
 
 
 #ifdef __cplusplus
@@ -185,6 +187,10 @@ public:
 	static bool requireSampleRate(const bool setIt) { _requireSampleRate = setIt;
 		return _requireSampleRate; }
 
+    static bool printSuppressUnderbar() { return _printSuppressUnderbar; }
+    static bool printSuppressUnderbar(const bool setIt) { _printSuppressUnderbar = setIt;
+        return _printSuppressUnderbar; }
+
 	// number options
 
 	static double bufferFrames() { return _bufferFrames; }
@@ -244,6 +250,9 @@ public:
 	static char *rcName() { return _rcName; }
 	static char *rcName(const char *rcName);
 
+    static char *suppressedFunNamelist() { return _suppressedNamelist; };
+    static char *suppressedFunNamelist(const char *nameList);
+
 	static void dump();
 
 private:
@@ -262,6 +271,7 @@ private:
 	static bool _autoLoad;
 	static bool _fastUpdate;
 	static bool _requireSampleRate;
+    static bool _printSuppressUnderbar;
 
 	// number options
 	static double _bufferFrames;
@@ -282,6 +292,7 @@ private:
 	static char _dsoPath[];
 	static char _homeDir[];
 	static char _rcName[];
+    static char _suppressedNamelist[];
 };
 
 extern "C" {

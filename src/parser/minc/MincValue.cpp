@@ -64,6 +64,23 @@ MincList::resize(int newLen)
     delete [] oldList;
 }
 
+bool MincList::removeAtIndex(int itemIndex)
+{
+    MincValue *oldList = data;
+    int newLen = len - 1;
+    data = new MincValue[newLen];
+    int i;
+    for (i = 0; i < itemIndex; ++i) {
+        data[i] = oldList[i];
+    }
+    for (; i < newLen; i++) {
+        data[i] = oldList[i + 1];
+    }
+    len = newLen;
+    delete [] oldList;
+    return true;
+}
+
 bool
 MincList::operator == (const MincList &rhs)
 {
@@ -149,6 +166,11 @@ MincMap::~MincMap()
 bool MincMap::contains(const MincValue &element)
 {
     return map.count(element) > 0;
+}
+
+bool  MincMap::remove(const MincValue &element)
+{
+    return map.erase(element) != 0;
 }
 
 bool

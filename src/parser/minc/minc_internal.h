@@ -63,7 +63,6 @@ typedef enum {
 #define EPSILON DBL_EPSILON
 
 /* error.cpp */
-void sys_error(const char *msg);
 void minc_advise(const char *msg, ...);
 void minc_warn(const char *msg, ...);
 void minc_die(const char *msg, ...);
@@ -93,6 +92,13 @@ class RTFatalException : public RTException
 {
 public:
 	RTFatalException(const char *msg) : RTException(msg) {}
+};
+
+class MemoryException : public std::bad_alloc, public RTFatalException
+{
+public:
+    MemoryException(const char *msg) : RTFatalException(msg) {}
+    virtual const char* what() const throw() { return mesg(); }     // This will need its signature changed for C++11
 };
 
 // Code that has not been finished (DAS HACK)
@@ -155,7 +161,9 @@ class MincObject
 {
 public:
     void *operator new(size_t size);
+    void *operator new[](size_t size);
     void operator delete(void *);
+    void operator delete[](void *);
 };
 
 typedef double MincFloat;
@@ -231,16 +239,22 @@ void efree(void *mem);
 
 inline void *	MincObject::operator new(size_t size)
 {
-	char *mem = emalloc(size);
-    if (!mem) {
-        throw std::bad_alloc();
-    }
-    return mem;
+	return (void *) emalloc(size);
+}
+
+inline void *	MincObject::operator new[](size_t size)
+{
+    return (void *) emalloc(size);
 }
 
 inline void	MincObject::operator delete(void *ptr)
 {
 	efree(ptr);
+}
+
+inline void	MincObject::operator delete[](void *ptr)
+{
+    efree(ptr);
 }
 
 #endif /* _MINC_INTERNAL_H_ */
