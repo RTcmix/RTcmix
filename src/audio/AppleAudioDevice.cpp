@@ -121,6 +121,7 @@ struct AppleAudioDevice::Impl {
 		int						virtualChannels;	// what is reported publically (may vary based on mono-stereo)
 		int						inLoc, outLoc;		// circ. buffer indices
 		int						audioBufFilled;		// audioBuffer samples available
+        UInt64                  startingHostTime;   // host time of first render or record
 #if LOCK_IO
         Lockable                lock;
 #endif
@@ -136,7 +137,6 @@ struct AppleAudioDevice::Impl {
 	bool					stopping;
 	bool					recording;				// Used by OSX code
 	bool					playing;				// Used by OSX code
-	int						inputFramesAvailable;
 	pthread_t               renderThread;
     RTSemaphore *           renderSema;
     int                     underflowCount;
@@ -277,7 +277,6 @@ renderThread(NULL), renderSema(NULL), underflowCount(0)
 	stopping = false;
 	recording = false;
 	playing = false;
-	inputFramesAvailable = 0;
 	inputBufferList = NULL;
 	for (int n = REC; n <= PLAY; ++n) {
 		port[n].streamIndex = 0;
@@ -293,6 +292,7 @@ renderThread(NULL), renderSema(NULL), underflowCount(0)
 		port[n].audioBuffer = NULL;
 		port[n].inLoc = port[n].outLoc = 0;
 		port[n].audioBufFilled = 0;
+        port[n].startingHostTime = 0;
 	}
 }
 
@@ -409,6 +409,9 @@ OSStatus AppleAudioDevice::Impl::audioUnitInputCallback(void *inUserData,
 	}
 #endif
 
+    if (port->startingHostTime == 0LLU) {
+        port->startingHostTime = inTimeStamp->mHostTime;
+    }
 	DPRINT("\tCopying directly into port's audioBuffer via AudioBuffer\n");
 	// We supply our own AudioBufferList for input.  Its buffers point into our port's buffer
 	impl->setBufferList(impl->inputBufferList);
@@ -483,6 +486,9 @@ OSStatus AppleAudioDevice::Impl::audioUnitRenderCallback(void *inUserData,
             goto End;
         }
 #endif
+        if (port->startingHostTime == 0LLU) {
+            port->startingHostTime = inTimeStamp->mHostTime;
+        }
 //		const int framesToWrite = port->deviceBufFrames;
 		// NOTE TO ME:  Cannot guarantee that we will have space for deviceBufFrames worth of audio in output
 		const int framesToWrite = inNumberFrames;
@@ -710,6 +716,11 @@ AppleAudioDevice::~AppleAudioDevice()
 	delete _impl;
 }
 
+unsigned long long AppleAudioDevice::getStartTimestamp() const
+{
+    return _impl->port[_impl->playing].startingHostTime;
+}
+
 int AppleAudioDevice::doOpen(int mode)
 {
 	ENTER(AppleAudioDevice::doOpen());
@@ -930,23 +941,25 @@ int AppleAudioDevice::doClose()
 
 int AppleAudioDevice::doStart()
 {
-	ENTER(AppleAudioDevice::doStart());
-	_impl->stopping = false;
+    ENTER(AppleAudioDevice::doStart());
+    _impl->stopping = false;
     // Pre-fill the input buffers
     int preBuffers = _impl->port[!_impl->recording].audioBufFrames / _impl->port[!_impl->recording].deviceBufFrames;
-    DPRINT("AppleAudioDevice::doStart: prerolling %d slices\n", preBuffers-1);
+    DPRINT("AppleAudioDevice::doStart: prerolling %d slices\n", preBuffers - 1);
     for (int prebuf = 1; prebuf < preBuffers; ++prebuf) {
         runCallback();
-	}
+    }
 #if !RENDER_IN_CALLBACK
     // Start up the render thread
     _impl->startRenderThread(this);
 #endif
-	// Start the Audio I/O Unit
+    // Start the Audio I/O Unit
     OSStatus err = AudioOutputUnitStart(_impl->audioUnit);
-	int status = (err == noErr) ? 0 : -1;
-	if (status == -1)
-		appleError("AppleAudioDevice::doStart: failed to start audio unit", status);
+    int status = (err == noErr) ? 0 : -1;
+    if (status == -1) {
+        appleError("AppleAudioDevice::doStart: failed to start audio unit", status);
+        _impl->stopRenderThread();      // If we dont do this, the render thread is left waiting
+    }
 	return status;
 }
 
@@ -966,6 +979,9 @@ int AppleAudioDevice::doStop()
 	int status = (err == noErr) ? 0 : -1;
 	if (status == -1)
 		appleError("AppleAudioDevice::doStop: failed to stop audio unit", status);
+    else {
+        _impl->port[_impl->playing].startingHostTime = 0;
+    }
 	return status;
 }
 

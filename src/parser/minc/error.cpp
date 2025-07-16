@@ -26,6 +26,25 @@ sys_error(const char *msg)
 	throw(MincSystemError);
 }
 
+char *concat_error_message(char *outbuf, int maxLen, const char *message, ...)
+{
+    va_list args;
+
+    va_start(args, message);
+    vsnprintf(outbuf, maxLen, message, args);
+    va_end(args);
+
+    int newLen = strlen(outbuf);
+    const char *includedFile = yy_get_current_include_filename();
+    if (includedFile) {
+        snprintf(outbuf+newLen, maxLen-newLen, " ('%s', near line %d)", includedFile, yy_get_stored_lineno());
+    }
+    else {
+        snprintf(outbuf+newLen, maxLen-newLen, " (near line %d)", yy_get_stored_lineno());
+    }
+    return outbuf;
+}
+
 void
 minc_advise(const char *msg, ...)
 {

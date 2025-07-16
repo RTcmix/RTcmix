@@ -47,7 +47,7 @@ extern "C" {
 }
 
 int RVB::primes[NPRIMES + 2];
-AtomicInt RVB::primes_gotten = -1;
+AtomicInt RVB::primes_gotten(-1);
 
 /* ------------------------------------------------------------ makeRVB --- */
 Instrument *makeRVB()

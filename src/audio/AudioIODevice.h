@@ -28,6 +28,7 @@ public:
 	double		getPeak(int chan, long *peakLoc) const;
 	int			setMuteThreshold(double thresh);
 	const char *getLastError() const;
+    unsigned long long      getStartTimestamp() const;
 
 protected:
 	// AudioDevice redefinitions.

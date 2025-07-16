@@ -217,3 +217,13 @@ const char *AudioOutputGroupDevice::getLastError() const
 	}
 	return theError;
 }
+
+unsigned long long AudioOutputGroupDevice::getStartTimestamp() const {
+    unsigned long long timeStamp = 0;
+    for (int dev = 0; dev < _count; ++dev) {
+        unsigned long long ts = _devices[dev]->getStartTimestamp();     // should be 0 for non-master
+        if (ts > timeStamp)
+            timeStamp = ts;
+    }
+    return timeStamp;
+}

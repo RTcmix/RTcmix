@@ -185,7 +185,7 @@ Symbol * MincStruct::addMember(const char *name, const MincValue &value, int sco
 
     Symbol *memberSym = Symbol::create(name);
     DPRINT("MincStruct::addMember(member '%s', type %s) => symbol %p\n", name, MincTypeName(value.dataType()), memberSym);
-    memberSym->value() = value;     // initialize member value
+    memberSym->setValue(value);     // initialize member value
     memberSym->_scope = scope;
 #if ALLOW_RECURSIVE_STRUCT_INIT     /* this causes a crash if a struct contains a struct which contains a... */
     if (structType) {
@@ -252,7 +252,7 @@ MincFunction::handleThis(std::vector<Symbol *> &symbolStack)
             Node *declaredVarThis = nodeStructDecl->exct();
             declaredVarThis->copyValue(symbolForThis, NO);  // dont allow type override
             DPRINT("MincFunction::handleThis: copying source symbol's value(s) into symbol for 'this'\n");
-            declaredVarThis->symbol()->value() = symbolForThis->value();
+            declaredVarThis->symbol()->setValue(symbolForThis->value());
             nodeStructDecl->unref();
         }
         else {
@@ -448,7 +448,7 @@ bool MincValue::validType(unsigned allowedTypes) const
     return ((type & allowedTypes) == type);
 }
 
-void MincValue::print()
+void MincValue::print() const
 {
     switch (type) {
         case MincFloatType:
@@ -551,21 +551,25 @@ const MincValue& MincValue::operator = (MincMap *m)
 
 const MincValue& MincValue::operator += (const MincValue &rhs)
 {
+    throw UnimplementedException("MincValue::operator +=");
     return *this;
 }
 
 const MincValue& MincValue::operator -= (const MincValue &rhs)
 {
+    throw UnimplementedException("MincValue::operator -=");
     return *this;
 }
 
 const MincValue& MincValue::operator *= (const MincValue &rhs)
 {
+    throw UnimplementedException("MincValue::operator *=");
     return *this;
 }
 
 const MincValue& MincValue::operator /= (const MincValue &rhs)
 {
+    throw UnimplementedException("MincValue::operator /=");
     return *this;
 }
 
@@ -588,6 +592,7 @@ MincValue& MincValue::operator[] (const MincValue &index)
     if (!index.validType(MincFloatType)) throw InvalidTypeException("Index into a list must be a number");
     int iIndex = (int)(MincFloat) index;
     // FINISH ME
+    throw UnimplementedException("MincValue::operator[]");
     return _u.list->data[iIndex];
 }
 

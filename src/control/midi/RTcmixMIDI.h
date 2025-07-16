@@ -116,6 +116,7 @@ public:
     virtual void sendProgramChange(long timestamp, uchar chan, uchar program);
 
 protected:
+    static void _midiCallback(PtTimestamp timestamp, void *context);
     inline PmStream *outstream() { return _outstream; }
 private:
     int         _deviceID;

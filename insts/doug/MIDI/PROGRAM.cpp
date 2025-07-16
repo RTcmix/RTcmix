@@ -50,7 +50,7 @@ int PROGRAM::init(double p[], int n_args)
 void PROGRAM::doStart(FRAMETYPE frameOffset)
 {
 //    printf("Sending MIDI program number %d\n", _patchNumber);
-    long timestamp = (1000.0 * frameOffset) / SR;
+    long timestamp = getEventTimestamp(frameOffset);
     _outputPort->sendProgramChange(timestamp, (unsigned char)_midiChannel, (unsigned char)_patchNumber);
 }
 

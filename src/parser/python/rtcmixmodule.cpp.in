@@ -77,15 +77,15 @@ static PyNumberMethods Opaque_as_number = {
 static PyTypeObject OpaqueType = {
    PyVarObject_HEAD_INIT(NULL, 0)
 	.tp_name = "rtcmix.Opaque",
-   .tp_doc = PyDoc_STR("Handle objects"),
 	.tp_basicsize = sizeof(OpaqueObject),
 	.tp_itemsize = 0,
-   .tp_flags = Py_TPFLAGS_BASETYPE,		// was Py_TPFLAGS_CHECKTYPES
-	//.tp_new = PyType_GenericNew,
 	.tp_dealloc = (destructor) Opaque_dealloc,
    .tp_getattr = (getattrfunc) Opaque_getattr,
    .tp_setattr = (setattrfunc) Opaque_setattr,
 	.tp_as_number = &Opaque_as_number,
+   .tp_flags = Py_TPFLAGS_BASETYPE,		// was Py_TPFLAGS_CHECKTYPES
+   .tp_doc = PyDoc_STR("Handle objects"),
+	//.tp_new = PyType_GenericNew,
 };
 
 

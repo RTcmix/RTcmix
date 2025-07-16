@@ -8,6 +8,7 @@
 #include <RTOption.h>
 #include "../../../src/rtcmix/DynamicLib.h"
 #include <RTMIDIOutput.h>
+#include <RTcmix.h>
 #include <ugens.h>
 #include <rt.h>
 
@@ -18,6 +19,13 @@ static RTMIDIOutput *gMIDIOutput;
 RTMIDIOutput *getMIDIOutput()
 {
     return gMIDIOutput;
+}
+
+void outputDestroyCallback(void *context)
+{
+    RTMIDIOutput *output = gMIDIOutput;
+    gMIDIOutput = NULL;
+    delete output;
 }
 
 double
@@ -40,6 +48,9 @@ setup_midi(double *p, int n_args)
             if (gMIDIOutput == NULL) {
                 return rtOptionalThrow(SYSTEM_ERROR);
             }
+            rtcmix_advise("setup_midi", "Created MIDI output");
+            // This will cause the MIDIOutput to be destroyed when the system is.
+            RTcmix::registerDestroyCallback(outputDestroyCallback, NULL);
         }
         else {
             theDSO.unload();

@@ -11,11 +11,8 @@
    p4 = MIDI velocity   (normalized, 0.0 to 1.0)
 */
 #include <stdio.h>
-#include <stdlib.h>
 #include <ugens.h>
 #include "NOTE.h"          // declarations for this instrument class
-#include <rt.h>
-#include <rtdefs.h>
 #include <RTMIDIOutput.h>
 
 #define DEBUG 0
@@ -66,9 +63,9 @@ int NOTE::init(double p[], int n_args)
 
 void NOTE::doStart(FRAMETYPE frameOffset)
 {
-    long timestamp = (1000.0 * frameOffset) / SR;
+    long timestamp = getEventTimestamp(frameOffset);
     int vel = (int)(0.5 + 127.0*_midiVel);
-    PRINT("NOTE: %p sending note on chan %d note %d vel %d with offset %ld\n", this, _midiChannel, _midiNote, vel, timestamp);
+    PRINT("NOTE: %p sending note on chan %d note %d vel %d with frame offset = %llu => timestamp %ld\n", this, _midiChannel, _midiNote, vel, frameOffset, timestamp);
     _outputPort->sendNoteOn(timestamp, (unsigned char)_midiChannel, (unsigned char)_midiNote, (unsigned char)vel);
 }
 
@@ -78,10 +75,10 @@ void NOTE::doupdate(FRAMETYPE currentFrame)
 {
 }
 
-void NOTE::doStop(FRAMETYPE currentFrame)
+void NOTE::doStop(FRAMETYPE frameOffset)
 {
-    long timestamp = 1000.0 * (currentFrame - getRunStartFrame()) / SR;
-    PRINT("NOTE: %p sending note off with offset %ld\n", this, timestamp);
+    long timestamp = getEventTimestamp(frameOffset);
+    PRINT("NOTE: %p sending note off chan %d note %d with frame offset = %llu => timestamp %ld\n", this, _midiChannel, _midiNote, frameOffset, timestamp);
     _outputPort->sendNoteOff(timestamp, (unsigned char)_midiChannel, (unsigned char)_midiNote, 0);
 }
 

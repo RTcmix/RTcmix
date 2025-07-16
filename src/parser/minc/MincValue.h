@@ -148,7 +148,7 @@ public:
     
     MincDataType    dataType() const { return type; }
     void zero() { _u.list = NULL; }        // zeroes without changing type
-    void print();
+    void print() const;
 private:
     void doClear();
     void doCopy(const MincValue &rhs);

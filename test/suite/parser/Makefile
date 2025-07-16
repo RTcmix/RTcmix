@@ -14,7 +14,8 @@ func_with_undef_struct_arg.sco \
 if_else_scope.sco \
 include_at_line7.sco \
 list_compare.sco \
-list_large_index.sco \
+list_increment_element.sco \
+list_read_write.sco \
 maptest2.sco \
 maptest3.sco \
 maptest4.sco \
@@ -39,6 +40,7 @@ struct_as_func_arg.sco \
 struct_as_func_return.sco \
 struct_as_member.sco \
 struct_copy.sco \
+struct_increment_element.sco \
 struct_initializer.sco \
 struct_with_same_as_member.sco \
 test_double_include.sco \
@@ -48,6 +50,7 @@ FAIL_SCORES = \
 func_errortests1.sco \
 handletest1.sco \
 include_error.sco \
+list_large_index.sco \
 nested_func_decls.sco \
 struct_duplicate_member.sco \
 struct_duplicate_membername.sco \

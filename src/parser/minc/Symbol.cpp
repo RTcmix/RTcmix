@@ -92,13 +92,13 @@ Symbol::copyValue(Node *source, bool allowTypeOverwrite)
     assert(_scope != -1);    // we accessed a variable after leaving its scope!
     if (dataType() != MincVoidType && source->dataType() != dataType()) {
         if (allowTypeOverwrite) {
-            minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
+            minc_warn("Overwriting %s variable '%s' with a %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
         }
         else {
-            minc_die("Cannot overwrite %s member '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
+            minc_die("Cannot overwrite '%s' (type %s) with a %s", name(), MincTypeName(dataType()), MincTypeName(source->dataType()));
         }
     }
-    value() = source->value();
+    setValue(source->value());
     return this;
 }
 

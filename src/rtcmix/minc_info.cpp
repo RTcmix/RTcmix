@@ -14,15 +14,12 @@
 #define ALL_CHANS -1
 
 /* These are all for the older disk-based cmix functions. */
-// BGGx ww -- add extern "C"
-extern "C" {
-	extern int	     isopen[NFILES];        /* open status */
-	extern SFHEADER      sfdesc[NFILES];
-	extern SFMAXAMP      sfm[NFILES];
-	extern struct stat   sfst[NFILES];
-	extern int headersize[NFILES];
-	extern "C" void sfstats(int fd);       /* defined in sfstats.c */
-}
+extern int	     isopen[NFILES];        /* open status */
+extern SFHEADER      sfdesc[NFILES];
+extern SFMAXAMP      sfm[NFILES];
+extern struct stat   sfst[NFILES];
+extern int headersize[NFILES];
+extern "C" void sfstats(int fd);       /* defined in sfstats.c */
 
 extern "C" {
 
@@ -157,7 +154,14 @@ int findpeakrmsdc(const char *funcname, const char *fname,
 
 	long startframe = long((starttime * srate) + 0.5);
 	long nframes = (nsamps / nchans) - startframe;
-	if (endtime != -1.0) {
+
+    if (startframe >= nframes) {
+        rterror(funcname, "Specified start time is at or past the end of the file.");
+        sndlib_close(fd, 0, 0, 0, 0);
+        return -1;
+    }
+
+    if (endtime != -1.0) {
 		long endframe = nframes;
 		nframes = long((endtime * srate) + 0.5) + startframe;
 		if (nframes > endframe)
@@ -167,25 +171,17 @@ int findpeakrmsdc(const char *funcname, const char *fname,
     if (chan != ALL_CHANS && chan >= nchans) {
 		die(funcname, "You specified channel %d for a %d-channel file.",
 		           chan, nchans);
+        sndlib_close(fd, 0, 0, 0, 0);
         RTExit(PARAM_ERROR);
     }
-	// BGGx ww arg!
-	/*
-	float peak[nchans];
-	long peakloc[nchans];
-	double ampavg[nchans];
-	double dcavg[nchans];
-	double rms[nchans];
-	*/
-	float *peak = new float[nchans];
-	long *peakloc = new long[nchans];
-	double *ampavg = new double[nchans];
-	double *dcavg = new double[nchans];
-	double *rms = new double[nchans];
-
-   int result = sndlib_findpeak(fd, -1, dataloc, -1, format, nchans,
+	float peak[MAXCHANS];
+	long peakloc[MAXCHANS];
+	double ampavg[MAXCHANS];
+	double dcavg[MAXCHANS];
+	double rms[MAXCHANS];
+	int result = sndlib_findpeak(fd, -1, dataloc, -1, format, nchans,
                     startframe, nframes, peak, peakloc, ampavg, dcavg, rms);
-   sndlib_close(fd, 0, 0, 0, 0);
+	sndlib_close(fd, 0, 0, 0, 0);
 	if (result == -1)
         RTExit(SYSTEM_ERROR);
 
@@ -312,11 +308,6 @@ RTcmix::input_sr(double *p, int n_args)   /* returns rate for rtinput() files */
       rtcmix_warn("SR", "There are no currently opened input files!");
       return 0.0;
    }
-//   if (inputFileTable[index].is_audio_dev) {
-//     fprintf(stderr, "WARNING: Requesting duration of audio input device "
-//                    "(not sound file)!\n");
-//   return 0.0;
-//   }
    return (inputFileTable[index].sampleRate());
 }
 
@@ -509,10 +500,8 @@ RTcmix::right_peak(double p[], int n_args)
    return get_peak(p[0], p[1], 1);
 }
 
-// BGGx ww -- added extern "C"
-extern "C" {
-	extern int sfd[NFILES];
-}
+
+extern int sfd[NFILES];
 
 extern "C" {
 

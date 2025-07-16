@@ -9,12 +9,17 @@
    p2 = MIDI channel
 */
 #include <stdio.h>
-#include <stdlib.h>
 #include <ugens.h>
 #include "MIDIBase.h"          // declarations for this instrument class
-#include <rt.h>
-#include <rtdefs.h>
 #include <RTMIDIOutput.h>
+
+#define DEBUG 0
+
+#if DEBUG
+#define PRINT printf
+#else
+#define PRINT if (0) printf
+#endif
 
 extern RTMIDIOutput *getMIDIOutput();
 
@@ -62,28 +67,32 @@ int MIDIBase::run()
     _runStartFrame = currentFrame();
     // We only do work for the first frame.  We access the offset into the audio buffer via the base
     // class 'output_offset'
+    int frameOffset = 0;
     if (_runStartFrame == 0) {
-        doStart(this->output_offset);
+        frameOffset = this->output_offset;
+        PRINT("MIDIBase::run(%p) calling doStart(frameOffset = %d)\n", this, frameOffset);
+        doStart(frameOffset);
     }
 
     // Note:  We cannot cache currentFrame() because it updates with increment()
     
-    int frameCount = framesToRun();
+    const int frameCount = framesToRun();
     const int end = nSamps() - 1;
     
-    // Because the MIDI instruments dont generate audio directly, we fake the
+    // Because the MIDI instruments don't generate audio directly, we fake the
     // loop here so we can call doUpdate() as many times as is expected for this
     // render call.
     
-    while (frameCount-- > 0) {
+    for (int fr = 0; fr < frameCount; ++fr) {
         int current = currentFrame();
         if (--_branch <= 0) {
-            doupdate(current);
+            doupdate(frameOffset+fr);
             _branch = getSkip();
         }
         increment();
         if (current == end) {
-            doStop(current);
+            PRINT("MIDIBase::run(%p) calling doStop(frameOffset = %d)\n", this, frameOffset+fr);
+            doStop(frameOffset+fr);
             break;
         }
     }
@@ -92,3 +101,8 @@ int MIDIBase::run()
 	return framesToRun();
 }
 
+long MIDIBase::getEventTimestamp(FRAMETYPE frameOffset)
+{
+    long timestamp = (1000.0 * (get_ichunkstart() + frameOffset)) / SR;
+    return timestamp;
+}

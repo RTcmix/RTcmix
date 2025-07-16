@@ -23,8 +23,8 @@ mdelput(float x, float *a, int *l)
     int index = l[0];
     a[index] = x;
     ++l[0];
-    if (l[0] >= l[1])
-        l[0] -= l[1];
+    if (l[0] >= l[2])
+        l[0] -= l[2];
 }
 
 float
@@ -37,7 +37,7 @@ mdelget(float *a, int samps, int *l)
 	if(i < 0)  {
 		i += l[2];
 		if(i < 0) return(0);
-		}
+    }
 
 	return(a[i]);
 }
@@ -58,7 +58,7 @@ mdliget(float *a, float samps, int *l)
 		if(i < 0) i += l[2];
 		if(i < 0) return(0.);
 		if(im1 < 0) im1 += l[2];
-		}
+    }
 	return(a[i] + frac * (a[im1] - a[i]));
 }
 

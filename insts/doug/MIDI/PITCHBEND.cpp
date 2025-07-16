@@ -60,9 +60,9 @@ int PITCHBEND::init(double p[], int n_args)
 
 void PITCHBEND::doStart(FRAMETYPE frameOffset)
 {
-    long timestamp = (1000.0 * frameOffset) / SR;
+    long timestamp = getEventTimestamp(frameOffset);
     unsigned value = 16383.5 + unsigned(0.5 + (_bendValue * 16383));
-    PRINT("doStart sending pitch bend on chan %d: value %u at offset %ld\n", _midiChannel, value, timestamp);
+    PRINT("doStart sending pitch bend on chan %d: value %u at timestamp %ld\n", _midiChannel, value, timestamp);
     _outputPort->sendPitchBend(timestamp, (unsigned char)_midiChannel, value);
 }
 
@@ -75,22 +75,22 @@ void PITCHBEND::doupdate(FRAMETYPE currentFrame)
     // updated to certain pfields.  For more about this, read
     // src/rtcmix/Instrument.h.
     
-    double p[4];
+    double p[5];
     update(p, 5, 1 << 3);
     
     float newValue = p[3];
     if (newValue < -1.0) {
-        rtcmix_warn("PITCHBEND", "Controller value limited to -1.0");
+        rtcmix_warn("PITCHBEND", "Value limited to -1.0");
         newValue = -1.0;
     }
     else if (newValue > 1.0) {
-        rtcmix_warn("PITCHBEND", "Controller value limited to 1.0");
+        rtcmix_warn("PITCHBEND", "Value limited to 1.0");
         newValue = 1.0;
     }
     if (newValue != _bendValue) {
         unsigned value = 16383.5 + unsigned(0.5 + (_bendValue * 16383));
-        long timestamp = 1000.0 * (currentFrame - getRunStartFrame()) / SR;
-        PRINT("doUpdate sending pitch bend value %u with frame time offset %ld ms\n", value, timestamp);
+        long timestamp = getEventTimestamp(currentFrame);
+        PRINT("doUpdate sending pitch bend value %u with timestamp %ld ms\n", value, timestamp);
         _outputPort->sendPitchBend(timestamp, (unsigned char)_midiChannel, value);
         _bendValue = newValue;
     }

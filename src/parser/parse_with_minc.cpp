@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include "minc/rename.h"
 #include "minc/minc_defs.h"
+#include "minc/minc_internal.h"     /* TODO: move RTExceptions into minc_defs.h */
 #include "minc/bison_version.h"
 #include "rtcmix_parse.h"
 #include <ugens.h>
@@ -36,6 +37,10 @@ run_parser(const char *caller)
     try {
 //        yydebug = 1;
         status = yyparse();
+    }
+    catch (const RTException rtex) {
+        rterror(caller, rtex.mesg());
+        status = -1;    // TODO: Add status to RTException?
     }
     catch (MincError err) {
         const char *errType = NULL;
@@ -86,15 +91,15 @@ run_parser(const char *caller)
             default:
                 errname = "Other error";
         }
-        rtcmix_warn(caller, "Caught exception: %s", errname);
+        rterror(caller, "Caught exception: %s", errname);
         status = otherError;
     }
     catch (std::bad_alloc &ba) {
-        rtcmix_warn(caller, "Caught memory exception: %s", ba.what());
+        rterror(caller, "Caught memory exception: %s", ba.what());
         status = MEMORY_ERROR;
     }
     catch (...) {
-        rtcmix_warn(caller, "Caught unknown exception");
+        rterror(caller, "Caught unknown exception");
         status = -1;
     }
     if (status != 0) {

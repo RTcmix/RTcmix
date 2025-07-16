@@ -415,13 +415,13 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
         
 #ifdef MULTI_THREAD
 		if (bus != -1) {
-#if defined(BBUG)
+#if defined(BBUG) || defined(DBUG)
 			printf("\nAdding instruments for current slice [end = %.3f ms] and bus [%d]\n",
 				   1000 * bufEndSamp/sr(), busq);
 #endif
 		}
 		else {
-#if defined(BBUG) || defined(DEBUG)
+#if defined(BBUG) || defined(DBUG)
 			printf("\nDone with bus type %d -- continuing\n", bus_type);
 #endif
 			continue;
