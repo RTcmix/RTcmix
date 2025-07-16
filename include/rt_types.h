@@ -46,11 +46,34 @@ typedef Boolean Bool;
 
 #ifdef __cplusplus
 
+#if defined(__cpp_lib_atomic) || __cplusplus >= 199711L
+#define USE_ATOMIC 1
+#include <atomic>
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7))
+#define USE_ATOMIC 1
+#include <atomic>
+#else
+#define USE_ATOMIC 0
+#endif
+
 #ifdef MULTI_THREAD
 
 #ifdef MAXMSP
-
 #error Multi-threaded support not yet available for this configuration
+#endif
+
+#if USE_ATOMIC
+
+class AtomicInt : private std::atomic<int32_t>
+{
+public:
+    explicit AtomicInt(int inVal=0)  { store(inVal); }
+    operator int () const { return load(); };
+    void increment() { ++(*this); }
+    bool incrementAndTest() { return (++(*this)) == 0; }
+    bool decrementAndTest() { return (--(*this)) == 0; }
+    int32_t operator = (int rhs) { store(rhs); return load(); }
+};
 
 #elif defined(MACOSX)
 
@@ -66,23 +89,6 @@ public:
     bool incrementAndTest() { return OSAtomicIncrement32(&val) == 0; }
     bool decrementAndTest() { return OSAtomicDecrement32(&val) == 0; }
     int operator = (int rhs) { return (val = rhs); }
-    
-};
-
-#elif defined(LINUX)
-
-#include <alsa/iatomic.h>
-
-class AtomicInt
-{
-    atomic_t val;
-public:
-    AtomicInt(int inVal=0) { atomic_set(&val, inVal); }
-    operator int () const { return atomic_read(&val); }
-    void increment() { atomic_inc(&val); }
-    bool incrementAndTest() { return atomic_inc_and_test(&val); }
-    bool decrementAndTest() { return atomic_dec_and_test(&val); }
-    int operator = (int rhs) { atomic_set(&val, rhs); return atomic_read(&val); }
 };
 
 #else
@@ -90,7 +96,7 @@ public:
 #error Tell Doug Scott you are want to compile MULTI_THREAD for this platform.
 typedef int AtomicInt;
 
-#endif
+#endif  // USE_ATOMIC
 
 #else	// !MULTI_THREAD
 

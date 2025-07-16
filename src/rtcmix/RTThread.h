@@ -20,6 +20,7 @@ public:
 protected:
 	void start();
 	virtual void run()=0;
+    void setName(const char *name);
 	static void *sProcess(void *inContext);
 private:
 	int			GetIndex() const { return mThreadIndex; }

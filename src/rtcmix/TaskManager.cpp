@@ -84,7 +84,7 @@ void TaskThread::run()
 #endif
     char threadName[16];
     snprintf(threadName, 16, "TaskThread %d", getIndex());
-    (void) pthread_setname_np(threadName);
+    setName(threadName);
 	do {
 #ifdef THREAD_DEBUG
 		printf("TaskThread %d sleeping...\n", tIndex);
