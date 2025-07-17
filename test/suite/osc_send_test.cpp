@@ -33,7 +33,7 @@ int main(int argc, char *argv[]){
 	stuff = new char[content.length()+1];
 	std::strcpy(stuff, content.c_str());
 
-    std::cout << stuff << std::endl;
+    std::cout << "sending '" << stuff << "'" << std::endl;
 
     if (lo_send(t, "/RTcmix/ScoreCommands", "s", stuff) == -1) {
         fprintf(stderr, "OSC error %d: %s\n", lo_address_errno(t),

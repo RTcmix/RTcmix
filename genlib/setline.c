@@ -10,7 +10,7 @@
 
 
 int
-setline(float *p, short n_args, int length, double *array)
+setline(double *p, int n_args, int length, double *array)
 {
    double increm;
    int i, j, k, i2, points;

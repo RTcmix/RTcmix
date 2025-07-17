@@ -5,13 +5,17 @@
 
 /* Functions for managing embedded Perl parser.    -JGG, 30-Jul-00 */
 
+/* NB: To see how to do this and attempt to keep the code up to date, consult
+	this documentation: https://perldoc.perl.org/perlembed.  -JGG, 10/6/24
+*/
+
 #include <assert.h>              /* put this before perl.h */
 #include <EXTERN.h>
 #include <perl.h>
 #include <XSUB.h>
 #include "rtcmix_parse.h"
 
-extern void boot_DynaLoader (CV* cv);
+EXTERN_C void boot_DynaLoader (pTHX_ CV* cv);
 
 static PerlInterpreter *perl_interp = NULL;
 static PerlInterpreter *my_perl = NULL;
@@ -21,12 +25,11 @@ static char *extra_lib_dir = "-I"SHAREDLIBDIR;
 
 /* -------------------------------------------------------------- xs_init --- */
 static void
-xs_init()
+xs_init(pTHX)
 {
    char *file = __FILE__;
 
    newXS("DynaLoader::boot_DynaLoader", boot_DynaLoader, file);
-
 }
 
 /* ---- special pearl parser ----- */

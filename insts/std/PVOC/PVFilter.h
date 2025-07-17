@@ -8,6 +8,7 @@
 class PVFilter : public RefCounted {
 public:
 	PVFilter();
+    virtual void    setFrameDuration(double duration) {}
 	virtual int		run(float *pvdata, int nvals)=0;
 	virtual int		init(double *p, int nargs);
 protected:

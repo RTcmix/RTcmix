@@ -86,7 +86,7 @@ MBASE::~MBASE()
 int MBASE::init(double p[], int n_args)
 {
     int    UseMikes;
-    float  outskip, inskip, abs_factor, dummy;
+    double  outskip, inskip, abs_factor, dummy;
 
     outskip = p[0];
     inskip = p[1];
@@ -128,7 +128,7 @@ int MBASE::init(double p[], int n_args)
 		return die(name(), "Output must be 4-channel (2 signal, 2 reverb feed).");
 	
     /* (perform some initialization that used to be in space.c) */
-    int meanLength = MFP_samps(SR, Dimensions); // mean delay length for reverb
+    long meanLength = MFP_samps(SR, Dimensions); // mean delay length for reverb
     get_lengths(meanLength);              /* sets up delay lengths */
     set_gains();                		/* sets gains for filters */
     set_walls(abs_factor);              /* sets wall filts for move routine */
@@ -466,7 +466,7 @@ void MBASE::get_lengths(long m_length)
 void MBASE::set_gains()
 {
    int    i, nvals = 16;
-   static const float array[16] = {
+   static double array[16] = {
       0, .001, 10, .1, 25, .225, 35, .28, 50, .35, 65, .4, 85, .45, 95, .475
    };
 
@@ -474,7 +474,7 @@ void MBASE::set_gains()
    double adjust = 1.0 - (0.42 * (SR - 25000) / 25000.0);
 
    /* create scaled curve for coeffs */
-   setline((float *)array, nvals, NCOEFFS, AIRCOEFFS);
+   setline(array, nvals, NCOEFFS, AIRCOEFFS);
 
    for (i = 0; i < NCOEFFS; i++)
       AIRCOEFFS[i] = pow(AIRCOEFFS[i], adjust);

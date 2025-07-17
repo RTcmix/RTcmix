@@ -21,7 +21,7 @@
 #define PRINT if (0) printf
 #endif
 
-extern RTMIDIOutput *getMIDIOutput();
+extern RTMIDIOutput *getMIDIOutputForChannel(int channel);
 
 MIDIBase::MIDIBase()
     : _branch(0), _midiChannel(0), _nargs(0), _runStartFrame(0), _outputPort(NULL)
@@ -36,17 +36,20 @@ int MIDIBase::init(double p[], int n_args)
 {
 	_nargs = n_args;		// store this for use in doupdate()
 
-    _outputPort = ::getMIDIOutput();
+    _midiChannel = (int)p[2];
+    if (_midiChannel < 0) {
+        return die(name(), "Illegal MIDI channel");
+    }
+    _outputPort = ::getMIDIOutputForChannel(_midiChannel);
     if (_outputPort == NULL) {
+		if (_midiChannel > 15) {
+			return die(name(), "No MIDI device/port set up to handle higher MIDI channels");
+		}
         return die(name(), "You need to set up MIDI output before playing instruments");
     }
 
     const float outskip = p[0];
 	const float dur = p[1];
-    _midiChannel = (int)p[2];
-    if (_midiChannel < 0 || _midiChannel > 15) {
-        return die(name(), "Illegal MIDI channel");
-    }
 
 	if (rtsetoutput(outskip, dur, this) == -1)
 		return DONT_SCHEDULE;

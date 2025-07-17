@@ -74,7 +74,7 @@ BASE::~BASE()
 int BASE::init(double p[], int n_args)
 {
 	int	UseMikes;
-	float  outskip, inskip, abs_factor, rvb_time;
+	double  outskip, inskip, abs_factor, rvb_time;
 
 	outskip = p[0];
 	inskip = p[1];
@@ -513,7 +513,7 @@ void BASE::set_gains(float rvbtime)
    int	i, fpoint, nvals = 16;
    float  rescale, gain, dist, G1, temp = SR / MACH1;
    double adjust;
-   static float array[16] = {
+   static double array[16] = {
 	  0, .001, 10, .1, 25, .225, 35, .28, 50, .35, 65, .4, 85, .45, 95, .475
    };
 

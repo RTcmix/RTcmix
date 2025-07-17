@@ -8,7 +8,7 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 
-#include "RTcmix.h"
+#include <RTcmix.h>
 
 //#define DBUG
 //#define DENORMAL_CHECK
@@ -26,7 +26,6 @@
 #include "prototypes.h"
 #include "InputFile.h"
 #include <ugens.h>
-#include <RTcmix.h>
 #include <RTOption.h>
 #include "handle.h"
 #include <ug_intro.h>
@@ -89,11 +88,11 @@ int				RTcmix::normalize_output_floats	= 0;
 int				RTcmix::is_float_format 		= 0;
 char *			RTcmix::rtoutsfname 			= NULL;
 
-float           RTcmix::xtime[TLENP];
-float           RTcmix::temp[TLENP];
-float           RTcmix::rxtime[TLENP];
-float           RTcmix::accel[TLENP];
-float           RTcmix::BASIS                   = 60.;
+double           RTcmix::xtime[TLENP];
+double           RTcmix::tempovals[TLENP];
+double           RTcmix::rxtime[TLENP];
+double           RTcmix::accel[TLENP];
+double           RTcmix::BASIS                   = 60.;
 short           RTcmix::tempo_set               = 0;
 short           RTcmix::numTimePoints           = 0;
 
@@ -765,23 +764,23 @@ double
 RTcmix::tempo(double p[], int n_args)
 {
     short m;
-    float dur,prvbt;
-    if(!n_args) {
+    double dur,prvbt;
+    if (!n_args) {
         rtcmix_advise("tempo", "Tempo changes cleared out");
         tempo_set = 0;
         return -1.0;
     }
-    for(m=0;m<TLEN;m++) { xtime[m]=temp[m]=rxtime[m]=accel[m]=0; }
+    for(m=0;m<TLEN;m++) { xtime[m]=tempovals[m]=rxtime[m]=accel[m]=0.; }
     for(m=0, numTimePoints=1; m < TLEN; m += 2, numTimePoints++) {
-        if((m) && (m >= n_args)) break;
+        if ((m) && (m >= n_args)) break;
         xtime[numTimePoints] = p[m];
-        temp[numTimePoints] = p[m + 1] / BASIS;
-        if (temp[numTimePoints] == 0.0) { return die("tempo", "tempo value cannot be zero - did you reverse your arguments?"); }
+        tempovals[numTimePoints] = p[m + 1] / BASIS;
+        if (tempovals[numTimePoints] == 0.0) { return die("tempo", "tempo value cannot be zero - did you reverse your arguments?"); }
     }
     tempo_set = 1;
     rxtime[numTimePoints] = xtime[numTimePoints] = .999999e+10;
-    temp[numTimePoints] = temp[numTimePoints - 1];
-    temp[0] = temp[1];
+    tempovals[numTimePoints] = tempovals[numTimePoints - 1];
+    tempovals[0] = tempovals[1];
     xtime[0] = rxtime[0] = accel[0] = prvbt = 0.;
     for(m=0; m < numTimePoints; m++) {
         dur = xtime[m+1] - xtime[m];
@@ -790,55 +789,51 @@ RTcmix::tempo(double p[], int n_args)
             rxtime[m+1] = rxtime[m];
         }
         else 	{
-            accel[m] = (float)(pow((double)temp[m+1],2.0) - pow((double)temp[m],2.0))/(2.0f*dur);
-            if (accel[m] == 0.0f) {
-                rxtime[m+1] = dur/temp[m]+prvbt;
+            accel[m] = (pow(tempovals[m+1],2.0) - pow(tempovals[m],2.0))/(2.0*dur);
+            if (accel[m] == 0.0) {
+                rxtime[m+1] = dur/tempovals[m]+prvbt;
             }
             else {
-                rxtime[m+1] = (float) (sqrt(pow((double)temp[m],2.0)+
-                                            (double)(2.0* accel[m]*dur))-temp[m])/
-                              accel[m] + prvbt;
+                rxtime[m+1] = (sqrt(pow(tempovals[m],2.0)+ (2.0* accel[m]*dur))-tempovals[m]) / accel[m] + prvbt;
             }
         }
         prvbt = rxtime[m+1];
     }
 /*
-for(m=0; m<=numTimePoints; m++) printf("%d %f %f %f %f\n",m,temp[m],accel[m],rxtime[m],xtime[m]);
+for(m=0; m<=numTimePoints; m++) printf("%d %f %f %f %f\n",m,tempovals[m],accel[m],rxtime[m],xtime[m]);
 */
     return 0.0;
 }
 
-float RTcmix::time_beat(float timein)
+double RTcmix::time_beat(double timein)
 {
     int m = 0;
-    float durp = 0;
+    double durp = 0;
 
     if (timein < 0.0f)
         timein = 0.0f;
 
-    if(!tempo_set) return(timein);
+    if (!tempo_set) return(timein);
 
     if (timein > 0.0f) {
         for(m=0; m <= numTimePoints; m++) {
-            if(timein > xtime[m] && timein <= xtime[m+1]) {
+            if (timein > xtime[m] && timein <= xtime[m+1]) {
                 durp = timein-xtime[m];
                 break;
             }
         }
     }
     if (accel[m] == 0.0f) {
-        return(durp/temp[m] + rxtime[m]);
+        return(durp/tempovals[m] + rxtime[m]);
     }
-    return(((float)sqrt(pow((double)temp[m],2.0)+
-                        (double)(2.0 * accel[m] * durp)) - temp[m])/
-           accel[m] + rxtime[m]);
+    return (sqrt(pow(tempovals[m],2.0) + (2.0 * accel[m] * durp)) - tempovals[m]) / accel[m] + rxtime[m];
 }
 
 
-float RTcmix::beat_time(float beatin)    /* returns beats from times */
+double RTcmix::beat_time(double beatin)    /* returns beats from times */
 {
     int m=0;
-    if(!tempo_set) return(beatin);
+    if (!tempo_set) return(beatin);
 
     if (beatin != 0.0f) {
         for(m=0; m <= numTimePoints; m++) {
@@ -848,10 +843,9 @@ float RTcmix::beat_time(float beatin)    /* returns beats from times */
         }
     }
     if (accel[m] == 0.0f) {
-        return((beatin-rxtime[m])*temp[m] + xtime[m]);
+        return((beatin-rxtime[m])*tempovals[m] + xtime[m]);
     }
-    return(((float)pow((double)((beatin-rxtime[m]) * accel[m]+temp[m]),2.0)
-            -(float)pow((double)temp[m],2.0))/(2.0 * accel[m]) + xtime[m]);
+    return (pow(((beatin-rxtime[m]) * accel[m]+tempovals[m]),2.0) - pow(tempovals[m],2.0)) / (2.0 * accel[m]) + xtime[m];
 }
 
 // This is from the RTsockfuncs.c file in ../lib.  It's such a handy

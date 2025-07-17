@@ -109,11 +109,11 @@ int CONTROLLER::init(double p[], int n_args)
         _controllerNumber = 127;
     }
     if (_controllerValue < 0.0) {
-        rtcmix_warn("CONTROLLER", "Controller value limited to 0.0");
+ //       rtcmix_warn("CONTROLLER", "Controller value limited to 0.0");
         _controllerValue = 0.0;
     }
     else if (_controllerValue > 1.0) {
-        rtcmix_warn("CONTROLLER", "Controller value limited to 1.0");
+//        rtcmix_warn("CONTROLLER", "Controller value limited to 1.0");
         _controllerValue = 1.0;
     }
     

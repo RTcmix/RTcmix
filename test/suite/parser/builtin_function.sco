@@ -5,8 +5,9 @@
 
 reset(99999);
 
-// this is a non-defined function and so should just warn us
+set_option("bail_on_undefined_function=false");
 
+// this is a non-defined function and so should just warn us
 not_defined_function(3, 4, 5);
 
 printf("SUCCEEDED\n");

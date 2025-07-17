@@ -38,6 +38,8 @@ INSTDOBJS = ../../insts/std/AM/AM.o \
 ../../insts/std/REVMIX/REVMIX.o \
 ../../insts/std/SCRUB/SCRUB.o \
 ../../insts/std/SCULPT/SCULPT.o \
+../../insts/std/SGRAN2/SGRAN2.o \
+../../insts/std/SGRAN2/STGRAN2.o \
 ../../insts/std/STEREO/STEREO.o \
 ../../insts/std/STRUM/BEND.o \
 ../../insts/std/STRUM/BEND1.o \

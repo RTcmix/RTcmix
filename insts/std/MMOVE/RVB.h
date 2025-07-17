@@ -18,11 +18,11 @@ public:
 	virtual int configure();
 	virtual int run();
 protected:
-	void set_random(void);
+	void set_random();
 	void get_lengths(long);
 	void set_gains(float);
-	void alloc_delays(void);
-	void set_allpass(void);
+	void alloc_delays();
+	void set_allpass();
 	void wire_matrix(double [12][12]);
 	void rvb_reset();
 	void doRun(double *, double *, long);	// was BASE::RVB()
@@ -49,7 +49,7 @@ private:
 	double		AIRCOEFFS[NCOEFFS];
 	double		Dimensions[5];
 	double		Nsdelay[2][6];
-	float		m_dur, m_amp;
+	double		m_dur, m_amp;
 	float		*in;
 	int			insamps, rvbdelsize;
 	int			_branch;

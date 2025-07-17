@@ -38,6 +38,7 @@ bool RTOption::_fastUpdate = false;
 bool RTOption::_requireSampleRate = true;
 bool RTOption::_printSuppressUnderbar = false;
 bool RTOption::_bailOnUndefinedFunction = false;
+bool RTOption::_sendMIDIRecordAutoStart = false;
 
 double RTOption::_bufferFrames = DEFAULT_BUFFER_FRAMES;
 int RTOption::_bufferCount = DEFAULT_BUFFER_COUNT;
@@ -632,6 +633,8 @@ int get_bool_option(const char *option_name)
         return (int) RTOption::printSuppressUnderbar();
     else if (!strcmp(option_name, kOptionBailOnUndefinedFunction))
         return (int)RTOption::bailOnUndefinedFunction();
+    else if (!strcmp(option_name, kOptionSendMIDIRecordAutoStart))
+        return (int)RTOption::sendMIDIRecordAutoStart();
 
 	assert(0 && "unsupported option name");		// program error
 	return 0;
@@ -665,6 +668,8 @@ void set_bool_option(const char *option_name, int value)
 		RTOption::requireSampleRate((bool) value);
     else if (!strcmp(option_name, kOptionPrintSuppressUnderbar))
         RTOption::printSuppressUnderbar((bool) value);
+    else if (!strcmp(option_name, kOptionSendMIDIRecordAutoStart))
+        RTOption::sendMIDIRecordAutoStart((bool)value);
 	else
 		assert(0 && "unsupported option name");
 }

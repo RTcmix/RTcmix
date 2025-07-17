@@ -101,11 +101,8 @@ makegen(double p[], int n_args)
       return -1.0;
    }
 
-   float fpvals[MAXDISPARGS];
-   for (int n = 0; n < n_args; ++n) { fpvals[n] = (float) p[n]; }
-
    gen.nargs = n_args - 3;
-   gen.pvals = &fpvals[3];
+   gen.pvals = &p[3];
    gen.array = table;
    gen.slot = (int) p[0];   /* get from pfield, to preserve negative "flag" */
 
@@ -155,7 +152,7 @@ makegen(double p[], int n_args)
       case 1:
          {
             char *sfname = DOUBLE_TO_STRING(p[3]);
-            gen.pvals = &fpvals[2];    /* gen1() needs size pfield */
+            gen.pvals = &p[2];    /* gen1() needs size pfield */
             gen.nargs++;
             retval = gen1(&gen, sfname);
             if (retval != -1.0) {

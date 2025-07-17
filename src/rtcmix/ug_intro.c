@@ -5,7 +5,7 @@ extern void rt_ug_intro();
 
 #ifdef EMBEDDED
 // BGG mm -- for dynamic memory mgmt (in src/parser/minc/y.tab.c)
-extern double minc_memflush();
+extern double minc_memflush(double p[], int n_args);
 #endif
 
 void
@@ -50,7 +50,8 @@ ug_intro()
 //    UG_INTRO_HANDLE_RETURN("lpcgetpitches", lpcgetpitches);
 //    UG_INTRO_HANDLE_RETURN("pvgetbin", pvgetbin);
     UG_INTRO_HANDLE_RETURN("bits", m_bits);
-	UG_INTRO_DOUBLE_RETURN("filedur", filedur);
+    UG_INTRO_HANDLE_RETURN("filebreakpoints", filebreakpoints);
+    UG_INTRO_DOUBLE_RETURN("filedur", filedur);
 	UG_INTRO_DOUBLE_RETURN("filechans", filechans);
 	UG_INTRO_DOUBLE_RETURN("filesr", filesr);
 	UG_INTRO_DOUBLE_RETURN("filepeak", filepeak);

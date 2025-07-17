@@ -1,6 +1,6 @@
 /* cmixfuns.h */
 
-double rand1(double *);
-double randi(double []);
-void toneset(float, double, int, double *);
+extern double rand1(double *);
+extern double randi(double *);
+extern void toneset(float, double, int, double *);
 

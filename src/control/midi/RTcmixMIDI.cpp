@@ -9,6 +9,7 @@
 #include <string.h>
 #include <limits.h>
 #include <assert.h>
+#include <algorithm>
 #include <RTOption.h>
 #include <RTcmix.h>
 #include <ugens.h>
@@ -381,7 +382,7 @@ void RTcmixMIDIOutput::_midiCallback(PtTimestamp timestamp, void *context)
 
 }
 
-RTcmixMIDIOutput::RTcmixMIDIOutput() : _deviceID(0), _outstream(NULL)
+RTcmixMIDIOutput::RTcmixMIDIOutput(const char *portname) : _portname(portname), _deviceID(0), _outstream(NULL)
 {
     
 }
@@ -402,7 +403,7 @@ int RTcmixMIDIOutput::init()
 {
     Pm_Initialize();
     
-    const char *devname = RTOption::midiOutDevice();
+    const char *devname = _portname ? _portname : RTOption::midiOutDevice();
     PRINT("Requested MIDI output device: \"%s\"\n", devname);
     if (strlen(devname)) {
         bool found = false;
@@ -526,12 +527,11 @@ void RTcmixMIDIOutput::sendSysEx(long timestamp, unsigned char *msg)
     Pm_WriteSysEx(outstream(), timestamp, msg);
 }
 
-void RTcmixMIDIOutput::sendMIDIStart(long timestamp)
-{
+void RTcmixMIDIOutput::sendMIDIStart(long timestamp) {
     PmEvent startEvent, SPPEvent;
 //    startEvent.message = Pm_Message(0xFA, 0, 0);
 //    startEvent.timestamp = timestamp;
-//    SPPEvent.message = Pm_Message(0xF2, 0, 0);
+    SPPEvent.message = Pm_Message(0xF2, 0, 0);
     SPPEvent.timestamp = timestamp;
     PmEvent buffers[16];
     for (int chan = 0; chan < 16; ++chan) {
@@ -539,14 +539,19 @@ void RTcmixMIDIOutput::sendMIDIStart(long timestamp)
         buffers[chan].timestamp = timestamp;
     }
 //    PRINT("RTcmixMIDIOutput::sendMIDIStart: sending MIDI ResetAllControllers, Start and SPP events with ts = %ld\n", timestamp);
-    PRINT("RTcmixMIDIOutput::sendMIDIStart: sending MIDI ResetAllControllers and MTC at ts = %ld\n", timestamp);
+//    PRINT("RTcmixMIDIOutput::sendMIDIStart: sending MIDI ResetAllControllers and MTC at ts = %ld\n", timestamp);
     AutoLock al(this);
     Pm_Write(outstream(), buffers, 16);
-//   Pm_Write(outstream(), &SPPEvent, 1);
-//   Pm_Write(outstream(), &startEvent, 1);
+//    Pm_Write(outstream(), &SPPEvent, 1);
     // MMC MIDI sysex for "go to beginning of track"
 //    unsigned char msg[14] = { 0xF0, 0x7F, 0x7F, 0x06, 0x44, 0x06, 0x01, 0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF7 };
 //    Pm_WriteSysEx(outstream(), timestamp, msg);
+    if (RTOption::sendMIDIRecordAutoStart()) {
+        PRINT("RTcmixMIDIOutput::sendMIDIStart: sending MIDI ResetAllControllers and CC 119 ts = %ld\n", timestamp);
+        startEvent.message = Pm_Message(make_status(kControl, 0), 119, 127);
+        Pm_Write(outstream(), &startEvent, 1);
+    }
+
     PRINT("RTcmixMIDIOutput::sendMIDIStart: Done\n");
 }
 
@@ -565,27 +570,31 @@ void RTcmixMIDIOutput::sendMIDIStop(long timestamp)
         Pm_Write(outstream(), &buffer, 1);
     }
 #else
-    PmEvent buffer1, buffer2;
+    PmEvent buffer1;
     buffer1.message = Pm_Message(0xFF, 0, 0);   // system reset
     buffer1.timestamp = timestamp;
-    buffer2.message = Pm_Message(0xFC, 0, 0);   // timecode stop
-    buffer2.timestamp = timestamp;
     PmEvent buffers[16];
     rtcmix_debug(NULL, "Sending MIDI System Reset, Stop, and All Sound Off events");
     for (int chan = 0; chan < 16; ++chan) {
         buffers[chan].message = Pm_Message(make_status(kControl, chan), 120, 0);   // AllSoundOff
         buffers[chan].timestamp = timestamp;
     }
-    PRINT("RTcmixMIDIOutput::sendMIDIStop: sending System Reset, MIDI Stop, and AllSoundOff events with ts = %ld\n", timestamp);
+    PRINT("RTcmixMIDIOutput::sendMIDIStop: sending System Reset and AllSoundOff events with ts = %ld\n", timestamp);
     AutoLock al(this);
     Pm_Write(outstream(), buffers, 16);
     Pm_Write(outstream(), &buffer1, 1);
-    Pm_Write(outstream(), &buffer2, 1);
 #endif
+//    PRINT("RTcmixMIDIOutput::sendMIDIStop: sending MIDI Stop with ts = %ld\n", timestamp);
+    PRINT("RTcmixMIDIOutput::sendMIDIStop: sending CC 119 ts = %ld\n", timestamp);
+    PmEvent stopEvent;
+//    stopEvent.message = Pm_Message(0xFC, 0, 0);   // timecode stop
+    stopEvent.message = Pm_Message(make_status(kControl, 0), 119, 0);
+    stopEvent.timestamp = timestamp;
+    Pm_Write(outstream(), &stopEvent, 1);
     PRINT("RTcmixMIDIOutput::sendMIDIStop: Done\n");
 }
 
-RTcmixMIDIOutput *createMIDIOutputPort()
+RTcmixMIDIOutput *createMIDIOutputPort(const char *portname)
 {
     // We need rtsetparams in order to set the latency of the MIDI system.
     if (!RTcmix::rtsetparams_was_called()) {
@@ -594,7 +603,7 @@ RTcmixMIDIOutput *createMIDIOutputPort()
     }
     RTcmixMIDIOutput *midiport = NULL;
     try {
-        midiport = new RTcmixMIDIOutput();
+        midiport = new RTcmixMIDIOutput(portname);
     }
     catch (...) {
         return NULL;

@@ -129,8 +129,8 @@ public:
     // Tempo methods
     static double tbase(double p[], int n_args);
     static double tempo(double p[], int n_args);
-    static float time_beat(float timein);
-    static float beat_time(float beatin);
+    static double time_beat(double timein);
+    static double beat_time(double beatin);
 
     int setInputBuffer(const char *inName, float *inBuffer, int inFrames, int inChans, int inModtime, float inGainScaling);
 	static InputFile * findInput(const char *inName, int *pOutIndex);
@@ -286,7 +286,7 @@ private:
 	static char *	rtoutsfname;
 
     /* used in tempo operations */
-    static float xtime[],temp[],rxtime[],accel[],BASIS;
+    static double xtime[],tempovals[],rxtime[],accel[],BASIS;
     static short tempo_set, numTimePoints;
 
     /* used in intraverse.C, rtsendsamps.c */

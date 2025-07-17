@@ -26,6 +26,7 @@ public:
     MincList(int len=0);
     void resize(int newLen);
     bool removeAtIndex(int itemIndex);
+    bool insertAtIndex(const MincValue &item, int itemIndex);
     bool operator == (const MincList &rhs);
     bool operator < (const MincList &rhs);
     bool operator > (const MincList &rhs);
@@ -155,6 +156,7 @@ public:
     bool operator >= (const MincValue &rhs) const;
     
     MincDataType    dataType() const { return type; }
+    bool isZero() const { return _u.raw == 0ULL; }
     void zero() { _u.list = NULL; }        // zeroes without changing type
     void print() const;
 private:

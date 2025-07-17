@@ -50,9 +50,9 @@ PVTransBend::init(double *pp, int nargs)
 	_currentCall = 0;
 	_exptable = new double[2048];
 	if (nargs >= 3) {
-		float *pvals = new float[nargs - 1];
-		float timeZero = pp[1];
-		float totalTime = pp[nargs - 2], prevTime = timeZero;
+		double *pvals = new double[nargs - 1];
+        double timeZero = pp[1];
+        double totalTime = pp[nargs - 2], prevTime = timeZero;
 		int pIndex = 0;
 		for (int arg=1; arg<nargs; arg+=2) {
 			if (pp[arg] < prevTime) {

@@ -289,7 +289,7 @@ Symbol * lookupOrAutodeclare(const char *name, Bool useLocalScope)
             DPRINT("\tfound it\n");
             // lookupOrAutodeclare is only used for lvalues, so we know we're going to modify this
             if (useLocalScope && sym->scope() == 0 && RTOption::parserWarnings() > 1) {
-                minc_advise("Careful -- modifying global variable '%s' within a function", name);
+                minc_advise("Caution -- modifying global variable '%s' within a function or a for/while loop", name);
             }
         }
         else {

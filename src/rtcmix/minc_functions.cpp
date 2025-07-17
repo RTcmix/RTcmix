@@ -124,10 +124,10 @@ double m_srand(double p[], int n_args)
 }
 
 double m_time_beat(double p[], int)
-{ float time_beat(float); return(time_beat(p[0])); }
+{ double time_beat(double); return(time_beat(p[0])); }
 
 double m_beat_time(double p[], int)
-{ float beat_time(float); return(beat_time(p[0])); }
+{ double beat_time(double); return(beat_time(p[0])); }
 
 double m_trunc(double p[], int n_args)
 { return((double)(long long)(p[0])); }		// D.S. 08/09

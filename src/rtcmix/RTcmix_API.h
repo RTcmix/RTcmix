@@ -11,9 +11,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-	// BGGxx
-	__declspec(dllexport) int heyho();
-
 	typedef void (*RTcmixBangCallback)(void *inContext);
 	typedef void (*RTcmixValuesCallback)(float *values, int numValues, void *inContext);
 	typedef void (*RTcmixPrintCallback)(const char *printBuffer, void *inContext);
@@ -76,3 +73,4 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+

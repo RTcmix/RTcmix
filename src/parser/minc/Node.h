@@ -26,15 +26,14 @@ static char sBuf[256];
 /* intermediate tree representation */
 
 typedef enum {
-	eNodeZero = 0,
-	eNodeSeq,
+	eNodeSeq = 1,
 	eNodeStore,
 	eNodeList,
 	eNodeListElem,
 	eNodeEmptyListElem,
 	eNodeSubscriptRead,
 	eNodeSubscriptWrite,
-    eNodeSubscriptIncrement,
+    eNodeSubscriptOpAssign,
     eNodeMember,
 	eNodeOpAssign,
 	eNodeLoadSym,
@@ -161,7 +160,23 @@ protected:
 	virtual Node*		doExct();
 };
 
-class NodeOp : public Node2Children
+class OperationBase
+{
+public:
+    OperationBase();
+    Node *doOperation(Node *node, const MincValue &lhs, const MincValue &rhs, OpKind op);
+private:
+    Node* do_op_string(Node *node, const char *str1, const char *str2, OpKind op);
+    Node* do_op_num(Node *node, MincFloat val1, MincFloat val2, OpKind op);
+    Node* do_op_handle_num(Node *node, MincHandle  val1, MincFloat val2, OpKind op);
+    Node* do_op_num_handle(Node *node, MincFloat val1, MincHandle  val2, OpKind op);
+    Node* do_op_handle_handle(Node *node, MincHandle  val1, MincHandle  val2, OpKind op);
+    Node* do_op_list_float(Node *node, const MincList *srcList, MincFloat val, OpKind  op);
+    Node* do_op_list_list(Node *node, const MincList *list1, const MincList *list2, OpKind  op);
+    Node* do_op_float_list(Node *node, MincFloat val, const MincList *srcList, OpKind  op);
+};
+
+class NodeOp : public Node2Children, private OperationBase
 {
 public:
 	NodeOp(OpKind op, Node *n1, Node *n2) : Node2Children(op, eNodeOperator, n1, n2) {
@@ -169,15 +184,6 @@ public:
 	}
 protected:
 	virtual Node*		doExct();
-private:
-	Node* do_op_string(const char *str1, const char *str2, OpKind op);
-	Node* do_op_num(const MincFloat val1, const MincFloat val2, OpKind op);
-	Node* do_op_handle_num(const MincHandle val1, const MincFloat val2, OpKind op);
-	Node* do_op_num_handle(const MincFloat val1, const MincHandle val2, OpKind op);
-	Node* do_op_handle_handle(const MincHandle val1, const MincHandle val2, OpKind op);
-	Node* do_op_list_float(const MincList *srcList, const MincFloat val, const OpKind op);
-	Node* do_op_list_list(const MincList *list1, const MincList *list2, const OpKind op);
-    Node* do_op_float_list(const MincFloat val, const MincList *srcList, const OpKind op);
 };
 
 class NodeUnaryOperator : public Node1Child
@@ -205,7 +211,7 @@ private:
 };
 
 /* like NodeStore, but modify value before storing into variable */
-class NodeOpAssign : public Node2Children
+class NodeOpAssign : public Node2Children, private OperationBase
 {
 public:
 	NodeOpAssign(Node *n1, Node *n2, OpKind op) : Node2Children(op, eNodeOpAssign, n1, n2) {
@@ -496,11 +502,15 @@ protected:
 	virtual Node*		doExct() { return this; }
 };
 
+// Subscript class owns implementtion for read/write access to lists and maps
+
 class Subscript
 {
 public:
     MincValue readValueAtIndex(Node *listNode, Node *indexNode);
     void writeValueToIndex(Node *listNode, Node *indexNode, const MincValue &value);
+    MincValue searchWithMapKey(Node *mapNode, Node *key);
+    void writeWithMapKey(Node *mapNode, Node *keyNode, const MincValue &value);
 };
 
 class NodeSubscriptRead : public Node2Children, private Subscript
@@ -511,8 +521,6 @@ public:
 	}
 protected:
 	virtual Node*		doExct();
-    void                readAtSubscript();
-    void                searchWithMapKey();
 };
 
 class NodeSubscriptWrite : public Node3Children, private Subscript
@@ -523,19 +531,18 @@ public:
 	}
 protected:
 	virtual Node*		doExct();
-    void                writeToSubscript(Node *listNode, Node *indexNode, const MincValue &value);
-    void                writeWithMapKey(Node *mapNode, Node *indexNode, const MincValue &value);
 };
 
-class NodeSubscriptIncrement : public Node3Children, private Subscript
+class NodeSubscriptOpAssign : public Node3Children, private Subscript, private OperationBase
 {
 public:
-    NodeSubscriptIncrement(Node *n1, Node *n2, Node *n3) : Node3Children(OpFree, eNodeSubscriptIncrement, n1, n2, n3) {
-        NPRINT("NodeSubscriptIncrement(%p, %p, %p) => %p\n", n1, n2, n3, this);
+    NodeSubscriptOpAssign(Node *n1, Node *n2, Node *n3, OpKind op) : Node3Children(op, eNodeSubscriptOpAssign, n1, n2, n3) {
+        NPRINT("NodeSubscriptOpAssign(%p, %p, %p, op=%d) => %p\n", n1, n2, n3, op, this);
     }
 protected:
     virtual Node*		doExct();
-    void                incrementSubscript(Node *listNode, Node *indexNode, Node *valueNode);
+    void                operateOnSubscript(Node *listNode, Node *indexNode, Node *valueNode, OpKind op);
+    void                operateOnMapLookup(Node *mapNode, Node *keyNode, Node *valueNode, OpKind op);
 };
 
 // NodeMemberAccess returns symbol for member var or method function from RHS of dot operator

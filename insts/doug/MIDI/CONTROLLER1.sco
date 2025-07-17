@@ -1,6 +1,6 @@
 // Test score for CONTROLLER instrument
 
-set_option("midi_outdevice = Internal MIDI: Bus 2");
+set_option("midi_outdevice = Internal MIDI Bus 2");
 rtsetparams(48000, 2, 1024);
 load("MIDI");
 

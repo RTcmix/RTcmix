@@ -11,6 +11,7 @@
 #include <pmutil.h>
 #include <RTMIDIOutput.h>
 #include <Lockable.h>
+#include <list>
 
 #define SLEEP_MSEC			1		// How long to nap between polling of events
 #define INVALID_MIDIVAL    99999
@@ -99,7 +100,7 @@ private:
 
 class RTcmixMIDIOutput : public RTMIDIOutput, private Lockable {
 public:
-    RTcmixMIDIOutput();
+    RTcmixMIDIOutput(const char *portname);
     virtual ~RTcmixMIDIOutput();
     int init();
     
@@ -121,12 +122,15 @@ protected:
     static void _midiCallback(PtTimestamp timestamp, void *context);
     inline PmStream *outstream() { return _outstream; }
 private:
-    int         _deviceID;
-    PmStream *  _outstream;
+    const char *                        _portname;
+    int                                 _deviceID;
+    PmStream *                          _outstream;
+    typedef std::pair<uchar, uchar> MidiItem;
+    std::list<MidiItem>                 _noteList;
 };
 
 RTcmixMIDIInput *createMIDIInputPort();
 
-RTcmixMIDIOutput *createMIDIOutputPort();
+RTcmixMIDIOutput *createMIDIOutputPort(const char *portname);
 
 #endif // _RTCMIXMIDI_H_

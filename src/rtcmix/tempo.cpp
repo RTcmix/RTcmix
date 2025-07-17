@@ -6,8 +6,8 @@
 extern "C" {
 double tbase(double p[], int n_args);
 double tempo(double p[], int n_args);
-float time_beat(float timein);
-float beat_time(float beatin);
+double time_beat(double timein);
+double beat_time(double beatin);
 };
 
 
@@ -23,14 +23,14 @@ tempo(double p[], int n_args)
     return RTcmix::tempo(p, n_args);
 }
 
-float
-time_beat(float timein)
+double
+time_beat(double timein)
 {
     return RTcmix::time_beat(timein);
 }
 
-float
-beat_time(float timein)
+double
+beat_time(double timein)
 {
     return RTcmix::beat_time(timein);
 }

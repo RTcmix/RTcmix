@@ -81,6 +81,30 @@ bool MincList::removeAtIndex(int itemIndex)
     return true;
 }
 
+bool MincList::insertAtIndex(const MincValue &item, int itemIndex)
+{
+    MincValue *oldList = data;
+    int newLen = std::max(len + 1, itemIndex + 1);
+    data = new MincValue[newLen];
+    int i;
+    // Copy items from before insert
+    for (i = 0; i < itemIndex && i < len; ++i) {
+        data[i] = oldList[i];
+    }
+    // Pad if necessary with 0's to match other list functionality
+    for (; i < itemIndex; ++i) {
+        data[i] = MincValue(0.0);
+    }
+    data[itemIndex] = item;
+    // Copy items after the insert
+    for (i = itemIndex+1; i <= len; ++i) {
+        data[i] = oldList[i-1];
+    }
+    len = newLen;
+    delete [] oldList;
+    return true;
+}
+
 bool
 MincList::operator == (const MincList &rhs)
 {
@@ -621,6 +645,10 @@ MincValue& MincValue::operator[] (const MincValue &index)
 
 bool MincValue::operator == (const MincValue &rhs) const
 {
+    // Allow a zero check
+    if (rhs.isZero()) {
+        return rawValue() == 0ULL;
+    }
     ThrowIf(rhs.type != this->type, NonmatchingTypeException("Attempt to compare variables having different types"));
     switch (type) {
         case MincFloatType:
@@ -629,12 +657,12 @@ bool MincValue::operator == (const MincValue &rhs) const
             return same(_u.string, rhs._u.string);
         case MincHandleType:
         case MincFunctionType:
+        case MincMapType:
+        case MincStructType:
             return (rawValue() == rhs.rawValue());
         case MincListType:
             return (_u.list == NULL || rhs._u.list == NULL) ?
                 _u.list == rhs._u.list : *_u.list == *rhs._u.list;
-        case MincMapType:
-        case MincStructType:
        default:
             throw InvalidTypeException("Can't compare objects of this type");
     }
