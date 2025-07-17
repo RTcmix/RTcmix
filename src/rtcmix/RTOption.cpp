@@ -8,6 +8,9 @@
 
 #include <assert.h>
 #include <limits.h>        // PATH_MAX
+// BGGx ww -- PATH_MAX not in windows; just grabbed this from somewhere
+#define PATH_MAX 260
+
 #include "RTOption.h"
 #include <Config.h>
 #include <string.h>
@@ -426,7 +429,8 @@ int RTOption::writeConfigFile(const char *fileName)
 #ifdef SHAREDLIBDIR
 	fprintf(stream, "\n# %s is a colon-separated list of directories (full "
 			"path names) to \n# search for instruments.\n", kOptionDSOPath);
-	fprintf(stream, "# %s = \"%s\"\n", kOptionDSOPath, SHAREDLIBDIR);
+// BGGx ww -- I don't know why VS compiler is looking at "SHAREDLIBDIR"
+//      fprintf(stream, "# %s = \"%s\"\n", kOptionDSOPath, SHAREDLIBDIR);
 #endif
 
 	fprintf(stream, "\n");

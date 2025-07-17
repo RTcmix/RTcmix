@@ -309,6 +309,18 @@ void checkForPrint()
 	}
 }
 
+//BGGx ww -- put these in for windows compile (from main source) -- I hope they work!
+//
+static RTcmixFinishedCallback sFinishedCallback = NULL;
+static void *sFinishedCallbackContext = NULL;
+
+void notifyIsFinished(long long endFrame)
+{
+	if (sFinishedCallback) {
+		sFinishedCallback(endFrame, sFinishedCallbackContext);
+	}
+}
+
 // Currently this does not support resetting the number of busses.
 
 int RTcmix_resetAudio(float sr, int nchans, int vecsize, int recording, int objno)
@@ -331,26 +343,31 @@ int RTcmix_resetAudio(float sr, int nchans, int vecsize, int recording, int objn
 	return status;
 }
 
-/* XXX TODO XXX DAS IF NEEDED BY WINDOWS, PLEASE UNCOMMENT AND EDIT
+// XXX TODO XXX DAS IF NEEDED BY WINDOWS, PLEASE UNCOMMENT AND EDIT
 // This is now the entry point into the parser code, so all the RTcmix_XXX methods
 // can be defined in this file.
 
 extern "C" int embedded_parse_score(const char *caller, char *thebuf, int buflen);
 
 // BGG mm -- set this to accept a buffer from max/msp or other embedded systems
+//
+// this is called by unity_parse_score for uRTcmix
 
-int RTcmix_parseScore(char *theBuf, int buflen)
+// BGGx ww -- added 'objno' for globalApp use
+// added 'extern "C" to match definition below
+extern "C" int RTcmix_parseScore(char *theBuf, int buflen, int objno)
 {
     int status = embedded_parse_score("RTcmix_parseScore", theBuf, buflen);
 #if defined(EMBEDDEDAUDIO)
-    if (!globalApp->interactive() && status != 0) {
+// BGGx ww -- added 'objno' for globalApp use
+    if (!globalApp[objno]->interactive() && status != 0) {
         // If there was an error, flush messages.
         checkForPrint();
     }
 #endif
     return status;
 }
-*/
+
 
 #ifdef IOS
 
@@ -385,13 +402,15 @@ void RTcmix_setMSPState(const char *inSpec, void *inState)
 // this is for dynamic loading of RTcmix instruments (for development)
 // only one rtcmix~ may be instantiated for this to work
 // the scorefile load() system is disabled in rtcmix~
-void loadinst(char *dsoname)
+// BGGx ww -- added "int objno" to this so it would compile
+void loadinst(char *dsoname,int objno)
 {
 	// the dsoname should be a fully-qualified pathname to the dynlib
 	globalApp[objno]->doload(dsoname);
 }
 
-void unloadinst()
+// BGGx ww -- added "int objno" to this so it would compile
+void unloadinst(int objno)
 {
 	// it is necessary to unload the dso directly, otherwise the dlopen()
 	// system keeps it in memory
@@ -459,12 +478,18 @@ int RTcmix_setAudioBufferFormat(RTcmix_AudioFormat format, int nchans, int objno
 	return SetEmbeddedCallbackAudioFormat(rtcmix_fmt, nchans);
 }
 
+// BGGx
+/*
 void RTcmix_setInteractive(int interactive)
 {
     globalApp->setInteractive(interactive != 0);
 }
+*/
 
-int RTcmix_runAudio(void *inAudioBuffer, void *outAudioBuffer, int nframes)
+// BGGx -- for unity
+float tinputbuf[2048];  // so we only have to pass one buffer ptr in unity
+
+int RTcmix_runAudio(void *inAudioBuffer, void *outAudioBuffer, int nframes, int objno)
 {
 	// BGGx
 	int retval;
@@ -559,15 +584,15 @@ void RTcmix_flushScore(int objno)
 	globalApp[objno]->set_wmmcontext(objno);
 }
 
-// BGGx
-extern "C" int RTcmix_parseScore(char *thebuf, int buflen);
+// BGGx ww -- added 'objno' for globalApp use
+extern "C" int RTcmix_parseScore(char *thebuf, int buflen, int objno);
 
 int unity_parse_score(char *buf, int len, int objno)
 {
    int retval;
 
    globalApp[objno]->get_wmmcontext(objno);
-   retval = RTcmix_parseScore(buf, len);
+   retval = RTcmix_parseScore(buf, len, objno);
    globalApp[objno]->set_wmmcontext(objno);
 
    return retval;

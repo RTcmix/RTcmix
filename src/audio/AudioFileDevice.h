@@ -3,6 +3,9 @@
 #ifndef _AUDIOFILEDEVICE_H_
 #define _AUDIOFILEDEVICE_H_
 
+// BGGx ww -- why is this included?  arg!
+
+/*
 #include "ThreadedAudioDevice.h"
 
 class AudioFileDevice : public ThreadedAudioDevice {
@@ -30,5 +33,6 @@ private:
 	struct Impl;
 	Impl	*_impl;
 };
+*/
 
 #endif	// _AUDIOFILEDEVICE_H_

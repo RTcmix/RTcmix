@@ -5,6 +5,8 @@
 
 #define SIZEOF_MMPRINTBUF 65536 /* should move to dyn alloc at some point */
 
+// BGGx ww -- I think this is in MMPrint.h
+/*
 class MMPrint {
 public:
     MMPrint() {};
@@ -14,6 +16,7 @@ public:
     static char *mm_print_ptr;
     static bool mm_cleared;
 };
+*/ // BGGx ww
 
 char MMPrint::mm_print_buf[SIZEOF_MMPRINTBUF];
 char *MMPrint::mm_print_ptr;

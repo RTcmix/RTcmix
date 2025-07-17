@@ -8,7 +8,7 @@ int wmmcontext_busy;
 #include <RTcmix.h>
 #include <wmmcontext.h>
 // BGGx ww
-#include "Option.h" // for our print context
+#include "RTOption.h" // for our print context
 
 extern wmmcontext theContext[]; // in main.cpp
 
@@ -57,11 +57,12 @@ extern int last_input_index;
 void RTcmix::set_wmmcontext(int objno)
 {
 	theContext[objno].NCHANS = NCHANS;
-	theContext[objno].RTBUFSAMPS = RTBUFSAMPS;
+	theContext[objno].RTBUFSAMPS = bufsamps();
 	theContext[objno].audioNCHANS = audioNCHANS;
-	theContext[objno].SR = SR;
+	theContext[objno].SR = sr();
 	theContext[objno].runToOffset = runToOffset;
-	theContext[objno].bufOffset = bufOffset;
+	// BGGx ww -- bufOffset isn't used any more?
+	//theContext[objno].bufOffset = bufOffset;
 // BGGx
 	theContext[objno].bufStartSamp = bufStartSamp;
 	theContext[objno].rtInteractive = rtInteractive;
@@ -151,11 +152,15 @@ void RTcmix::get_wmmcontext(int objno)
 	wmmcontext_busy = 1;
 
 	NCHANS = theContext[objno].NCHANS;
-	RTBUFSAMPS = theContext[objno].RTBUFSAMPS;
+	// BGG -- new API for some of these globals
+	//RTBUFSAMPS = theContext[objno].RTBUFSAMPS;
+	setRTBUFSAMPS(theContext[objno].RTBUFSAMPS);
 	audioNCHANS = theContext[objno].audioNCHANS;
-	SR = theContext[objno].SR;
+	//SR = theContext[objno].SR;
+	setSR(theContext[objno].SR);
 	runToOffset = theContext[objno].runToOffset;
-	bufOffset = theContext[objno].bufOffset;
+	// BGGx ww -- bufOffset isn't used any more?
+	// bufOffset = theContext[objno].bufOffset;
 // BGGx
 	bufStartSamp = theContext[objno].bufStartSamp;
 	rtInteractive = theContext[objno].rtInteractive;
@@ -245,7 +250,8 @@ void RTcmix::clear_wmmcontext(int objno)
 	theContext[objno].audioNCHANS = 0;
 	theContext[objno].SR = 0.0;
 	theContext[objno].runToOffset = false;
-	theContext[objno].bufOffset = 0;
+	// BGGx ww -- bufOffset isn't used any more?
+	//theContext[objno].bufOffset = 0;
 	theContext[objno].bufStartSamp = 0;
 	theContext[objno].rtInteractive = 0;
 	theContext[objno].rtsetparams_called = 0;
@@ -317,7 +323,7 @@ void RTcmix::clear_wmmcontext(int objno)
 // BGGx ww -- set our internal print var to default state (2, rterrors only)
 //	theContext[objno].wmmprint = 2;
 // BGGx -- set the default internal _print in RTcmix from our context var here
-        Option::print(theContext[objno].wmmprint);
+        RTOption::print(theContext[objno].wmmprint);
 // from main.cpp
 //	theContext[objno].mm_bufs = mm_bufs;
 //	theContext[objno].mm_buf_input = mm_buf_input;

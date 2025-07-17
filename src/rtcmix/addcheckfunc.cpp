@@ -214,7 +214,11 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
         if (func->legacy) {
          /* for old (double p[], int nargs) signature (now minus the float[] array -- DAS) */
          #include <maxdispargs.h>
-         double p[MAXDISPARGS];
+        // BGGx ww -- I have no idea why this won't initialize with MAXDISPARGS
+         // double p[MAXDISPARGS];
+         double *p;
+         p = (double*)emalloc(MAXDISPARGS * sizeof(double));
+
          for (int i = 0; i < nargs; i++) {
 			const Arg &theArg = arglist[i];
 			switch (theArg.type()) {
@@ -235,6 +239,7 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
          }
          *retval = (double) (*(func->func_ptr.legacy_return))
                                                       (p, nargs);
+         efree(p);
       }
       else
          *retval = (double) (*(func->func_ptr.number_return))
@@ -349,7 +354,8 @@ extern "C" double m_load(double *, int);	// loader.c
 int
 RTcmix::findAndLoadFunction(const char *funcname)
 {
-	const char *path;
+    // BGGx ww -- no idea, but this wouldn't compile
+	//const char *path;
 	int status = -1;
 	// BGGx ww -- no load in windows
 /*

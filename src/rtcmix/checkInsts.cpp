@@ -45,7 +45,7 @@ findInstCreator(rt_item *inList, const char *inInstName)
 
 static int loadPFieldsAndSetup(const char *inName, Instrument *inInst, const Arg arglist[], const int nargs)
 {
-    int status = NO_ERROR;
+    int status = NO_RTCMIX_ERROR;
 	// Load PFieldSet with ConstPField instances for each
 	// valid p field.
 	PFieldSet *pfieldset = new PFieldSet(nargs);
@@ -106,11 +106,11 @@ static int loadPFieldsAndSetup(const char *inName, Instrument *inInst, const Arg
 				break;
 		}
 	}
-	if (status != NO_ERROR) {
+	if (status != NO_RTCMIX_ERROR) {
 		delete pfieldset;
 		return status;
 	}
-    return inInst->setup(pfieldset) >= 0 ? NO_ERROR : PARAM_ERROR;
+    return inInst->setup(pfieldset) >= 0 ? NO_RTCMIX_ERROR : PARAM_ERROR;
 }
 
 int
@@ -128,7 +128,7 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
 	InstCreatorFunction instCreator = findInstCreator(rt_list, instname);
 
 	if (instCreator) {
-		::printargs(instname, arglist, nargs);
+		printargs(instname, arglist, nargs);
 
 		if (!rtsetparams_was_called()) {
 #ifdef EMBEDDED

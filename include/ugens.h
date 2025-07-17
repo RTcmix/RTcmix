@@ -165,7 +165,7 @@ void fnscl(struct gen *gen);
 
 typedef enum {
     FUNCTION_NOT_FOUND      = 1,    /* error, but alternately treated as warning */
-    NO_ERROR                = 0,
+    NO_RTCMIX_ERROR                = 0,
     DONT_SCHEDULE           = -1,	/* returned by Instr->init() on fatal err */
     PARAM_ERROR             = -2,   /* passed-in value or value reached in curve, etc., out of range */
     CONFIGURATION_ERROR     = -3,   /* instrument created before rtsetparams, etc. */

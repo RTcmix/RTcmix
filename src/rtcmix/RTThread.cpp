@@ -36,7 +36,8 @@ void RTThread::setName(const char *name)
 #ifdef MACOSX
     (void) pthread_setname_np(name);
 #else
-    (void) pthread_setname_np(mThread, name);
+// DAS Commented out for Brad's windoze version for now
+//    (void) pthread_setname_np(mThread, name);
 #endif
 }
 

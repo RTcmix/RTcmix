@@ -28,7 +28,7 @@ RTcmix::dispatch(const char *func_label, const Arg arglist[],
 				"Note: \"%s\" is an undefined function or instrument.",
 				func_label);
               break;
-          case NO_ERROR:
+          case NO_RTCMIX_ERROR:
           default:
               break;
       }

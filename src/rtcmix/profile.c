@@ -33,8 +33,8 @@ profile()
     UG_INTRO("pitch_smoothing",use_pitch_smoothing);
  */
 
-// BGGxx
-// get RID of these damned instrunents from hell!
+// BGGx ww
+// these not working in windows
 /*
 #ifndef USE_MMOVE
 	// from MOVE/PLACE
@@ -58,10 +58,10 @@ profile()
 	UG_INTRO("path",path);
 	UG_INTRO("cpath",cpath);
 	UG_INTRO("threshold",threshold);
-*/
 	
 	// from PVOC
 	UG_INTRO("set_filter", set_filter);
+*/
 
 	// from ELL
 	UG_INTRO("ellset", ellset);

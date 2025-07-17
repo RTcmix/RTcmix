@@ -40,7 +40,9 @@ extern "C" {
 		AudioFormat_32BitFloat_Normalized = 8,	// single-precision float samples, scaled between -1.0 and 1.0
 		AudioFormat_32BitFloat = 16				// single-precision float samples, scaled between -32767.0 and 32767.0
 	} RTcmix_AudioFormat;
-	int RTcmix_setAudioBufferFormat(RTcmix_AudioFormat format, int nchans);
+// BGGx ww added the declspec() and objno
+	//__declspec(dllexport) int RTcmix_setAudioBufferFormat(RTcmix_AudioFormat format, int nchans);
+	__declspec(dllexport) int RTcmix_setAudioBufferFormat(RTcmix_AudioFormat format, int nchans, int objno);
     // Set this to 0 to run non-interactively (i.e., parse the score completely first, then start running audio).
     void RTcmix_setInteractive(int interactive);
 	// Call this to send and receive audio from RTcmix

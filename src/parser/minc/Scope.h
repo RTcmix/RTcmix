@@ -8,6 +8,9 @@
 #ifndef Scope_h
 #define Scope_h
 
+// BGGx ww -- had to add this for Windows
+#include <assert.h>
+
 #include "rt_types.h"
 #include "minc_internal.h"
 

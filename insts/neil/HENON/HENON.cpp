@@ -76,7 +76,9 @@ void HENON::doupdate()
 
 void HENON::updateparams()
 {
-	double p[nargs];
+	// BGGx ww -- don't allocate this repeatedly!  pace Doug
+	//double p[nargs];
+	double p[9];
 	update(p, nargs);
 
 	a = (nargs > 3) ? p[3] : 1.4;

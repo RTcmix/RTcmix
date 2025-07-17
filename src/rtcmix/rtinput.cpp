@@ -491,7 +491,7 @@ RTcmix::rtinput(double p[], int n_args)
 	
 Error:
     
-    if (status != NO_ERROR) {
+    if (status != NO_RTCMIX_ERROR) {
         RTExit(status);
     }
 	/* This signals inTraverse() to grab buffers from the audio device. We wait till the end to be sure we succeed,

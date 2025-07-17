@@ -54,7 +54,8 @@ rtprofile()
 	RT_INTRO("NOISE",makeNOISE);
 	RT_INTRO("PANECHO",makePANECHO);
 	RT_INTRO("PHASER", makePHASER);
-	RT_INTRO("PVOC", makePVOC);
+	// BGGx ww -- PVOC not working in windows
+//	RT_INTRO("PVOC", makePVOC);
 	RT_INTRO("REVMIX", makeREVMIX);
 	RT_INTRO("SCRUB", makeSCRUB);
 	RT_INTRO("SCULPT",makeSCULPT);

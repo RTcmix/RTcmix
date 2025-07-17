@@ -16,7 +16,8 @@
 #include <RTOption.h>
 
 #include "AudioDevice.h"
-#include "AudioFileDevice.h"
+// BGGx ww
+//#include "AudioFileDevice.h"
 #include "AudioIODevice.h"
 #include "AudioOutputGroupDevice.h"
 #include "DualOutputAudioDevice.h"
@@ -154,8 +155,8 @@ create_audio_file_device(AudioDevice *inDevice,
 	
 	AudioDevice *device = NULL;
 
-    // BGGx
-    /*
+// BGGx
+/*
 	AudioFileDevice *fileDevice = NULL;
 
     try {
@@ -259,7 +260,7 @@ create_audio_file_device(AudioDevice *inDevice,
 		 printf("     srate:  %g\n", srate);
 		 printf("     chans:  %d\n", chans);
 	}
-
+*/ // BGGx
 	return device;
 }
 

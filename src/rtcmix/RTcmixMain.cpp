@@ -228,6 +228,9 @@ RTcmixMain::~RTcmixMain()
 void
 RTcmixMain::parseArguments(int argc, char **argv, char **env)
 {
+// BGGx ww -- I think all this needs to go for windows/embedded
+// it wasn't in my uRTcmix code
+/*
    int         i;
 #ifdef LINUX
    int		   priority = 0;
@@ -246,9 +249,9 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
    xargc = 1;
    xenv = env;
 
-   /* Process command line, copying any args we don't handle into
-      <xargv> for parsers to deal with.
-   */
+ //  Process command line, copying any args we don't handle into
+ //     <xargv> for parsers to deal with.
+  
    for (i = 1; i < argc; i++) {
       char *arg = argv[i];
 
@@ -257,10 +260,10 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
             case 'h':
                usage();
                break;
-            case 'i':               /* for separate parseit thread */
+            case 'i':               // for separate parseit thread
                setInteractive(true);
                audio_config = 0;
-               RTOption::exitOnError(false);  /* we cannot simply quit when in interactive mode */
+               RTOption::exitOnError(false);  // we cannot simply quit when in interactive mode
                break;
             case 'o':
 #ifdef OSC
@@ -273,19 +276,19 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                  exit(1);
 #endif
                 break;
-            case 'n':               /* for use in interactive mode only */
+            case 'n':               // for use in interactive mode only
                noParse = 1;
                break;
 			case 'P':
-               parseOnly = 1;		/* parser testing */
+               parseOnly = 1;		// parser testing
                break;
-            case 'Q':               /* really quiet */
+            case 'Q':               // really quiet
                RTOption::reportClipping(false);
-               RTOption::checkPeaks(false); /* (then fall through) */
-            case 'q':               /* quiet */
+               RTOption::checkPeaks(false); // (then fall through)
+            case 'q':               // quiet
                RTOption::print(0);
                break;
-            case 'v':               /* verbosity */
+            case 'v':               // verbosity
                if (++i >= argc) {
                   fprintf(stderr, "You didn't give a print level (0-5).\n");
                   exit(1);
@@ -314,19 +317,19 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                RTOption::device(argv[i]);
                break;
 #ifdef NETAUDIO
-            case 'r':               /* set up for network playing */
+            case 'r':               // set up for network playing
               	if (++i >= argc) {
                   fprintf(stderr, "You didn't give a remote host ip.\n");
                   exit(1);
               	}
-               /* host ip num */
+               // host ip num
                strcat(rhostname, "net:");
-               strncat(rhostname, argv[i], 59-4);    /* safe strcat */
+               strncat(rhostname, argv[i], 59-4);    // safe strcat
                rhostname[59] = '\0';
                netplay = 1;
                break;
-            case 'k':               /* socket number for network playing */
-                                    /* defaults to 9999 */
+            case 'k':               // socket number for network playing
+                                    // defaults to 9999
                if (++i >= argc) {
                   fprintf(stderr, "You didn't give a socket number.\n");
                   exit(1);
@@ -336,7 +339,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                netplay = 1;
                break;
 #endif
-            case 'S':               /* set up a socket offset */
+            case 'S':               // set up a socket offset
                if (++i >= argc) {
                   fprintf(stderr, "You didn't give a socket offset.\n");
                   exit(1);
@@ -344,19 +347,19 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                socknew = atoi(argv[i]);
                printf("%s listening on socket %d\n", xargv[0], MYPORT + socknew);
                break;
-            case 's':               /* start time (offset into playback) */
+            case 's':               // start time (offset into playback)
                  if (++i >= argc) {
                     fprintf(stderr, "You didn't give a skip time.\n");
                     exit(1);
                  }
                  setBufTimeOffset((float)atof(argv[i]), false);
                  break;
-            case 'd':               /* duration to play for (unimplemented) */
-            case 'e':               /* time to stop playing (unimplemented) */
+            case 'd':               // duration to play for (unimplemented)
+            case 'e':               // time to stop playing (unimplemented)
                fprintf(stderr, "-d, -e options not yet implemented\n");
                exit(1);
                break;
-            case 'f':     /* use file name arg instead of stdin as score */
+            case 'f':     // use file name arg instead of stdin as score
                if (++i >= argc) {
                   fprintf(stderr, "You didn't give a file name.\n");
                   exit(1);
@@ -364,18 +367,18 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                infile = argv[i];
                use_script_file(infile);
                break;
-            case '-':           /* accept "--debug" and pass to Perl as "-d" */
+            case '-':           // accept "--debug" and pass to Perl as "-d"
                if (strncmp(&arg[2], "debug", 10) == 0)
                   xargv[xargc++] = strdup("-d");
 			   else
-				   xargv[xargc++] = arg;    /* copy all other --arguments to parser */
+				   xargv[xargc++] = arg;    // copy all other --arguments to parser
                break;
             default:
-               xargv[xargc++] = arg;    /* copy for parser */
+               xargv[xargc++] = arg;    // copy for parser
          }
       }
       else
-         xargv[xargc++] = arg;          /* copy for parser */
+         xargv[xargc++] = arg;          // copy for parser
 
       if (xargc >= MAXARGS) {
          fprintf(stderr, "Too many command-line options.\n");
@@ -385,7 +388,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
    // Handle state which is set via args but not stored in RTcmix.
    // NOTE:  The way this is handled should change.
 #ifdef NETAUDIO
-   if (netplay) {             /* set up socket for sending audio */
+   if (netplay) {             // set up socket for sending audio
       int status = ::setnetplay(rhostname, thesocket);
       if (status == -1) {
          fprintf(stderr, "Cannot establish network connection to '%s' for "
@@ -396,7 +399,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                                                                   rhostname);
     }
 #endif
-
+*/ // BGGx ww -- end of all that parse args
 }
 
 #ifndef EMBEDDED
@@ -581,7 +584,7 @@ RTcmixMain::doload(char *dsoPath)
 	rtcmix_advise("loader", "Loaded %s functions from shared library:\n\t'%s'.\n", (profileLoaded == 3) ? "standard and RT" :
 		(profileLoaded == 2) ? "RT" : "standard", dsoPath);
 #endif
-
+*/ // BGGx ww
 	return 1;
 }
 

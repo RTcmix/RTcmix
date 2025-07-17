@@ -22,8 +22,9 @@
 #include <RTOption.h>
 #ifdef MAXMSP
 // BGG -- this is how you print to the console.app now in max/msp
-extern void cpost(const char *fmt, ...);
-#define USE_POST
+// BGGx ww -- cpost isn't defined in the windows version
+//extern void cpost(const char *fmt, ...);
+//#define USE_POST
 #elif defined(PD)
 // DAS -- this is PD's version of same
 extern void post(const char *fmt, ...);
@@ -32,8 +33,9 @@ extern void post(const char *fmt, ...);
 #endif
 
 #if (defined(MACOSX) || defined(IOS)) && defined(EMBEDDED)
-#include <syslog.h>
-#define USE_SYSLOG
+// BGGx ww -- not sure why this was being included in the VS compile
+//#include <syslog.h>
+//#define USE_SYSLOG
 #endif
 
 

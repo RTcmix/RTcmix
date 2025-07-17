@@ -1196,7 +1196,8 @@ void NodeFunctionCall::callBuiltinFunction(const char *functionName)
     }
     this->setValue(retval);
     switch (result) {
-        case NO_ERROR:
+        // BGGx ww -- NO_ERROR is reserved in Windows
+        case NO_RTCMIX_ERROR:
             break;
         case FUNCTION_NOT_FOUND:
 #if defined(ERROR_FAIL_ON_UNDEFINED_FUNCTION)

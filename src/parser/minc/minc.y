@@ -831,7 +831,8 @@ void reset_parser()
 
 #ifdef EMBEDDED
 
-#warning DAS Make sure yylex_destroy() works
+// BGGx -- no #warning in VS!
+// warning DAS Make sure yylex_destroy() works
 #define USE_YYLEX_DESTROY
 
 // BGG mm -- for dynamic memory mgmt (double return for UG_INTRO() macro)

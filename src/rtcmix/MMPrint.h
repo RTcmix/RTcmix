@@ -12,7 +12,20 @@
 #ifndef __MM_PRINT_H__
 #define __MM_PRINT_H__
 
+#define SIZEOF_MMPRINTBUF 65536 /* should move to dyn alloc at some point */
+
 #ifdef __cplusplus
+
+class MMPrint {
+public:
+    MMPrint() {};
+    ~MMPrint() {};
+
+    static char mm_print_buf[];
+    static char* mm_print_ptr;
+    static bool mm_cleared;
+};
+
 extern "C" {
 #endif // __cplusplus
 	int get_mm_print_space();

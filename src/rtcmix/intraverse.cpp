@@ -99,7 +99,9 @@ int RTcmix::runMainLoop()
 			return ret;
 		}
 #endif
-       usleep(1000*100);   // no reason to run loop faster that 1 per 100 ms.
+		// BGGx ww
+		// usleep(1000*100);   // no reason to run loop faster that 1 per 100 ms
+		Sleep(100);
 	}
 
 #ifndef EMBEDDED
