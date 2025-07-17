@@ -216,7 +216,7 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
 #include <maxdispargs.h>
             // BGGx ww -- I have no idea why this won't initialize with MAXDISPARGS
             // double p[MAXDISPARGS];
-            double *p = (double*)emalloc(MAXDISPARGS * sizeof(double));
+            double *p = (double*)malloc(MAXDISPARGS * sizeof(double));
             for (int i = 0; i < nargs; i++) {
                 const Arg &theArg = arglist[i];
                 switch (theArg.type()) {
@@ -237,7 +237,7 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
             }
             *retval = (double) (*(func->func_ptr.legacy_return))
                     (p, nargs);
-            efree(p);
+            free(p);
         }
         else
             *retval = (double) (*(func->func_ptr.number_return))

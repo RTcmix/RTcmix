@@ -55,25 +55,27 @@
      TOK_POW = 271,
      CASTTOKEN = 272,
      TOK_STRUCT_DECL = 273,
-     TOK_FLOAT_DECL = 274,
-     TOK_STRING_DECL = 275,
-     TOK_HANDLE_DECL = 276,
-     TOK_LIST_DECL = 277,
-     TOK_MAP_DECL = 278,
-     TOK_FUNC_DECL = 279,
-     TOK_IDENT = 280,
-     TOK_NUM = 281,
-     TOK_ARG_QUERY = 282,
-     TOK_ARG = 283,
-     TOK_NOT = 284,
-     TOK_IF = 285,
-     TOK_ELSE = 286,
-     TOK_FOR = 287,
-     TOK_WHILE = 288,
-     TOK_RETURN = 289,
-     TOK_TRUE = 290,
-     TOK_FALSE = 291,
-     TOK_STRING = 292
+     TOK_BASE_DECL = 274,
+     TOK_FLOAT_DECL = 275,
+     TOK_STRING_DECL = 276,
+     TOK_HANDLE_DECL = 277,
+     TOK_LIST_DECL = 278,
+     TOK_MAP_DECL = 279,
+     TOK_MFUNC_DECL = 280,
+     TOK_METHOD = 281,
+     TOK_IDENT = 282,
+     TOK_NUM = 283,
+     TOK_ARG_QUERY = 284,
+     TOK_ARG = 285,
+     TOK_NOT = 286,
+     TOK_IF = 287,
+     TOK_ELSE = 288,
+     TOK_FOR = 289,
+     TOK_WHILE = 290,
+     TOK_RETURN = 291,
+     TOK_TRUE = 292,
+     TOK_FALSE = 293,
+     TOK_STRING = 294
    };
 #endif
 /* Tokens.  */
@@ -93,25 +95,27 @@
 #define TOK_POW 271
 #define CASTTOKEN 272
 #define TOK_STRUCT_DECL 273
-#define TOK_FLOAT_DECL 274
-#define TOK_STRING_DECL 275
-#define TOK_HANDLE_DECL 276
-#define TOK_LIST_DECL 277
-#define TOK_MAP_DECL 278
-#define TOK_FUNC_DECL 279
-#define TOK_IDENT 280
-#define TOK_NUM 281
-#define TOK_ARG_QUERY 282
-#define TOK_ARG 283
-#define TOK_NOT 284
-#define TOK_IF 285
-#define TOK_ELSE 286
-#define TOK_FOR 287
-#define TOK_WHILE 288
-#define TOK_RETURN 289
-#define TOK_TRUE 290
-#define TOK_FALSE 291
-#define TOK_STRING 292
+#define TOK_BASE_DECL 274
+#define TOK_FLOAT_DECL 275
+#define TOK_STRING_DECL 276
+#define TOK_HANDLE_DECL 277
+#define TOK_LIST_DECL 278
+#define TOK_MAP_DECL 279
+#define TOK_MFUNC_DECL 280
+#define TOK_METHOD 281
+#define TOK_IDENT 282
+#define TOK_NUM 283
+#define TOK_ARG_QUERY 284
+#define TOK_ARG 285
+#define TOK_NOT 286
+#define TOK_IF 287
+#define TOK_ELSE 288
+#define TOK_FOR 289
+#define TOK_WHILE 290
+#define TOK_RETURN 291
+#define TOK_TRUE 292
+#define TOK_FALSE 293
+#define TOK_STRING 294
 
 
 
