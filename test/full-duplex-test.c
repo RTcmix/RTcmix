@@ -23,7 +23,7 @@ main (int argc, char* argv[])
   int rec_time;
 
   /* Check % of args */
-  printf("======== RTCmix (full-duplex-test) LINUX ========\n");
+  printf("======== RTcmix (full-duplex-test) LINUX ========\n");
   
   speed = 44100;
   chans = 2;

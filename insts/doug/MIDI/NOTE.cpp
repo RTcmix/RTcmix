@@ -89,12 +89,13 @@ void NOTE::doupdate(FRAMETYPE currentFrame)
 void NOTE::doStop(FRAMETYPE frameOffset) {
     long timestamp = getEventTimestamp(frameOffset);
     if ((int) (0.5 + 127.0 * _midiVel) > 0) {
-        PRINT("NOTE: %p sending note off chan %d note %d with frame offset = %llu => timestamp %ld\n", this, _midiChannel,
-               _midiNote, frameOffset, timestamp);
+        PRINT("NOTE: %p sending note off chan %d note %d with frame offset = %llu => timestamp %ld\n",
+              this, _midiChannel, _midiNote, frameOffset, timestamp);
         _outputPort->sendNoteOff(timestamp, (unsigned char) _midiChannel, (unsigned char) _midiNote, 0);
     }
     else {
-        PRINT("NOTE: skipping note-off on stop because this was a zero-velocity event\n");
+        PRINT("NOTE: %p skipping note-off on stop for chan %d note %d because this was a zero-velocity event\n",
+              this, _midiChannel, _midiNote);
     }
 }
 

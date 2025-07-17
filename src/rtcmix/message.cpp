@@ -228,7 +228,7 @@ die(const char *inst_name, const char *format, ...)
     return DONT_SCHEDULE;
 }
 
-RTCmixStatus rtOptionalThrow(RTCmixStatus status)
+RTcmixStatus rtOptionalThrow(RTcmixStatus status)
 {
     if (get_bool_option(kOptionBailOnError)) {
         throw(status);

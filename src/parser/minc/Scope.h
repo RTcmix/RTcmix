@@ -44,9 +44,9 @@ struct MemberInfo {
 
 class StructType {
 public:
-    StructType(const char *inName) : _name(inName) {}
+    StructType(const char *inName, const char *baseName=NULL) : _name(inName), _baseName(baseName) {}
     ~StructType() {}
-    // Adds a MemberInfo for this struct member.
+    // Adds a MemberInfo for this struct member.  Called by NodeMemberDecl.
     void addMemberInfo(const char *name, MincDataType type, const char *subtypeName) {
         _members.push_back(MemberInfo(name, type, subtypeName));
     }
@@ -59,13 +59,16 @@ public:
         }
     }
     const char *name() const { return _name; }
+    const char *baseName() const { return _baseName; }
     const int memberCount() const { return (int) _members.size(); }
+    void copyMembers(const StructType *fromType) { _members = fromType->_members; }
 protected:
     const char *                _name;
+    const char *                _baseName;
     std::vector<MemberInfo>     _members;
 };
 
-StructType *installStructType(const char *typeName, Bool isGlobal);
+StructType *registerStructType(const char *typeName, Bool isGlobal, const char *baseTypeName);
 const StructType *lookupStructType(const char *typeName, ScopeLookupType lookupType);
 
 void push_function_stack();

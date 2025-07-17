@@ -1075,13 +1075,20 @@ Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char 
         // This replicates the argument-printing mechanism used by compiled-in functions.
         // Functions beginning with underbar, or those in a "suppressed list", can be "privatized" using set_option()
         if (RTOption::print() >= MMP_PRINTS) {
-            const char *functionName = sCalledFunctions.back();
-            bool isSuppressed = functionName[0] == '_' && RTOption::printSuppressUnderbar();
+            const char *functionName = sCalledFunctions.back(), *baseName;
+            // Method names begin with the struct name followed by dot.  Suppression is based on post-dot portion.
+            if ((baseName = strchr(functionName, '.')) != NULL) {
+                ++baseName;
+            }
+            else {
+                baseName = functionName;
+            }
+            bool isSuppressed = baseName[0] == '_' && RTOption::printSuppressUnderbar();
             if (!isSuppressed) {
                 const char *suppressedList = RTOption::suppressedFunNamelist();
                 if (suppressedList != NULL) {
                     char nameWithComma[128];    // there better not be a function name longer than this!
-                    snprintf(nameWithComma, 128, "%s,", functionName);
+                    snprintf(nameWithComma, 128, "%s,", baseName);
                     isSuppressed = (strstr(suppressedList, nameWithComma) != NULL);
                 }
             }
@@ -1134,6 +1141,35 @@ Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char 
     return returnedNode;
 }
 
+// TODO: Operations which involve struct methods and members in base classes should be handled in a single location
+// which can recursively handle bases of bases, etc.
+
+void NodeFunctionCall::callInitMethodIfPresent(MincStruct *theStruct, Symbol *thisSymbol)
+{
+    const char *initName = strsave("_init");
+    Symbol *memberSymbol = theStruct->lookupMember(initName);
+    if (!memberSymbol) {
+        const char *methodName = methodNameFromStructAndFunction(theStruct->typeName(), initName);
+        Symbol *methodSymbol = lookupSymbol(methodName, AnyLevel), *baseMethodSymbol = NULL;
+        if (theStruct->baseTypeName() != NULL) {
+            // Look for base class _init() if base is present and call it.
+            baseMethodSymbol = lookupSymbol(methodNameFromStructAndFunction(theStruct->baseTypeName(), initName), AnyLevel);
+            if (baseMethodSymbol) {
+                MincFunction *theMethod = (MincFunction *)baseMethodSymbol->value();
+                (void) callMincFunction(theMethod, baseMethodSymbol->name(), thisSymbol);
+            }
+        }
+        // For the _init method, we call it on both the base (if present) and the derived.
+        if (methodSymbol) {
+            MincFunction *theMethod = (MincFunction *)methodSymbol->value();
+            (void) callMincFunction(theMethod, methodSymbol->name(), thisSymbol);
+        }
+    }
+    else {
+        minc_warn("This struct's member '%s' overrides presence of a initializer method!", initName);
+    }
+}
+
 // In this special case, the function name is the struct type name
 
 bool NodeFunctionCall::callConstructor(const char *functionName)
@@ -1161,7 +1197,8 @@ bool NodeFunctionCall::callConstructor(const char *functionName)
             initList->data = sMincList;
             initList->len = sMincListLen;
             TPRINT("NodeFunctionCall::callConstructor -- initializing struct members from sMincList\n");
-            sym->initAsStruct(structType, initList);
+            sym->initAsStruct(structType, initList, true);  // Default args allowed for constructor functions
+            callInitMethodIfPresent((MincStruct *)sym->value(), sym);
             copyValue(sym, false);
             initList->data = NULL;
             initList->len = 0;
@@ -1202,6 +1239,10 @@ void NodeFunctionCall::callBuiltinFunction(const char *functionName)
         case FUNCTION_NOT_FOUND:
 #if defined(ERROR_FAIL_ON_UNDEFINED_FUNCTION)
             throw result;
+#else
+        if (RTOption::bailOnUndefinedFunction()) {
+            throw result;
+        }
 #endif
             break;
         default:
@@ -1321,9 +1362,13 @@ Node *	NodeMethodCall::doExct()
             } else {
                 // This is a "real method", so look for matching method symbol.
                 TPRINT("NodeMethodCall: member with that name not found - attempting to retrieve symbol for method\n");
-                const char *methodName = methodNameFromStructAndFunction(theStruct->typeName(), _methodName);
                 Symbol *objectSymbol = object->symbol();
+                const char *methodName = methodNameFromStructAndFunction(theStruct->typeName(), _methodName);
                 Symbol *methodSymbol = lookupSymbol(methodName, AnyLevel);
+                if (methodSymbol == NULL && theStruct->baseTypeName() != NULL) {
+                    // Look for base class method if base is present
+                    methodSymbol = lookupSymbol(methodNameFromStructAndFunction(theStruct->baseTypeName(), _methodName), AnyLevel);
+                }
                 if (methodSymbol) {
                     MincFunction *theMethod = (MincFunction *)methodSymbol->value();
                     Node *functionRet = callMincFunction(theMethod, methodSymbol->name(), objectSymbol);
@@ -1691,7 +1736,7 @@ Node *	NodeArgList::doExct()
 	inCalledFunctionArgList = false;
     // Create a special function block symbol storing the function's argument count.
     Symbol *n_args = installSymbol(strsave("_n_args"), NO);
-    n_args->setValue(MincValue((MincFloat) sArgListLen));
+    n_args->setValue(MincValue((MincFloat) sMincListLen));
 	return this;
 }
 
@@ -1843,9 +1888,15 @@ Node *  NodeStructDef::doExct()
 {
     TPRINT("NodeStructDef(%p) -- installing struct type '%s'\n", this, _typeName);
     if (current_scope() == 0) {    // until I allow nested structs
-        sNewStructType = installStructType(_typeName, YES);  // all structs global for now
+        sNewStructType = registerStructType(_typeName, YES, _baseName);  // all structs global for now
         if (sNewStructType) {
-            TPRINT("-- walking struct's element list\n");
+            // If there is a base class, access its StructType and copy its MemberInfo
+            if (_baseName != NULL) {
+                const StructType *baseType = lookupStructType(_baseName, GlobalLevel);
+                sNewStructType->copyMembers(baseType);
+            }
+            // Now handle this struct's members
+            TPRINT("-- walking struct's member decl list\n");
             child(0)->exct();
             sNewStructType = NULL;
         }
@@ -1856,7 +1907,8 @@ Node *  NodeStructDef::doExct()
     return this;
 }
 
-// NodeMemberDecl is invoked once for each struct member listed in the struct definition.  sNewStructType was set in NodeStructDef.
+// NodeMemberDecl is invoked once for each struct member listed in the struct definition.
+// sNewStructType was set in NodeStructDef, and represents the full definition of the struct.
 
 Node *  NodeMemberDecl::doExct()
 {

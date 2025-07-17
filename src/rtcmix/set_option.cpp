@@ -36,6 +36,7 @@ enum ParamType {
 	FAST_UPDATE,
 	REQUIRE_SAMPLE_RATE,
     PRINT_SUPPRESS_UNDERBAR,
+    BAIL_ON_UNDEFINED_FUNCTION,
 	BUFFER_FRAMES,
 	BUFFER_COUNT,
 	OSC_INPORT,
@@ -80,6 +81,7 @@ static Param _param_list[] = {
 	{ kOptionFastUpdate, FAST_UPDATE, false},
 	{ kOptionRequireSampleRate, REQUIRE_SAMPLE_RATE, true},
     { kOptionPrintSuppressUnderbar, PRINT_SUPPRESS_UNDERBAR, false },
+    { kOptionBailOnUndefinedFunction, BAIL_ON_UNDEFINED_FUNCTION, false },
 
 	// number options
 	{ kOptionBufferFrames, BUFFER_FRAMES, false},
@@ -279,6 +281,10 @@ static int _set_key_value_option(const char *key, const char *sval,
         case PRINT_SUPPRESS_UNDERBAR:
             status = _str_to_bool(sval, bval);
             RTOption::printSuppressUnderbar(bval);
+            break;
+        case BAIL_ON_UNDEFINED_FUNCTION:
+            status = _str_to_bool(sval, bval);
+            RTOption::bailOnUndefinedFunction(bval);
             break;
 
 		// number options

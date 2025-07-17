@@ -193,9 +193,11 @@ MincStruct::~MincStruct()
     }
 }
 
+// addMember() is called during the instantiation of a struct-type object.  It creates a unique symbol for this
+// newly-instantiated member of the struct
+
 Symbol * MincStruct::addMember(const char *name, const MincValue &value, int scope, const char *structTypeName)
 {
-    // Element symbols are not linked to any scope, so we call create() directly.
     // RIGHT HERE, WE NEED THE FOLLOWING LINES, BUT WE ALSO NEED TO BE PASSED THE STRUCT TYPENAME
     const StructType *structType = NULL;
     if (value.dataType() == MincStructType) {
@@ -205,6 +207,7 @@ Symbol * MincStruct::addMember(const char *name, const MincValue &value, int sco
         }
     }
 
+    // Element symbols are not linked to any scope, so we call create() directly.
     Symbol *memberSym = Symbol::create(name);
     DPRINT("MincStruct::addMember(member '%s', type %s) => symbol %p\n", name, MincTypeName(value.dataType()), memberSym);
     memberSym->setValue(value);     // initialize member value

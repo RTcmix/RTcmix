@@ -517,7 +517,7 @@ int RTcmix_runAudio(void *inAudioBuffer, void *outAudioBuffer, int nframes, int 
 // these are set from inlets on the rtcmix~ object, using PFields to
 // control the Instruments
 // rtcmix~ is set to constrain up to a max of 19 inlets for PFields
-// iRTCmix can handle up to MAX_INLETS - DAS
+// iRTcmix can handle up to MAX_INLETS - DAS
 
 // BGGx -- OBJgInletValues  and gInletValues declared up above (they are
 // used in the RTcmix_runAudio() function

@@ -10,7 +10,7 @@
    p7  = threshold (in dBFS)
    p8  = compression ratio - e.g. 20 means 20:1 (100 is infinity)
    p9  = look-ahead time (seconds)
-   p10 = peak detection window size (power of 2 <= RTCmix output buffer size)
+   p10 = peak detection window size (power of 2 <= RTcmix output buffer size)
    p11 = detection type (0: peak, 1: average peak, 2: rms)
    p12 = bypass (1: bypass on, 0: bypass off)
    p13 = input channel  [optional; default is 0]

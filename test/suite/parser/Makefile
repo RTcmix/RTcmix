@@ -1,6 +1,12 @@
 CMIX = CMIX
 
 PASS_SCORES = \
+base_init.sco \
+base_no_initializer01.sco \
+basetest01.sco \
+basetest03.sco \
+base_method_override.sco \
+base_no_initializer02.sco \
 bool_checks.sco \
 builtin_function.sco \
 check_arg_order.sco \
@@ -17,6 +23,7 @@ include_at_line7.sco \
 if_else_scope.sco \
 list_compare.sco \
 list_increment_element.sco \
+list_operate_element.sco \
 list_read_write.sco \
 maptest2.sco \
 maptest3.sco \
@@ -28,6 +35,7 @@ mfunction01.sco \
 multistruct.sco \
 negative_list_element.sco \
 nested.sco \
+nested_if_in_for.sco \
 nested_functions.sco \
 nestednoloop.sco \
 new_features.sco \
@@ -44,6 +52,7 @@ struct_as_func_return.sco \
 struct_as_member.sco \
 struct_copy.sco \
 struct_increment_element.sco \
+struct_var_scope.sco \
 struct_initializer.sco \
 struct_with_same_as_member.sco \
 test_double_include.sco \
@@ -51,8 +60,14 @@ two_methods.sco \
 unaryop.sco
 
 FAIL_SCORES = \
+base_unknown.sco \
+block_scope.sco \
+derived_duplicate_member.sco \
+for_scope.sco \
+function_scope.sco \
 func_errortests1.sco \
 handletest1.sco \
+if_inside_fun_scope.sco \
 include_error.sco \
 list_large_index.sco \
 nested_func_decls.sco \
@@ -65,7 +80,8 @@ struct_init_wrong_type.sco \
 struct_init_insufficient_args.sco \
 struct_var_scope.sco \
 uninit_fun_member.sco \
-uninit_mfunction.sco
+uninit_mfunction.sco \
+while_scope.sco
 
 
 scores_that_pass:
