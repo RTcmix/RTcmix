@@ -215,33 +215,33 @@ id:  TOK_IDENT			{ MPRINT_ID(yytext); $$ = strsave(yytext); }
 
 /* variable declaration lists */
 
-fdecl:	TOK_FLOAT_DECL idl	{ 	MPRINT("fdecl");
+fdecl:	TOK_FLOAT_DECL idl	{ 	MPRINT("stmt: fdecl");
 								$$ = go(declare(MincFloatType));
 								idcount = 0;
 							}	// e.g., "float x, y z"
 	;
-sdecl:	TOK_STRING_DECL idl	{ 	MPRINT("sdecl");
+sdecl:	TOK_STRING_DECL idl	{ 	MPRINT("stmt: sdecl");
 								$$ = go(declare(MincStringType));
 								idcount = 0;
 							}
 	;
-hdecl:	TOK_HANDLE_DECL idl	{ 	MPRINT("hdecl");
+hdecl:	TOK_HANDLE_DECL idl	{ 	MPRINT("stmt: hdecl");
 								$$ = go(declare(MincHandleType));
 								idcount = 0;
 							}
 	;
-ldecl:	TOK_LIST_DECL idl	{ 	MPRINT("ldecl");
+ldecl:	TOK_LIST_DECL idl	{ 	MPRINT("stmt: ldecl");
 								$$ = go(declare(MincListType));
 								idcount = 0;
 							}
     ;
-mapdecl:    TOK_MAP_DECL idl    {     MPRINT("mapdecl");
+mapdecl:    TOK_MAP_DECL idl    {     MPRINT("stmt: mapdecl");
                                 $$ = go(declare(MincMapType));
                                 idcount = 0;
                               }
     ;
 
-mfuncdecl:    TOK_MFUNC_DECL idl    {     MPRINT("mfuncdecl"); $$ = go(declare(MincFunctionType)); idcount = 0; }
+mfuncdecl:    TOK_MFUNC_DECL idl    {     MPRINT("stmt: mfuncdecl"); $$ = go(declare(MincFunctionType)); idcount = 0; }
     ;
     
 /* statement nesting level counter.  This is an inline action between tokens. */
@@ -276,7 +276,8 @@ func:   '(' fexpl ')' {    MPRINT("func: (fexpl)"); $$ = $2; }
     ;
 
 /* A function call is an id followed by (args) or () */
-fcall:   id func {    MPRINT("fcall: id func"); $$ = new NodeFunctionCall(new NodeLoadSym($1), $2); }
+fcall:  id func       {    MPRINT("fcall: id func"); $$ = new NodeFunctionCall(new NodeLoadSym($1), $2); }
+    |   fcall func    {    MPRINT("fcall: fcall func"); $$ = new NodeFunctionCall($1, $2); }    /* calling a function on the returned value of a function */
     |   obj subscript func { MPRINT("fcall: obj subscript func"); $$ = new NodeFunctionCall(new NodeSubscriptRead($1, $2), $3); }
     ;
 
@@ -291,19 +292,36 @@ ternary: exp '?' exp ':' exp { $$ = new NodeTernary($1, $3, $5); }
 
 /* An rstmt is statement returning a value, such as assignments, function calls, etc. */
 rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAutoDeclLoadSym($1), $3); }
-	| id TOK_PLUSEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpPlus); }
-	| id TOK_MINUSEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpMinus); }
-	| id TOK_MULEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpMul); }
-	| id TOK_DIVEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpDiv); }
+	| obj TOK_PLUSEQU exp {	MPRINT("rstmt: obj TOK_PLUSEQU exp");
+	                        $$ = new NodeOpAssign($1, $3, OpPlus);
+	}
+	| obj TOK_MINUSEQU exp {	$$ = new NodeOpAssign($1, $3, OpMinus); }
+	| obj TOK_MULEQU exp {		$$ = new NodeOpAssign($1, $3, OpMul); }
+	| obj TOK_DIVEQU exp {		$$ = new NodeOpAssign($1, $3, OpDiv); }
 
+    /* Special-case rules for operating on an array access.  This is needed because the returned
+       value from array[exp] has no symbol associated with it.
+    */
+	| obj subscript TOK_PLUSEQU exp { MPRINT("rstmt: obj subscript TOK_PLUSEQU exp");
+     	$$ = new NodeSubscriptOpAssign($1, $2, $4, OpPlus);
+	}
+	| obj subscript TOK_MINUSEQU exp { MPRINT("rstmt: obj subscript TOK_MINUSEQU exp");
+     	$$ = new NodeSubscriptOpAssign($1, $2, $4, OpMinus);
+	}
+	| obj subscript TOK_MULEQU exp { MPRINT("rstmt: obj subscript TOK_MULEQU exp");
+     	$$ = new NodeSubscriptOpAssign($1, $2, $4, OpMul);
+	}
+	| obj subscript TOK_DIVEQU exp { MPRINT("rstmt: obj subscript TOK_DIVEQU exp");
+     	$$ = new NodeSubscriptOpAssign($1, $2, $4, OpDiv);
+	}
     /* Special-case rules for incrementing/decrementing an array access.  This is needed because the returned
-       value from [exp] has no symbol associated with it.
+       value from array[exp] has no symbol associated with it.
     */
  	| TOK_PLUSPLUS obj subscript  { MPRINT("rstmt: TOK_PLUSPLUS obj subscript");
- 	    $$ = new NodeSubscriptIncrement($2, $3, new NodeConstf(1.0));
+ 	    $$ = new NodeSubscriptOpAssign($2, $3, new NodeConstf(1.0), OpPlus);
  	}
  	| TOK_MINUSMINUS obj subscript  { MPRINT("rstmt: TOK_MINUSMINUS obj subscript");
- 	    $$ = new NodeSubscriptIncrement($2, $3, new NodeConstf(-1.0));
+ 	    $$ = new NodeSubscriptOpAssign($2, $3, new NodeConstf(1.0), OpMinus);
  	}
 
     /* Generic rule for all other objs */
@@ -359,6 +377,7 @@ bexp:	exp %prec LOWPRIO	{ MPRINT("bexp: exp"); $$ = $1; }
 
 /* expression */
 exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
+    | ternary           {  MPRINT("exp: ternary"); $$ = $1; }
 	| exp TOK_POW exp	{ $$ = new NodeOp(OpPow, $1, $3); }
 	| exp '*' exp		{ $$ = new NodeOp(OpMul, $1, $3); }
 	| exp '/' exp		{ $$ = new NodeOp(OpDiv, $1, $3); }
@@ -371,8 +390,6 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 							double f = atof(yytext);
 							$$ = new NodeConstf(f);
 						}
-    | ternary   {  MPRINT("rstmt: ternary"); $$ = $1; }
-
     /* DAS THESE ARE NOW PURE RIGHT-HAND-SIDE */
     | obj                   { MPRINT("exp: obj");   $$ = $1; }
     | expblk                { MPRINT("exp: expblk");   $$ = $1; }   // for list initialization
@@ -440,26 +457,26 @@ structdecl: TOK_STRUCT_DECL id idl    { MPRINT("structdecl"); $$ = go(declareStr
     ;
 
 /* A structinit is a struct decl plus an initializer */
-structinit: TOK_STRUCT_DECL id idl '=' expblk {   MPRINT("structinit: struct <type> id = expblk"); $$ = go(initializeStruct($2, $5)); idcount = 0; }
+structinit: TOK_STRUCT_DECL id idl '=' expblk {   MPRINT("stmt: structinit: struct <type> id = expblk"); $$ = go(initializeStruct($2, $5)); idcount = 0; }
 
 /* Rules for declaring and defining functions and methods */
 
-/* function name, e.g. "list myfunction".  Used as first part of definition.
-    TODO: This is where I would add the ability for a function to return an mfunction.
- */
+/* function name, e.g. "list myfunction".  Used as first part of definition. */
 
 funcname: TOK_FLOAT_DECL id { MPRINT("funcname"); incrFunctionLevel();
-                                    $$ = new NodeFuncDecl(strsave($2), MincFloatType); }
+                                    $$ = new NodeFuncDecl($2, MincFloatType); }
     | TOK_STRING_DECL id { MPRINT("funcname"); incrFunctionLevel();
-                                    $$ = new NodeFuncDecl(strsave($2), MincStringType); }
+                                    $$ = new NodeFuncDecl($2, MincStringType); }
     | TOK_HANDLE_DECL id { MPRINT("funcname");  incrFunctionLevel();
-                                    $$ = new NodeFuncDecl(strsave($2), MincHandleType); }
+                                    $$ = new NodeFuncDecl($2, MincHandleType); }
     | TOK_LIST_DECL id { MPRINT("funcname: returns list");  incrFunctionLevel();
-                                    $$ = new NodeFuncDecl(strsave($2), MincListType); }
+                                    $$ = new NodeFuncDecl($2, MincListType); }
+    | TOK_MFUNC_DECL id { MPRINT("funcname: returns mfunction"); incrFunctionLevel();
+                                    $$ = new NodeFuncDecl($2, MincFunctionType); }
     | TOK_MAP_DECL id { MPRINT("funcname: returns map");  incrFunctionLevel();
-                                    $$ = new NodeFuncDecl(strsave($2), MincMapType); }
+                                    $$ = new NodeFuncDecl($2, MincMapType); }
     | TOK_STRUCT_DECL id id { MPRINT("funcname: returns struct");  incrFunctionLevel();
-                                    $$ = new NodeFuncDecl(strsave($3), MincStructType); }
+                                    $$ = new NodeFuncDecl($3, MincStructType); }
     ;
 
 /* method name, e.g. "list mymethod".  Used as first part of definition.

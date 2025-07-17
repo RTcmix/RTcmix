@@ -113,6 +113,9 @@ distclean: cleanall cleanac
 
 ####################################################### for maintainers only ###
 
+test: install
+	@cd test/suite; $(MAKE) test;
+
 configure: configure.ac
 	touch defs.conf
 	aclocal

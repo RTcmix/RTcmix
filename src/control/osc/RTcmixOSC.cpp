@@ -31,14 +31,15 @@ RTcmixOSC::~RTcmixOSC()
 
 RTcmixOSC *createOSCServer()
 {
-	RTcmixOSC *oscserver = new RTcmixOSC();
-	if (oscserver) {
+	RTcmixOSC *oscserver = NULL;
+    try {
+        oscserver = new RTcmixOSC();
 		if (oscserver->init() == -1) {
 			delete oscserver;
 			return NULL;
 		}
 	}
-
+    catch(...) {}
 	return oscserver;
 }
 

@@ -11,8 +11,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <ugens.h>
-#include <sndlibsupport.h>	// RTcmix header
 #include <RTSemaphore.h>
 #include <new>
 #include <syslog.h>
@@ -148,7 +146,6 @@ struct AppleAudioDevice::Impl {
 	void					destroyInputBufferList(AudioBufferList *inList);
     int                     startRenderThread(AppleAudioDevice *parent);
     void                    stopRenderThread();
-	inline int				outputDeviceChannels() const;
 	static OSStatus			audioUnitInputCallback(void *inUserData,
 													AudioUnitRenderActionFlags *ioActionFlags,
 													const AudioTimeStamp *inTimeStamp,

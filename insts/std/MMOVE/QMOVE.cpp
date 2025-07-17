@@ -5,6 +5,7 @@
 #include "QMOVE.h"
 #include <ugens.h>
 #include <rt.h>
+#include <string.h>
 #include "../MOVE/common.h"
 
 //#define SIG_DEBUG 1

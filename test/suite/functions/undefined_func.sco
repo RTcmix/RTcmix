@@ -1,3 +1,5 @@
+set_option("bail_on_undefined_function=false");
+
 struct TestMethod
 {
 	method float callUndefinedFunction() {

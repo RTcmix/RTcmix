@@ -6,6 +6,7 @@
 #include <ugens.h>
 #include <rt.h>
 #include <rtdefs.h>
+#include <string.h>
 #include "../MOVE/common.h"
 
 #ifdef SIG_DEBUG
