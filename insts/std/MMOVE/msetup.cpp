@@ -109,8 +109,8 @@ get_rvb_setup_params(double Dimensions[],       /* array of 5 elements */
 int
 get_setup_params(double Dimensions[],       /* array of 5 elements */
 				 AttenuationParams *params,
-				 float *rvb_time,
-                 float  *abs_factor,
+				 double *rvb_time,
+                 double  *abs_factor,
                  int    *UseMikes,
                  double *MikeAngle,
                  double *MikePatternFactor)

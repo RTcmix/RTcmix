@@ -144,7 +144,7 @@ num   {dig}+
 <INIT>mfunction         return TOK_MFUNC_DECL;
 <INIT>return		    return TOK_RETURN;
 <INIT>method		    return TOK_METHOD;
-<INIT>[%={}><,.;*+-]    return (*yytext);
+<INIT>[?%={}><,.:;*+-]  return (*yytext);
 <INIT>"["|"]"|"/"       return (*yytext);
 <INIT>"("|")"           return (*yytext);
 <INIT>"\n"        ;

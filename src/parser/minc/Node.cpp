@@ -63,13 +63,13 @@ extern "C" {
 
 /* builtin.cpp */
 extern int call_builtin_function(const char *funcname, const MincValue arglist[],
-                          const int nargs, MincValue *retval);
+                          int nargs, MincValue *retval);
 extern int call_object_method(MincValue &object, const char *methodName, const MincValue arglist[],
                               int nargs, MincValue *retval);
 
 /* callextfunc.cpp */
 extern int call_external_function(const char *funcname, const MincValue arglist[],
-                           const int nargs, MincValue *return_value);
+                           int nargs, MincValue *return_value);
 extern MincHandle minc_binop_handle_float(MincHandle  handle, MincFloat val, OpKind op);
 extern MincHandle minc_binop_float_handle(MincFloat val, MincHandle  handle, OpKind op);
 extern MincHandle minc_binop_handles(MincHandle  handle1, MincHandle  handle2, OpKind op);
@@ -181,6 +181,7 @@ static const char *s_NodeKinds[] = {
    "NodeWhile",
    "NodeFor",
    "NodeIfElse",
+   "NodeTernary",
    "NodeDecl",
    "NodeStructDecl",
    "NodeFuncDecl",
@@ -240,14 +241,13 @@ static int numNodes = 0;
 /* Tree nodes */
 
 Node::Node(OpKind op, NodeKind kind)
-	: kind(kind), op(op), lineno(yyget_lineno()), includeFilename(yy_get_current_include_filename())
+	: kind(kind), _type(MincVoidType), op(op), v(MincValue()), lineno(yyget_lineno()), includeFilename(yy_get_current_include_filename()), _symbol(NULL)
 {
 	NPRINT("Node::Node (%s) this=%p storing lineno %d, includefile '%s'\n", classname(), this, lineno, includeFilename);
 #ifdef DEBUG_NODE_MEMORY
 	++numNodes;
     NPRINT("[%d nodes in existence]\n", numNodes);
 #endif
-    u.number = 0.0;     // this should zero out the union.
 }
 
 Node::~Node()
@@ -716,13 +716,13 @@ Node *    OperationBase::do_op_float_list(Node *node, MincFloat val, const MincL
 
 Node *	NodeConstf::doExct()
 {
-	v = (MincFloat) u.number;
+	v = (MincFloat) this->number;
 	return this;
 }
 
 Node *	NodeString::doExct()
 {
-	v = u.string;
+	v = this->string;
 	return this;
 }
 
@@ -1065,6 +1065,28 @@ Node *  NodeMemberAccess::doExct()
     return this;
 }
 
+bool functionPrintIsSuppressed(const char *functionName)
+{
+    const char *baseName;
+    // Method names begin with the struct name followed by dot.  Suppression is based on post-dot portion.
+    if ((baseName = strchr(functionName, '.')) != NULL) {
+        ++baseName;
+    }
+    else {
+        baseName = functionName;
+    }
+    bool isSuppressed = baseName[0] == '_' && RTOption::printSuppressUnderbar();
+    if (!isSuppressed) {
+        const char *suppressedList = RTOption::suppressedFunNamelist();
+        if (suppressedList != NULL) {
+            char nameWithComma[128];    // there better not be a function name longer than this!
+            snprintf(nameWithComma, 128, "%s,", baseName);
+            isSuppressed = (strstr(suppressedList, nameWithComma) != NULL);
+        }
+    }
+    return isSuppressed;
+}
+
 Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char *functionName, Symbol *thisSymbol)
 {
     Node *returnedNode = NULL;
@@ -1078,24 +1100,7 @@ Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char 
         // This replicates the argument-printing mechanism used by compiled-in functions.
         // Functions beginning with underbar, or those in a "suppressed list", can be "privatized" using set_option()
         if (RTOption::print() >= MMP_PRINTS) {
-            const char *functionName = sCalledFunctions.back(), *baseName;
-            // Method names begin with the struct name followed by dot.  Suppression is based on post-dot portion.
-            if ((baseName = strchr(functionName, '.')) != NULL) {
-                ++baseName;
-            }
-            else {
-                baseName = functionName;
-            }
-            bool isSuppressed = baseName[0] == '_' && RTOption::printSuppressUnderbar();
-            if (!isSuppressed) {
-                const char *suppressedList = RTOption::suppressedFunNamelist();
-                if (suppressedList != NULL) {
-                    char nameWithComma[128];    // there better not be a function name longer than this!
-                    snprintf(nameWithComma, 128, "%s,", baseName);
-                    isSuppressed = (strstr(suppressedList, nameWithComma) != NULL);
-                }
-            }
-            if (!isSuppressed) {
+            if (!functionPrintIsSuppressed(sCalledFunctions.back())) {
                 RTPrintf("============================\n");
                 RTPrintfCat("%s: ", functionName);
                 MincValue retval;
@@ -1104,9 +1109,6 @@ Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char 
         }
         // Create a symbol for 'this' within the function's scope if this is a method.
         function->handleThis(thisSymbol);
-        /* The exp list is copied to the symbols for the function's arg list. */
-        TPRINT("MincFunctionHandler::callMincFunction declaring all argument symbols in the function's scope\n");
-        function->copyArguments();
         savedLineNo = yyget_lineno();
         savedScope = current_scope();
         savedIfElseDepth = sIfElseBlockDepth;
@@ -1115,6 +1117,9 @@ Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char 
         sForWhileBlockDepth = 0;
         incrementFunctionCallDepth();
         savedCallDepth = sFunctionCallDepth;
+        /* The exp list is copied to the symbols for the function's arg list. */
+        TPRINT("MincFunctionHandler::callMincFunction declaring all argument symbols in the function's scope\n");
+        function->copyArguments();
         TPRINT("MincFunctionHandler::callMincFunction executing %s(), call depth saved at %d\n",
                sCalledFunctions.back(), savedCallDepth);
         returnedNode = function->execute();
@@ -1130,9 +1135,21 @@ Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char 
                sFunctionCallDepth, sIfElseBlockDepth, sForWhileBlockDepth);
         restore_scope(savedScope);
     }
+    catch (MincError err) {
+        pop_function_stack();
+        sCalledFunctions.pop_back();
+        if (!sCalledFunctions.empty()) {
+            RTFPrintf(stderr, "[During call to '%s']\n", sCalledFunctions.back());
+        }
+        decrementFunctionCallDepth();
+        throw;
+    }
     catch(...) {    // Anything else is an error
         pop_function_stack();
         sCalledFunctions.pop_back();
+        if (!sCalledFunctions.empty()) {
+            RTFPrintf(stderr, "[During call to '%s']\n", sCalledFunctions.back());
+        }
         decrementFunctionCallDepth();
         throw;
     }
@@ -1182,7 +1199,7 @@ bool NodeFunctionCall::callConstructor(const char *functionName)
     if (structType) {
         TPRINT("NodeFunctionCall::callConstructor -- creating a value with type struct %s\n", functionName);
         // This replicates the argument-printing mechanism used by compiled-in functions.
-        if (RTOption::print() >= MMP_PRINTS) {
+        if (RTOption::print() >= MMP_PRINTS && !functionPrintIsSuppressed(functionName)) {
             RTPrintf("============================\n");
             RTPrintfCat("%s: ", functionName);
             MincValue retval;
@@ -1438,7 +1455,7 @@ Node *	NodeStore::doExct()
 	/* Copy entire MincValue union from expr to id sym and to this. */
 	lhs->symbol()->copyValue(child(1), _allowTypeOverwrite);
 	TPRINT("NodeStore: copying value from RHS (%p) to here (%p)\n", rhs, this);
-	copyValue(rhs, _allowTypeOverwrite);
+	setValue(rhs->value());     // no type check since done above
 	return this;
 }
 
@@ -1727,6 +1744,19 @@ Node *	NodeWhile::doExct()
     }
     decrementForWhileBlockDepth();
 	return this;
+}
+
+Node *	NodeTernary::doExct()
+{
+    if ((bool)child(0)->exct()->value() == true) {
+        child(1)->exct();
+        setValue(child(1)->value());
+    }
+    else {
+        child(2)->exct();
+        setValue(child(2)->value());
+    }
+    return this;
 }
 
 Node *	NodeArgList::doExct()

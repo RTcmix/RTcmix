@@ -3,9 +3,9 @@
 #ifndef _MPLACE_H_
 #define _MPLACE_H_
 
-#include "MBASE.h"
+#include "MSTEREOBASE.h"
 
-class MPLACE : public MBASE {
+class MPLACE : public MSTEREOBASE {
 public:
     MPLACE();
     virtual ~MPLACE();

@@ -3,9 +3,9 @@
 #ifndef _MMOVE_H_
 #define _MMOVE_H_
 
-#include "MBASE.h"
+#include "MSTEREOBASE.h"
 
-class MMOVE : public MBASE {
+class MMOVE : public MSTEREOBASE {
 public:
     MMOVE();
     virtual ~MMOVE();

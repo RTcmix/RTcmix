@@ -49,6 +49,8 @@ rtprofile()
 	RT_INTRO("MMOVE", makeMMOVE);
 	RT_INTRO("MPLACE", makeMPLACE);
 	RT_INTRO("RVB", makeRVB);
+	RT_INTRO("QMOVE", makeQMOVE);
+	RT_INTRO("QRVB", makeQRVB);
 #endif
 */
 	RT_INTRO("MOCKBEND", makeMOCKBEND);

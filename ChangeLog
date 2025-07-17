@@ -1,6 +1,19 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2025-06-21 Douglas Scott <netdscott-at-netscape.net>
+	* Finished Brad's work on rtcmix~ - now compiles, links, installs, and runs on Max v8 and v9.
+	* Bumped its version to 2.2.
+	* Updated site.conf, etc. to allow for Max v9 (still uses 8.2 SDK).
+	* Fixed issues with QMOVE under embedded.
+
+2025-06-19 Douglas Scott <netdscott-at-netscape.net>
+    * Added ternary operator to MinC parser - really useful!
+    * Bumped version to 5.6.0.
+
+2025-04-20 Douglas Scott <netdscott-at-netscape.net>
+    * Added new quad version of DMOVE and RVB called QMOVE and QRVB.
+    
 2024-10-07 John Gibson <johgibso-at-iu.edu>
 	* Fixed PCMIX compilation on macOS Sonoma and (hopefully) earlier OS versions.
 

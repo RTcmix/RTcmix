@@ -60,6 +60,7 @@ typedef enum {
 	eNodeWhile,
 	eNodeFor,
 	eNodeIfElse,
+    eNodeTernary,
 	eNodeDecl,
     eNodeStructDecl,
 	eNodeFuncDecl,
@@ -84,8 +85,8 @@ public:
     const char *		name() const;
 	MincDataType		dataType() const { return v.dataType(); }
 	virtual Node*		child(int index) const { return NULL; }
-	void				setSymbol(Symbol *sym) { u.symbol = sym; }
-	Symbol *			symbol() const { return u.symbol; }
+	void				setSymbol(Symbol *sym) { _symbol = sym; }
+	Symbol *			symbol() const { return _symbol; }
     void                setValue(const MincValue &value) { v = value; }
 	const MincValue&	value() const { return v; }
 	Node*				exct();
@@ -97,11 +98,7 @@ protected:
     virtual             ~Node();
 	virtual Node*		doExct() = 0;
 protected:
-	union {
-		Symbol *symbol;
-		double number;
-		const char *string;
-	} u;
+    Symbol *            _symbol;
 };
 
 class NodeNoop : public Node
@@ -255,23 +252,25 @@ protected:
 class NodeString : public Node
 {
 public:
-	NodeString(const char *str) : Node(OpFree, eNodeString) {
-		u.string = str;
-		NPRINT("NodeString('%s') => %p\n", str, this);
+	NodeString(const char *str) : Node(OpFree, eNodeString), string(str) {
+		NPRINT("NodeString('%s') => %p\n", string, this);
 	}
 protected:
 	virtual Node*		doExct();
+private:
+    const char *string;
 };
 
 class NodeConstf : public Node
 {
 public:
-	NodeConstf(MincFloat num) : Node(OpFree, eNodeConstf) {
-		u.number = num;
-		NPRINT("NodeConstf(%f) => %p\n", num, this);
+	NodeConstf(MincFloat num) : Node(OpFree, eNodeConstf), number(num) {
+		NPRINT("NodeConstf(%f) => %p\n", number, this);
 	}
 protected:
 	virtual Node*		doExct();
+private:
+    double number;
 };
 
 class NodeArgListElem : public Node2Children
@@ -600,6 +599,16 @@ public:
 	}
 protected:
 	virtual Node*		doExct();
+};
+
+class NodeTernary : public Node3Children
+{
+public:
+    NodeTernary(Node *n1, Node *n2, Node *n3) : Node3Children(OpFree, eNodeTernary, n1, n2, n3) {
+        NPRINT("NodeTernary(%p, %p, %p) => %p\n", n1, n2, n3, this);
+    }
+protected:
+    virtual Node*		doExct();
 };
 
 class NodeDecl : public Node

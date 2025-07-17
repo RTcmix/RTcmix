@@ -6,6 +6,6 @@ y = ++t.f;
 
 printf("t.f is now %f\n", t.f);
 
-if (y != 101) { print("SCORE FAILED"); }
+if (y != 101 || t.f != 101) { print("SCORE FAILED"); }
 else { print("SCORE PASSED"); }
 

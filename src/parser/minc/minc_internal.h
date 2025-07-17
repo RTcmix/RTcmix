@@ -101,6 +101,12 @@ public:
     virtual const char* what() const throw() { return mesg(); }     // This will need its signature changed for C++11
 };
 
+class ParserException : public RTFatalException
+{
+public:
+    ParserException(const char *msg) : RTFatalException(msg) {}
+};
+
 // Code that has not been finished (DAS HACK)
 
 class UnimplementedException : public RTFatalException
@@ -111,50 +117,50 @@ public:
 
 // Such as attempting to multiply two MincStrings
 
-class UnsupportedOperationException : public RTException
+class UnsupportedOperationException : public ParserException
 {
 public:
-	UnsupportedOperationException(const char *msg) : RTException(msg) {}
+	UnsupportedOperationException(const char *msg) : ParserException(msg) {}
 };
 
-class InvalidOperatorException : public RTException
+class InvalidOperatorException : public ParserException
 {
 public:
-	InvalidOperatorException(const char *msg) : RTException(msg) {}
+	InvalidOperatorException(const char *msg) : ParserException(msg) {}
 };
 
-class NonmatchingTypeException : public RTException
+class NonmatchingTypeException : public ParserException
 {
 public:
-	NonmatchingTypeException(const char *msg) : RTException(msg) {}
+	NonmatchingTypeException(const char *msg) : ParserException(msg) {}
 };
 
 // Such as indexing a MincList with a MincString
 
-class InvalidTypeException : public RTFatalException
+class InvalidTypeException : public ParserException
 {
 public:
-	InvalidTypeException(const char *msg) : RTFatalException(msg) {}
+	InvalidTypeException(const char *msg) : ParserException(msg) {}
 };
 
-class UndeclaredVariableException : public RTFatalException
+class UndeclaredVariableException : public ParserException
 {
 public:
-	UndeclaredVariableException(const char *msg) : RTFatalException(msg) {}
+	UndeclaredVariableException(const char *msg) : ParserException(msg) {}
 };
 
-class ReclaredVariableException : public RTFatalException
+class ReclaredVariableException : public ParserException
 {
 public:
-	ReclaredVariableException(const char *msg) : RTFatalException(msg) {}
+	ReclaredVariableException(const char *msg) : ParserException(msg) {}
 };
 
 // Such as divide or mod by zero
 
-class ArithmaticException : public RTFatalException
+class ArithmaticException : public ParserException
 {
 public:
-    ArithmaticException(const char *msg) : RTFatalException(msg) {}
+    ArithmaticException(const char *msg) : ParserException(msg) {}
 };
 
 class MincObject

@@ -1,5 +1,5 @@
-// rtcmix~ v 2.1, Brad Garton (2/2011)
-// uses the RTcmix bundled executable lib, now based on RTcmix-5.5 (OS 14.5 support)
+// rtcmix~ v 2.2, Brad Garton (2/2011)
+// uses the RTcmix bundled executable lib, now based on RTcmix-5.6 (OS 15.X support)
 // see http://music.columbia.edu/cmc/RTcmix for more info
 //
 // invaluable assistance writing this max/msp object from Dan Trueman, R. Luke Dubois and Joshua Kit Clayton
@@ -100,15 +100,20 @@
 // At this point it still will not run under MaxMSP 8.6 due to deprecation of MaxAPI.
 // Cleaned up void function prototypes.  Removed commented-out NS* loader code for clarity.
 //
-
+// 5/2025
+// v. 2.2
+// Brad started work on Max 9 upgrade using Max 8.2 SDK
+// -- Work finished by Doug Scott.  Will now run on all versions up through 9.  All Max framework
+//    dependencies are now resolved at load time.  No rtcmix~ linker dependencies on Max.
+//
 
 // Hand-defining these here because these will always be true, and are needed to get the right portions of RTcmix_API.h
 
 #define EMBEDDEDAUDIO 1
 #define MAXMSP 1
 
-#define VERSION "2.1"
-#define RTcmixVERSION "RTcmix-maxmsp-5.5.0"
+#define VERSION "2.2"
+#define RTcmixVERSION "RTcmix-maxmsp-5.6.0"
 
 #if MAX_SDK_MAJOR_VERSION==6
 #include <ext.h>

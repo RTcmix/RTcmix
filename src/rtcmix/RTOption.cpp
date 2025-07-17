@@ -107,10 +107,9 @@ void RTOption::init()
 	// initialize home directory and full path of user's configuration file
 
 	char *dir = getenv("HOME");
-	if (dir == NULL)
-		return;
-	if (strlen(dir) > 256)     // legit HOME not likely to be longer
-		return;
+	if (dir == NULL || strlen(dir) > 256) { // legit HOME not likely to be NULL or longer than this
+        dir = (char *) "/tmp";   // fake it to avoid crashes later
+    }
 	strncpy(_homeDir, dir, PATH_MAX);
 	_homeDir[PATH_MAX - 1] = 0;
 
