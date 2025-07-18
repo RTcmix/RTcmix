@@ -55,11 +55,13 @@ struct_increment_element_via_method.sco \
 struct_var_scope.sco \
 struct_initializer.sco \
 struct_with_same_as_member.sco \
+ternary.sco \
 test_double_include.sco \
 two_methods.sco \
 unaryop.sco
 
 FAIL_SCORES = \
+bad_ternary.sco \
 base_unknown.sco \
 block_scope.sco \
 derived_duplicate_member.sco \
