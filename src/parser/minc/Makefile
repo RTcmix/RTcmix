@@ -38,12 +38,13 @@ endif
 lex.yy.c: $(LSRC) minc_internal.h rename.h
 	$(LEX) $(LEXFLAGS) $(LSRC)
 
-minc.cpp: lex.yy.c $(YSRC) minc_internal.h rename.h
+minc.cpp: lex.yy.c $(YSRC) minc_internal.h rename.h bison_version.h
 	$(YACC) $(YFLAGS) $(YSRC)
 
-depend::
-	$(RM) bison_version.h
+bison_version.h:
 	-bison --version | awk '/bison/ { printf("#define BISON_VERSION %d\n", $$4); }' >> bison_version.h
+
+depend:
 	-$(SHELL) -ec '$(CC) -M $(CFLAGS) $(SRCS)' > depend
 
 -include depend
@@ -52,8 +53,8 @@ install: all
 uninstall:
 
 clean:
-	$(RM) *.o $(MINC) lex.yy.c minc.cpp minc.hpp y.output
+	$(RM) *.o $(MINC) lex.yy.c minc.cpp minc.hpp y.output bison_version.h
 
 cleanall: clean
-	$(RM) depend bison_version.h
+	$(RM) depend
 
