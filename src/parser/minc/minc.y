@@ -75,23 +75,18 @@ static Node * go(Node * t1);
 %}
 
 %left  <ival> LOWPRIO
-%left  <ival> '='
-%left  <ival> TOK_PLUSPLUS
-%left  <ival> TOK_MINUSMINUS
-%left  <ival> TOK_MINUSEQU
-%left  <ival> TOK_PLUSEQU
-%left  <ival> TOK_DIVEQU
-%left  <ival> TOK_MULEQU
-%left  <ival> TOK_OR
-%left  <ival> TOK_AND
-%left  <ival> TOK_EQU TOK_UNEQU
-%left  <ival> '<' '>' TOK_LESSEQU TOK_GTREQU
-%left  <ival> '+' '-'
-%left  <ival> '*' '/'
-%left  <ival> TOK_POW
-%left  <ival> CASTTOKEN
+%right '=' TOK_PLUSEQU TOK_MINUSEQU TOK_MULEQU TOK_DIVEQU   // assignment-like, should be right-associative
+%right TOK_PLUSPLUS TOK_MINUSMINUS      // prefix unary ++/--
+%left  TOK_OR
+%left  TOK_AND
+%right '?' ':'
+%nonassoc TOK_EQU TOK_UNEQU
+%nonassoc '<' '>' TOK_LESSEQU TOK_GTREQU
+%left  '+' '-'
+%left  '*' '/' '%'
 
-%right  <ival> '?' ':'
+%right TOK_POW
+%right  <ival> CASTTOKEN TOK_NOT
 %right <ival> TOK_STRUCT_DECL
 %right <ival> TOK_BASE_DECL
 
@@ -102,14 +97,14 @@ static Node * go(Node * t1);
 %token <ival> TOK_MAP_DECL
 %token <ival> TOK_MFUNC_DECL;
 %token <ival> TOK_METHOD;
-%token <ival> TOK_IDENT TOK_NUM TOK_ARG_QUERY TOK_ARG TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
+%token <ival> TOK_IDENT TOK_NUM TOK_ARG_QUERY TOK_ARG TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
 
-%type  <node> stml stmt rstmt bexp expl unaryexp exp expblk str ret bstml obj fexp fexpl func fcall mcall subscript ternary
+%type  <node> stml stmt rstmt expl exp expblk str ret bstml obj fexp fexpl func fcall mcall subscript ternary
 %type  <node> decl fdecl sdecl hdecl ldecl mapdecl structdecl structinit mfuncdecl arg argl funcdef fblock fargl funcname mbr mbrl structdef methodname methoddef
 %type  <str> id structname basename
 
-%destructor { MPRINT1("yydestruct unref'ing node %p\n", $$); RefCounted::unref($$); } stml stmt rstmt bexp expl unaryexp exp str ret bstml fdecl sdecl hdecl ldecl ternary mapdecl structdecl structinit mfuncdecl funcdef arg argl fargl funcname mbr mbrl structdef obj fexp fexpl fblock expblk subscript methodname methoddef
+%destructor { MPRINT1("yydestruct unref'ing node %p\n", $$); RefCounted::unref($$); } stml stmt rstmt expl exp str ret bstml fdecl sdecl hdecl ldecl ternary mapdecl structdecl structinit mfuncdecl funcdef arg argl fargl funcname mbr mbrl structdef obj fexp fexpl fblock expblk subscript methodname methoddef
 
 %error-verbose
 
@@ -119,93 +114,93 @@ prg:	| stml				{ MPRINT("prg:"); program = $1; program->ref(); cleanup(); return
 	;
  
 /* statement list */
-stml:	stmt				{ MPRINT("stml:	stmt"); $$ = $1; }
-	| stmt ';'				{ MPRINT("stml:	stmt;"); $$ = $1; }
-	| stml stmt				{ MPRINT("stml:	stml stmt"); $$ = new NodeSeq($1, $2); }
-	| stml stmt ';'			{ MPRINT("stml:	stml stmt;"); $$ = new NodeSeq($1, $2); }
+stml:	stmt				{ MPRINT("stmt -> stml"); $$ = $1; }
+	| stmt ';'				{ MPRINT("stmt; -> stml"); $$ = $1; }
+	| stml stmt				{ MPRINT("stml stmt -> stml"); $$ = new NodeSeq($1, $2); }
+	| stml stmt ';'			{ MPRINT("stml stmt; -> stml"); $$ = new NodeSeq($1, $2); }
 	;
 
 /* statement */
-stmt: decl                 { MPRINT("stmt: decl"); $$ = $1; }
-    | structdecl           { MPRINT("stmt: structdecl"); $$ = $1; } /* separated out because we allow "struct Foo f = {...}" */
+stmt: decl                 { MPRINT("decl -> stmt"); $$ = $1; }
+    | structdecl           { MPRINT("structdecl -> stmt"); $$ = $1; } /* separated out because we allow "struct Foo f = {...}" */
     | decl '=' exp         {
                               minc_die("Declarations may not include initializers.");
                               flerror = 1;
                               $$ = new NodeNoop();
                           }
     | structinit
-	| bstml                 { MPRINT("stmt: bstml"); $$ = $1; }
-	| TOK_IF level bexp stmt {	xblock = 1; MPRINT("IF bexp stmt");
+	| bstml                 { MPRINT("bstml -> stmt"); $$ = $1; }
+	| TOK_IF level exp stmt {	xblock = 1; MPRINT("IF exp stmt -> smtm");
 								decrLevel();
 								$$ = go(new NodeIf($3, $4));
 								xblock = 0;
 							}
-	| TOK_IF level bexp stmt TOK_ELSE stmt { xblock = 1;
+	| TOK_IF level exp stmt TOK_ELSE stmt { xblock = 1;
 								decrLevel();
 								$$ = go(new NodeIfElse($3, $4, $6));
 								xblock = 0;
 							}
-	| TOK_WHILE level bexp stmt	{ xblock = 1;	MPRINT("WHILE bexp stmt");
+	| TOK_WHILE level exp stmt	{ xblock = 1;	MPRINT("WHILE exp stmt -> stmt");
 								decrLevel();
 								$$ = go(new NodeWhile($3, $4));
 								xblock = 0;
 							}
-	| TOK_FOR level '(' stmt ';' bexp ';' stmt ')' stmt { xblock = 1;
+	| TOK_FOR level '(' stmt ';' exp ';' stmt ')' stmt { xblock = 1;
 								decrLevel();
 								$$ = go(new NodeFor($4, $6, $8, $10));
 								xblock = 0;
 							}
-	| ret                   { MPRINT("stmt: ret");
+	| ret                   { MPRINT("ret -> stmt");
 	                          if (level == 0) {
 	                            minc_die("return statements are not allowed in main score"); $$ = new NodeNoop();
 	                          }
 	                          else { $$ = $1; }
 	                        }
-    | rstmt					{ MPRINT("stmt: rstmt");	$$ = go($1); }
-    | funcdef               { MPRINT("stmt: funcdef"); $$ = go($1); }
-    | structdef             { MPRINT("stmt: structdef"); $$ = $1; }
+    | rstmt					{ MPRINT("rstmt -> stmt");	$$ = go($1); }
+    | funcdef               { MPRINT("funcdef -> stmt"); $$ = go($1); }
+    | structdef             { MPRINT("structdef -> stmt"); $$ = $1; }
 	;
 
 /* block statement list
    This is tricky because we want to bump 'level' here (to avoid executing the contents of the list
-   until the block is completely created) but we don't want to bump it twice for <if bexp bstml>.  So,
+   until the block is completely created) but we don't want to bump it twice for <if exp bstml>.  So,
    if/else/while/for statements set xblock to 1 indicating the bump has already been done.  Only a 
    stand-alone block statement will do its own bump.
  */
 
 bstml:	'{'			{ if (!xblock) incrLevel(); }
 		stml
-		'}'			{ 	MPRINT("bstml: { stml }"); MPRINT2("level = %d, xblock = %d", level, xblock);
+		'}'			{ 	MPRINT("{ stml } -> bstml"); MPRINT2("level = %d, xblock = %d", level, xblock);
 									if (!xblock) { decrLevel(); }
 									$$ = go(new NodeBlock($3));
 								}
 	/* DAS handling empty block as special case to avoid need for empty stml's */
-	| '{' '}'		{ 	MPRINT("bstml: {}");
+	| '{' '}'		{ 	MPRINT("{} -> bstml");
 								$$ = go(new NodeBlock(new NodeNoop()));
 								}
 	;
 
 /* A return statement.  Only used inside functions. */
 
-ret: TOK_RETURN exp			{	MPRINT("ret exp");
+ret: TOK_RETURN exp			{	MPRINT("return exp -> ret");
 								MPRINT1("\tcalled at level %d", level);
 								$$ = new NodeRet($2);
 							}
-	| TOK_RETURN exp ';'	{	MPRINT("ret exp;");
+	| TOK_RETURN exp ';'	{	MPRINT("return exp; -> ret");
 								MPRINT1("\tcalled at level %d", level);
 								$$ = new NodeRet($2);
 							}
-	| TOK_RETURN            {   MPRINT("ret");
+	| TOK_RETURN            {   MPRINT("return");
                                 if (level > 0) { minc_die("return statements must return a value"); } $$ = new NodeNoop();
                             }
-	| TOK_RETURN ';'        {   MPRINT("ret;");
+	| TOK_RETURN ';'        {   MPRINT("return;");
                                 if (level > 0) { minc_die("return statements must return a value"); } $$ = new NodeNoop();
                             }
 	;
 
 /* An identifier list is used to declare a variable of a particular type, e.g., "float gain" */
-idl: id					{ MPRINT("idl: id"); idlist[idcount++] = $1; }
-	| id ',' idl		{ MPRINT("idl: id,idl"); idlist[idcount++] = $1; }
+idl: id					{ MPRINT("id -> idl"); idlist[idcount++] = $1; }
+	| id ',' idl		{ MPRINT("id,idl -> idl"); idlist[idcount++] = $1; }
 	;
 
 /* An identifier is any single text token */
@@ -221,92 +216,91 @@ decl:   fdecl
     |   mfuncdecl
     ;
 
-fdecl:	TOK_FLOAT_DECL idl	{ 	MPRINT("decl: fdecl");
+fdecl:	TOK_FLOAT_DECL idl	{ 	MPRINT("fdecl -> decl");
 								$$ = go(declare(MincFloatType));
 								idcount = 0;
 							}	// e.g., "float x, y z"
 	;
-sdecl:	TOK_STRING_DECL idl	{ 	MPRINT("decl: sdecl");
+sdecl:	TOK_STRING_DECL idl	{ 	MPRINT("sdecl -> decl");
 								$$ = go(declare(MincStringType));
 								idcount = 0;
 							}
 	;
-hdecl:	TOK_HANDLE_DECL idl	{ 	MPRINT("decl: hdecl");
+hdecl:	TOK_HANDLE_DECL idl	{ 	MPRINT("hdecl -> decl");
 								$$ = go(declare(MincHandleType));
 								idcount = 0;
 							}
 	;
-ldecl:	TOK_LIST_DECL idl	{ 	MPRINT("decl: ldecl");
+ldecl:	TOK_LIST_DECL idl	{ 	MPRINT("ldecl -> decl");
 								$$ = go(declare(MincListType));
 								idcount = 0;
 							}
     ;
-mapdecl:    TOK_MAP_DECL idl    {     MPRINT("decl: mapdecl");
+mapdecl:    TOK_MAP_DECL idl    {     MPRINT("mapdecl -> decl");
                                 $$ = go(declare(MincMapType));
                                 idcount = 0;
                               }
     ;
 
-mfuncdecl:    TOK_MFUNC_DECL idl    {     MPRINT("decl: mfuncdecl"); $$ = go(declare(MincFunctionType)); idcount = 0; }
+mfuncdecl:    TOK_MFUNC_DECL idl    {     MPRINT("mfuncdecl -> decl"); $$ = go(declare(MincFunctionType)); idcount = 0; }
     ;
     
 /* statement nesting level counter.  This is an inline action between tokens. */
 level:  /* nothing */ { incrLevel(); }
 	;
 
-subscript:  '[' exp ']'         {       MPRINT("subscript: [exp]"); $$ = $2; }
+subscript:  '[' exp ']'         {       MPRINT("[exp] -> subscript"); $$ = $2; }
 
 /* An obj is an id or anything that can be operator accessed via . or [] */
-obj:    id                  {       MPRINT("obj: id");          $$ = new NodeLoadSym($1); }
-    |   obj '.' id            {       MPRINT("obj: obj.id");      $$ = new NodeMemberAccess($1, $3);  }
-    |   obj '[' exp ']'      {       MPRINT("obj: obj[exp]");    $$ = new NodeSubscriptRead($1, $3); }
+obj:    id                  {       MPRINT("id -> obj");          $$ = new NodeLoadSym($1); }
+    |   obj '.' id            {       MPRINT("obj.id -> obj");      $$ = new NodeMemberAccess($1, $3);  }
+    |   obj '[' exp ']'      {       MPRINT("obj[exp] -> obj");    $$ = new NodeSubscriptRead($1, $3); }
     ;
 
 /* An expression list block is used to initialize a list or a struct */
-expblk: '{' level expl '}'    { MPRINT("expblk: {expl}");    decrLevel(); $$ = new NodeList($3); }
+expblk: '{' level expl '}'    { MPRINT("{expl} -> expblk");    decrLevel(); $$ = new NodeList($3); }
     ;
 
 /* A function expression is an item that can appear in a set of function arguments */
-fexp:   exp             { MPRINT("fexp: exp"); $$ = $1; }
-    |   bexp            { MPRINT("fexp: bexp"); $$ = $1; }
+fexp:   exp             { MPRINT("exp -> fexp"); $$ = $1; }
     ;
 
 /* A function expression list is a function expression or a series of comma-separated function expressions */
-fexpl:  fexp            { MPRINT("fexpl: fexp"); $$ = new NodeListElem(new NodeEmptyListElem(), $1); }
-    |   fexpl ',' fexp  {  MPRINT("fexpl: fexpl,fexp"); $$ = new NodeListElem($1, $3); }
+fexpl:  fexp            { MPRINT("fexp -> fexpl"); $$ = new NodeListElem(new NodeEmptyListElem(), $1); }
+    |   fexpl ',' fexp  {  MPRINT("fexpl,fexp -> fexpl"); $$ = new NodeListElem($1, $3); }
     ;
 
 /* A function is a set of function arguments inside parentheses */
-func:   '(' fexpl ')' {    MPRINT("func: (fexpl)"); $$ = $2; }
-    |   '(' ')'       {     MPRINT("func: ()"); $$ = new NodeEmptyListElem();  }
+func:   '(' fexpl ')' {    MPRINT("(fexpl) -> func"); $$ = $2; }
+    |   '(' ')'       {     MPRINT("() -> func"); $$ = new NodeEmptyListElem();  }
     ;
 
 /* A function call is an id followed by (args) or () */
-fcall:  id func       {    MPRINT("fcall: id func"); $$ = new NodeFunctionCall(new NodeLoadSym($1), $2); }
-    |   fcall func    {    MPRINT("fcall: fcall func"); $$ = new NodeFunctionCall($1, $2); }    /* calling a function on the returned value of a function */
-    |   obj subscript func { MPRINT("fcall: obj subscript func"); $$ = new NodeFunctionCall(new NodeSubscriptRead($1, $2), $3); }
+fcall:  id func       {    MPRINT("id func -> fcall"); $$ = new NodeFunctionCall(new NodeLoadSym($1), $2); }
+    |   fcall func    {    MPRINT("fcall func -> fcall"); $$ = new NodeFunctionCall($1, $2); }    /* calling a function on the returned value of a function */
+    |   obj subscript func { MPRINT("obj subscript func -> fcall"); $$ = new NodeFunctionCall(new NodeSubscriptRead($1, $2), $3); }
     ;
 
 /* A method is a function call on an object using the dot operator. The object can be an id, a member access on a
    struct/class, or a list element accessed by index.  The id is the string representing the method */
-mcall: obj '.' id func {  MPRINT("mcall: obj.id func"); $$ = new NodeMethodCall($1, $3, $4); }
+mcall: obj '.' id func {  MPRINT("obj.id func -> mcall"); $$ = new NodeMethodCall($1, $3, $4); }
     ;
 
 /* New ternary statement - Doug likes having these */
-ternary: bexp '?' unaryexp ':' unaryexp { $$ = new NodeTernary($1, $3, $5); }
+ternary: exp '?' exp ':' exp { $$ = new NodeTernary($1, $3, $5); }
     ;
 
 /* An rstmt is statement returning a value, such as assignments, function calls, etc. */
 rstmt:
-    id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAutoDeclLoadSym($1), $3); }
+    id '=' exp		{ MPRINT("id = exp -> rstmt");		$$ = new NodeStore(new NodeAutoDeclLoadSym($1), $3); }
     /* Special case: Assigning value to an element in a struct.  Types can never be overwritten here. */
     | obj '.' id '=' exp       {
-                                MPRINT("rstmt: obj.id = exp");
+                                MPRINT("obj.id = exp -> rstmt");
                                 $$ = new NodeStore(new NodeMemberAccess($1, $3), $5, /* allowOverwrite = */ false);
                             }
     /* Special case: Assigning value to an array at an index */
 	| obj '[' exp ']' '=' exp {
-                                MPRINT("rstmt: obj[exp] = exp");
+                                MPRINT("obj[exp] = exp -> rstmt");
                                 $$ = new NodeSubscriptWrite($1, $3, $6);
                             }
 	| obj TOK_PLUSEQU exp {	    $$ = new NodeOpAssign($1, $3, OpPlus); }
@@ -316,42 +310,42 @@ rstmt:
     /* Special-case rules for operating on an array access.  This is needed because the returned
        value from array[exp] has no symbol associated with it.
     */
-	| obj subscript TOK_PLUSEQU exp { MPRINT("rstmt: obj subscript TOK_PLUSEQU exp");
+	| obj subscript TOK_PLUSEQU exp { MPRINT("obj subscript tok_PLUSEQU EXP -> rstmt");
      	$$ = new NodeSubscriptOpAssign($1, $2, $4, OpPlus);
 	}
-	| obj subscript TOK_MINUSEQU exp { MPRINT("rstmt: obj subscript TOK_MINUSEQU exp");
+	| obj subscript TOK_MINUSEQU exp { MPRINT("obj subscript tok_MINUSEQU EXP -> rstmt");
      	$$ = new NodeSubscriptOpAssign($1, $2, $4, OpMinus);
 	}
-	| obj subscript TOK_MULEQU exp { MPRINT("rstmt: obj subscript TOK_MULEQU exp");
+	| obj subscript TOK_MULEQU exp { MPRINT("obj subscript tok_MULEQU EXP -> rstmt");
      	$$ = new NodeSubscriptOpAssign($1, $2, $4, OpMul);
 	}
-	| obj subscript TOK_DIVEQU exp { MPRINT("rstmt: obj subscript TOK_DIVEQU exp");
+	| obj subscript TOK_DIVEQU exp { MPRINT("obj subscript tok_DIVEQU EXP -> rstmt");
      	$$ = new NodeSubscriptOpAssign($1, $2, $4, OpDiv);
 	}
     /* Generic rule for incrementing/decrementing */
-    | TOK_PLUSPLUS obj %prec CASTTOKEN { MPRINT("rstmt: TOK_PLUSPLUS obj");
+    | TOK_PLUSPLUS obj %prec CASTTOKEN { MPRINT("tok_PLUSPLUS OBJ -> rstmt");
         $$ = new NodeOpAssign($2, new NodeConstf(1.0), OpPlusPlus);
     }
-    | TOK_MINUSMINUS obj %prec CASTTOKEN { MPRINT("rstmt: TOK_MINUSMINUS obj");
+    | TOK_MINUSMINUS obj %prec CASTTOKEN { MPRINT("tok_MINUSMINUS OBJ -> rstmt");
         $$ = new NodeOpAssign($2, new NodeConstf(1.0), OpMinusMinus);
     }
     /* Special-case rules for incrementing/decrementing an array access.  This is needed because the returned
        value from array[exp] has no symbol associated with it.
     */
- 	| TOK_PLUSPLUS obj subscript  { MPRINT("rstmt: TOK_PLUSPLUS obj subscript");
+ 	| TOK_PLUSPLUS obj subscript  { MPRINT("tok_PLUSPLUS OBJ subscript -> rstmt");
  	    $$ = new NodeSubscriptOpAssign($2, $3, new NodeConstf(1.0), OpPlus);
  	}
- 	| TOK_MINUSMINUS obj subscript  { MPRINT("rstmt: TOK_MINUSMINUS obj subscript");
+ 	| TOK_MINUSMINUS obj subscript  { MPRINT("tok_MINUSMINUS OBJ subscript -> rstmt");
  	    $$ = new NodeSubscriptOpAssign($2, $3, new NodeConstf(1.0), OpMinus);
  	}
 
-    |   fcall        {  MPRINT("rstmt: fcall"); $$ = $1; }
-    |   mcall        {  MPRINT("rstmt: mcall"); $$ = $1; }
+    |   fcall        {  MPRINT("fcall -> rstmt"); $$ = $1; }
+    |   mcall        {  MPRINT("mcall -> rstmt"); $$ = $1; }
 	;
 
 /* An expression list is an expression or set of expressions which will be wrapped in a block */
-expl:	exp				{ MPRINT("expl: exp"); $$ = new NodeListElem(new NodeEmptyListElem(), $1); }
-	| expl ',' exp		{ MPRINT("expl: expl,exp"); $$ = new NodeListElem($1, $3); }
+expl:	exp				{ MPRINT("exp -> expl"); $$ = new NodeListElem(new NodeEmptyListElem(), $1); }
+	| expl ',' exp		{ MPRINT("expl,exp -> expl"); $$ = new NodeListElem($1, $3); }
 	;
 
 /* A string is quoted text */
@@ -361,48 +355,55 @@ str:	TOK_STRING		{   char *s = yytext + 1;
 						}
 	;
 
-/* Boolean expression, before being wrapped in () */
-bexp:	exp %prec LOWPRIO	{ MPRINT("bexp: exp"); $$ = $1; }
-	| TOK_NOT bexp %prec TOK_UNEQU { MPRINT("!bexp"); $$ = new NodeNot($2); }
-	| bexp TOK_AND bexp	{ $$ = new NodeAnd($1, $3); }
-	| bexp TOK_OR  bexp	{ $$ = new NodeOr($1, $3); }
-	| bexp TOK_EQU bexp	{ $$ = new NodeRelation(OpEqual, $1, $3); }
-	| exp TOK_UNEQU exp	{ $$ = new NodeRelation(OpNotEqual, $1, $3); }
-	| exp '<' exp			{ $$ = new NodeRelation(OpLess, $1, $3); }
-	| exp '>' exp			{ $$ = new NodeRelation(OpGreater, $1, $3); }
-	| exp TOK_LESSEQU exp { $$ = new NodeRelation(OpLessEqual, $1, $3); }
-	| exp TOK_GTREQU exp	{ $$ = new NodeRelation(OpGreaterEqual, $1, $3); }
-	| TOK_TRUE				{ $$ = new NodeRelation(OpEqual, new NodeConstf(1.0), new NodeConstf(1.0)); }
-	| TOK_FALSE				{ $$ = new NodeRelation(OpNotEqual, new NodeConstf(1.0), new NodeConstf(1.0)); }
-	;
+/* expression, now including all boolean expressions as well */
+exp:
+    rstmt                             { MPRINT("rstmt -> exp"); $$ = $1; }
+  | ternary                           { MPRINT("ternary -> exp"); $$ = $1; }
 
-/* expression */
-unaryexp: '(' bexp ')'		{ MPRINT("unaryexp: (bexp)"); $$ = $2; } // bexp only an expression when wrapped
-    | str			    { $$ = $1; }
-	| TOK_NUM			{ double f = atof(yytext); $$ = new NodeConstf(f); }
-    | obj               { MPRINT("unaryexp: obj");   $$ = $1; }
-    | expblk            { MPRINT("unaryexp: expblk");   $$ = $1; }   // for list initialization
-	| '{' '}'	        { MPRINT("unaryexp: {}");	$$ = new NodeList(new NodeEmptyListElem()); }   // for empty list initialization
-	| TOK_ARG_QUERY		{ $$ = parseArgumentQuery(yytext, &flerror); }
-	| TOK_ARG			{ $$ = parseScoreArgument(yytext, &flerror); }
-	| TOK_TRUE			{ $$ = new NodeConstf(1.0); }
-	| TOK_FALSE			{ $$ = new NodeConstf(0.0); }
-    ;
+  // Arithmetic
+  | exp TOK_POW exp                   { $$ = new NodeOp(OpPow, $1, $3); }
+  | exp '*' exp                       { $$ = new NodeOp(OpMul, $1, $3); }
+  | exp '/' exp                       { $$ = new NodeOp(OpDiv, $1, $3); }
+  | exp '%' exp                       { $$ = new NodeOp(OpMod, $1, $3); }
+  | exp '+' exp                       { $$ = new NodeOp(OpPlus, $1, $3); }
+  | exp '-' exp                       { $$ = new NodeOp(OpMinus, $1, $3); }
 
-exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
-    | ternary           {  MPRINT("exp: ternary"); $$ = $1; }
-	| exp TOK_POW exp	{ $$ = new NodeOp(OpPow, $1, $3); }
-	| exp '*' exp		{ $$ = new NodeOp(OpMul, $1, $3); }
-	| exp '/' exp		{ $$ = new NodeOp(OpDiv, $1, $3); }
-	| exp '+' exp		{ MPRINT("exp: exp + exp"); $$ = new NodeOp(OpPlus, $1, $3); }
-	| exp '-' exp		{ $$ = new NodeOp(OpMinus, $1, $3); }
-	| exp '%' exp		{ $$ = new NodeOp(OpMod, $1, $3); }
-    | unaryexp          { MPRINT("exp: unaryexp"); $$ = $1; }
-    | '-' exp %prec CASTTOKEN { MPRINT("exp: '-' exp");
-								/* NodeConstf is a dummy; makes exct_operator work */
-								$$ = new NodeOp(OpNeg, $2, new NodeConstf(0.0));
-							}
-	;
+  // Logical and relational (formerly in bexp)
+  | TOK_NOT exp %prec TOK_UNEQU       { MPRINT("!exp -> exp"); $$ = new NodeNot($2); }
+  | exp TOK_AND exp                   { $$ = new NodeAnd($1, $3); }
+  | exp TOK_OR exp                    { $$ = new NodeOr($1, $3); }
+  | exp TOK_EQU exp                   { $$ = new NodeRelation(OpEqual, $1, $3); }
+  | exp TOK_UNEQU exp                 { $$ = new NodeRelation(OpNotEqual, $1, $3); }
+  | exp '<' exp                       { $$ = new NodeRelation(OpLess, $1, $3); }
+  | exp '>' exp                       { $$ = new NodeRelation(OpGreater, $1, $3); }
+  | exp TOK_LESSEQU exp               { $$ = new NodeRelation(OpLessEqual, $1, $3); }
+  | exp TOK_GTREQU exp                { $$ = new NodeRelation(OpGreaterEqual, $1, $3); }
+
+  // Constants and literals
+  | TOK_TRUE                          { $$ = new NodeConstf(1.0); }
+  | TOK_FALSE                         { $$ = new NodeConstf(0.0); }
+
+  // Grouping
+  | '(' exp ')'                       { MPRINT("(exp) -> exp"); $$ = $2; }
+
+  // Unary minus (uses dummy NodeConstf to satisfy operator format)
+  | '-' exp %prec CASTTOKEN           {
+                                        MPRINT("'-' exp -> exp");
+                                        $$ = new NodeOp(OpNeg, $2, new NodeConstf(0.0));
+                                      }
+
+  // Data and special types
+  | str                               { $$ = $1; }
+  | TOK_NUM                           {
+                                        double f = atof(yytext);
+                                        $$ = new NodeConstf(f);
+                                      }
+  | obj                               { MPRINT("obj -> exp"); $$ = $1; }
+  | expblk                            { MPRINT("expblk -> exp"); $$ = $1; }
+  | '{' '}'                           { MPRINT("{} -> exp"); $$ = new NodeList(new NodeEmptyListElem()); }
+  | TOK_ARG_QUERY                     { $$ = parseArgumentQuery(yytext, &flerror); }
+  | TOK_ARG                           { $$ = parseScoreArgument(yytext, &flerror); }
+;
 
 /* Rules for declaring and defining structs */
 
@@ -410,22 +411,22 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
     It is either a type followed by an <id>, like "float length", or a method definition.
  */
 
-mbr: TOK_FLOAT_DECL id  { MPRINT("mbr: decl");  $$ = new NodeMemberDecl($2, MincFloatType); }
-    | TOK_STRING_DECL id    { MPRINT("mbr: decl");    $$ = new NodeMemberDecl($2, MincStringType); }
-    | TOK_HANDLE_DECL id    { MPRINT("mbr: decl");    $$ = new NodeMemberDecl($2, MincHandleType); }
-    | TOK_LIST_DECL id  { MPRINT("mbr: decl");  $$ = new NodeMemberDecl($2, MincListType); }
-    | TOK_MAP_DECL id   { MPRINT("mbr: decl");   $$ = new NodeMemberDecl($2, MincMapType); }
-    | TOK_MFUNC_DECL id { MPRINT("mbr: decl");   $$ = new NodeMemberDecl($2, MincFunctionType); }
-    | structname id     { MPRINT("mbr: struct decl");   $$ = new NodeMemberDecl($2, MincStructType, $1); }     // member decl for struct includes struct type
-    | TOK_METHOD methoddef  { MPRINT("mbr: methoddef"); $$ = $2; }    // $2 will be a NodeMethodDef instance
+mbr: TOK_FLOAT_DECL id  { MPRINT("decl -> mbr");  $$ = new NodeMemberDecl($2, MincFloatType); }
+    | TOK_STRING_DECL id    { MPRINT("decl -> mbr");    $$ = new NodeMemberDecl($2, MincStringType); }
+    | TOK_HANDLE_DECL id    { MPRINT("decl -> mbr");    $$ = new NodeMemberDecl($2, MincHandleType); }
+    | TOK_LIST_DECL id  { MPRINT("decl -> mbr");  $$ = new NodeMemberDecl($2, MincListType); }
+    | TOK_MAP_DECL id   { MPRINT("decl -> mbr");   $$ = new NodeMemberDecl($2, MincMapType); }
+    | TOK_MFUNC_DECL id { MPRINT("decl -> mbr");   $$ = new NodeMemberDecl($2, MincFunctionType); }
+    | structname id     { MPRINT("struct decl -> mbr");   $$ = new NodeMemberDecl($2, MincStructType, $1); }     // member decl for struct includes struct type
+    | TOK_METHOD methoddef  { MPRINT("methoddef -> mbr"); $$ = $2; }    // $2 will be a NodeMethodDef instance
     ;
 
 /* An mbrl is one <mbr> or a series of <mbr>'s separated by commas, for a struct definition,
     e.g. "float f, float g, string s"
  */
 
-mbrl: mbr               { MPRINT("mbrl: mbr"); $$ = new NodeSeq(new NodeNoop(), $1); }
-    | mbrl ',' mbr      { MPRINT("mbrl: mbrl,mbr"); $$ = new NodeSeq($1, $3); }
+mbrl: mbr               { MPRINT("mbr -> mbrl"); $$ = new NodeSeq(new NodeNoop(), $1); }
+    | mbrl ',' mbr      { MPRINT("mbrl,mbr -> mbrl"); $$ = new NodeSeq($1, $3); }
     ;
 
 /* A structname is the rule for the beginning of a struct decl, e.g., "struct Foo" - we just return the id for the struct's name */
@@ -456,7 +457,7 @@ structdecl: TOK_STRUCT_DECL id idl    { $$ = go(declareStructs($2)); idcount = 0
     ;
 
 /* A structinit is a struct decl plus an initializer */
-structinit: TOK_STRUCT_DECL id idl '=' expblk {   MPRINT("stmt: structinit: struct <type> id = expblk"); $$ = go(initializeStruct($2, $5)); idcount = 0; }
+structinit: TOK_STRUCT_DECL id idl '=' expblk {   MPRINT("structinit: struct <type> id = expblk -> stmt"); $$ = go(initializeStruct($2, $5)); idcount = 0; }
 
 /* Rules for declaring and defining functions and methods */
 
@@ -509,16 +510,16 @@ arg: TOK_FLOAT_DECL id      { MPRINT("arg");
                                     $$ = new NodeDecl($2, MincListType); }
     | TOK_MAP_DECL id       { MPRINT("arg");
                                     $$ = new NodeDecl($2, MincMapType); }
-    | TOK_STRUCT_DECL id id { MPRINT("arg: structname");
+    | TOK_STRUCT_DECL id id { MPRINT("structname -> arg");
                                     $$ = new NodeStructDecl($3, $2); }
-    | TOK_MFUNC_DECL id      { MPRINT("arg: mfunction");
+    | TOK_MFUNC_DECL id      { MPRINT("mfunction -> arg");
                                     $$ = new NodeDecl($2, MincFunctionType); }
     ;
 
 /* a <argl> is one <arg> or a series of <arg>'s separated by commas */
 
-argl: arg     { MPRINT("argl: arg"); $$ = new NodeArgListElem(new NodeEmptyListElem(), $1); }
-    | argl ',' arg    { MPRINT("argl: argl,arg"); $$ = new NodeArgListElem($1, $3); }
+argl: arg     { MPRINT("arg -> argl"); $$ = new NodeArgListElem(new NodeEmptyListElem(), $1); }
+    | argl ',' arg    { MPRINT("argl,arg -> argl"); $$ = new NodeArgListElem($1, $3); }
     ;
 
 /* a <fargl> is a grouped argument list for a function definition, e.g. "(float f, string s)".
@@ -528,22 +529,22 @@ argl: arg     { MPRINT("argl: arg"); $$ = new NodeArgListElem(new NodeEmptyListE
    variable in the function's scope, then accesses it via lookup().
  */
 
-fargl: '(' argl ')'		{ MPRINT("fargl: (argl)"); $$ = new NodeArgList($2); }
-	| '(' ')'           { MPRINT("fargl: ()"); $$ = new NodeArgList(new NodeEmptyListElem()); }
+fargl: '(' argl ')'		{ MPRINT("(argl) -> fargl"); $$ = new NodeArgList($2); }
+	| '(' ')'           { MPRINT("() -> fargl"); $$ = new NodeArgList(new NodeEmptyListElem()); }
 	;
 
 /* fblock is a function body statement list in a block including its curly braces.
    The statement list must end with a return statement. */
 
-fblock: '{' stml ret '}' { MPRINT("fblock: { stml ret }"); $$ = $$ = new NodeFuncBodySeq($2, $3);; }
-    |   '{' ret '}'     { MPRINT("fblock: { ret }"); $$ = new NodeFuncBodySeq(new NodeEmptyListElem(), $2); }
+fblock: '{' stml ret '}' { MPRINT("{ stml ret } -> fblock"); $$ = $$ = new NodeFuncBodySeq($2, $3);; }
+    |   '{' ret '}'     { MPRINT("{ ret } -> fblock"); $$ = new NodeFuncBodySeq(new NodeEmptyListElem(), $2); }
  	|   '{' stml '}'	{ minc_die("function bodies must end with 'return <exp>' statement"); flerror = 1; $$ = new NodeNoop(); }
    ;
 
 /* funcdef is a complete rule for a function definition, e.g. "list myfunction(string s) { ... }".
  */
 
-funcdef: funcname fargl fblock	{ MPRINT("funcdef");
+funcdef: funcname fargl fblock	{ MPRINT("funcname fargl fblock -> funcdef");
                                     decrFunctionLevel();
 									$$ = new NodeFuncDef($1, $2, $3);
 								}
@@ -552,7 +553,7 @@ funcdef: funcname fargl fblock	{ MPRINT("funcdef");
 /* methoddef is a complete rule for a struct method definition.  Looks the same as funcdef but only occurs within a struct definition.
  */
 
-methoddef: methodname fargl fblock    { MPRINT("methoddef");
+methoddef: methodname fargl fblock    { MPRINT("methodname fargl fblock -> methoddef");
                                     decrFunctionLevel();
                                     $$ = new NodeMethodDef($1, $2, $3);
                                 }

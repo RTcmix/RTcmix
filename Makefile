@@ -126,3 +126,10 @@ configure: configure.ac
 cleanac:
 	@$(RM) -r autom4te.cache config.log config.status config.cache
 
+print-vars::
+	@echo Important Makefile variables:
+	@echo LIBPREFIX: $(LIBPREFIX)
+	@echo SHLIB: $(SHLIB)
+	@echo SHLIB_SUFFIX: $(SHLIB_SUFFIX)
+	@echo RTLIB: $(RTLIB)
+	@echo RTLIBTYPE: $(RTLIBTYPE)

@@ -14,13 +14,7 @@ result = (false) ? a : b + c;
 
 if (result != b + c) { printf("result %d != b + c (%d)\n", result, b + c); exit("ternary parser incorrect"); }
 
-// Here we check to be sure the LH binding happens -- the result should include the addition of c even though the boolean is true.
-
-result = (true) ? a : b + c;
-
-if (result != a + c) { printf("result %d != a + c (%d)\n", result, a + c); exit("ternary parser not reducing left"); }
-
-// Minc requires that both expressions be unary.  Make sure that works.
+// Minc requires that both expressions resolve to unary.  Make sure that works.
 
 result = (true) ? (a + b) : c;
 

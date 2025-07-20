@@ -21,10 +21,18 @@ jobs:
         sudo apt-get install -y build-essential libasound2-dev libsndfile1-dev
 
     - name: Configure the build
-      run: ./configure --prefix=/tmp
+      run: ./configure
 
-    - name: Build the project
-      run: make BUILDTYPE=STANDALONE USE_EXTERNAL_PMLIB=FALSE install || echo "Build and install failed"
-
+    - name: Build and install the project
+      run: |
+        make BUILDTYPE=STANDALONE USE_EXTERNAL_PMLIB=FALSE || echo "Build failed"
+        make BUILDTYPE=STANDALONE USE_EXTERNAL_PMLIB=FALSE install || echo "Install failed"
+      env:
+        BUILDTYPE: STANDALONE
+        ARCH: LINUX
+        USE_EXTERNAL_PMLIB: FALSE
+        RTLIBTYPE: DYNAMIC
+        SHLIB_SUFFIX: so
+    
     - name: Run tests
       run: make rawtest

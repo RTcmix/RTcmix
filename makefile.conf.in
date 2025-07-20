@@ -458,4 +458,14 @@ TRASH = core core.[0-9]+ *~
 # Cool debugging feature:  to see value of make macro "$(MACRO)" type "make print-MACRO"
 print-%: ; @echo $* is $($*)
 
+# Sanity check for each included instance of makefile.conf
+ifneq (,$(filter ,$(LIBPREFIX) $(SHLIB) $(SHLIB_SUFFIX) $(RTLIB) $(RTLIBTYPE) $(AUDIODRIVER)))
+	$(info LIBPREFIX: $(LIBPREFIX))
+	$(info SHLIB: $(SHLIB))
+	$(info SHLIB_SUFFIX: $(SHLIB_SUFFIX))
+	$(info RTLIB: $(RTLIB))
+	$(info RTLIBTYPE: $(RTLIBTYPE))
+	$(info AUDIODRIVER: $(AUDIODRIVER))
+	$(error Configuration error - some important Makefile variable is not set)
+endif
 

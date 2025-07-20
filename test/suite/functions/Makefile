@@ -1,3 +1,5 @@
+include ../../../makefile.conf
+
 POSITIVE_TESTS = bexp default-args typereturn handle if-bstml ifrand iftrue exit exit2 \
 	manysymbols toofewargs undefined_func var-redeclare struct_ctor_wrong_arg_count 
 NEGATIVE_TESTS = too-many-args function-symbol arg-symbol lineno \
@@ -12,7 +14,7 @@ FUNC_TESTS = argtest call-stack func_call func_return funclevel1 func_call2 func
 # These fail but shouldn't, but we leave them out for clean regression:
 # scope02
 
-CMIX = CMIX -P
+CMIX = ${CMIXDIR}/bin/CMIX -P
 
 all:	positive-tests compat-tests block-tests negative-tests func-tests
 

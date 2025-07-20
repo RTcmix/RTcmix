@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2025-07-20 Douglas Scott <netdscott-at-netscape.net>
+	* Finished two major sets of changes on MinC parser.  Main change: removed bexp and generalize to exp because the logic was already allowing this.
+	* Unit tests can now be called from the top level, and integration into Github actions is in-progress.
+
 2025-06-21 Douglas Scott <netdscott-at-netscape.net>
 	* Finished Brad's work on rtcmix~ - now compiles, links, installs, and runs on Max v8 and v9.
 	* Bumped its version to 2.2.

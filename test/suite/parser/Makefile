@@ -1,6 +1,10 @@
-CMIX = CMIX
+include ../../../makefile.conf
+
+CMIX = ${CMIXDIR}/bin/CMIX
 
 PASS_SCORES = \
+bison-verification.sco \
+bison-verification-2.sco \
 base_init.sco \
 base_no_initializer01.sco \
 basetest01.sco \
@@ -43,6 +47,7 @@ newfunction02.sco \
 newfunction03.sco \
 null_list.sco \
 object_methods.sco \
+operator_test01.sco \
 sanity_check.sco \
 struct01.sco \
 struct02.sco \
@@ -61,10 +66,10 @@ two_methods.sco \
 unaryop.sco
 
 FAIL_SCORES = \
-bad_ternary.sco \
 base_unknown.sco \
 block_scope.sco \
 derived_duplicate_member.sco \
+error2.sco \
 for_scope.sco \
 function_scope.sco \
 func_errortests1.sco \

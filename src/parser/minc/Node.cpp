@@ -1749,10 +1749,12 @@ Node *	NodeWhile::doExct()
 Node *	NodeTernary::doExct()
 {
     if ((bool)child(0)->exct()->value() == true) {
+        TPRINT("NodeTernary: taking TRUE branch\n");
         child(1)->exct();
         setValue(child(1)->value());
     }
     else {
+        TPRINT("NodeTernary: taking FALSE branch\n");
         child(2)->exct();
         setValue(child(2)->value());
     }

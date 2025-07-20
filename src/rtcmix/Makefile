@@ -396,7 +396,6 @@ ifeq ($(BUILDTYPE), STANDALONE)
 endif
 
 # rules for library and three executables we build
-
 ifeq ($(BUILDTYPE), STANDALONE)
 $(RTLIB): depend $(COMMON_OBJS) $(LIBS)
 	$(LOAD) $@ $(COMMON_OBJS) $(INST_OBJS) $(LIB_OBJS) $(LIBS) $(SYSLIBS)
