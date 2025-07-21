@@ -872,17 +872,23 @@ void Subscript::writeValueToIndex(Node *listNode, Node *indexNode, const MincVal
     int len = 0;
     MincList *theList =  listNode->symbol() ? (MincList *) listNode->symbol()->value() : (MincList *) listNode->value();
     MincFloat fltindex = (MincFloat) indexNode->value();
-    int index = (int) fltindex;
-    if (fltindex - (MincFloat) index > 0.0)
+    if (fltindex - floor(fltindex) > 0.0)
         minc_warn("list index (%f) must be integer ... correcting", fltindex);
     if (theList != NULL) {
         len = theList->len;
         assert(len >= 0);    /* NB: okay to have zero-length list */
     }
+    // Cast to int and then verify
+    int index = (int) fltindex;
     if (index < 0) {    /* means last element */
-        if (index <= -2)
-            minc_warn("negative index ... assigning to last element");
-        index = len > 0 ? len - 1 : 0;
+        if (fltindex < 0.0) {
+            if (index <= -2)
+                minc_warn("negative index ... assigning to last element");
+            index = len > 0 ? len - 1 : 0;
+        }
+        else {      /* means int index wrapped negative */
+            minc_die("list array subscript exceeds integer size limit!");
+        }
     }
     if (index >= len) {
         /* resize list */
