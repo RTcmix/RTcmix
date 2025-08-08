@@ -61,17 +61,19 @@ void makeMIDIChoice(const PmDeviceInfo *info[], const int numDevices,
 	}
 }
 
+#define MAX_DEVICES 32
+
 int chooseMIDIDevices()
 {
 	int status = 0;
 	Pm_Initialize();
 
 	const int numdev = Pm_CountDevices();
-	const PmDeviceInfo *info[numdev];
+	const PmDeviceInfo *info[MAX_DEVICES];
 
 	bool hasinputdev = false;
 	bool hasoutputdev = false;
-	for (int id = 0; id < numdev; id++) {
+	for (int id = 0; id < numdev && id < MAX_DEVICES; id++) {
 		info[id] = Pm_GetDeviceInfo(id);
 		if (info[id] != NULL) {
 			if (info[id]->input)

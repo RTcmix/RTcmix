@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2025-08-08 Douglas Scott <netdscott-at-netscape.net>
+	* Removed 95% of all "automatic array" uses (declaring an array using a non-const variable) which are not in the strict C++ standard.
+	  I did this by using MAXCHANS for any array involved in channel counts, determined the maximum pfield index used for 'p' arrays.
+	  If I could not determine a good solution, I marked the instance with a TODO comment. 
+	* More work on Minc parser to allow arbitrary postfix operator chains (a.b[], a[].b, a().b[c].d(), etc., etc.).
+
 2025-07-20 Douglas Scott <netdscott-at-netscape.net>
 	* Finished two major sets of changes on MinC parser.  Main change: removed bexp and generalize to exp because the logic was already allowing this.
 	* Unit tests can now be called from the top level, and integration into Github actions is in-progress.

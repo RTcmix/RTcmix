@@ -188,8 +188,8 @@ int GRANULATE::init(double p[], int n_args)
 
 void GRANULATE::doupdate()
 {
-   double p[_nargs];
-   update(p, _nargs, kInskip | kAmp | kInChan | kWinStart | kWinEnd | kWrap
+   double p[25];    // Allocate to 1 more than max p index examined
+   update(p, 25, kInskip | kAmp | kInChan | kWinStart | kWinEnd | kWrap
          | kTraversal | kHopTime | kInJitter | kOutJitter | kMinDur | kMaxDur
          | kMinAmp | kMaxAmp | kTransp | kTranspJitter | kMinPan | kMaxPan);
 
@@ -248,7 +248,7 @@ int GRANULATE::run()
       // If we're not in wrap mode, this returns false when it's time to stop.
       _keepgoing = _stream->prepare();
 
-      float out[outchans];
+      float out[MAXCHANS];
       if (outchans == 2) {
          out[0] = _stream->lastL() * _amp;
          out[1] = _stream->lastR() * _amp;

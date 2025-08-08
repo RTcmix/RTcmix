@@ -63,8 +63,8 @@ int DUMP::init(double p[], int n_args)
 
 void DUMP::doupdate()
 {
-	double p[nargs];
-	update(p, nargs);
+	double p[3];
+	update(p, 3);
 
 	if (nargs > 3) {
 		printf("DUMP (frame=%d)..............................\n", currentFrame());

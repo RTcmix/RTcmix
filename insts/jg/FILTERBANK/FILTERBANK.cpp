@@ -116,7 +116,7 @@ int FILTERBANK::init(double p[], int n_args)
 
 void FILTERBANK::doupdate()
 {
-	double p[nargs];
+	double p[nargs];    // TODO: Get rid of "automatic array" here
 	update(p, nargs);
 
 	amp = p[3];

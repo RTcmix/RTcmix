@@ -57,8 +57,8 @@ int CRACKLE::configure()
 
 void CRACKLE::doupdate()
 {
-	double p[nargs];
-	update(p, nargs);
+	double p[5];
+	update(p, 5);
 
 	amp = p[2];
 	param = (nargs > 3) ? p[3] * 0.22 + 0.83 : 1.05;

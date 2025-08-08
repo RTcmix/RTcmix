@@ -77,7 +77,7 @@ int SPLITTER::configure()
 
 void SPLITTER::doupdate()
 {
-	double p[_nargs];
+	double p[MAXCHANS+5];
 	update(p, _nargs);
 
 	_amp = p[3];
@@ -104,7 +104,7 @@ int SPLITTER::run()
 
 		float insig = _in[i + _inchan] * _amp;
 
-		float out[outchans];
+		float out[MAXCHANS];
 
 		for (int n = 0; n < outchans; n++)
 			out[n] = insig * _amps[n];

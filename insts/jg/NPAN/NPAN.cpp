@@ -271,7 +271,7 @@ int NPAN::configure()
 int NPAN::run()
 {
    const int outchans = outputChannels();
-   float out[outchans];
+   float out[MAXCHANS];
    const int samps = framesToRun() * inputChannels();
 
    rtgetin(in, this, samps);

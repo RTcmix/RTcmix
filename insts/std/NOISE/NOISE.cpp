@@ -64,8 +64,8 @@ int NOISE :: run()
 {
    for (int i = 0; i < framesToRun(); i++) {
       if (--branch <= 0) {
-         double p[nargs];
-         update(p, nargs);
+         double p[4];
+         update(p, 4);
          amp = p[2];
          if (amparray)
             amp *= tablei(currentFrame(), amparray, amptabs);

@@ -64,8 +64,8 @@ int DUST::configure()
 
 void DUST::doupdate()
 {
-	double p[_nargs];
-	update(p, _nargs);
+	double p[7];
+	update(p, 7);
 
 	_amp = p[2];
 	_density = (_nargs > 3) ? p[3] : 5;

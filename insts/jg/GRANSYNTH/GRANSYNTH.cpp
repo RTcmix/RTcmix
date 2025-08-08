@@ -136,8 +136,8 @@ int GRANSYNTH::init(double p[], int n_args)
 
 void GRANSYNTH::doupdate()
 {
-   double p[_nargs];
-   update(p, _nargs, kAmp | kHopTime | kOutJitter | kMinDur | kMaxDur
+   double p[17];    // Always 1 more than max p index examined
+   update(p, 17, kAmp | kHopTime | kOutJitter | kMinDur | kMaxDur
          | kMinAmp | kMaxAmp | kPitch | kPitchJitter | kMinPan | kMaxPan);
 
    _amp = p[2];
@@ -184,7 +184,7 @@ int GRANSYNTH::run()
 
       _stream->prepare();
 
-      float out[outchans];
+      float out[MAXCHANS];
       if (outchans == 2) {
          out[0] = _stream->lastL() * _amp;
          out[1] = _stream->lastR() * _amp;

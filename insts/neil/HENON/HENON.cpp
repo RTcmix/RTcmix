@@ -62,8 +62,8 @@ int HENON::configure()
 
 void HENON::doupdate()
 {
-	double p[nargs];
-	update(p, nargs);
+	double p[9];
+	update(p, 9);
 
 	amp = p[2];
 
@@ -74,8 +74,8 @@ void HENON::doupdate()
 
 void HENON::updateparams()
 {
-	double p[nargs];
-	update(p, nargs);
+	double p[7];
+	update(p, 7);
 
 	a = (nargs > 3) ? p[3] : 1.4;
 	b = (nargs > 4) ? p[4] : 0.3;

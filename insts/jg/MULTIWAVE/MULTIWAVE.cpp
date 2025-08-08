@@ -101,7 +101,7 @@ int MULTIWAVE::init(double p[], int n_args)
 
 void MULTIWAVE::doupdate()
 {
-   double p[nargs];
+   double p[nargs];     // TODO: Get rid of "automatic" array here
    update(p, nargs);
 
    overall_amp = p[2];
@@ -119,7 +119,7 @@ int MULTIWAVE::run()
 {
    const int samps = framesToRun();
    const int chans = outputChannels();
-   float out[chans];
+   float out[MAXCHANS];
 
    for (int i = 0; i < samps; i++) {
       if (--branch <= 0) {

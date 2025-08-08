@@ -369,8 +369,8 @@ int VOCODESYNTH :: configure()
 /* -------------------------------------------------------------- doupdate -- */
 void VOCODESYNTH :: doupdate()
 {
-   double p[nargs];
-   update(p, nargs, kAmp | kPan);
+   double p[18];    // 1 more than maximum p index examined
+   update(p, 18, kAmp | kPan);
 
    amp = p[3];
    if (amptable)

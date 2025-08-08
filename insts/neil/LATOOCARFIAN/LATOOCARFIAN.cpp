@@ -68,8 +68,8 @@ int LATOOCARFIAN::configure()
 
 void LATOOCARFIAN::doupdate()
 {
-	double p[nargs];
-	update(p, nargs);
+	double p[10];
+	update(p, 10);
 
 	amp = p[2];
 	param1 = (nargs > 3) ? p[3] : 2.871;

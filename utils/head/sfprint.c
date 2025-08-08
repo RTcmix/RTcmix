@@ -71,8 +71,8 @@ static void print_maxamp(int srate, int nchans, float peaks[], long locs[],
    int showtime, int showdbfs)
 {
    int n;
-   char peakstr[nchans][STRLEN];
-   char locstr[nchans][STRLEN];
+   char peakstr[MAXCHANS][STRLEN];
+   char locstr[MAXCHANS][STRLEN];
 
    if (showtime) {
       for (n = 0; n < nchans; n++) {

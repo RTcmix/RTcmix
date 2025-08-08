@@ -186,7 +186,7 @@ int MULTEQ :: init(double p[], int n_args)
 
 void MULTEQ :: doupdate()
 {
-   double p[nargs];
+   double p[nargs];     // TODO: Get rid of "automatic" array here
    update(p, nargs);
 
    amp = p[3];

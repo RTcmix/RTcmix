@@ -141,7 +141,7 @@ int QPAN::configure()
 
 int QPAN::run()
 {
-   float out[outputChannels()];
+   float out[MAXCHANS];
    const int inchans = inputChannels();
    const int outchans = outputChannels();
    const int samps = framesToRun() * inchans;

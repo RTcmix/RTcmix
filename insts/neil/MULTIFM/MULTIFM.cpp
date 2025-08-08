@@ -210,7 +210,7 @@ int MULTIFM::configure()
 
 void MULTIFM::doupdate()
 {
-	double p[nargs];
+	double p[nargs];    // TODO: Remove use of "automatic" array
 	update(p, nargs);
 
 	for (int i = 0; i < numops; i++) {

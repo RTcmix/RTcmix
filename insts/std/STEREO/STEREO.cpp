@@ -149,8 +149,8 @@ void STEREO::updatePans(double p[])
 
 void STEREO::doupdate()
 {
-	double p[nargs];
-	update(p, nargs);
+	double p[MAXCHANS+MATRIX_PFIELD_OFFSET];
+	update(p, MAXCHANS+MATRIX_PFIELD_OFFSET);
 
 	amp = p[3];
 	if (amptable)

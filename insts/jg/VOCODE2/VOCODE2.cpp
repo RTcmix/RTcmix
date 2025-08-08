@@ -270,8 +270,8 @@ int VOCODE2 :: configure()
 
 void VOCODE2 :: doupdate()
 {
-   double p[nargs];
-   update(p, nargs, kAmp | kNoiseAmp | kPan);
+   double p[15];    // 1 more than maximum p index examined
+   update(p, 15, kAmp | kNoiseAmp | kPan);
 
    amp = p[3];
    if (amparray)

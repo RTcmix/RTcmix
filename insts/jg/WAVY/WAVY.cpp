@@ -209,7 +209,7 @@ int WAVY::run()
 		float sig1 = _oscilA->nexti();
 		float sig2 = _oscilB->nexti();
 
-		float out[chans];
+		float out[MAXCHANS];
 		if (_fp)
 			out[0] = eval(sig1, sig2) * _amp;
 		else

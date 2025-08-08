@@ -104,8 +104,8 @@ int REVMIX::run()
 
    for (int i = samps - inputChannels(); i >=  0; i -= inputChannels())  {
       if (--branch <= 0) {
-         double p[nargs];
-         update(p, nargs);
+         double p[6];
+         update(p, 6);
          amp = p[3];
          if (amparray)
             amp *= tablei(currentFrame(), amparray, amptabs);
