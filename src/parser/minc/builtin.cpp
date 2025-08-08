@@ -182,7 +182,7 @@ _do_print(const MincValue args[], int nargs)
           {
               MincMap *mmap = (MincMap *)args[i];
               if (mmap != NULL) {
-                  RTPrintfCat("[");
+                  RTPrintfCat("Map:[");
                   mmap->print();
                   RTPrintfCat("]%s", delimiter);
               }
@@ -195,7 +195,7 @@ _do_print(const MincValue args[], int nargs)
           {
               MincStruct *theStruct = (MincStruct *)args[i];
               if (theStruct != NULL) {
-                  RTPrintfCat("{ ");
+                  RTPrintfCat("Struct:{ ");
                   theStruct->print();
                   RTPrintfCat(" }%s", delimiter);
               }
