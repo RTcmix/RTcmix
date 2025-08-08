@@ -157,6 +157,11 @@ stmt: decl                 { MPRINT("decl -> stmt"); $$ = $1; }
 	                          else { $$ = $1; }
 	                        }
     | rstmt					{ MPRINT("rstmt -> stmt");	$$ = go($1); }
+    // Catch illegal assignments to function and method calls
+    | fcall '='             { minc_die("Illegal assignment to function call result"); $$ = new NodeNoop(); }
+    | mcall '='             { minc_die("Illegal assignment to method call result"); $$ = new NodeNoop(); }
+    | fcall                 { MPRINT("fcall -> stmt"); $$ = go($1); }   // allows bare function calls
+    | mcall                 { MPRINT("mcall -> stmt"); $$ = go($1); }   // allows bare method calls
     | funcdef               { MPRINT("funcdef -> stmt"); $$ = go($1); }
     | structdef             { MPRINT("structdef -> stmt"); $$ = $1; }
 	;
@@ -255,6 +260,8 @@ subscript:  '[' exp ']'         {       MPRINT("[exp] -> subscript"); $$ = $2; }
 obj:    id                  {       MPRINT("id -> obj");          $$ = new NodeLoadSym($1); }
     |   obj '.' id            {       MPRINT("obj.id -> obj");      $$ = new NodeMemberAccess($1, $3);  }
     |   obj '[' exp ']'      {       MPRINT("obj[exp] -> obj");    $$ = new NodeSubscriptRead($1, $3); }
+    |   fcall               {  MPRINT("fcall -> obj"); $$ = $1; }
+    |   mcall               {  MPRINT("mcall -> obj"); $$ = $1; }
     ;
 
 /* An expression list block is used to initialize a list or a struct */
@@ -276,9 +283,7 @@ func:   '(' fexpl ')' {    MPRINT("(fexpl) -> func"); $$ = $2; }
     ;
 
 /* A function call is an id followed by (args) or () */
-fcall:  id func       {    MPRINT("id func -> fcall"); $$ = new NodeFunctionCall(new NodeLoadSym($1), $2); }
-    |   fcall func    {    MPRINT("fcall func -> fcall"); $$ = new NodeFunctionCall($1, $2); }    /* calling a function on the returned value of a function */
-    |   obj subscript func { MPRINT("obj subscript func -> fcall"); $$ = new NodeFunctionCall(new NodeSubscriptRead($1, $2), $3); }
+fcall:  obj func       {    MPRINT("obj func -> fcall"); $$ = new NodeFunctionCall($1, $2); }
     ;
 
 /* A method is a function call on an object using the dot operator. The object can be an id, a member access on a
@@ -310,16 +315,16 @@ rstmt:
     /* Special-case rules for operating on an array access.  This is needed because the returned
        value from array[exp] has no symbol associated with it.
     */
-	| obj subscript TOK_PLUSEQU exp { MPRINT("obj subscript tok_PLUSEQU EXP -> rstmt");
+	| obj subscript TOK_PLUSEQU exp { MPRINT("obj [] tok_PLUSEQU EXP -> rstmt");
      	$$ = new NodeSubscriptOpAssign($1, $2, $4, OpPlus);
 	}
-	| obj subscript TOK_MINUSEQU exp { MPRINT("obj subscript tok_MINUSEQU EXP -> rstmt");
+	| obj subscript TOK_MINUSEQU exp { MPRINT("obj [] tok_MINUSEQU EXP -> rstmt");
      	$$ = new NodeSubscriptOpAssign($1, $2, $4, OpMinus);
 	}
-	| obj subscript TOK_MULEQU exp { MPRINT("obj subscript tok_MULEQU EXP -> rstmt");
+	| obj subscript TOK_MULEQU exp { MPRINT("obj [] tok_MULEQU EXP -> rstmt");
      	$$ = new NodeSubscriptOpAssign($1, $2, $4, OpMul);
 	}
-	| obj subscript TOK_DIVEQU exp { MPRINT("obj subscript tok_DIVEQU EXP -> rstmt");
+	| obj subscript TOK_DIVEQU exp { MPRINT("obj [] tok_DIVEQU EXP -> rstmt");
      	$$ = new NodeSubscriptOpAssign($1, $2, $4, OpDiv);
 	}
     /* Generic rule for incrementing/decrementing */
@@ -332,15 +337,12 @@ rstmt:
     /* Special-case rules for incrementing/decrementing an array access.  This is needed because the returned
        value from array[exp] has no symbol associated with it.
     */
- 	| TOK_PLUSPLUS obj subscript  { MPRINT("tok_PLUSPLUS OBJ subscript -> rstmt");
+ 	| TOK_PLUSPLUS obj subscript  { MPRINT("tok_PLUSPLUS obj [] -> rstmt");
  	    $$ = new NodeSubscriptOpAssign($2, $3, new NodeConstf(1.0), OpPlus);
  	}
- 	| TOK_MINUSMINUS obj subscript  { MPRINT("tok_MINUSMINUS OBJ subscript -> rstmt");
+ 	| TOK_MINUSMINUS obj subscript  { MPRINT("tok_MINUSMINUS obj [] -> rstmt");
  	    $$ = new NodeSubscriptOpAssign($2, $3, new NodeConstf(1.0), OpMinus);
  	}
-
-    |   fcall        {  MPRINT("fcall -> rstmt"); $$ = $1; }
-    |   mcall        {  MPRINT("mcall -> rstmt"); $$ = $1; }
 	;
 
 /* An expression list is an expression or set of expressions which will be wrapped in a block */
