@@ -35,25 +35,25 @@ lib$(NAME).so:	$(UGENS_H) $(OBJS)
 ifeq ($(BUILDTYPE), STANDALONE)
 
 libPVFilterTest.so:	PVFilter.o PVFilterTest.o
-	$(CXX) $(SHARED_LDFLAGS) -o $@ PVFilter.o PVFilterTest.o setup.o
+	$(CXX) $(SHARED_LDFLAGS) -o $@ PVFilter.o PVFilterTest.o
 
 libPVNewFilter.so:	PVFilter.o PVNewFilter.o
-	$(CXX) $(SHARED_LDFLAGS) -o $@ PVFilter.o PVNewFilter.o setup.o
+	$(CXX) $(SHARED_LDFLAGS) -o $@ PVFilter.o PVNewFilter.o
 
 libPVRandBend.so:	PVFilter.o PVRandBend.o
-	$(CXX) $(SHARED_LDFLAGS) -o $@ PVFilter.o PVRandBend.o setup.o
+	$(CXX) $(SHARED_LDFLAGS) -o $@ PVFilter.o PVRandBend.o
 
 libPVRandBands.so:	PVFilter.o PVRandBands.o
-	$(CXX) $(SHARED_LDFLAGS) -o $@ PVFilter.o PVRandBands.o setup.o
+	$(CXX) $(SHARED_LDFLAGS) -o $@ PVFilter.o PVRandBands.o
 
 libPVTransBend.so:	PVFilter.o PVTransBend.o
-	$(CXX) $(SHARED_LDFLAGS) -o $@ PVFilter.o PVTransBend.o setup.o
+	$(CXX) $(SHARED_LDFLAGS) -o $@ PVFilter.o PVTransBend.o
 
 libPVFilterBands.so:	PVFilter.o PVFilterBands.o
-	$(CXX) $(SHARED_LDFLAGS) -o $@ PVFilter.o PVFilterBands.o setup.o
+	$(CXX) $(SHARED_LDFLAGS) -o $@ PVFilter.o PVFilterBands.o
 
 libPVBandThreshold.so:	PVFilter.o PVBandThreshold.o
-	$(CXX) $(SHARED_LDFLAGS) -o $@ PVFilter.o PVBandThreshold.o setup.o
+	$(CXX) $(SHARED_LDFLAGS) -o $@ PVFilter.o PVBandThreshold.o
 
 endif
 
