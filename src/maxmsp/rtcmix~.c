@@ -1,5 +1,5 @@
 // rtcmix~ v 2.2, Brad Garton (2/2011)
-// uses the RTcmix bundled executable lib, now based on RTcmix-5.6 (OS 15.X support)
+// uses the RTcmix bundled executable lib, now based on RTcmix-5.7 (OS 15.X support)
 // see http://music.columbia.edu/cmc/RTcmix for more info
 //
 // invaluable assistance writing this max/msp object from Dan Trueman, R. Luke Dubois and Joshua Kit Clayton
@@ -113,7 +113,7 @@
 #define MAXMSP 1
 
 #define VERSION "2.2"
-#define RTcmixVERSION "RTcmix-maxmsp-5.6.0"
+#define RTcmixVERSION "RTcmix-maxmsp-5.7.0"
 
 #if MAX_SDK_MAJOR_VERSION==6
 #include <ext.h>
