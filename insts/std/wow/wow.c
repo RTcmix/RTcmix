@@ -123,7 +123,7 @@ printf ("     Avg of modulator: %f.  Max of integral: %f.  Min: %f.\n",
 	duration += (q_size/inchans) - 1;
 	setnote(input_start/SR(), duration/SR(), 0);
 
-	for (i; i < q_size; i += inchans) GETIN (queue+i, 0);
+	for (; i < q_size; i += inchans) GETIN (queue+i, 0);
 
 	q_middle = q_past;
 	q_end = q_middle + q_future;
