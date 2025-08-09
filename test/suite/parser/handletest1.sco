@@ -1,10 +1,10 @@
-set_option("require_sample_rate=false", "device=Aggregate Device", "record=true");
+set_option("require_sample_rate=false");
 rtsetparams(44100, 2);
-rtinput("AUDIO");
+load("WAVETABLE");
 
-bus_config("MIX", "in0-1", "out0-1");
+bus_config("WAVETABLE", "out0-1");
 
-i = makeinstrument("MIX", 0, 0, 1, 1, 0, 1);
+i = makeinstrument("WAVETABLE", 0, 1, 1, 7.0, 0.5);
 
 // Handle operations
 

@@ -19,6 +19,6 @@ struct StructWithMethodTakingArgument {
 
 struct StructWithMethodTakingArgument myStruct2 = { "This is a string" };
 
-x = myStruct2.theMethod("another string");
+y = myStruct2.theMethod("another string");
 
-print(x);
+print(y);
