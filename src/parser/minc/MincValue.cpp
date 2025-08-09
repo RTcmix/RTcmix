@@ -288,23 +288,18 @@ MincFunction::~MincFunction()
 }
 
 void
-MincFunction::handleThis(Symbol *symbolForThis)
+MincFunction::handleThis(MincStruct *structForThis, const char *thisName)
 {
     if (_type == Method) {
-        if (symbolForThis) {
-            MincStruct *structForThis = (MincStruct *) symbolForThis->value();
-            Node *nodeStructDecl = new NodeStructDecl(strsave("this"), structForThis->typeName());
-            nodeStructDecl->ref();
-            DPRINT("MincFunction::handleThis: declaring symbol for 'this' from called object '%s'\n", symbolForThis->name());
-            Node *declaredVarThis = nodeStructDecl->exct();
-            declaredVarThis->copyValue(symbolForThis, NO);  // dont allow type override
-            DPRINT("MincFunction::handleThis: copying source symbol's value(s) into symbol for 'this'\n");
-            declaredVarThis->symbol()->setValue(symbolForThis->value());
-            nodeStructDecl->unref();
-        }
-        else {
-            DPRINT("MincFunction::handleThis: symbolForThis is NULL\n");    // This will generate an error later
-        }
+        Node *nodeStructDecl = new NodeStructDecl(strsave("this"), structForThis->typeName());
+        nodeStructDecl->ref();
+        TPRINT("MincFunction::handleThis: declaring symbol for 'this' from called object '%s'\n",
+               thisName ? thisName : "temp");
+        Node *declaredVarThis = nodeStructDecl->exct();
+        declaredVarThis->setValue(MincValue(structForThis));  // NOTE: HOW DO I PROTECT AGAINS type override
+        TPRINT("MincFunction::handleThis: copying source symbol's value(s) into symbol for 'this'\n");
+        declaredVarThis->symbol()->setValue(MincValue(structForThis));
+        nodeStructDecl->unref();
     }
 }
 

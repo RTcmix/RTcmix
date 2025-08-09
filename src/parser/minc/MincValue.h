@@ -93,7 +93,7 @@ public:
         Method      = 0x20
     };
     MincFunction(Node *argumentList, Node *functionBody, MincFunction::Type type=MincFunction::Standalone);
-    void    handleThis(Symbol *thisSymbol);
+    void    handleThis(MincStruct *structForThis, const char *thisName);
     void    copyArguments();
     Node *  execute();
 protected:

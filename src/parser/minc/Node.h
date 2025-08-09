@@ -385,7 +385,7 @@ class MincFunctionHandler
 {
 public:
     MincFunctionHandler() {}
-    Node *                callMincFunction(MincFunction *function, const char *functionName, Symbol *thisSymbol=NULL);
+    Node *                callMincFunction(MincFunction *function, const char *functionName, MincStruct *thisStruct=NULL);
 };
 
 //  Function call node
@@ -403,7 +403,7 @@ protected:
 private:
     bool                callConstructor(const char *functionName);
     void                callBuiltinFunction(const char *functionName);
-    void                callInitMethodIfPresent(MincStruct *theStruct, Symbol *thisSymbol);
+    void                callInitMethodIfPresent(MincStruct *theStruct);
 };
 
 //  Method call node
@@ -420,7 +420,7 @@ public:
 protected:
     virtual Node *  doExct();
 private:
-    bool            callObjectMethod(Symbol *thisSymbol, const char *methodName);
+    bool            callObjectMethod(MincValue objectValue, const char *methodName);
 private:
     const char *    _methodName;
 };

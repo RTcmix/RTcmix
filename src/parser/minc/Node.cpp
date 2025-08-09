@@ -1042,13 +1042,13 @@ Node *  NodeMemberAccess::doExct()
 {
     ENTER();
     TPRINT("NodeMemberAccess: get target object:\n");
-    child(0)->exct();         /* lookup target */
+    Node *object = child(0)->exct();         /* lookup target */
     // NOTE: If LHS was a temporary variable, objectSymbol will be null
-    Symbol *objectSymbol = child(0)->symbol();
+    Symbol *objectSymbol = object->symbol();
     const char *targetName = (objectSymbol != NULL) ? objectSymbol->name() : "temp lhs";
-    if (child(0)->dataType() == MincStructType) {
+    if (object->dataType() == MincStructType) {
         TPRINT("NodeMemberAccess: access member '%s' on struct object '%s'\n", _memberName, targetName);
-        MincStruct *theStruct = (MincStruct *) child(0)->value();
+        MincStruct *theStruct = (MincStruct *) object->value();
         if (theStruct) {
             Symbol *memberSymbol = theStruct->lookupMember(_memberName);
             if (memberSymbol) {
@@ -1094,7 +1094,7 @@ bool functionPrintIsSuppressed(const char *functionName)
     return isSuppressed;
 }
 
-Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char *functionName, Symbol *thisSymbol)
+Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char *functionName, MincStruct *thisStruct)
 {
     Node *returnedNode = NULL;
     sCalledFunctions.push_back(functionName);
@@ -1115,7 +1115,8 @@ Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char 
             }
         }
         // Create a symbol for 'this' within the function's scope if this is a method.
-        function->handleThis(thisSymbol);
+        // A non-null 'thisStruct' indicates we are calling a method on the struct.
+        function->handleThis(thisStruct, NULL);
         savedLineNo = yyget_lineno();
         savedScope = current_scope();
         savedIfElseDepth = sIfElseBlockDepth;
@@ -1171,7 +1172,7 @@ Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char 
 // TODO: Operations which involve struct methods and members in base classes should be handled in a single location
 // which can recursively handle bases of bases, etc.
 
-void NodeFunctionCall::callInitMethodIfPresent(MincStruct *theStruct, Symbol *thisSymbol)
+void NodeFunctionCall::callInitMethodIfPresent(MincStruct *theStruct)
 {
     const char *initName = strsave("_init");
     Symbol *memberSymbol = theStruct->lookupMember(initName);
@@ -1183,13 +1184,13 @@ void NodeFunctionCall::callInitMethodIfPresent(MincStruct *theStruct, Symbol *th
             baseMethodSymbol = lookupSymbol(methodNameFromStructAndFunction(theStruct->baseTypeName(), initName), AnyLevel);
             if (baseMethodSymbol) {
                 MincFunction *theMethod = (MincFunction *)baseMethodSymbol->value();
-                (void) callMincFunction(theMethod, baseMethodSymbol->name(), thisSymbol);
+                (void) callMincFunction(theMethod, baseMethodSymbol->name(), theStruct);
             }
         }
         // For the _init method, we call it on both the base (if present) and the derived.
         if (methodSymbol) {
             MincFunction *theMethod = (MincFunction *)methodSymbol->value();
-            (void) callMincFunction(theMethod, methodSymbol->name(), thisSymbol);
+            (void) callMincFunction(theMethod, methodSymbol->name(), theStruct);
         }
     }
     else {
@@ -1225,7 +1226,7 @@ bool NodeFunctionCall::callConstructor(const char *functionName)
             initList->len = sMincListLen;
             TPRINT("NodeFunctionCall::callConstructor -- initializing struct members from sMincList\n");
             sym->initAsStruct(structType, initList, true);  // Default args allowed for constructor functions
-            callInitMethodIfPresent((MincStruct *)sym->value(), sym);
+            callInitMethodIfPresent((MincStruct *)sym->value());
             copyValue(sym, false);
             initList->data = NULL;
             initList->len = 0;
@@ -1293,7 +1294,7 @@ Node *	NodeFunctionCall::doExct() {
             case MincFunctionType:        // Standalone MinC function
             {
                 Symbol *functionSymbol = calledFunction->symbol();      // This can be NULL
-                const char *functionName = functionSymbol ? functionSymbol->name() : "LHS";
+                const char *functionName = functionSymbol ? functionSymbol->name() : "Temp LHS";
                 MincFunction *theFunction = (MincFunction *)calledFunction->value();
                 if (theFunction != NULL) {
                     Node *returned = callMincFunction(theFunction, functionName);
@@ -1308,7 +1309,8 @@ Node *	NodeFunctionCall::doExct() {
             }
                 break;
             default:
-                minc_die("%s'%s' is not a function or instrument", calledFunction->symbol() ? "variable " : "", calledFunction->symbol() ? calledFunction->symbol()->name() : "LHS");
+                minc_die("%s'%s' is not a function or instrument",
+                         calledFunction->symbol() ? "variable " : "", calledFunction->symbol() ? calledFunction->symbol()->name() : "Temp LHS");
                 break;
         }
     } catch(UndeclaredVariableException &uve) {
@@ -1337,14 +1339,13 @@ Node *	NodeFunctionCall::doExct() {
     return this;
 }
 
-bool NodeMethodCall::callObjectMethod(Symbol *thisSymbol, const char *methodName) {
-    MincValue thisValue = thisSymbol->value();
+bool NodeMethodCall::callObjectMethod(MincValue objectValue, const char *methodName) {
     TPRINT("NodeMethodCall::callObjectMethod: attempting to invoke '%s' on %s object\n", methodName, MincTypeName(thisValue.dataType()));
+    // Note: This function can modify 'objectValue' and/or return a value via 'retVal'.
+    // 'objectVal' is handled in the caller
     MincValue retval;
-    // Note: This function can modify 'thisValue' and/or return a value via 'retVal'
-    int result = call_object_method(thisValue, methodName, sMincList, sMincListLen, &retval);
+    int result = call_object_method(objectValue, methodName, sMincList, sMincListLen, &retval);
     if (result != 0) {
-        thisSymbol->setValue(thisValue);
         this->setValue(retval);
         return true;        // success
     }
@@ -1397,18 +1398,19 @@ Node *	NodeMethodCall::doExct()
                 }
                 if (methodSymbol) {
                     MincFunction *theMethod = (MincFunction *)methodSymbol->value();
-                    Node *functionRet = callMincFunction(theMethod, methodSymbol->name(), objectSymbol);
+                    Node *functionRet = callMincFunction(theMethod, methodSymbol->name(), theStruct);
                     setValue(functionRet->value());     // store value from Minc method call to us
-                } else if (objectSymbol) {
+                } else {
                     // See if method was one of the builtin object methods.
-                    if (callObjectMethod(objectSymbol, _methodName) == false) {
+                    MincValue objValue = object->value();
+                    if (callObjectMethod(objValue, _methodName) == false) {
                         minc_die("variable '%s' of type 'struct %s' has no member or method '%s'", object->name(),
                                  theStruct->typeName(), _methodName);
                     }
-                }
-                else {
-                    // If the object's symbol was null, it was a LHS temp object
-                    minc_die("Calling methods on temporary LHS objects is not supported");
+                    // If called object was not a temporary, update its symbol with the modified object
+                    else if (objectSymbol != NULL) {
+                        objectSymbol->setValue(objValue);
+                    }
                 }
             }
         } else {
@@ -1417,15 +1419,16 @@ Node *	NodeMethodCall::doExct()
     }
     else {
         // Method is being called on a non-struct object
-        Symbol *objSymbol = object->symbol();
-        if (objSymbol != NULL) {
-            if (callObjectMethod(objSymbol, _methodName) == false) {   // Note: This stores the return value internally
-                minc_die("Method '%s' is not defined for type '%s'", _methodName, MincTypeName(object->dataType()));
-            }
+        MincValue objValue = object->value();
+        if (callObjectMethod(objValue, _methodName) == false) {   // Note: This stores the return value internally
+            minc_die("Method '%s' is not defined for type '%s'", _methodName, MincTypeName(object->dataType()));
         }
         else {
-            minc_die("Calling methods on temporary LHS objects is not supported");
-        }
+            // If called object was not a temporary, update its symbol with the modified object
+            Symbol *objSymbol = object->symbol();
+            if (objSymbol != NULL) {
+                objSymbol->setValue(objValue);
+            }}
     }
 	pop_list();
     assert(this->dataType() != MincVoidType);
@@ -1459,7 +1462,7 @@ Node *	NodeStore::doExct()
 #endif
 	TPRINT("NodeStore(%p): copying value from RHS (%p) to LHS's symbol (%p)\n", this, rhs, lhs->symbol());
 	/* Copy entire MincValue union from expr to id sym and to this. */
-	lhs->symbol()->copyValue(child(1), _allowTypeOverwrite);
+	lhs->symbol()->copyValue(rhs, _allowTypeOverwrite);
 	TPRINT("NodeStore: copying value from RHS (%p) to here (%p)\n", rhs, this);
 	setValue(rhs->value());     // no type check since done above
 	return this;
