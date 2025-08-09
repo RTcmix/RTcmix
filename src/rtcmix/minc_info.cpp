@@ -176,11 +176,11 @@ int findpeakrmsdc(const char *funcname, const char *fname,
         sndlib_close(fd, 0, 0, 0, 0);
         RTExit(PARAM_ERROR);
     }
-	float peak[nchans];
-	long peakloc[nchans];
-	double ampavg[nchans];
-	double dcavg[nchans];
-	double rms[nchans];
+	float peak[MAXCHANS];
+	long peakloc[MAXCHANS];
+	double ampavg[MAXCHANS];
+	double dcavg[MAXCHANS];
+	double rms[MAXCHANS];
 	int result = sndlib_findpeak(fd, -1, dataloc, -1, format, nchans,
                     startframe, nframes, peak, peakloc, ampavg, dcavg, rms);
 	sndlib_close(fd, 0, 0, 0, 0);
@@ -322,11 +322,11 @@ Handle filebreakpoints(const Arg args[], const int nargs)
     bool wasSilent = true;
 
     for (long frm = startframe; frm < nframes; frm += offset) {
-        float peak[nchans];
-        long peakloc[nchans];
-        double ampavg[nchans];
-        double dcavg[nchans];
-        double rms[nchans];
+        float peak[MAXCHANS];
+        long peakloc[MAXCHANS];
+        double ampavg[MAXCHANS];
+        double dcavg[MAXCHANS];
+        double rms[MAXCHANS];
         int result = sndlib_findpeak(fd, -1, dataloc, -1, format, nchans,
                                      frm, windowCount, peak, peakloc, ampavg, dcavg, rms);
         if (result == -1) {
