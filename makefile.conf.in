@@ -392,6 +392,7 @@ endif
 # LDFLAGS:			  Libraries which standalone binaries link against.
 # IMBCMIXOBJS:		  Non-lib .o files which imbedded binaries need.
 # DYNAMIC_LDFLAGS:	  Linker flags when creating dynamic shared libraries.
+# PYTHON_LDFLAGS: 	 Special linker flags for PYCMIX
 
 ifeq ($(ARCH),LINUX)
   ifeq ($(AUDIODRIVER),ALSA)
@@ -403,6 +404,7 @@ ifeq ($(ARCH),LINUX)
   SHARED_LDFLAGS = -shared -Wl,-soname,$(RTLIB)
   DYNAMIC_LDFLAGS = $(SHARED_LDFLAGS)
   DYN = -rdynamic
+  PYTHON_LDFLAGS =
 endif
 ifeq ($(ARCH),MACOSX)
   SYS_LDFLAGS = -framework CoreAudio $(ARCH_SYS_LDFLAGS)
@@ -414,6 +416,7 @@ ifeq ($(ARCH),MACOSX)
   endif
   DYNAMIC_LDFLAGS = $(ARCHFLAGS) -undefined dynamic_lookup -dynamiclib -install_name $(LIBDIR)/$(RTLIB)
   DYN = 
+  PYTHON_LDFLAGS = -headerpad_max_install_names
 endif
 ifeq ($(ARCH),SGI)
   SYS_LDFLAGS = -lpthread -laudio -lm
@@ -421,6 +424,7 @@ ifeq ($(ARCH),SGI)
   SHARED_LDFLAGS = -shared -update_registry $(LIBDESTDIR)/so_locations
   DYNAMIC_LDFLAGS = $(SHARED_LDFLAGS)
   DYN = 
+  PYTHON_LDFLAGS =
 endif
 ifeq ($(ARCH),FREEBSD)
   SYS_LDFLAGS += -pthread -lm -ll
@@ -428,6 +432,7 @@ ifeq ($(ARCH),FREEBSD)
   SHARED_LDFLAGS = -shared -Wl,-soname,$(RTLIB)
   DYNAMIC_LDFLAGS = $(SHARED_LDFLAGS)
   DYN = -rdynamic
+  PYTHON_LDFLAGS =
 endif
 
 LDFLAGS = $(ARCH_RTLDFLAGS) $(RTLDFLAGS)

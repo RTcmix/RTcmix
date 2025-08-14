@@ -30,7 +30,7 @@ ifeq ($(PYTHON_EXT_STATIC_LINK), FALSE)
 	#@exit 1
 endif
 	# Build the same architecture that we're using for RTcmix
-	env CFLAGS='-arch $(BUILD_ARCH)' LDFLAGS='-arch $(BUILD_ARCH)' $(PYTHON) setup.py build
+	env CFLAGS='-headerpad_max_install_names -arch $(BUILD_ARCH)' LDFLAGS='-arch $(BUILD_ARCH)' $(PYTHON) setup.py build
 else # !MACOSX
 	$(PYTHON) setup.py build
 endif

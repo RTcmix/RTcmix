@@ -441,7 +441,7 @@ endif
 
 PYMIX: $(MAIN_OBJS) $(PY_O) $(LIBS) $(PROFILE_O)
 ifeq ($(PYTHON_SUPPORT), TRUE)
-	$(CXX) $(CXXFLAGS) -o PYMIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) \
+	$(CXX) $(CXXFLAGS) $(PYTHON_LDFLAGS) -o PYMIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) \
 		$(PY_O) -L. $(LDFLAGS) $(PYEXT) $(PYTHONLIBS) $(SYS_LDFLAGS)
   ifeq ($(ARCH),MACOSX)
 		/bin/sh ../parser/python/fix_libpython_path.sh $(PYTHON)
