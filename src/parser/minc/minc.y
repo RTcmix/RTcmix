@@ -538,9 +538,9 @@ fargl: '(' argl ')'		{ MPRINT("(argl) -> fargl"); $$ = new NodeArgList($2); }
 /* fblock is a function body statement list in a block including its curly braces.
    The statement list must end with a return statement. */
 
-fblock: '{' stml ret '}' { MPRINT("{ stml ret } -> fblock"); $$ = $$ = new NodeFuncBodySeq($2, $3);; }
+fblock: '{' stml '}'	{ minc_die("function and method bodies must end with 'return <exp>' statement"); flerror = 1; $$ = new NodeNoop(); }
+    |   '{' stml ret '}' { MPRINT("{ stml ret } -> fblock"); $$ = $$ = new NodeFuncBodySeq($2, $3);; }
     |   '{' ret '}'     { MPRINT("{ ret } -> fblock"); $$ = new NodeFuncBodySeq(new NodeEmptyListElem(), $2); }
- 	|   '{' stml '}'	{ minc_die("function bodies must end with 'return <exp>' statement"); flerror = 1; $$ = new NodeNoop(); }
    ;
 
 /* funcdef is a complete rule for a function definition, e.g. "list myfunction(string s) { ... }".
