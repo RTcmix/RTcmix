@@ -70,11 +70,13 @@ MBASE::MBASE(int chans, int paths) : m_tapsize(0), m_branch(0), m_chans(chans), 
 
 MBASE::~MBASE()
 {
-   delete [] in;
-   delete [] m_tapDelay;
-   for (int i = 0; i < outputchans; i++) {
-       delete [] m_mixbufs[i];
-   }
+    delete[] in;
+    delete[] m_tapDelay;
+    if (m_mixbufs != NULL) {
+        for (int i = 0; i < outputchans; i++) {
+            delete[] m_mixbufs[i];
+        }
+    }
     delete [] m_mixbufs;
     decrement_users();
 }
