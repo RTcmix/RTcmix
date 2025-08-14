@@ -274,6 +274,13 @@ int RTOption::readConfigFile(const char *fileName)
 	else if (result != kConfigNoValueForKey)
 		reportError("%s: %s.", conf.getLastErrorText(), key);
 
+    key = kOptionParserWarnings;
+    result = conf.getValue(key, dval);
+    if (result == kConfigNoErr)
+        parserWarnings((int)dval);
+    else if (result != kConfigNoValueForKey)
+        reportError("%s: %s.", conf.getLastErrorText(), key);
+
 	// string options .........................................................
 
 	char *sval;
