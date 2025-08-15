@@ -15,6 +15,8 @@ int get_setup_params(double dimensions[], AttenuationParams *params,
 int get_rvb_setup_params(double dimensions[], double matrix[12][12], 
 						 double *rvbTime);
 
+void set_space_called(int called);
+int space_was_called();
 void increment_users();
 void decrement_users();
 int check_users();

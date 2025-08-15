@@ -16,6 +16,10 @@ static double _Matrix[12][12];
 static double _Matrix_Gain = 0.72;
 static AttenuationParams g_AttenParams = { 0.1, 300.0, 1.0 };
 
+void set_space_called(int called) { space_called = called; }
+
+int space_was_called() { return space_called; }
+
 /* ---------------------------------------------------------- fill_matrix --- */
 static void
 fill_matrix()
@@ -78,7 +82,7 @@ get_rvb_setup_params(double Dimensions[],       /* array of 5 elements */
 {
    int    i, j;
 
-   if (!space_called)
+   if (!space_was_called())
       return -1;
 
    Dimensions[0] = (double)_front;
@@ -95,8 +99,6 @@ get_rvb_setup_params(double Dimensions[],       /* array of 5 elements */
          Matrix[j][i] = _Matrix[j][i];
 
    *rvb_time = _rvb_time;
-
-   space_called = 1;
 
    return 0;
 }
@@ -115,7 +117,7 @@ get_setup_params(double Dimensions[],       /* array of 5 elements */
                  double *MikeAngle,
                  double *MikePatternFactor)
 {
-   if (!space_called)
+   if (!space_was_called())
       return -1;
 
    Dimensions[0] = (double)_front;
@@ -131,8 +133,6 @@ get_setup_params(double Dimensions[],       /* array of 5 elements */
    *UseMikes = _UseMikes;
    *MikeAngle = _MikeAngle;
    *MikePatternFactor = _MikePatternFactor;
-
-   space_called = 1;
 
    return 0;
 }
@@ -201,9 +201,9 @@ mm_space(double p[], int n_args)
       _rvb_time = 0.001;            /* shortest rvb time allowed */
 
 //   rtcmix_advise("space", "%s is %.2f feet wide by %.2f feet deep by %.2f feet tall",
-//				 _right - _left, _front - _back, _ceiling, space_called ? "New room" : "Room");
+//				 _right - _left, _front - _back, _ceiling, space_was_called() ? "New room" : "Room");
 
-   space_called = 1;
+   set_space_called(1);
 
    return 0.0;
 }

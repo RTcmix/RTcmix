@@ -3,7 +3,7 @@
 #include <ugens.h>
 #include "setup.h"
 
-static int    space_called = 0;
+static int    space_was_called = 0;
 static int    matrix_flag = 0;
 static int    _UseMikes = 0;
 static float  _front, _right, _back, _left, _ceiling, _abs_factor, _rvb_time;
@@ -58,7 +58,7 @@ get_setup_params(double Dimensions[],       /* array of 5 elements */
 {
    int    i, j;
 
-   if (!space_called)
+   if (!space_was_called)
       return -1;
 
    Dimensions[0] = (double)_front;
@@ -80,7 +80,7 @@ get_setup_params(double Dimensions[],       /* array of 5 elements */
    *MikeAngle = _MikeAngle;
    *MikePatternFactor = _MikePatternFactor;
 
-   space_called = 1;
+    space_was_called = 1;
 
    return 0;
 }
@@ -116,7 +116,7 @@ m_space(double p[], int n_args)
    if (!_rvb_time)
       _rvb_time = 0.001;            /* shortest rvb time allowed */
 
-   space_called = 1;
+    space_was_called = 1;
 
    return 0.0;
 }

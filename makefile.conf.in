@@ -412,7 +412,7 @@ ifeq ($(ARCH),MACOSX)
   ifeq ($(BUILDTYPE), PD)
   	SHARED_LDFLAGS = $(ARCHFLAGS) -bundle
   else
-		SHARED_LDFLAGS = $(ARCHFLAGS) $(OPT) -bundle -undefined dynamic_lookup
+		SHARED_LDFLAGS = $(ARCHFLAGS) $(OPT) -bundle -flat_namespace -undefined suppress #-undefined dynamic_lookup
   endif
   DYNAMIC_LDFLAGS = $(ARCHFLAGS) -undefined dynamic_lookup -dynamiclib -install_name $(LIBDIR)/$(RTLIB)
   DYN = 
