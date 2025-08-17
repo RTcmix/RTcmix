@@ -63,7 +63,10 @@ CHAIN::~CHAIN()
 
 int  CHAIN::setup(PFieldSet *inPFields)
 {
-	// Copy first 3 numeric args to new PFieldSet
+    if (inPFields->size() < 4) {
+        return die("CHAIN", "Usage: CHAIN(outskip, duration, num_chained_instruments, instrument0 {, instrument1, ...}");
+    }
+    // Copy first 3 numeric args to new PFieldSet
 	PFieldSet *newSet = new PFieldSet(3);
 	for (int p = 0; p < 3; ++p)
 		newSet->load(new ConstPField((*inPFields)[p].doubleValue(0.0)), p);

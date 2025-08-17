@@ -84,14 +84,14 @@ ifeq ($(ARCH),LINUX)
     INSTTYPE = STATIC
     SHLIB = rtcmix_embedded
     RTLIB_INSTALL_DIR = $(LIBDIR)
-    ifeq ($(RTLIBTYPE), DYNAMIC)
-        SHLIB_SUFFIX = so
-        RTLIB_LDFLAGS = $(DYNAMIC_LDFLAGS)
-    else
-        ARCH_RTLDFLAGS =
-        SHLIB_SUFFIX = a
-        RTLIB_LDFLAGS =
-    endif
+  endif
+  ifeq ($(RTLIBTYPE), DYNAMIC)
+    SHLIB_SUFFIX = so
+    RTLIB_LDFLAGS = $(DYNAMIC_LDFLAGS)
+  else
+    ARCH_RTLDFLAGS =
+    SHLIB_SUFFIX = a
+    RTLIB_LDFLAGS =
   endif
   CC = gcc
   CXX = g++ -Wno-deprecated
