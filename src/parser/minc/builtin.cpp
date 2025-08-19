@@ -44,8 +44,8 @@ static MincString _make_type_string(MincDataType type);
 /* list of builtin functions, searched by _find_builtin */
 static struct _builtins {
    const char *label;
-   MincFloat (*number_return)(const MincValue *, int); /* func name for those returning MincFloat */
-   MincString (*string_return)(const MincValue *, int);   /* func name for those returning char * */
+   MincFloat (*number_return)(const MincValue [], int); /* func name for those returning MincFloat */
+   MincString (*string_return)(const MincValue [], int);   /* func name for those returning char * */
 } builtin_funcs[] = {
    { "print",     _minc_print,   NULL },
    { "printf",    _minc_printf,  NULL },

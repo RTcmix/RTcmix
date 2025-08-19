@@ -591,6 +591,15 @@ const MincValue& MincValue::operator = (MincMap *m)
     return *this;
 }
 
+const MincValue& MincValue::operator = (MincFunction *f)
+{
+    RefCounted::ref(f);    // ref before unref
+    doClear();
+    type = MincFunctionType;
+    _u.mfunc = f;
+    return *this;
+}
+
 const MincValue& MincValue::operator += (const MincValue &rhs)
 {
     throw UnimplementedException("MincValue::operator +=");

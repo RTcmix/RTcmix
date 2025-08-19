@@ -1332,7 +1332,7 @@ Node *	NodeFunctionCall::doExct() {
         }
         else {
             TPRINT("NodeFunctionCall: Other undeclared var exception - re-throwing\n");
-            throw uve;
+            throw;
         }
     }
     pop_list();
