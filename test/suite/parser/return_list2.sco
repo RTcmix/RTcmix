@@ -17,7 +17,7 @@ list eighths()
 	return _out;
 }
 
-for (n = 0; n < 10000; ++n) {
+for (n = 0; n < 1000; ++n) {
 	printf("---- ITERATION %f ----\n", n);
 	l = eighths();
 }
