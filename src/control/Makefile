@@ -30,7 +30,7 @@ $(DIRS)::
 
 .PHONY: install clean cleanall $(DIRS)
 
-install:
+install: all
 	@for DIR in $(DIRS); \
 	do \
 	  ( cd $$DIR; $(MAKE) $(MFLAGS) install; ) \
