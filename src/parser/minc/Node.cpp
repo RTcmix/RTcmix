@@ -312,6 +312,24 @@ Node *	Node::exct()
 	return outNode;
 }
 
+/* This copies a value and handles ref counting when necessary */
+void
+Node::copyValue(const MincValue &value, bool allowTypeOverwrite, bool suppressOverwriteWarning)
+{
+    if (dataType() != MincVoidType && value.dataType() != dataType()) {
+        if (allowTypeOverwrite) {
+            if (!suppressOverwriteWarning) {
+                minc_warn("Overwriting %s variable '%s' with a %s", MincTypeName(dataType()), name(),
+                          MincTypeName(value.dataType()));
+            }
+        }
+        else {
+            minc_die("Cannot overwrite '%s' (type %s) with a %s", name(), MincTypeName(dataType()), MincTypeName(value.dataType()));
+        }
+    }
+    setValue(value);
+}
+
 /* This copies a node's value and handles ref counting when necessary */
 Node *
 Node::copyValue(Node *source, bool allowTypeOverwrite, bool suppressOverwriteWarning)
@@ -323,18 +341,7 @@ Node::copyValue(Node *source, bool allowTypeOverwrite, bool suppressOverwriteWar
         return this;
     }
 #endif
-    if (dataType() != MincVoidType && source->dataType() != dataType()) {
-        if (allowTypeOverwrite) {
-            if (!suppressOverwriteWarning) {
-                minc_warn("Overwriting %s variable '%s' with a %s", MincTypeName(dataType()), name(),
-                          MincTypeName(source->dataType()));
-            }
-        }
-        else {
-            minc_die("Cannot overwrite '%s' (type %s) with a %s", name(), MincTypeName(dataType()), MincTypeName(source->dataType()));
-        }
-    }
-    setValue(source->value());
+    copyValue(source->value(), allowTypeOverwrite, suppressOverwriteWarning);
 #ifdef DEBUG
     TPRINT("\tthis: ");
     print();
@@ -348,18 +355,7 @@ Node::copyValue(Symbol *source, bool allowTypeOverwrite, bool suppressOverwriteW
 {
     TPRINT("Node::copyValue(this=%p, Symbol=%p)\n", this, source);
     assert(source->scope() != -1);    // we accessed a variable after leaving its scope!
-    if (dataType() != MincVoidType && source->dataType() != dataType()) {
-        if (allowTypeOverwrite) {
-            if (!suppressOverwriteWarning) {
-                minc_warn("Overwriting %s variable '%s' with a %s", MincTypeName(dataType()), name(),
-                          MincTypeName(source->dataType()));
-            }
-        }
-        else {
-            minc_die("Cannot overwrite '%s' (type %s) with a %s", name(), MincTypeName(dataType()), MincTypeName(source->dataType()));
-        }
-    }
-    setValue(source->value());
+    copyValue(source->value(), allowTypeOverwrite, suppressOverwriteWarning);
 #ifdef DEBUG
     TPRINT("\tthis: ");
     print();
@@ -1094,9 +1090,9 @@ bool functionPrintIsSuppressed(const char *functionName)
     return isSuppressed;
 }
 
-Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char *functionName, MincStruct *thisStruct)
+MincValue MincFunctionHandler::callMincFunction(MincFunction *function, const char *functionName, MincStruct *thisStruct)
 {
-    Node *returnedNode = NULL;
+    MincValue returnedValue;
     sCalledFunctions.push_back(functionName);
     assert(function != NULL);
     TPRINT("MincFunctionHandler::callMincFunction: theFunction = %p -- dropping in\n", function);
@@ -1110,8 +1106,8 @@ Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char 
             if (!functionPrintIsSuppressed(sCalledFunctions.back())) {
                 RTPrintf("============================\n");
                 RTPrintfCat("%s: ", functionName);
-                MincValue retval;
-                call_builtin_function("print", sMincList, sMincListLen, &retval);
+                MincValue unusedValue;
+                call_builtin_function("print", sMincList, sMincListLen, &unusedValue);
             }
         }
         // Create a symbol for 'this' within the function's scope if this is a method.
@@ -1130,12 +1126,12 @@ Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char 
         function->copyArguments();
         TPRINT("MincFunctionHandler::callMincFunction executing %s(), call depth saved at %d\n",
                sCalledFunctions.back(), savedCallDepth);
-        returnedNode = function->execute();
+        returnedValue = function->execute()->value();
     }
     catch (Node * returned) {    // This catches return statements!
         TPRINT("MincFunctionHandler::callMincFunction caught Node %p as return stmt throw - restoring call depth %d\n",
                returned, savedCallDepth);
-        returnedNode = returned;
+        returnedValue = returned->value();
         sFunctionCallDepth = savedCallDepth;
         sIfElseBlockDepth = savedIfElseDepth;
         sForWhileBlockDepth = savedForWhileDepth;
@@ -1166,7 +1162,7 @@ Node * MincFunctionHandler::callMincFunction(MincFunction *function, const char 
     yyset_lineno(savedLineNo);
     pop_function_stack();
     sCalledFunctions.pop_back();
-    return returnedNode;
+    return returnedValue;
 }
 
 // TODO: Operations which involve struct methods and members in base classes should be handled in a single location
@@ -1297,11 +1293,9 @@ Node *	NodeFunctionCall::doExct() {
                 const char *functionName = functionSymbol ? functionSymbol->name() : "Temp LHS";
                 MincFunction *theFunction = (MincFunction *)calledFunction->value();
                 if (theFunction != NULL) {
-                    Node *returned = callMincFunction(theFunction, functionName);
-                    if (returned != NULL) {
-                        TPRINT("NodeFunctionCall copying Minc function call results into self\n");
-                        copyValue(returned);
-                    }
+                    MincValue retValue = callMincFunction(theFunction, functionName);
+                    TPRINT("NodeFunctionCall copying Minc function call value into self\n");
+                    copyValue(retValue);
                 }
                 else {
                     minc_die("function variable '%s' is NULL", functionName);
@@ -1368,14 +1362,13 @@ Node *	NodeMethodCall::doExct()
             // Check for "false method" - a mfunction struct member invoked as function.  No 'this' symbol.
             Symbol *memberSymbol = theStruct->lookupMember(_methodName);
             if (memberSymbol) {
-                Node *functionRet;
                 switch (memberSymbol->dataType()) {
                     case MincFunctionType:        // MinC function
                     {
                         MincFunction *theFunction = (MincFunction *)memberSymbol->value();
                         if (theFunction != NULL) {
-                            functionRet = callMincFunction(theFunction, memberSymbol->name());
-                            setValue(functionRet->value());     // store value from Minc function call to us
+                            MincValue retVal = callMincFunction(theFunction, memberSymbol->name());
+                            setValue(retVal);     // store value from Minc function call to us
                         }
                         else {
                             minc_die("struct member '%s' is NULL", _methodName);
@@ -1398,8 +1391,8 @@ Node *	NodeMethodCall::doExct()
                 }
                 if (methodSymbol) {
                     MincFunction *theMethod = (MincFunction *)methodSymbol->value();
-                    Node *functionRet = callMincFunction(theMethod, methodSymbol->name(), theStruct);
-                    setValue(functionRet->value());     // store value from Minc method call to us
+                    MincValue retVal = callMincFunction(theMethod, methodSymbol->name(), theStruct);
+                    setValue(retVal);     // store value from Minc method call to us
                 } else {
                     // See if method was one of the builtin object methods.
                     MincValue objValue = object->value();

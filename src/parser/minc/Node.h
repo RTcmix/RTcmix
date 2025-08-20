@@ -97,6 +97,7 @@ public:
 protected:
     virtual             ~Node();
 	virtual Node*		doExct() = 0;
+	void				copyValue(const MincValue &value, bool allowTypeOverwrite=true, bool suppressOverwriteWarning=false);
 protected:
     Symbol *            _symbol;
 };
@@ -385,7 +386,7 @@ class MincFunctionHandler
 {
 public:
     MincFunctionHandler() {}
-    Node *                callMincFunction(MincFunction *function, const char *functionName, MincStruct *thisStruct=NULL);
+    MincValue	callMincFunction(MincFunction *function, const char *functionName, MincStruct *thisStruct=NULL);
 };
 
 //  Function call node
