@@ -55,10 +55,7 @@
 #include <assert.h>
 
 extern "C" {
-	void yyset_lineno(int line_number);
-	int yyget_lineno(void);
     void yy_store_lineno(int line_number);
-    const char * yy_get_current_include_filename();
     void yy_set_current_include_filename(const char *include_file);
 };
 
@@ -403,7 +400,7 @@ Node *	OperationBase::do_op_string(Node *node, const char *str1, const char *str
          minc_internal_error("invalid string operator");
          break;
    }
-	return node;
+   return node;
 }
 
 
@@ -1128,10 +1125,10 @@ MincValue MincFunctionHandler::callMincFunction(MincFunction *function, const ch
                sCalledFunctions.back(), savedCallDepth);
         returnedValue = function->execute()->value();
     }
-    catch (Node * returned) {    // This catches return statements!
-        TPRINT("MincFunctionHandler::callMincFunction caught Node %p as return stmt throw - restoring call depth %d\n",
-               returned, savedCallDepth);
-        returnedValue = returned->value();
+    catch (const MincValue &returned) {    // This catches return statements!
+        TPRINT("MincFunctionHandler::callMincFunction caught MincValue as return stmt throw - restoring call depth %d\n",
+               savedCallDepth);
+        returnedValue = returned;
         sFunctionCallDepth = savedCallDepth;
         sIfElseBlockDepth = savedIfElseDepth;
         sForWhileBlockDepth = savedForWhileDepth;
@@ -1447,7 +1444,6 @@ Node *	NodeStore::doExct()
 	TPRINT("NodeStore(%p): evaluate LHS %p (child 0)\n", this, child(0));
 	Node *lhs = child(0)->exct();
     // NEW: Do not allow overwrites of structs, functions, handles.
-    MincDataType rhsType = rhs->dataType();
     MincDataType lhsType = lhs->dataType();
     if (lhsType != MincVoidType && lhsType != MincFloatType && lhsType != MincStringType) {
         _allowTypeOverwrite = false;
@@ -1841,7 +1837,7 @@ Node *	NodeRet::doExct()
 	child(0)->exct();
 	copyValue(child(0));
 	TPRINT("NodeRet throwing %p for return stmt\n", this);
-	throw this;	// Cool, huh?  Throws this node's body out to function's endpoint!
+	throw this->value();	// Cool, huh?  Throws this node's value out to function's endpoint!
 	return NULL;	// notreached
 }
 

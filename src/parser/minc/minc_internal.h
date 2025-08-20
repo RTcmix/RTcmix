@@ -18,6 +18,7 @@
 #include <string.h>
 #include <stdio.h>      // snprintf
 #include <new>          // std::bad_alloc
+#include <exception>
 
 #ifdef DEBUG
    #define DPRINT(...) rtcmix_print(__VA_ARGS__)
@@ -74,18 +75,18 @@ extern "C" const char *yy_get_current_include_filename();
 #define minc_try try
 #define minc_catch(actions) catch(...) { if (true) { actions } throw; }
 
-class RTException
+class RTException : public std::exception
 {
 public:
 	RTException(const char *msg) {
         concat_error_message(_mesg, MAX_MESSAGE_SIZE, msg);
     }
-    RTException(const RTException &rhs) { strcpy(_mesg, rhs.mesg()); }
-	const char *mesg() const { return _mesg; }
+    RTException(const RTException &rhs) noexcept { strcpy(_mesg, rhs.mesg()); }
+    const char *what() const throw() { return mesg(); }
+	const char *mesg() const { return what(); }
 private:
 	char _mesg[MAX_MESSAGE_SIZE];
 };
-
 
 class RTFatalException : public RTException
 {
