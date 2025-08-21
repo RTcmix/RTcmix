@@ -1100,8 +1100,8 @@ MincValue MincFunctionHandler::callMincFunction(MincFunction *function, const ch
     MincValue returnedValue;
     sCalledFunctions.push_back(functionName);
     assert(function != NULL);
-    TPRINT("MincFunctionHandler::callMincFunction: theFunction = %p -- dropping in\n", function);
-    push_function_stack();
+    TPRINT("MincFunctionHandler::callMincFunction: theFunction (%p) -- calling '%s'\n", function, functionName);
+    FunctionBalance(push_function_stack, pop_function_stack);
     push_scope();           // move into function-body scope
     int savedLineNo=0, savedScope=0, savedCallDepth=0, savedIfElseDepth=0, savedForWhileDepth=0;
     try {
@@ -1145,7 +1145,6 @@ MincValue MincFunctionHandler::callMincFunction(MincFunction *function, const ch
         restore_scope(savedScope);
     }
     catch (MincError err) {
-        pop_function_stack();
         sCalledFunctions.pop_back();
         if (!sCalledFunctions.empty()) {
             RTFPrintf(stderr, "[During call to '%s']\n", sCalledFunctions.back());
@@ -1154,7 +1153,6 @@ MincValue MincFunctionHandler::callMincFunction(MincFunction *function, const ch
         throw;
     }
     catch(...) {    // Anything else is an error
-        pop_function_stack();
         sCalledFunctions.pop_back();
         if (!sCalledFunctions.empty()) {
             RTFPrintf(stderr, "[During call to '%s']\n", sCalledFunctions.back());
@@ -1165,7 +1163,6 @@ MincValue MincFunctionHandler::callMincFunction(MincFunction *function, const ch
     decrementFunctionCallDepth();
     // restore parser line number
     yyset_lineno(savedLineNo);
-    pop_function_stack();
     sCalledFunctions.pop_back();
     return returnedValue;
 }
@@ -1303,7 +1300,6 @@ Node *	NodeFunctionCall::doExct() {
     // Phase 2: evaluate arguments with a single, balanced list frame
     FunctionBalance fb(push_list, pop_list);
     TPRINT("NodeFunctionCall: Args: list node %p (child 1)\n", argList);
-    argList->exct();    // execute arg expression list (stored on this NodeCall)
     if (calledFunction) {
         switch (calledFunction->dataType()) {
             case MincFunctionType:        // Standalone MinC function
@@ -1314,8 +1310,9 @@ Node *	NodeFunctionCall::doExct() {
                 if (theFunction == NULL) {
                     minc_die("function variable '%s' is NULL", functionName);
                 }
+                argList->exct();    // execute arg expression list (stored on this NodeCall)
                 MincValue retValue = callMincFunction(theFunction, functionName);
-                TPRINT("NodeFunctionCall copying Minc function call value into self\n");
+                TPRINT("NodeFunctionCall copying Minc function '%s' call return value into self\n", functionName);
                 copyValue(retValue);
                 break;
             }
@@ -1327,6 +1324,7 @@ Node *	NodeFunctionCall::doExct() {
         }
     } else if (builtinFunctionString) {
         TPRINT("NodeFunctionCall: preparing for call to constructor or builtin function '%s'\n", builtinFunctionString);
+        argList->exct();    // execute arg expression list (stored on this NodeCall)
         if (!callConstructor((MincString) builtinFunctionString)) {
             TPRINT("NodeFunctionCall: no constructor - attempting call to builtin function '%s'\n",
                    builtinFunctionString);
@@ -1340,7 +1338,7 @@ Node *	NodeFunctionCall::doExct() {
 }
 
 bool NodeMethodCall::callObjectMethod(MincValue objectValue, const char *methodName) {
-    TPRINT("NodeMethodCall::callObjectMethod: attempting to invoke '%s' on %s object\n", methodName, MincTypeName(thisValue.dataType()));
+    TPRINT("NodeMethodCall::callObjectMethod: attempting to invoke '%s' on %s object\n", methodName, MincTypeName(objectValue.dataType()));
     // Note: This function can modify 'objectValue' and/or return a value via 'retVal'.
     // 'objectVal' is handled in the caller
     MincValue retval;
@@ -1360,7 +1358,7 @@ Node *	NodeMethodCall::doExct()
     TPRINT("NodeMethodCall: Method name: '%s'\n", _methodName);
     FunctionBalance fb(push_list, pop_list);
     TPRINT("NodeMethodCall: Args: list node %p (child 1)\n", child(1));
-    Node *args = child(1)->exct();    // execute arg expression list (stored on this NodeCall)
+    Node *argList = child(1);    // arg expression list (stored on this NodeCall)
     if (object->dataType() == MincStructType) {
         // Method is being called on a struct object
         MincStruct *theStruct = (MincStruct *) object->value();
@@ -1373,6 +1371,7 @@ Node *	NodeMethodCall::doExct()
                     {
                         MincFunction *theFunction = (MincFunction *)memberSymbol->value();
                         if (theFunction != NULL) {
+                            argList->exct();    // postpone argument evaluation until here
                             MincValue retVal = callMincFunction(theFunction, memberSymbol->name());
                             setValue(retVal);     // store value from Minc function call to us
                         }
@@ -1396,11 +1395,13 @@ Node *	NodeMethodCall::doExct()
                     methodSymbol = lookupSymbol(methodNameFromStructAndFunction(theStruct->baseTypeName(), _methodName), AnyLevel);
                 }
                 if (methodSymbol) {
+                    argList->exct();    // postpone argument evaluation until here
                     MincFunction *theMethod = (MincFunction *)methodSymbol->value();
                     MincValue retVal = callMincFunction(theMethod, methodSymbol->name(), theStruct);
                     setValue(retVal);     // store value from Minc method call to us
                 } else {
                     // See if method was one of the builtin object methods.
+                    argList->exct();    // postpone argument evaluation until here
                     MincValue objValue = object->value();
                     if (callObjectMethod(objValue, _methodName) == false) {
                         minc_die("variable '%s' of type 'struct %s' has no member or method '%s'", object->name(),
@@ -1417,6 +1418,7 @@ Node *	NodeMethodCall::doExct()
         }
     }
     else {
+        argList->exct();    // postpone argument evaluation until here
         // Method is being called on a non-struct object
         MincValue objValue = object->value();
         if (callObjectMethod(objValue, _methodName) == false) {   // Note: This stores the return value internally
@@ -1427,7 +1429,8 @@ Node *	NodeMethodCall::doExct()
             Symbol *objSymbol = object->symbol();
             if (objSymbol != NULL) {
                 objSymbol->setValue(objValue);
-            }}
+            }
+        }
     }
     assert(this->dataType() != MincVoidType);
 	return this;

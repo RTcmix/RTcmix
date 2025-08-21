@@ -539,7 +539,7 @@ fargl: '(' argl ')'		{ MPRINT("(argl) -> fargl"); $$ = new NodeArgList($2); }
    The statement list must end with a return statement. */
 
 fblock: '{' stml '}'	{ minc_die("function and method bodies must end with 'return <exp>' statement"); flerror = 1; $$ = new NodeNoop(); }
-    |   '{' stml ret '}' { MPRINT("{ stml ret } -> fblock"); $$ = $$ = new NodeFuncBodySeq($2, $3);; }
+    |   '{' stml ret '}' { MPRINT("{ stml ret } -> fblock"); $$ = new NodeFuncBodySeq($2, $3); }
     |   '{' ret '}'     { MPRINT("{ ret } -> fblock"); $$ = new NodeFuncBodySeq(new NodeEmptyListElem(), $2); }
    ;
 
