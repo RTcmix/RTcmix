@@ -792,7 +792,7 @@ go(Node * t1)
 		try {
 			t1->exct();
 		}
-        catch(const RTException rtex) {
+        catch(const RTException &rtex) {
             MPRINT1("caught fatal exception: '%s' - cleaning up and re-throwing", rtex.mesg());
             t1->unref();
             t1 = NULL;

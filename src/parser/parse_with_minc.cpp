@@ -59,7 +59,7 @@ run_parser(const char *caller)
                 errType = "System error";
                 break;
             case MincInternalError:
-                errType = "Internal error";
+                errType = "Internal error: Report to Doug Scott";
                 break;
         }
         rtcmix_warn(caller, "caught parse exception: %s", errType);

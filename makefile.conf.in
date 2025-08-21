@@ -401,7 +401,7 @@ ifeq ($(ARCH),LINUX)
 	SYS_LDFLAGS = -lpthread -lm -ldl
   endif
   DSO_LDFLAGS = $(OPT) $(SYSLIBS)
-  SHARED_LDFLAGS = -shared -Wl,-soname,$(RTLIB)
+  SHARED_LDFLAGS = -shared
   DYNAMIC_LDFLAGS = $(SHARED_LDFLAGS)
   DYN = -rdynamic
   PYTHON_LDFLAGS =
@@ -429,7 +429,7 @@ endif
 ifeq ($(ARCH),FREEBSD)
   SYS_LDFLAGS += -pthread -lm -ll
   DSO_LDFLAGS = -export-dynamic $(SYS_LDFLAGS)
-  SHARED_LDFLAGS = -shared -Wl,-soname,$(RTLIB)
+  SHARED_LDFLAGS = -shared
   DYNAMIC_LDFLAGS = $(SHARED_LDFLAGS)
   DYN = -rdynamic
   PYTHON_LDFLAGS =

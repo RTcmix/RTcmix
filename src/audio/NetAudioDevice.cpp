@@ -107,6 +107,7 @@ NetAudioDevice::NetAudioDevice(const char *path) : _impl(new Impl)
 
 NetAudioDevice::~NetAudioDevice()
 {
+    close();
 	delete [] _impl->hostname;
 	delete _impl;
 }

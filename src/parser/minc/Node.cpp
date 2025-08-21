@@ -231,6 +231,16 @@ static const char *methodNameFromStructAndFunction(const char *structName, const
 static void push_list(void);
 static void pop_list(void);
 
+typedef void (VoidFunction)(void);
+
+class FunctionBalance {
+public:
+    FunctionBalance(VoidFunction *in_function, VoidFunction *out_function) : _out_function(out_function) { in_function(); }
+    ~FunctionBalance() { _out_function(); }
+private:
+    VoidFunction *_out_function;
+};
+
 #ifdef DEBUG_NODE_MEMORY
 static int numNodes = 0;
 #endif
@@ -779,19 +789,17 @@ Node *	NodeListElem::doExct()
 	return this;
 }
 
-Node *	NodeList::doExct()
-{
-	push_list();
-	child(0)->exct();     /* NB: increments sMincListLen */
-	MincList *theList = new MincList(sMincListLen);
-	this->v = theList;
-	TPRINT("MincList %p assigned to self\n", theList);
-	// Copy from stack list into Node's MincList.
+Node *NodeList::doExct() {
+    FunctionBalance fb(push_list, pop_list);
+    child(0)->exct();     /* NB: increments sMincListLen */
+    MincList *theList = new MincList(sMincListLen);
+    this->v = theList;
+    TPRINT("MincList %p assigned to self\n", theList);
+    // Copy from stack list into Node's MincList.
     for (int i = 0; i < sMincListLen; ++i) {
-		theList->data[i] = sMincList[i];
+        theList->data[i] = sMincList[i];
     }
-	pop_list();
-	return this;
+    return this;
 }
 
 // The Subscript class is a private base class which allows several nodes to share its functionality
@@ -1274,59 +1282,60 @@ Node *	NodeFunctionCall::doExct() {
     ENTER();
     Node *functionNode = child(0);
     Node *argList = child(1);
+    // Phase 1: decide what we're calling (MinC function vs constructor/builtin).
+    Node *calledFunction = NULL;
+    const char *builtinFunctionString = NULL;
     try {
         TPRINT("NodeFunctionCall: Func: node %p (child 0)\n", functionNode);
         /* Lookup function.  NOTE: This operation can throw if the function is not a Minc function.
          * This is caught and handled below as a compiled function.
          */
-        Node *calledFunction = functionNode->exct();
-        push_list();
-        TPRINT("NodeFunctionCall: Args: list node %p (child 1)\n", argList);
-        argList->exct();    // execute arg expression list (stored on this NodeCall)
+        calledFunction = functionNode->exct();
+    } catch (UndeclaredVariableException &) {
+        if (functionNode->dataType() == MincStringType) {
+            // NodeLoadSym stashed the unknown name as a string for builtin/ctor path
+            builtinFunctionString = functionNode->value();
+        } else {
+            throw;   // Not the function-name case; propagate
+        }
+    }
+
+    // Phase 2: evaluate arguments with a single, balanced list frame
+    FunctionBalance fb(push_list, pop_list);
+    TPRINT("NodeFunctionCall: Args: list node %p (child 1)\n", argList);
+    argList->exct();    // execute arg expression list (stored on this NodeCall)
+    if (calledFunction) {
         switch (calledFunction->dataType()) {
             case MincFunctionType:        // Standalone MinC function
             {
                 Symbol *functionSymbol = calledFunction->symbol();      // This can be NULL
                 const char *functionName = functionSymbol ? functionSymbol->name() : "Temp LHS";
-                MincFunction *theFunction = (MincFunction *)calledFunction->value();
-                if (theFunction != NULL) {
-                    MincValue retValue = callMincFunction(theFunction, functionName);
-                    TPRINT("NodeFunctionCall copying Minc function call value into self\n");
-                    copyValue(retValue);
-                }
-                else {
+                MincFunction *theFunction = (MincFunction *) calledFunction->value();
+                if (theFunction == NULL) {
                     minc_die("function variable '%s' is NULL", functionName);
                 }
-            }
+                MincValue retValue = callMincFunction(theFunction, functionName);
+                TPRINT("NodeFunctionCall copying Minc function call value into self\n");
+                copyValue(retValue);
                 break;
+            }
             default:
                 minc_die("%s'%s' is not a function or instrument",
-                         calledFunction->symbol() ? "variable " : "", calledFunction->symbol() ? calledFunction->symbol()->name() : "Temp LHS");
+                         calledFunction->symbol() ? "variable " : "",
+                         calledFunction->symbol() ? calledFunction->symbol()->name() : "Temp LHS");
                 break;
         }
-    } catch(UndeclaredVariableException &uve) {
-        const char *builtinFunctionString = NULL;
-        if (functionNode->dataType() == MincStringType) {
-            // We stored this string away when we noticed this in the parser.
-            builtinFunctionString = functionNode->value();
+    } else if (builtinFunctionString) {
+        TPRINT("NodeFunctionCall: preparing for call to constructor or builtin function '%s'\n", builtinFunctionString);
+        if (!callConstructor((MincString) builtinFunctionString)) {
+            TPRINT("NodeFunctionCall: no constructor - attempting call to builtin function '%s'\n",
+                   builtinFunctionString);
+            callBuiltinFunction((MincString) builtinFunctionString);
         }
-        if (builtinFunctionString) {
-            TPRINT("NodeFunctionCall: preparing for call to constructor or builtin function '%s'\n", builtinFunctionString);
-            push_list();
-            TPRINT("NodeFunctionCall: Args: list node %p (child 1)\n", argList);
-            argList->exct();    // execute arg expression list (stored on this NodeCall)
-            bool success = callConstructor((MincString) builtinFunctionString);
-            if (!success) {
-                TPRINT("NodeFunctionCall: no constructor - attempting call to builtin function '%s'\n", builtinFunctionString);
-                callBuiltinFunction((MincString) builtinFunctionString);
-            }
-        }
-        else {
-            TPRINT("NodeFunctionCall: Other undeclared var exception - re-throwing\n");
-            throw;
-        }
+    } else {
+        minc_internal_error("NodeFunctionCall: calledFunction is NULL and builtinFunctionString is NULL");
     }
-    pop_list();
+
     return this;
 }
 
@@ -1349,7 +1358,7 @@ Node *	NodeMethodCall::doExct()
     TPRINT("NodeMethodCall: Object %p (child 0)\n", child(0));
     Node *object = child(0)->exct();
     TPRINT("NodeMethodCall: Method name: '%s'\n", _methodName);
-    push_list();
+    FunctionBalance fb(push_list, pop_list);
     TPRINT("NodeMethodCall: Args: list node %p (child 1)\n", child(1));
     Node *args = child(1)->exct();    // execute arg expression list (stored on this NodeCall)
     if (object->dataType() == MincStructType) {
@@ -1420,7 +1429,6 @@ Node *	NodeMethodCall::doExct()
                 objSymbol->setValue(objValue);
             }}
     }
-	pop_list();
     assert(this->dataType() != MincVoidType);
 	return this;
 }
