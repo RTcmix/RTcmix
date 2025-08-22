@@ -111,12 +111,12 @@ static std::vector<const char *> sCalledFunctions;
 
 static int sForWhileBlockDepth = 0;      // level of actively-executing while() and for() blocks
 static void incrementForWhileBlockDepth() { ++sForWhileBlockDepth; SPRINT("sForWhileBlockDepth -> %d", sForWhileBlockDepth); }
-static void decrementForWhileBlockDepth() { --sForWhileBlockDepth; SPRINT("sForWhileBlockDepth -> %d", sForWhileBlockDepth); }
+static void decrementForWhileBlockDepth() { assert(sForWhileBlockDepth > 0); --sForWhileBlockDepth; SPRINT("sForWhileBlockDepth -> %d", sForWhileBlockDepth); }
 static bool inForOrWhileBlock() { return sForWhileBlockDepth > 0; }
 
 static int sIfElseBlockDepth = 0;      // level of actively-executing if() and else() blocks
 static void incrementIfElseBlockDepth() { ++sIfElseBlockDepth; SPRINT("sIfElseBlockDepth -> %d", sIfElseBlockDepth); }
-static void decrementIfElseBlockDepth() { --sIfElseBlockDepth; SPRINT("sIfElseBlockDepth -> %d", sIfElseBlockDepth); }
+static void decrementIfElseBlockDepth() { assert(sIfElseBlockDepth > 0); --sIfElseBlockDepth; SPRINT("sIfElseBlockDepth -> %d", sIfElseBlockDepth); }
 static bool inIfOrElseBlock() { return sIfElseBlockDepth > 0; }
 
 static void copyNodeToMincList(MincValue *edest, Node *  tpsrc);
@@ -1101,9 +1101,9 @@ MincValue MincFunctionHandler::callMincFunction(MincFunction *function, const ch
     sCalledFunctions.push_back(functionName);
     assert(function != NULL);
     TPRINT("MincFunctionHandler::callMincFunction: theFunction (%p) -- calling '%s'\n", function, functionName);
-    FunctionBalance(push_function_stack, pop_function_stack);
-    push_scope();           // move into function-body scope
-    int savedLineNo=0, savedScope=0, savedCallDepth=0, savedIfElseDepth=0, savedForWhileDepth=0;
+    FunctionBalance fb(push_function_stack, pop_function_stack);
+    push_scope();           // move into function-body scope.  This scope is destroyed in pop_function_stack().
+    int savedLineNo=0;
     try {
         // This replicates the argument-printing mechanism used by compiled-in functions.
         // Functions beginning with underbar, or those in a "suppressed list", can be "privatized" using set_option()
@@ -1117,32 +1117,18 @@ MincValue MincFunctionHandler::callMincFunction(MincFunction *function, const ch
         }
         // Create a symbol for 'this' within the function's scope if this is a method.
         // A non-null 'thisStruct' indicates we are calling a method on the struct.
-        function->handleThis(thisStruct, NULL);
+        function->handleThis(thisStruct, NULL);     // This can throw
         savedLineNo = yyget_lineno();
-        savedScope = current_scope();
-        savedIfElseDepth = sIfElseBlockDepth;
-        savedForWhileDepth = sForWhileBlockDepth;
-        sIfElseBlockDepth = 0;
-        sForWhileBlockDepth = 0;
         incrementFunctionCallDepth();
-        savedCallDepth = sFunctionCallDepth;
         /* The exp list is copied to the symbols for the function's arg list. */
         TPRINT("MincFunctionHandler::callMincFunction declaring all argument symbols in the function's scope\n");
         function->copyArguments();
-        TPRINT("MincFunctionHandler::callMincFunction executing %s(), call depth saved at %d\n",
-               sCalledFunctions.back(), savedCallDepth);
+        TPRINT("MincFunctionHandler::callMincFunction executing %s()\n", sCalledFunctions.back());
         returnedValue = function->execute()->value();
     }
     catch (const MincValue &returned) {    // This catches return statements!
-        TPRINT("MincFunctionHandler::callMincFunction caught MincValue as return stmt throw - restoring call depth %d\n",
-               savedCallDepth);
+        TPRINT("MincFunctionHandler::callMincFunction caught MincValue as return stmt throw\n");
         returnedValue = returned;
-        sFunctionCallDepth = savedCallDepth;
-        sIfElseBlockDepth = savedIfElseDepth;
-        sForWhileBlockDepth = savedForWhileDepth;
-        SPRINT("Function call depth restored to %d, if/else depth to %d, for/while to %d",
-               sFunctionCallDepth, sIfElseBlockDepth, sForWhileBlockDepth);
-        restore_scope(savedScope);
     }
     catch (MincError err) {
         sCalledFunctions.pop_back();

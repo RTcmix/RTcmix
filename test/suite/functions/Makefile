@@ -8,7 +8,7 @@ undefined_nested_arg
 COMPAT_TESTS = compat compat1 compat2 compat3
 BLOCK_TESTS = block block01 block01a block02 block02a block02c block03 block03a block03c block_list
 FUNC_TESTS = argtest call-stack func_call func_return funclevel1 func_call2 funcdecl \
-	recursivefun03 recursivefun04 recursivefun1 recursivefun2 func_auto_locals \
+	recurse_fun_as_arg recurse_fun recursivefun03 recursivefun04 recursivefun1 recursivefun2 func_auto_locals \
 	nested_builtin_functions func_local_scopes scope01 scopetest struct_ctor1 \
 	two_returns two_returns_b
 

@@ -15,8 +15,8 @@
 #include <string.h>
 
 #undef SCOPE_DEBUG
-//#undef DPRINT
 #ifdef SCOPE_DEBUG
+#undef DPRINT
 #define DPRINT(...) rtcmix_print(__VA_ARGS__)
 #else
 #define DPRINT(...)
