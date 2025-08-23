@@ -41,8 +41,9 @@
 // these are to enable dynamic maketable() construction
 #include <maxdispargs.h>
 #include <rtcmix_types.h>
-extern "C" "int _dispatch_table(const Arg *args, const int nargs, const int startarg, double **array, int *len);
-Handle createPFieldHandle(class PField *);
+
+extern int _dispatch_table(const Arg args[], const int nargs, const int startarg, double** array, int* len);
+extern Handle createPFieldHandle(class PField*);
 
 // BGG -- this is from src/rtcmix/table.cpp, but renamed slightly in case
 // of static lib conflicts.  Tried an extern declaration but it didn't work

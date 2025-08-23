@@ -259,8 +259,8 @@ PField *createBinopPField(PField *pfield1, PField *pfield2, OpKind op)
 	return new PFieldBinaryOperator(pfield1, pfield2, binop);
 }
 
-MincHandle minc_binop_handle_float(const MincHandle mhandle,
-	const MincFloat val, OpKind op)
+MincHandle minc_binop_handle_float(MincHandle mhandle,
+	MincFloat val, OpKind op)
 {
 	DPRINT("minc_binop_handle_float (handle=%p, val=%f\n", mhandle, val);
 
@@ -285,8 +285,8 @@ MincHandle minc_binop_handle_float(const MincHandle mhandle,
 	return (MincHandle) _createPFieldHandle(outpfield);
 }
 
-MincHandle minc_binop_float_handle(const MincFloat val,
-	const MincHandle mhandle, OpKind op)
+MincHandle minc_binop_float_handle(MincFloat val,
+	MincHandle mhandle, OpKind op)
 {
 	DPRINT("minc_binop_float_handle (val=%f, handle=%p\n", val, mhandle);
 
@@ -313,8 +313,8 @@ MincHandle minc_binop_float_handle(const MincFloat val,
 	return (MincHandle) _createPFieldHandle(outpfield);
 }
 
-MincHandle minc_binop_handles(const MincHandle mhandle1,
-	const MincHandle mhandle2, OpKind op)
+MincHandle minc_binop_handles(MincHandle mhandle1,
+	MincHandle mhandle2, OpKind op)
 {
 	DPRINT("minc_binop_handles (handle1=%p, handle2=%p\n", mhandle1, mhandle2);
 

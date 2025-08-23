@@ -1497,13 +1497,10 @@ _string_to_tablekind(const char *str)
 	return InvalidTable;
 }
 
-// BGGx ww
-extern "C" {
+
 int
 _dispatch_table(const Arg args[], const int nargs, const int startarg,
 	double **array, int *len);
-}
-
 
 int
 _dispatch_table(const Arg args[], const int nargs, const int startarg,

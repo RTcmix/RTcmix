@@ -96,7 +96,11 @@ private:
 	ThreadPool *			mThreadPool;
 	Task *					mTaskHead;
 	Task *					mTaskTail;
+#ifdef MACOSX_NO
 	TAtomicStack2<Task>		mTaskStack;
+#else
+	TAtomicStack<Task>		mTaskStack;
+#endif
 };
 
 class TaskManager

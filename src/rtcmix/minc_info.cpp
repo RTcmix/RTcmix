@@ -15,12 +15,16 @@
 #define ALL_CHANS -1
 
 /* These are all for the older disk-based cmix functions. */
-extern int	     isopen[NFILES];        /* open status */
-extern SFHEADER      sfdesc[NFILES];
-extern SFMAXAMP      sfm[NFILES];
-extern struct stat   sfst[NFILES];
-extern int headersize[NFILES];
-extern "C" void sfstats(int fd);       /* defined in sfstats.c */
+
+extern "C" {
+	int isopen[NFILES]; /* open status */
+	int headersize[NFILES];
+
+	SFHEADER sfdesc[NFILES];
+	SFMAXAMP sfm[NFILES];
+	struct stat sfst[NFILES];
+	void sfstats(int fd); /* defined in sfstats.c */
+}
 
 extern "C" {
 
@@ -322,11 +326,11 @@ Handle filebreakpoints(const Arg args[], const int nargs)
     bool wasSilent = true;
 
     for (long frm = startframe; frm < nframes; frm += offset) {
-        float peak[nchans];
-        long peakloc[nchans];
-        double ampavg[nchans];
-        double dcavg[nchans];
-        double rms[nchans];
+        float peak[MAXCHANS];
+        long peakloc[MAXCHANS];
+        double ampavg[MAXCHANS];
+        double dcavg[MAXCHANS];
+        double rms[MAXCHANS];
         int result = sndlib_findpeak(fd, -1, dataloc, -1, format, nchans,
                                      frm, windowCount, peak, peakloc, ampavg, dcavg, rms);
         if (result == -1) {
@@ -597,7 +601,7 @@ RTcmix::right_peak(double p[], int n_args)
 }
 
 
-extern int sfd[NFILES];
+extern "C" int sfd[NFILES];
 
 extern "C" {
 

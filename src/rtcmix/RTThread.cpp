@@ -34,7 +34,8 @@ RTThread::~RTThread() {
 void RTThread::setName(const char *name)
 {
 #ifdef MACOSX
-    (void) pthread_setname_np(name);
+// BGG commented THIS out for windoze version -- "MACOSX" is defined for the compile
+//    (void) pthread_setname_np(name);
 #else
 // DAS Commented out for Brad's windoze version for now
 //    (void) pthread_setname_np(mThread, name);

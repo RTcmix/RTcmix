@@ -15,11 +15,12 @@
 #include <new>
 
 typedef struct yy_buffer_state * YY_BUFFER_STATE;
-#if BISON_VERSION >= 3 || !defined(MACOSX)
-extern YY_BUFFER_STATE yy_scan_bytes(const char * buf, int len);
-#else
-extern YY_BUFFER_STATE yy_scan_bytes(const char * buf, size_t len);
-#endif
+// BGG changed this for uRTcmix
+//#if BISON_VERSION >= 3 || !defined(MACOSX)
+extern YY_BUFFER_STATE yy_scan_bytes(const char* buf, int len);
+//#else
+//extern YY_BUFFER_STATE yy_scan_bytes(const char* buf, size_t len);
+//#endif
 
 extern "C" {
     extern int yyparse();
