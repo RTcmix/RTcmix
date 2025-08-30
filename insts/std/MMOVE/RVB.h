@@ -4,7 +4,7 @@
 #ifndef _RTCMIX_RVB_H_
 #define _RTCMIX_RVB_H_
 
-#include <RVBBASE.h>
+#include "RVBBASE.h"
 
 #define RVB_CHANS 2
 #define RVB_DELCOUNT 6

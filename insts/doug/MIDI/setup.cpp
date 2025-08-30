@@ -77,9 +77,9 @@ setup_midi(double *p, int n_args)
     if (theDSO.load(loadPath) == 0) {
         MIDIOutputCreator creator = NULL;
         if (theDSO.loadFunction(&creator, "create_midi_output") == 0) {
-            for (int p = 0; p < portCount; ++p) {
-                gMIDIOutputs[p] = (RTMIDIOutput *)(*creator)(portnames[p]);
-                if (gMIDIOutputs[p] == NULL) {
+            for (int pidx = 0; pidx < portCount; ++pidx) {
+                gMIDIOutputs[pidx] = (RTMIDIOutput *)(*creator)(portnames[pidx]);
+                if (gMIDIOutputs[pidx] == NULL) {
                     return rtOptionalThrow(SYSTEM_ERROR);
                 }
             }

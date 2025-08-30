@@ -585,12 +585,14 @@ void RTcmixMIDIOutput::sendMIDIStop(long timestamp)
     Pm_Write(outstream(), &buffer1, 1);
 #endif
 //    PRINT("RTcmixMIDIOutput::sendMIDIStop: sending MIDI Stop with ts = %ld\n", timestamp);
-    PRINT("RTcmixMIDIOutput::sendMIDIStop: sending CC 119 ts = %ld\n", timestamp);
-    PmEvent stopEvent;
-//    stopEvent.message = Pm_Message(0xFC, 0, 0);   // timecode stop
-    stopEvent.message = Pm_Message(make_status(kControl, 0), 119, 0);
-    stopEvent.timestamp = timestamp;
-    Pm_Write(outstream(), &stopEvent, 1);
+    if (RTOption::sendMIDIRecordAutoStart()) {
+        PRINT("RTcmixMIDIOutput::sendMIDIStop: sending CC 119 ts = %ld\n", timestamp);
+        PmEvent stopEvent;
+//      stopEvent.message = Pm_Message(0xFC, 0, 0);   // timecode stop
+        stopEvent.message = Pm_Message(make_status(kControl, 0), 119, 0);
+        stopEvent.timestamp = timestamp;
+        Pm_Write(outstream(), &stopEvent, 1);
+    }
     PRINT("RTcmixMIDIOutput::sendMIDIStop: Done\n");
 }
 
