@@ -132,6 +132,14 @@ hash(const char *s)
     return i;
 }
 
+inline double fuzzyTol(double a, double b,
+                       double relTol = 1e-12,
+                       double absTol = 1e-15)
+{
+    // Absolute floor keeps behavior sane near zero; relative scales for large mags.
+    return std::max(absTol, relTol * std::max(std::fabs(a), std::fabs(b)));
+}
+
 /* floating point comparisons:
  f1 < f2   ==> -1
  f1 == f2  ==> 0
@@ -140,19 +148,12 @@ hash(const char *s)
 int
 cmp(MincFloat f1, MincFloat f2)
 {
-    if (fabs((double) f1 - (double) f2) < EPSILON) {
-        /* printf("cmp=%g %g %g \n",f1,f2,fabs(f1-f2)); */
-        return 0;
-    }
-    if ((f1 - f2) > EPSILON) {
-        /* printf("cmp > %g %g %g \n",f1,f2,fabs(f1-f2)); */
-        return 1;
-    }
-    if ((f2 - f1) > EPSILON) {
-        /* printf("cmp <%g %g %g \n",f1,f2,fabs(f1-f2)); */
-        return -1;
-    }
-    return 0;
+    if (std::isnan(f1) || std::isnan(f2)) return 0;  // treat NaNs as "not comparable"
+    if (f1 == f2) return 0;                          // handles infinities exactly equal
+    double diff = f1 - f2;
+    double tol  = fuzzyTol(f1, f2, 1e-12, 1e-15);
+    if (std::fabs(diff) <= tol) return 0;
+    return (diff < 0) ? -1 : +1;
 }
 
 

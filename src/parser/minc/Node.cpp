@@ -298,6 +298,13 @@ void Node::print()
     }
 }
 
+void	Node::printValue()
+{
+    if (this->dataType() == MincFloatType) printf("%f\n", (MincFloat) value());
+    else if (this->dataType() == MincStringType) printf("'%s'\n", (MincString) value());
+    else printf("non-numeric\n");
+}
+
 Node *	Node::exct()
 {
 	ENTER();
@@ -312,7 +319,7 @@ Node *	Node::exct()
     yy_set_current_include_filename(includeFilename);
 	Node *outNode = doExct();	// this is redefined on all subclasses
     TPRINT("%s::exct(%p) done: returning node %p of type %s\n", classname(), this, outNode, MincTypeName(outNode->dataType()));
-#ifdef DEBUG_FILENAME_INCLUDES
+    #ifdef DEBUG_FILENAME_INCLUDES
     printf("%s::exct(%p) restoring current location to '%s'\n", classname(), this, savedIncludeFilename);
 #endif
     yy_set_current_include_filename(savedIncludeFilename);

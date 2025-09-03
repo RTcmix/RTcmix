@@ -6,6 +6,7 @@
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
+#include <stdlib.h>
 #include "rename.h"
 #include "bison_version.h"
 #include "minc_internal.h"
@@ -397,7 +398,7 @@ exp:
   // Data and special types
   | str                               { $$ = $1; }
   | TOK_NUM                           {
-                                        double f = atof(yytext);
+                                        double f = std::strtod(yytext, NULL);
                                         $$ = new NodeConstf(f);
                                       }
   | obj                               { MPRINT("obj -> exp"); $$ = $1; }
@@ -693,7 +694,7 @@ static Node * parseListArgument(const char *text, int *pOutErr)
             case ',':
                 firstSign = true;      // clear this
                 if (isNumber) {
-                    double f = atof(&text[elemIndex]);
+                    double f = std::strtod(&text[elemIndex], NULL);
                     listElem = new NodeListElem(listElem, new NodeConstf(f));
                 }
                 else {
@@ -757,7 +758,7 @@ static Node * parseScoreArgument(const char *text, int *pOutErr)
             }
         }
         if (is_number) {
-            double f = atof(value);
+            double f = std::strtod(value, NULL);
             return new NodeConstf(f);
         }
         // else we store this as a string constant.

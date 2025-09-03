@@ -98,6 +98,7 @@ protected:
     virtual             ~Node();
 	virtual Node*		doExct() = 0;
 	void				copyValue(const MincValue &value, bool allowTypeOverwrite=true, bool suppressOverwriteWarning=false);
+    void                printValue();
 protected:
     Symbol *            _symbol;
 };
