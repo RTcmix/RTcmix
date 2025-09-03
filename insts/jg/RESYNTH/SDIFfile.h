@@ -58,8 +58,7 @@ public:
 	// Exclude partials not lying entirely in the range [minFreq, maxFreq],
 	// or whose max amp is below ampThreshold. Takes effect on next call to
 	// getFrame.
-	void filterPartials(const float minFreq, const float maxFreq,
-			const float ampThreshold);
+	void filterPartials(float minFreq, float maxFreq, float ampThreshold);
 
 	// Return a pointer to an array of average frequencies of all the partial
 	// tracks in the SDIF file. The array has maxPartialID+1 elements.

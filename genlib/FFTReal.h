@@ -56,7 +56,7 @@ private:
 	class BitReversedLUT
 	{
 	public:
-		explicit			BitReversedLUT (const int nbr_bits);
+		explicit			BitReversedLUT (int nbr_bits);
 							~BitReversedLUT ();
 		const long *	get_ptr () const
 		{
@@ -70,7 +70,7 @@ private:
 	class	TrigoLUT
 	{
 	public:
-		explicit			TrigoLUT (const int nbr_bits);
+		explicit			TrigoLUT (int nbr_bits);
 							~TrigoLUT ();
 		const flt_t	*	get_ptr (const int level) const
 		{

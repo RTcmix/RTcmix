@@ -29,14 +29,14 @@ public:
 	// doesn't want a units string, pass NULL for <units>.  The <precision>
 	// argument gives the number of digits after the decimal point to display.
 	int configureXLabel(const char *prefix, const char *units,
-                                                   const int precision);
+                                                   int precision);
 	int configureYLabel(const char *prefix, const char *units,
-                                                   const int precision);
+                                                   int precision);
 
 	// Update the value used in the label.  Note: only the client PField knows
 	// how the mouse coords, given to it in range [0,1], will be scaled.
-	void updateXLabelValue(const int id, const double value);
-	void updateYLabelValue(const int id, const double value);
+	void updateXLabelValue(int id, double value);
+	void updateYLabelValue(int id, double value);
 
 
 protected:
@@ -44,12 +44,12 @@ protected:
 	// Display the mouse window on the screen.
 	virtual int show() = 0;
 
-	virtual void doConfigureXLabel(const int id, const char *prefix,
-                                 const char *units, const int precision) = 0;
-	virtual void doConfigureYLabel(const int id, const char *prefix,
-                                 const char *units, const int precision) = 0;
-	virtual void doUpdateXLabelValue(const int id, const double value) = 0;
-	virtual void doUpdateYLabelValue(const int id, const double value) = 0;
+	virtual void doConfigureXLabel(int id, const char *prefix,
+                                 const char *units, int precision) = 0;
+	virtual void doConfigureYLabel(int id, const char *prefix,
+                                 const char *units, int precision) = 0;
+	virtual void doUpdateXLabelValue(int id, double value) = 0;
+	virtual void doUpdateYLabelValue(int id, double value) = 0;
 	virtual bool handleEvents() = 0;
 
 	int _xlabelCount;

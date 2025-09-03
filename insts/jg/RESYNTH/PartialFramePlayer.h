@@ -52,7 +52,7 @@ public:
 	// This is a static method so that it can be called to construct a buffering
 	// scheme at a level higher than this object.  For example, this is
 	// necessary in RTcmix, though not in MaxMSP.
-	static float getControlRateMultiplier(const int bufSize, int &controlSize);
+	static float getControlRateMultiplier(int bufSize, int &controlSize);
 
 	// Set how long a partial's amplitude ramps down to 0 once it is set to die.
 	// NOTE: Must call this only after a call to controlSamps() or controlRate()!
@@ -88,7 +88,7 @@ public:
 
 	// List of partial pitches in oct.pc for retuning.
 	// The <chord> array is consulted only during this call.
-	void setRetuneChord(const float *chord, const int numPitches);
+	void setRetuneChord(const float *chord, int numPitches);
 
 	// Transpose all the pitches in the retune chord (semitones).
 	void retuneTranspose(const float transpose)
@@ -167,7 +167,7 @@ private:
 	// which can be NULL.
 	void _allocVoices(List <PartialVoice *> *list, const int numVoices);
 
-	float _retunePartial(const int partialID, const float origFreq);
+	float _retunePartial(int partialID, const float origFreq);
 
 	// Prune dead voices from the active voice list, push them onto the free
 	// list, and mark their entries in in the _partialIDtoVoice table as NULL.

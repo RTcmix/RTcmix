@@ -16,13 +16,13 @@
 #include <limits>
 
 extern "C" {
-    double pvinput(const Arg args[], const int nargs);
-    double pvgetbincount(const Arg args[], const int nargs);
-    double pvgetframerate(const Arg args[], const int nargs);
-    Handle pvgetframeamps(const Arg args[], const int nargs);
-    Handle pvgetframefreqs(const Arg args[], const int nargs);
-    Handle pvgetframe(const Arg args[], const int nargs);
-    Handle pvgetbin(const Arg args[], const int nargs);
+    double pvinput(const Arg args[], int nargs);
+    double pvgetbincount(const Arg args[], int nargs);
+    double pvgetframerate(const Arg args[], int nargs);
+    Handle pvgetframeamps(const Arg args[], int nargs);
+    Handle pvgetframefreqs(const Arg args[], int nargs);
+    Handle pvgetframe(const Arg args[], int nargs);
+    Handle pvgetbin(const Arg args[], int nargs);
 }
 
 static int gPvocFD = -1;

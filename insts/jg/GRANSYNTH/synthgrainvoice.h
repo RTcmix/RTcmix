@@ -16,7 +16,7 @@ public:
 
    void setGrainEnvelopeTable(double *table, int length);
 
-   void startGrain(const int bufoutstart, const double startphase,
+   void startGrain(int bufoutstart, const double startphase,
       const double outdur, const double amp, const double pitch,
       const double pan);
 
@@ -24,7 +24,7 @@ public:
    void next(float &left, float &right);
 
    // block version
-   void next(float *buffer, const int numFrames, const float amp);
+   void next(float *buffer, int umFrames, float amp);
 
 private:
 

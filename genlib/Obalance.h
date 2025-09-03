@@ -16,7 +16,7 @@ public:
 	Obalance(float srate, int windowlen = kDefaultRMSWindowLength);
 	~Obalance();
 
-	void setwindow(const int nframes);
+	void setwindow(int nframes);
 	void setgain(const float gain) { _gain = gain; }
 	inline float next(float input, float comparator);
 	void clear();

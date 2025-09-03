@@ -24,7 +24,7 @@ public:
 	virtual ~RTcmixMIDIInput();
 	int init();
 	void clear();
-	void dump(const int chan);
+	void dump(int chan);
 
 	// We store the last note on/off pitch and velocity values into an array
 	// for reference in a manner similar to that of controllers.  This is *not*
@@ -78,7 +78,7 @@ private:
 						{ _program[chan] = val; }
 	inline void setChanPress(int chan, int val)
 						{ _chanpress[chan] = val; }
-	const char *getValueString(const int val);
+	const char *getValueString(int val);
 
 	static void _processMIDI(PtTimestamp timestamp, void *context);
 

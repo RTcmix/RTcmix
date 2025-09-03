@@ -12,10 +12,10 @@
 #include <ugens.h>		// for warn, die
 
 extern "C" {
-	Handle opmul(const Arg args[], const int nargs);
-	Handle opadd(const Arg args[], const int nargs);
-	Handle opdiv(const Arg args[], const int nargs);
-	Handle opsub(const Arg args[], const int nargs);
+	Handle opmul(const Arg args[], int nargs);
+	Handle opadd(const Arg args[], int nargs);
+	Handle opdiv(const Arg args[], int nargs);
+	Handle opsub(const Arg args[], int nargs);
 };
 
 

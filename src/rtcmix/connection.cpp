@@ -26,15 +26,15 @@
 // The remaining functions are public, callable from scripts.
 
 extern "C" {
-	Handle makeconnection(const Arg args[], const int nargs);
+	Handle makeconnection(const Arg args[], int nargs);
 #ifdef EMBEDDED
 // BGG -- see note below
-	Handle create_handle(const Arg args[], const int nargs);
-	Handle create_pfbus_handle(const Arg args[], const int nargs);
+	Handle create_handle(const Arg args[], int nargs);
+	Handle create_pfbus_handle(const Arg args[], int nargs);
 #endif
 };
 
-typedef Handle (*HandleCreator)(const Arg[], const int);
+typedef Handle (*HandleCreator)(const Arg[], int);
 
 // ---------------------------------------------------------- makeconnection ---
 Handle

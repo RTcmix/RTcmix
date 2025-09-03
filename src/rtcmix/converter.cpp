@@ -19,7 +19,7 @@
 // The remaining functions are public, callable from scripts.
 
 extern "C" {
-	Handle makeconverter(const Arg args[], const int nargs);
+	Handle makeconverter(const Arg args[], int nargs);
 };
 
 

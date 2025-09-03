@@ -42,8 +42,8 @@ public:
 					const double timeFactor = 1.0);
 	virtual ~DataFile();
 
-	int writeHeader(const int fileRate, const int format, const bool swap);
-	long readHeader(const int  defaultFileRate = -1,
+	int writeHeader(int fileRate, const int format, const bool swap);
+	long readHeader(int  defaultFileRate = -1,
 						const int  defaultFormat = kDataFormatFloat,
 						const bool defaultSwap = false);
 
@@ -55,11 +55,11 @@ public:
 	// number of times, as long as readHeader has already set a valid file rate.
 	// Returns -1 if seek error (and it reports error); 0 otherwise.
 
-	int setSkipTime(const double skipTime, const bool absolute = false);
+	int setSkipTime(double skipTime, bool absolute = false);
 
-	int writeOne(const double val);
+	int writeOne(double val);
 	double readOne();
-	int readFile(double *block, const long maxItems);
+	int readFile(double *block, long maxItems);
 
 	static int formatStringToCode(const char *str);
 

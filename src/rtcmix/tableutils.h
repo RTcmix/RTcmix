@@ -9,10 +9,10 @@
 class PField;
 
 bool is_table(const PField *pf);
-void get_table_bounds(const double *array, const int len, double &min, double &max);
-double get_table_mean(const double *array, const int len);
-void fill_linebrk_table(const Arg [], const int, double *, const int);
-void fill_wave_table(const Arg [], const int, double *, const int);
-int wavetable_from_string(const char *, double *, const int, const char *);
+void get_table_bounds(const double *array, int len, double &min, double &max);
+double get_table_mean(const double *array, int len);
+void fill_linebrk_table(const Arg [], int, double *, int);
+void fill_wave_table(const Arg [], int, double *, int);
+int wavetable_from_string(const char *, double *, int, const char *);
 
 #endif /* _TABLEUTILS_H_ */

@@ -16,19 +16,19 @@ public:
 
 protected:
 	// RTcmixDisplay reimplementations
-	virtual void doConfigureLabel(const int id, const char *prefix,
-                                 const char *units, const int precision);
-	virtual void doUpdateLabelValue(const int id, const double value);
+	virtual void doConfigureLabel(int id, const char *prefix,
+                                 const char *units, int precision);
+	virtual void doUpdateLabelValue(int id, double value);
 	virtual bool handleEvents();
 
 private:
 	int openSocket();
-	int reportError(const char *err, const bool useErrno);
+	int reportError(const char *err, bool useErrno);
 	int readPacket(DisplaySockPacket *packet);
 	int writePacket(const DisplaySockPacket *packet);
-	void sendLabel(const int id, const char *prefix,
-                  const char *units, const int precision);
-	void sendLabelValue(const int id, const double value);
+	void sendLabel(int id, const char *prefix,
+                  const char *units, int precision);
+	void sendLabelValue(int id, double value);
 	int pollInput(long);
 
 	int _sockport;

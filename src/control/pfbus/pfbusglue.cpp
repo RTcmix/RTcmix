@@ -81,9 +81,9 @@ create_pfield(const Arg args[], const int nargs)
 
 extern "C" {
 #ifdef EMBEDDED
-	Handle create_pfbus_handle(const Arg args[], const int nargs);
+	Handle create_pfbus_handle(const Arg args[], int nargs);
 #else
-	Handle create_handle(const Arg args[], const int nargs);
+	Handle create_handle(const Arg args[], int nargs);
 	int register_dso();
 #endif
 };

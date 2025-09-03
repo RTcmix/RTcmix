@@ -206,7 +206,7 @@ char *strsave(const char *str);
 /* utils.cpp */
 int is_float_list(const MincList *list);
 MincFloat *float_list_to_array(const MincList *list);
-MincList *array_to_float_list(const MincFloat *array, const int len);
+MincList *array_to_float_list(const MincFloat *array, int len);
 const char *MincTypeName(MincDataType type);
 
 int hash(const char *c);

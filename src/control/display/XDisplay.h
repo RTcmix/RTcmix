@@ -15,16 +15,16 @@ public:
 
 protected:
 	// RTcmixDisplay reimplementations
-	virtual void doConfigureLabel(const int id, const char *prefix,
-                                 const char *units, const int precision);
-	virtual void doUpdateLabelValue(const int id, const double value);
+	virtual void doConfigureLabel(int id, const char *prefix,
+                                 const char *units, int precision);
+	virtual void doUpdateLabelValue(int id, double value);
 	virtual bool handleEvents();
 
 private:
-	Window createWindow(const int xpos, const int ypos,
-					const unsigned int width, const unsigned int height);
+	Window createWindow(int xpos, const int ypos,
+					unsigned int width, unsigned int height);
 	void drawWindowContent();
-	void drawLabel(const int id);
+	void drawLabel(int id);
 	void drawLabels();
 
 	int _screen;

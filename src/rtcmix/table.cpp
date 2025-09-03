@@ -1595,15 +1595,15 @@ _dispatch_table(const Arg args[], const int nargs, const int startarg,
 // The remaining functions are public, callable from scripts.
 
 extern "C" {
-	Handle maketable(const Arg args[], const int nargs);
-	double tablelen(const Arg args[], const int nargs);
-	double tablemin(const Arg args[], const int nargs);
-	double tablemax(const Arg args[], const int nargs);
-	double tablemean(const Arg args[], const int nargs);
-	Handle copytable(const Arg args[], const int nargs);
-	double samptable(const Arg args[], const int nargs);
-	double dumptable(const Arg args[], const int nargs);
-	double plottable(const Arg args[], const int nargs);
+	Handle maketable(const Arg args[], int nargs);
+	double tablelen(const Arg args[], int nargs);
+	double tablemin(const Arg args[], int nargs);
+	double tablemax(const Arg args[], int nargs);
+	double tablemean(const Arg args[], int nargs);
+	Handle copytable(const Arg args[], int nargs);
+	double samptable(const Arg args[], int nargs);
+	double dumptable(const Arg args[], int nargs);
+	double plottable(const Arg args[], int nargs);
 };
 
 

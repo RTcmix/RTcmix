@@ -13,8 +13,8 @@
 #include <string.h>
 
 extern "C" {
-    Handle lpcgetpitches(const Arg args[], const int nargs);
-    Handle lpcgetamps(const Arg args[], const int nargs);
+    Handle lpcgetpitches(const Arg args[], int nargs);
+    Handle lpcgetamps(const Arg args[], int nargs);
 }
 
 Handle getlpcframedata(const char *filename, const char *functionname, int npolesGuess, int frameField, int firstFrame, int lastFrame, float thresh)

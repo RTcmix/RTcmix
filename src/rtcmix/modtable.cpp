@@ -188,7 +188,7 @@ _shift_table(PField *intable, const Arg args[], const int nargs)
 // The remaining functions are public, callable from scripts.
 
 extern "C" {
-	Handle modtable(const Arg args[], const int nargs);
+	Handle modtable(const Arg args[], int nargs);
 }
 
 

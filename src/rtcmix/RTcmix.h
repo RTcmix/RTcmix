@@ -89,7 +89,7 @@ public:
 	static bool rtsetparams_was_called() { return rtsetparams_called; }
 	
 	static int registerFunction(const char *funcName, const char *dsoPath);
-	static void printargs(const char *funcname, const Arg arglist[], const int nargs);
+	static void printargs(const char *funcname, const Arg arglist[], int nargs);
 	static int dispatch(const char *func_label, const Arg arglist[],
 						const int nargs, Arg *retval);
 	static void addfunc(const char *func_label,

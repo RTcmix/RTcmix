@@ -28,18 +28,18 @@ protected:
 		return 1.0 - (_yraw * _yfactor);
 	}
 
-	virtual void doConfigureXLabel(const int id, const char *prefix,
-                                 const char *units, const int precision);
-	virtual void doConfigureYLabel(const int id, const char *prefix,
-                                 const char *units, const int precision);
-	virtual void doUpdateXLabelValue(const int id, const double value);
-	virtual void doUpdateYLabelValue(const int id, const double value);
+	virtual void doConfigureXLabel(int id, const char *prefix,
+                                 const char *units, int precision);
+	virtual void doConfigureYLabel(int id, const char *prefix,
+                                 const char *units, int precision);
+	virtual void doUpdateXLabelValue(int id, double value);
+	virtual void doUpdateYLabelValue(int id, double value);
 
 	virtual bool handleEvents();
 
 private:
-	Window createWindow(const int xpos, const int ypos,
-					const unsigned int width, const unsigned int height);
+	Window createWindow(int xpos, const int ypos,
+					unsigned int width, unsigned int height);
 	void setFactors();
 	void drawWindowContent();
 	void drawXLabels();

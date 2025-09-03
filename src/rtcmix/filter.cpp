@@ -172,7 +172,7 @@ _smooth_filter(PField *innerpf, const Arg args[], const int nargs)
 // The remaining functions are public, callable from scripts.
 
 extern "C" {
-	Handle makefilter(const Arg args[], const int nargs);
+	Handle makefilter(const Arg args[], int nargs);
 }
 
 

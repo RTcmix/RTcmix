@@ -28,7 +28,7 @@ public:
 	inline int getlength(void) const { return _length; }
 
 	// <phase> should be in [-pi, pi]
-	void setPhaseRadians(const float phase);	// JG added
+	void setPhaseRadians(float phase);	// JG added
 
 private:
 	double _si, _phase, _lendivSR;

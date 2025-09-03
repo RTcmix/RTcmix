@@ -76,13 +76,13 @@ double m_dur(double *p, int n_args)
 // Functions for returning info about sound files to the script.  -JGG
 
 extern "C" {
-	double filedur(const Arg args[], const int nargs);
-	double filechans(const Arg args[], const int nargs);
-	double filesr(const Arg args[], const int nargs);
-	double filepeak(const Arg args[], const int nargs);
-	double filerms(const Arg args[], const int nargs);
-	double filedc(const Arg args[], const int nargs);
-    Handle filebreakpoints(const Arg args[], const int nargs);
+	double filedur(const Arg args[], int nargs);
+	double filechans(const Arg args[], int nargs);
+	double filesr(const Arg args[], int nargs);
+	double filepeak(const Arg args[], int nargs);
+	double filerms(const Arg args[], int nargs);
+	double filedc(const Arg args[], int nargs);
+    Handle filebreakpoints(const Arg args[], int nargs);
 };
 
 double filedur(const Arg args[], const int nargs)
@@ -614,10 +614,10 @@ m_info(double *p, int n_args)
 // BGG
 extern "C" {
 // used to check if a pfbus is connected and to link pfbusses w/ Instruments
-	double bus_exists(const Arg args[], const int nargs);
-	double bus_link(const Arg args[], const int nargs);
+	double bus_exists(const Arg args[], int nargs);
+	double bus_link(const Arg args[], int nargs);
 // used to get values from makeconnection("inlet", ...) into an executing score
-	double getPFval(const Arg args[], const int nargs);
+	double getPFval(const Arg args[], int nargs);
 }
 
 double bus_exists(const Arg args[], const int nargs)

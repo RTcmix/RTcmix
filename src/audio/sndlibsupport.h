@@ -100,7 +100,7 @@ int sndlib_put_header_comment(int, float [], long [], char *);
 
 /* helper functions */
 int sndlib_current_header_comment_alloc_good(char *);
-int sfcomment_peakstats_current(const SFComment *, const int);
+int sfcomment_peakstats_current(const SFComment *, int);
 int sndlib_findpeak(int, int, int, int, int, int, long, long,
                     float [], long [], double [], double [], double []);
 

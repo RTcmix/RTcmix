@@ -20,10 +20,10 @@
 extern int resetval;		// declared in src/rtcmix/minc_functions.c
 
 extern "C" {
-	Handle makemonitor(const Arg args[], const int nargs);
+	Handle makemonitor(const Arg args[], int nargs);
 
 	// defined in makeconnection.cpp, called below
-	Handle makeconnection(const Arg args[], const int nargs);
+	Handle makeconnection(const Arg args[], int nargs);
 }
 
 

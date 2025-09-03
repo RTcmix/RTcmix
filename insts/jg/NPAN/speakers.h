@@ -4,7 +4,7 @@
 
 class Speaker {
 public:
-   Speaker(const int channel, const double angle, const double distance);
+   Speaker(int channel, double angle, double distance);
    ~Speaker();
 
    int channel() const { return _channel; }

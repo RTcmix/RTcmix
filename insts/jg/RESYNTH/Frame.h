@@ -46,7 +46,7 @@ inline int _compareFreq(const void *a, const void *b)
 
 class Frame {
 public:
-	Frame(const int maxNumPartials);
+	Frame(int maxNumPartials);
 	~Frame(void);
 	void time(const double val) { _time = val; }
 	double time(void) const { return _time; }
@@ -59,7 +59,7 @@ public:
 	PartialNode **partials(void) { return _nodes; }
 
 	// Return the partial node with matching ID, or NULL.
-	PartialNode *partialFromID(const int id);
+	PartialNode *partialFromID(int id);
 
 	// Sort the partial nodes in this frame in ascending order by partial
 	// frequency.

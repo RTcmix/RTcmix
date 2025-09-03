@@ -74,14 +74,14 @@ public:
    inline float lastR() const { return _lastR; }
 
    // Block I/O.  Pass a buffer sized to <numFrames> * number of output chans.
-   void processBlock(float *buffer, const int numFrames, const float amp);
+   void processBlock(float *buffer, int umFrames, float amp);
 
 private:
    const int firstFreeVoice();
    const double getPitch();
    void playGrains();
-   void playGrains(float buffer[], const int numFrames, const float amp);
-   void maybeStartGrain(const int bufoutstart = 0);
+   void playGrains(float buffer[], int umFrames, float amp);
+   void maybeStartGrain(int bufoutstart = 0);
 
    // set in response to user input
    double _srate;

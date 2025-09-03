@@ -268,7 +268,7 @@ create_pfield(const Arg args[], const int nargs)
 // system.
 
 extern "C" {
-	Handle create_handle(const Arg args[], const int nargs);
+	Handle create_handle(const Arg args[], int nargs);
     void * create_midi_output(const char *portname);
 	int register_dso();
 };

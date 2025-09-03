@@ -421,7 +421,7 @@ public:
 protected:
 	virtual ~QuantizePField();
 private:
-	double quantizeValue(const double val, const double quantum) const;
+	double quantizeValue(double val, double quantum) const;
 	PField *_quantumPField;
 };
 

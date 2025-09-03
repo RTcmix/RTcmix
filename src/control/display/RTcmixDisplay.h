@@ -22,19 +22,18 @@ public:
 	// during run.  If there is no more label space, return -1.  If caller
 	// doesn't want a units string, pass NULL for <units>.  The <precision>
 	// argument gives the number of digits after the decimal point to display.
-	int configureLabel(const char *prefix, const char *units,
-                                                   const int precision);
+	int configureLabel(const char *prefix, const char *units, int precision);
 
 	// Update the value used in the label.
-	void updateLabelValue(const int id, const double value);
+	void updateLabelValue(int id, double value);
 
 protected:
 	virtual ~RTcmixDisplay();
 	// Show the display window on the screen.
 	virtual int show() = 0;
-	virtual void doConfigureLabel(const int id, const char *prefix,
-                                 const char *units, const int precision) = 0;
-	virtual void doUpdateLabelValue(const int id, const double value) = 0;
+	virtual void doConfigureLabel(int id, const char *prefix,
+                                 const char *units, int precision) = 0;
+	virtual void doUpdateLabelValue(int id, double value) = 0;
 	virtual bool handleEvents() = 0;
 
 	int _labelCount;

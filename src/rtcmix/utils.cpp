@@ -11,7 +11,7 @@
 #endif
 
 extern "C" {
-    Handle m_bits(const Arg args[], const int nargs);
+    Handle m_bits(const Arg args[], int nargs);
 }
 
 Handle m_bits(const Arg args[], const int nargs) {

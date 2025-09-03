@@ -21,8 +21,8 @@ extern int resetval;		// declared in src/rtcmix/minc_functions.c
 // The remaining functions are public, callable from scripts.
 
 extern "C" {
-	Handle makeLFO(const Arg args[], const int nargs);
-	Handle makerandom(const Arg args[], const int nargs);
+	Handle makeLFO(const Arg args[], int nargs);
+	Handle makerandom(const Arg args[], int nargs);
 }
 
 typedef enum {
