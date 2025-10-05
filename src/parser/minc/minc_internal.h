@@ -81,7 +81,7 @@ public:
 	RTException(const char *msg) {
         concat_error_message(_mesg, MAX_MESSAGE_SIZE, msg);
     }
-    RTException(const RTException &rhs) { strcpy(_mesg, rhs.mesg()); }
+    RTException(const RTException &rhs) { strncpy(_mesg, rhs.mesg(), MAX_MESSAGE_SIZE); }
     const char *what() const throw() { return _mesg; }
 	const char *mesg() const { return _mesg; }
 private:
@@ -94,7 +94,7 @@ public:
 	RTFatalException(const char *msg) : RTException(msg) {}
 };
 
-class MemoryException : public std::bad_alloc, public RTFatalException
+class MemoryException : public RTFatalException
 {
 public:
     MemoryException(const char *msg) : RTFatalException(msg) {}

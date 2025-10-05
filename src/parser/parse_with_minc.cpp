@@ -38,8 +38,8 @@ run_parser(const char *caller)
 //        yydebug = 1;
         status = yyparse();
     }
-    catch (std::bad_alloc &ba) {
-        rterror(caller, "Caught memory exception: %s", ba.what());
+    catch (MemoryException &me) {
+        rterror(caller, "Caught memory exception: %s", me.what());
         status = MEMORY_ERROR;
     }
     catch (const RTException &rtex) {
