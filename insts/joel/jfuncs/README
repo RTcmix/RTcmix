@@ -18,9 +18,9 @@ COMMANDS:
 sin(value)		trigonomic sine of the value.
 cos(value)		trigonomic cosine of the value.
 constrain(test,low,high)			clips the value if it exceeds the range [low-high]
-map(test,low0,high0,low1,high1) 	scales a value from an old range [low0-high0]
+remap(test,low0,high0,low1,high1) 	scales a value from an old range [low0-high0]
 									to a new range [low1-high1]
-	or: map(test,low,high)			scales a value in the range [0-1] to the range [low-high]
+	or: remap(test,low,high)		scales a value in the range [0-1] to the range [low-high]
 lowrand()		random linear distribution in the range [0-1] weighted toward low values.
 highrand()		random linear distribution in the range [0-1] weighted toward high values.
 trirand()		random triangular distribution in the range [0-1] weighted toward center values.

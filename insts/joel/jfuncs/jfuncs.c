@@ -48,7 +48,7 @@ double m_constrain(double p[], int n_args)
 	return (bottom>highval) ? highval : bottom;
 }
 
-double m_map(double p[], int n_args)
+double m_remap(double p[], int n_args)
 {
 	double result;
 	if (n_args>3)
@@ -138,7 +138,7 @@ profile()
    UG_INTRO("gaussrand", m_gaussrand);
    UG_INTRO("prob", m_prob);
    UG_INTRO("constrain", m_constrain);
-   UG_INTRO("map", m_map);
+   UG_INTRO("remap", m_remap);
    return 0;
 }
 #endif
