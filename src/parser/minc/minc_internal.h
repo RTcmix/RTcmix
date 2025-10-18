@@ -28,7 +28,7 @@
 
 /* important Minc tuning parameters */
 #define YYLMAX   2048      /* maximum yacc line length */
-#define MAXSTACK 15        /* depth of function call or list recursion */
+#define MAXSTACK 32        /* depth of function call or list recursion */
 #define HASHSIZE 107       /* number of buckets in string table */
 #define MAX_MESSAGE_SIZE 1024
 
