@@ -110,7 +110,7 @@ struct AppleAudioDevice::Impl {
 		int						streamCount;		// How many streams open
 		int						streamChannel;		// 1st chan of first stream
 		SInt32					*channelMap;		// Channel map
-		int						channelMapCount;	// number of channels in the map
+        UInt32					channelMapCount;	// number of channels in the map
 		AudioBufferList			*streamDesc;
 		unsigned int 			deviceBufFrames;	// hw buf length
 		float					*audioBuffer;		// circ. buffer
@@ -656,6 +656,8 @@ void AppleAudioDevice::Impl::propertyListenerProc(void *inRefCon,
 		case kAudioUnitProperty_LastRenderError:
 			DPRINT(">>>> AppleAudioDevice: got render error notification: %d\n", (int)theProp.sint);
 			break;
+		default:
+			break;	// ignore
 	}
 	if (needToStop) {
 		fprintf(stderr, "Device format changed - stopping\n");
@@ -689,7 +691,7 @@ void AppleAudioDevice::Impl::stopRenderThread()
     DPRINT("AppleAudioDevice::Impl::stopRenderThread: posting to semaphore for thread\n");
     renderSema->post();  // wake up, it's time to die
     DPRINT("AppleAudioDevice::Impl::stopRenderThread: waiting for thread to finish\n");
-    if (pthread_join(renderThread, NULL) == -1) {
+    if (pthread_join(renderThread, NULL) != 0) {
         DERROR("AppleAudioDevice::Impl::stopRenderThread: terminating thread!\n");
         pthread_cancel(renderThread);
         renderThread = 0;
@@ -966,16 +968,16 @@ int AppleAudioDevice::doPause(bool pause)
 	return error("AppleAudioDevice: pause not yet implemented");
 }
 
-int AppleAudioDevice::doStop()
-{
+int AppleAudioDevice::doStop() {
 	ENTER(AppleAudioDevice::doStop());
 #if !RENDER_IN_CALLBACK
-    _impl->stopRenderThread();
+	_impl->stopRenderThread();
 #endif
 	OSStatus err = AudioOutputUnitStop(_impl->audioUnit);
 	int status = (err == noErr) ? 0 : -1;
-	if (status == -1)
+	if (status == -1) {
 		appleError("AppleAudioDevice::doStop: failed to stop audio unit", status);
+	}
     else {
         _impl->port[_impl->playing].startingHostTime = 0;
     }
@@ -1028,42 +1030,35 @@ int AppleAudioDevice::setAudioHardwareRate(double *sampleRate)
 		// Save original for restore when closing (good OSX software practice)
 		_impl->savedDeviceSampleRate = _impl->deviceFormat.mSampleRate;
 
-		// Test whether or not audio format property is writable.
-		Boolean writeable = FALSE;
-		size = sizeof(writeable);
-		status = AudioDeviceGetPropertyInfo(devID,
-										 0,
-										 isInput,
-										 kAudioDevicePropertyStreamFormat,
-										 &size,
-										 &writeable);
-		if (status != kAudioHardwareNoError) {
-			return appleError("Can't get device format writeable property", status);
-		}
+		// Test whether or not audio format property is writable using modern AudioObject API.
+        AudioObjectPropertyAddress addr = { kAudioDevicePropertyStreamFormat,
+                                            isInput ? kAudioDevicePropertyScopeInput : kAudioDevicePropertyScopeOutput,
+                                            kAudioObjectPropertyElementMaster };
+        Boolean writeable = FALSE;
+        if (!AudioObjectHasProperty(devID, &addr)) {
+            return appleError("Device does not have stream format property", kAudioHardwareUnknownPropertyError);
+        }
+        status = AudioObjectIsPropertySettable(devID, &addr, &writeable);
+        if (status != kAudioHardwareNoError) {
+            return appleError("Can't get device format writeable property", status);
+        }
+		
 		if (writeable) {
 			// Try to set new sample rate on hardware
 			// Default all values to device's defaults then set our sample rate.
 			AudioStreamBasicDescription requestedFormat;
 			size = sizeof(requestedFormat);
-			status = AudioDeviceGetProperty(devID,
-											0,
-											isInput,
-											kAudioDevicePropertyStreamFormat,
-											&size,
-											&requestedFormat);
+            AudioObjectPropertyAddress fmtAddr = { kAudioDevicePropertyStreamFormat,
+                                                   isInput ? kAudioDevicePropertyScopeInput : kAudioDevicePropertyScopeOutput,
+                                                   kAudioObjectPropertyElementMaster };
+			status = AudioObjectGetPropertyData(devID, &fmtAddr, 0, NULL, &size, &requestedFormat);
 			if (status != kAudioHardwareNoError) {
 				return appleError("Can't get device format", status);
 			}
 			DPRINT("Attempting to change HW sample rate from %f to %f\n", _impl->deviceFormat.mSampleRate, newSampleRate);
 			requestedFormat.mSampleRate = newSampleRate;
 			size = sizeof(requestedFormat);
-			OSStatus err = AudioDeviceSetProperty(devID,
-												  NULL,
-												  0,
-												  isInput,
-												  kAudioDevicePropertyStreamFormat,
-												  size,
-												  (void *)&requestedFormat);
+			OSStatus err = AudioObjectSetPropertyData(devID, &fmtAddr, 0, NULL, size, &requestedFormat);
 			switch (err) {
 				case noErr:
 				{
@@ -1091,12 +1086,7 @@ int AppleAudioDevice::setAudioHardwareRate(double *sampleRate)
 			AudioStreamBasicDescription actualFormat;
             size = sizeof(actualFormat);
 			DPRINT("Retrieving hardware format\n");
-            err = AudioDeviceGetProperty(devID,
-                                         0,
-										 isInput,
-                                         kAudioDevicePropertyStreamFormat,
-                                         &size,
-                                         &actualFormat);
+            err = AudioObjectGetPropertyData(devID, &fmtAddr, 0, NULL, &size, &actualFormat);
             if (err != kAudioHardwareNoError) {
                 return appleError("Can't retrieve audio hardware format", status);
             }
@@ -1495,22 +1485,23 @@ errToString(OSStatus err)
 static OSStatus
 getDeviceList(AudioDeviceID **devList, int *devCount)
 {
-	UInt32 size;
-	
-	OSStatus err = AudioHardwareGetPropertyInfo(kAudioHardwarePropertyDevices, &size, NULL);
-	if (err != kAudioHardwareNoError) {
-		DERROR("Can't get hardware device list property info.\n");
-		return err;
-	}
-	*devCount = size / sizeof(AudioDeviceID);
-	*devList = new AudioDeviceID[*devCount];
-	err = AudioHardwareGetProperty(kAudioHardwarePropertyDevices, &size, *devList);
-	if (err != kAudioHardwareNoError) {
-		DERROR("Can't get hardware device list.\n");
-		return err;
-	}
-	
-	return 0;
+	AudioObjectPropertyAddress addr = { kAudioHardwarePropertyDevices,
+                                        kAudioObjectPropertyScopeGlobal,
+                                        kAudioObjectPropertyElementMaster };
+    UInt32 size = 0;
+    OSStatus err = AudioObjectGetPropertyDataSize(kAudioObjectSystemObject, &addr, 0, NULL, &size);
+    if (err != kAudioHardwareNoError) {
+        DERROR("Can't get hardware device list property info.\n");
+        return err;
+    }
+    *devCount = size / sizeof(AudioDeviceID);
+    *devList = new AudioDeviceID[*devCount];
+    err = AudioObjectGetPropertyData(kAudioObjectSystemObject, &addr, 0, NULL, &size, *devList);
+    if (err != kAudioHardwareNoError) {
+        DERROR("Can't get hardware device list.\n");
+        return err;
+    }
+    return 0;
 }
 
 static AudioDeviceID
@@ -1519,12 +1510,10 @@ findDeviceID(const char *devName, AudioDeviceID *devList, int devCount, Boolean 
 	AudioDeviceID devID = 0;
     UInt32 size = sizeof(devID);
 	if (!strcasecmp(devName, "default")) {
-		OSStatus err = AudioHardwareGetProperty(
-												isInput ?
-												kAudioHardwarePropertyDefaultInputDevice :
-												kAudioHardwarePropertyDefaultOutputDevice,
-												&size,
-												(void *) &devID);
+		AudioObjectPropertyAddress defAddr = { isInput ? kAudioHardwarePropertyDefaultInputDevice : kAudioHardwarePropertyDefaultOutputDevice,
+											   kAudioObjectPropertyScopeGlobal,
+											   kAudioObjectPropertyElementMaster };
+		OSStatus err = AudioObjectGetPropertyData(kAudioObjectSystemObject, &defAddr, 0, NULL, &size, &devID);
 		if (err != kAudioHardwareNoError || devID == kAudioDeviceUnknown) {
 			DERROR("Cannot find default OSX device\n");
 			return 0;
@@ -1548,36 +1537,31 @@ findDeviceID(const char *devName, AudioDeviceID *devList, int devCount, Boolean 
 		 &dataSize,
 		 &theName);
 		 */
-		OSStatus err = AudioDeviceGetPropertyInfo(devList[dev],
-												  0,
-												  isInput,
-												  kAudioDevicePropertyDeviceName,
-												  &size, NULL);
-		if (err != kAudioHardwareNoError) {
-			DERROR("findDeviceID: Can't get device name property info for device %u\n",
-					devList[dev]);
-			continue;
-		}
-		
-		char *name = new char[64 + size + 1];	// XXX Dont trust property size anymore!
-		err = AudioDeviceGetProperty(devList[dev],
-									 0,
-									 isInput,
-									 kAudioDevicePropertyDeviceName,
-									 &size, name);
-		if (err != kAudioHardwareNoError) {
-			DERROR("findDeviceID: Can't get device name property for device %u.\n",
-					(unsigned)devList[dev]);
-			delete [] name;
-			continue;
-		}
-		DPRINT("Checking device %d -- name: \"%s\"\n", dev, name);
+        AudioObjectPropertyAddress nameAddr = { kAudioObjectPropertyName,
+                                                isInput ? kAudioDevicePropertyScopeInput : kAudioDevicePropertyScopeOutput,
+                                                kAudioObjectPropertyElementMaster };
+        CFStringRef theName = NULL;
+        UInt32 dataSize = sizeof(CFStringRef);
+        OSStatus err = AudioObjectGetPropertyData(devList[dev], &nameAddr, 0, NULL, &dataSize, &theName);
+        if (err != kAudioHardwareNoError || theName == NULL) {
+            DERROR("findDeviceID: Can't get device name property for device %u.\n",
+                    (unsigned)devList[dev]);
+            continue;
+        }
+        char nameBuf[512];
+        Boolean ok = CFStringGetCString(theName, nameBuf, sizeof(nameBuf), kCFStringEncodingUTF8);
+        CFRelease(theName);
+        if (!ok) {
+            DERROR("findDeviceID: Can't convert device name for device %u.\n",
+                    (unsigned)devList[dev]);
+            continue;
+        }
+		DPRINT("Checking device %d -- name: \"%s\"\n", dev, nameBuf);
 		// For now, we must match the case as well because strcasestr() does not exist.
-		if (strstr(name, devName) != NULL) {
+		if (strstr(nameBuf, devName) != NULL) {
 			DPRINT("MATCH FOUND\n");
 			devID = devList[dev];
 		}
-		delete [] name;
 	}
 	return devID;
 }
@@ -1670,4 +1654,6 @@ void AppleAudioDevice::parseDeviceDescription(const char *inDesc)
 	
 }
 #endif
+
+
 

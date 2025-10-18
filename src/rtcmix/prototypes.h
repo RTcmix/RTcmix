@@ -1,7 +1,7 @@
 /* This file contains prototypes for functions used by the RTcmix core,
    not by instruments or utility programs.   -JGG
 */
-#ifndef _PROTOTYPES_H_ 
+#ifndef _PROTOTYPES_H_
 #define PROTOTYPES_H_ 1
 
 #include "buffers.h"    /* for BufPtr */
@@ -21,7 +21,6 @@ double dispatch(const char *str, double *pp, int n_args, void **inst);
    extern "C" braces in their files.
 */
 extern "C" {
-
 #endif /* __cplusplus */
 
 /* buffers.c:  prototypes in buffers.h */
@@ -37,29 +36,36 @@ void *parseit(void *);
 
 /* rtgetin.C */
 int read_samps(int fd, int data_format, int file_chans, BufPtr dest,
-                                    int dest_chans, int dest_frames);
+               int dest_chans, int dest_frames);
 
 /* rtinput.c */
 int open_sound_file(const char *funcname,
-					const char *sfname,
-					int *header_type,
+                    const char *sfname,
+                    int *header_type,
                     int *data_format, int *data_location,
-					double *srate,
+                    double *srate,
                     int *nchans,
-					long *nsamps);
+                    long *nsamps);
 
 /* sound_sample_buf_read.cpp */
 float *sound_sample_buf_read(char *fname, double insk, double dur, int *nframes, int *nchans);
 
 /* audio_devices.cpp */
 void stop_audio_devices();
+
 void destroy_audio_devices();
 
 /* rtcmix_wrappers.c */
 
 int rtsetparams_was_called();
+
 float SR();
+
 void set_SR(float);
+
+double m_beat_time(double p[], int);
+
+double m_time_beat(double p[], int);
 
 #ifdef __cplusplus
 } /* extern "C" */

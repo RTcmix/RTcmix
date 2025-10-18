@@ -153,10 +153,10 @@ _do_print(const MincValue args[], int nargs)
             RTPrintfCat("\"%s\"%s", (MincString)args[i], delimiter);
             break;
          case MincHandleType:
-            RTPrintfCat("Handle:%p%s", (MincHandle)args[i], delimiter);
+            RTPrintfCat("Hndl:%p%s", (MincHandle)args[i], delimiter);
             break;
           case MincFunctionType:
-              RTPrintfCat("Function:%p%s", (MincFunction *)args[i], delimiter);
+              RTPrintfCat("Func:%p%s", (MincFunction *)args[i], delimiter);
               break;
         case MincListType:
 		  {
@@ -195,7 +195,7 @@ _do_print(const MincValue args[], int nargs)
           {
               MincStruct *theStruct = (MincStruct *)args[i];
               if (theStruct != NULL) {
-                  RTPrintfCat("Struct:{ ");
+                  RTPrintfCat("Strct:{ ");
                   theStruct->print();
                   RTPrintfCat(" }%s", delimiter);
               }

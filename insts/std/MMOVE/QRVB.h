@@ -5,7 +5,7 @@
 #ifndef _QRVB_H_
 #define _QRVB_H_
 
-#include <RVBBASE.h>
+#include "RVBBASE.h"
 
 #define QRVB_CHANS 4
 #define QRVB_DELCOUNT 3
