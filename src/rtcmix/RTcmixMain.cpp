@@ -669,7 +669,7 @@ RTcmixMain::sockit(void *arg)
     int s, ns;
     struct sockaddr_in sss;
     int err;
-    struct sockdata *sinfo;
+    struct sockdata *sinfo = NULL;
     size_t amt;
     char *sptr;
     int val,optlen;
@@ -723,12 +723,12 @@ RTcmixMain::sockit(void *arg)
       for (i=0;i<MAXDISPARGS;i++) {
 		sinfo->data.p[i] = 0;
       }
-	  
+
       // we do this when the -n flag is set, it has to parse rtsetparams()
       // coming over the socket before it can access the values of RTBUFSAMPS,
       // SR, NCHANS, etc.
       if (noParse) {
-		
+
 		// Wait for the ok to go ahead
 		pthread_mutex_lock(&audio_config_lock);
 		if (!audio_config) {
@@ -738,7 +738,7 @@ RTcmixMain::sockit(void *arg)
 #endif
 		}
 		pthread_mutex_unlock(&audio_config_lock);
-		
+
 		while (!audio_configured) {
 		  pthread_mutex_lock(&audio_config_lock);
 		  if (audio_config) {
@@ -792,7 +792,7 @@ RTcmixMain::sockit(void *arg)
 	  }
 
       // Main socket reading loop
-      while(1) {
+      while (1) {
 		sptr = (char *)sinfo;
 		amt = read(ns, (void *)sptr, sizeof(struct sockdata));
         while (amt < sizeof(struct sockdata)) {
@@ -806,6 +806,7 @@ RTcmixMain::sockit(void *arg)
 			RTPrintf("RTcmix termination cmd received.\n");
 			run_status = RT_SHUTDOWN;	// Notify inTraverse()
  			shutdown(s,0);
+			delete sinfo;
 			return NULL;
 		}
 		else if (strcmp(sinfo->name, "RTcmix_panic") == 0) {
@@ -833,7 +834,7 @@ RTcmixMain::sockit(void *arg)
                 strcmp(sinfo->name,"set_option") == 0 ||
                 strcmp(sinfo->name,"bus_config") == 0 ||
                 strcmp(sinfo->name, "load")==0 ) {
-                
+
                 // these two commands use text data
                 // replace the text[i] with p[i] pointers
                 for (i = 0; i < sinfo->n_args; i++)
@@ -852,7 +853,7 @@ RTcmixMain::sockit(void *arg)
               rtcmix_debug(NULL, "sinfo->data.p[%d] = %f", i, sinfo->data.p[i]);
           }
 #endif
-          (void) ::dispatch(sinfo->name, sinfo->data.p, sinfo->n_args, NULL);
+			(void) ::dispatch(sinfo->name, sinfo->data.p, sinfo->n_args, NULL);
 		}
       }
     }
