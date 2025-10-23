@@ -5,7 +5,7 @@ TARGET = Deployment
 OSX_VERSION=`xcrun --show-sdk-version --sdk macosx`
 SDKROOT = macosx${OSX_VERSION}
 MACOSX_DEPLOYMENT_TARGET = ${OSX_VERSION}
-MAX_LDFLAGS = "-Xlinker -U -Xlinker _object_method_imp -Xlinker -U -Xlinker _object_new_imp -undefined dynamic_lookup"
+MAX_LDFLAGS = "-Xlinker -U -Xlinker _object_method_imp -Xlinker -U -Xlinker _object_new_imp -Xlinker -undefined -Xlinker dynamic_lookup"
 LOCAL_FLAGS = -Wno-shorten-64-to-32
 PROJECT = rtcmix~.xcodeproj
 

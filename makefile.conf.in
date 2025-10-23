@@ -189,7 +189,8 @@ ifeq ($(ARCH),MACOSX)
     else
         LIBPREFIX =
     endif
-	RTLIB_LDFLAGS = $(UB_CFLAGS) -Wl,-U,_cpost,-bundle,-undefined dynamic_lookup
+	# Note: These are passed to $(CXX), so linker args are wrapped with -Wl
+	RTLIB_LDFLAGS = $(UB_CFLAGS) -Wl,-U,_cpost,-bundle -Wl,-undefined -Wl,dynamic_lookup
 	RTLIBTYPE = DYNAMIC
 	RTLIB_INSTALL_DIR = $(MAX_LIB_INSTALL_DIR)
     AUDIODRIVER=EMBEDDEDAUDIO
