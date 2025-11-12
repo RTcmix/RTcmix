@@ -58,7 +58,7 @@ embeddedtest: embeddedtest.o
 	$(CXX) $(LDFLAGS) -g -o $@ embeddedtest.o -L${CMIXDIR}/lib -lrtcmix_embedded
 
 osc_send_test.o:	osc_send_test.cpp
-	$(CXX) ${LIBLO_CFLAGS} -c osc_send_test.cpp
+	$(CXX) ${LIBLO_CFLAGS} -g -c osc_send_test.cpp
 
 osc_send: osc_send_test.o
 	$(CXX) -g -o $@ osc_send_test.o ${LIBLO_LIBS}
