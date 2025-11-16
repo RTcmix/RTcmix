@@ -444,6 +444,7 @@ void ALSAAudioDevice::run()
 bool ALSAAudioDevice::recognize(const char *desc)
 {
 	return desc == NULL
+		|| strncmp(desc, "default", 7) == 0
 		|| strncmp(desc, "hw:", 3) == 0
 		|| strncmp(desc, "plug", 4) == 0;
 }
