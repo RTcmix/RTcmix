@@ -23,6 +23,7 @@ protected:
 	// ThreadedAudioDevice reimplementation
 	virtual void run();
 	// ThreadedAudioDevice override
+	virtual int waitForDevice(unsigned int wTime=0);	// wTime in msec.
 	virtual int doStop();
 	// AudioDeviceImpl reimplementation
 	virtual int doOpen(int mode);

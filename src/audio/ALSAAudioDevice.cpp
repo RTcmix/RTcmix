@@ -111,6 +111,29 @@ int ALSAAudioDevice::doPause(bool isPaused)
 	return getstatus(status);
 }
 
+int ALSAAudioDevice::waitForDevice(unsigned int wTime)
+{
+	// Wait wTime msecs for snd_pcm_wait to return, then bail.
+	int ret = 0;
+	if (!stopping()) {
+		// If wTime == 0, wait forever by passing -1 for time.
+		int waitRet = snd_pcm_wait(_handle, wTime == 0 ? -1 : wTime);
+		if (waitRet <= 0) {
+			if (errno != -EINTR) {
+				fprintf(stderr,
+						"ALSAAudioDevice::waitForDevice: snd_pcm_wait %s\n",
+						(waitRet == 0) ? "timed out" : "returned error");
+			}
+			ret = -1;
+		}
+	}
+	else {
+		PRINT1("ALSAAudioDevice::waitForDevice: stopping == true\n");
+		ret = 1;
+	}
+	return ret;
+}
+
 int ALSAAudioDevice::doStop()
 {
 	if (!stopping()) {
