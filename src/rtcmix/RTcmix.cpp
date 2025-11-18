@@ -450,7 +450,7 @@ RTcmix::cmd(const char *name, int n_args, const char* p0, ...)
 	p[0] = STRING_TO_DOUBLE(st[0]);
 	va_start(ap, p0); // start variable list after p0
 	for (i = 1; i < n_args; i++) {
-		strcpy(st[i], va_arg(ap, char*));
+		strncpy(st[i], va_arg(ap, char*), 100);
 		p[i] = STRING_TO_DOUBLE(st[i]);
 	}
 	va_end(ap);
@@ -477,7 +477,13 @@ RTcmix::cmd(const char *name, const PFieldSet &pfSet)
 		arglist[field] = createPFieldHandle(&pfSet[field]);
 	}
 
-	(void) dispatch(name, arglist, nFields, &retArg);
+	try {
+		(void) dispatch(name, arglist, nFields, &retArg);
+	}
+	catch (...) {
+		delete [] arglist;
+		throw;
+	}
 
 	delete [] arglist;
 	

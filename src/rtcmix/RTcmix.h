@@ -60,13 +60,13 @@ public:
 	virtual ~RTcmix();
 
 	
-	Instrument* cmd(const char*, int, double, ...); // for numeric params
-	Instrument* cmd(const char*, int, const char*, ...); // for string params
-	Instrument* cmd(const char*, const PFieldSet &); // for PFieldSet
+	static Instrument* cmd(const char*, int, double, ...); // for numeric params
+	static Instrument* cmd(const char*, int, const char*, ...); // for string params
+	static Instrument* cmd(const char*, const PFieldSet &); // for PFieldSet
 
-	double cmd(const char*); // for commands with no params
-	double cmdval(const char*, int, double, ...); // value return (numeric params)
-	double cmdval(const char*, int, const char*, ...); // value return (string params)
+	static double cmd(const char*); // for commands with no params
+	static double cmdval(const char*, int, double, ...); // value return (numeric params)
+	static double cmdval(const char*, int, const char*, ...); // value return (string params)
 
 	void printOn();
 	void printOff();
@@ -91,7 +91,7 @@ public:
 	static int registerFunction(const char *funcName, const char *dsoPath);
 	static void printargs(const char *funcname, const Arg arglist[], int nargs);
 	static int dispatch(const char *func_label, const Arg arglist[],
-						const int nargs, Arg *retval);
+						int nargs, Arg *retval);
 	static void addfunc(const char *func_label,
 					   double (*func_ptr_legacy)(double*, int),
                        double (*func_ptr_number)(const Arg[], int),
@@ -197,8 +197,8 @@ protected:
 	static void resetHeapAndQueue();
 
 	// These were standalone but are now static methods
-	static int checkInsts(const char *instname, const Arg arglist[], const int nargs, Arg *retval);
-	static int checkfunc(const char *funcname, const Arg arglist[], const int nargs, Arg *retval);
+	static int checkInsts(const char *instname, const Arg arglist[], int nargs, Arg *retval);
+	static int checkfunc(const char *funcname, const Arg arglist[], int nargs, Arg *retval);
 	static int findAndLoadFunction(const char *funcname);
 	static void freefuncs();
 	static FRAMETYPE getElapsed() { return elapsed; }

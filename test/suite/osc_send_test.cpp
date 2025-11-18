@@ -52,7 +52,7 @@ int main(int argc, char *argv[]){
 	std::string content( (std::istreambuf_iterator<char>(*input) ),
                    (std::istreambuf_iterator<char>()    ) );
 
-    std::cout << "sending '" << content << "'" << std::endl;
+    std::cout << "sending '\n" << content << "'" << std::endl;
 
     if (lo_send(t, "/RTcmix/ScoreCommands", "s", content.c_str()) == -1) {
         fprintf(stderr, "OSC error %d: %s\n", lo_address_errno(t),

@@ -19,9 +19,9 @@
 #define DEBUG 0
 
 #if DEBUG
-#define PRINT printf
+#define PRINT(...) printf(__VA_ARGS__)
 #else
-#define PRINT
+#define PRINT(...)
 #endif
 
 // if INBUF_SIZE is 0, PortMidi uses a default value

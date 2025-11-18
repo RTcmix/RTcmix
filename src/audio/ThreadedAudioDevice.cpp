@@ -154,10 +154,11 @@ int ThreadedAudioDevice::waitForDevice(unsigned int wTime) {
 		int selret = ::select(nfds, &_rfdset, &_wfdset,
 							  NULL, wTime == 0 ?  NULL : &tv);
 		if (selret <= 0) {
-			if (errno != EINTR)
+			if (errno != EINTR) {
 				fprintf(stderr,
 						"ThreadedAudioDevice::waitForDevice: select %s\n",
 						(selret == 0) ? "timed out" : "returned error");
+			}
 			ret = -1;
 		}
 		else {

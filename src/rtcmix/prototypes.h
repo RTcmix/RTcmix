@@ -11,8 +11,6 @@
 
 // These functions are declared as C++ functions.
 
-class AudioDevice;
-
 /* dispatch.cpp */
 
 double dispatch(const char *str, double *pp, int n_args, void **inst);
@@ -23,22 +21,17 @@ double dispatch(const char *str, double *pp, int n_args, void **inst);
 extern "C" {
 #endif /* __cplusplus */
 
-/* buffers.c:  prototypes in buffers.h */
-
-/* checkfuncs.c */
+/* checkfuncs.cpp */
 double checkfuncs(const char *fname, double *pp, int n_args);
 
 /* this is just a wrapper for C files to call */
 double parse_dispatch(const char *str, double *pp, int n_args, void **inst);
 
-/* parseit.C */
-void *parseit(void *);
-
-/* rtgetin.C */
+/* rtgetin.cpp */
 int read_samps(int fd, int data_format, int file_chans, BufPtr dest,
                int dest_chans, int dest_frames);
 
-/* rtinput.c */
+/* rtinput.cpp */
 int open_sound_file(const char *funcname,
                     const char *sfname,
                     int *header_type,
@@ -49,11 +42,6 @@ int open_sound_file(const char *funcname,
 
 /* sound_sample_buf_read.cpp */
 float *sound_sample_buf_read(char *fname, double insk, double dur, int *nframes, int *nchans);
-
-/* audio_devices.cpp */
-void stop_audio_devices();
-
-void destroy_audio_devices();
 
 /* rtcmix_wrappers.c */
 

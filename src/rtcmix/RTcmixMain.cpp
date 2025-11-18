@@ -128,7 +128,7 @@ int				RTcmixMain::parseOnly       = 0;
 int				RTcmixMain::socknew			= 0;
 
 #ifdef OSC
-lo_server_thread*       RTcmixMain::osc_thread_handle = NULL;
+lo_server_thread       RTcmixMain::osc_thread_handle = NULL;
 #endif
 
 #ifdef NETAUDIO
@@ -453,6 +453,7 @@ Failed:
 #endif
     return retcode;
 }
+
 #endif
 
 int     RTcmixMain::runUsingSockit()
@@ -594,7 +595,7 @@ RTcmixMain::interrupt_handler(int signo)
 #ifdef OSC
        if (osc_thread_handle != NULL) {
            fprintf(stderr, "shutting down OSC server...\n");
-           lo_server_thread_stop(*osc_thread_handle);
+           lo_server_thread_stop(osc_thread_handle);
            free(osc_thread_handle);
        }
 #endif
