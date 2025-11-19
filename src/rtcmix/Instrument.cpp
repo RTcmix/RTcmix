@@ -417,6 +417,8 @@ void Instrument::addout(BusType bus_type, int bus)
 
 	   endframe = output_offset + framesToRun();
 
+		assert(endframe <= RTBUFSAMPS);
+
 		// Add outbuf to appropriate bus at offset
 #if defined(DEBUG) || DEBUG_BUFFER
 		RTPrintf("   %s::addout(this=%p %d, %d): doing normal addToBus with endframe %d\n",

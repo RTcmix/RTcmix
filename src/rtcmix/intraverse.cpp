@@ -57,7 +57,6 @@ int RTcmix::runMainLoop()
 
 	// Initialize everything ... cause it's good practice
 	bufStartSamp = 0;  // current end sample for buffer
-	bufEndSamp = bufsamps();
 	startupBufCount = 0;
 	audioDone = false;
 	
@@ -97,6 +96,7 @@ int RTcmix::runMainLoop()
 #endif
        usleep(1000*100);   // no reason to run loop faster that 1 per 100 ms.
 	}
+	bufEndSamp = bufsamps();	// NOTE: This has to be set *after* audio is configured
 
 #ifndef EMBEDDED
 	if (audio_configured && interactive()) {
@@ -463,6 +463,12 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 #endif
 				chunksamps = frameCount;
 			}
+			else if (chunksamps + offset > frameCount) {
+#ifndef EMBEDDED
+				printf("ERROR: chunksamps+offset is %ld - limiting chunksamps to %ld\n", (long)chunksamps+offset, (long)frameCount-offset);
+#endif
+				chunksamps = frameCount - offset;
+			}
 #ifdef DBUG
             printf("Begin playback iteration==========\n");
             printf("bufEndSamp:  %ld\n", (long)bufEndSamp);
@@ -587,6 +593,12 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
             printf("ERROR: chunksamps is %ld - limiting to %ld\n", (long)chunksamps, (long)frameCount);
 #endif
             chunksamps = frameCount;
+        }
+        else if (chunksamps + offset > frameCount) {
+#ifndef EMBEDDED
+        	printf("ERROR: chunksamps+offset is %ld - limiting chunksamps to %ld\n", (long)chunksamps+offset, (long)frameCount-offset);
+#endif
+        	chunksamps = frameCount - offset;
         }
 #ifdef DBUG
         printf("Begin playback iteration==========\n");

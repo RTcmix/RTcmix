@@ -120,9 +120,14 @@ int ALSAAudioDevice::waitForDevice(unsigned int wTime)
 		int waitRet = snd_pcm_wait(_handle, wTime == 0 ? -1 : wTime);
 		if (waitRet <= 0) {
 			if (errno != -EINTR) {
-				fprintf(stderr,
-						"ALSAAudioDevice::waitForDevice: snd_pcm_wait %s\n",
-						(waitRet == 0) ? "timed out" : "returned error");
+				switch (waitRet) {
+				case 0:
+					fprintf(stderr, "ALSAAudioDevice::waitForDevice: snd_pcm_wait timed out\n");
+					break;
+				default:
+					fprintf(stderr, "ALSAAudioDevice::waitForDevice: snd_pcm_wait returned error %d\n", errno);
+					break;
+				}
 			}
 			ret = -1;
 		}
