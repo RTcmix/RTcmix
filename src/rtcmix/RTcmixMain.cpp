@@ -273,8 +273,8 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                break;
             case 'o':
 #ifdef OSC
-         		if (++i < argc) {
-         			set_osc_port(argv[i]);
+         		if (i+1 < argc) {
+         			set_osc_port(argv[++i]);
          		}
                 setInteractive(true);
                 setUseOSC(true);
@@ -298,7 +298,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                RTOption::print(0);
                break;
             case 'v':               /* verbosity */
-               if (++i >= argc) {
+               if (++i >= argc || argv[i][0] == '-') {
                   fprintf(stderr, "You didn't give a print level (0-5).\n");
                   exit(1);
                }
@@ -311,7 +311,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                break;
 #ifdef LINUX
             case 'p':
-               if (++i >= argc) {
+               if (++i >= argc || argv[i][0] == '-') {
                   fprintf(stderr, "You didn't give a priority number.\n");
                   exit(1);
                }
@@ -319,7 +319,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                break;
 #endif
             case 'D':
-               if (++i >= argc) {
+               if (++i >= argc || argv[i][0] == '-') {
                   fprintf(stderr, "You didn't give an audio device name.\n");
                   exit(1);
                }
@@ -327,7 +327,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                break;
 #ifdef NETAUDIO
             case 'r':               /* set up for network playing */
-              	if (++i >= argc) {
+              	if (++i >= argc || argv[i][0] == '-') {
                   fprintf(stderr, "You didn't give a remote host ip.\n");
                   exit(1);
               	}
@@ -339,7 +339,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                break;
             case 'k':               /* socket number for network playing */
                                     /* defaults to 9999 */
-               if (++i >= argc) {
+               if (++i >= argc || argv[i][0] == '-') {
                   fprintf(stderr, "You didn't give a socket number.\n");
                   exit(1);
                }
@@ -349,7 +349,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                break;
 #endif
             case 'S':               /* set up a socket offset */
-               if (++i >= argc) {
+               if (++i >= argc || argv[i][0] == '-') {
                   fprintf(stderr, "You didn't give a socket offset.\n");
                   exit(1);
                }
@@ -357,7 +357,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                printf("%s listening on socket %d\n", xargv[0], MYPORT + socknew);
                break;
             case 's':               /* start time (offset into playback) */
-                 if (++i >= argc) {
+                 if (++i >= argc || argv[i][0] == '-') {
                     fprintf(stderr, "You didn't give a skip time.\n");
                     exit(1);
                  }
@@ -369,7 +369,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                exit(1);
                break;
             case 'f':     /* use file name arg instead of stdin as score */
-               if (++i >= argc) {
+               if (++i >= argc || argv[i][0] == '-') {
                   fprintf(stderr, "You didn't give a file name.\n");
                   exit(1);
                }
@@ -616,7 +616,7 @@ RTcmixMain::interrupt_handler(int signo)
            fprintf(stderr, "flushing audio...\n");
        }
        // Notify rendering loop no matter what.
-       run_status = RT_SHUTDOWN;
+       setRunStatus(RT_SHUTDOWN);
 
        if (!audioLoopStarted) {
            fprintf(stderr, "exiting\n");
@@ -634,7 +634,7 @@ RTcmixMain::signal_handler(int signo)
 		signal_handler_called = 1;
 	   fprintf(stderr, "\n<<< Caught internal signal (%d) >>>\n", signo);
 
-	   run_status = RT_ERROR;
+	   setRunStatus(RT_ERROR);
 	   switch (signo) {
 	   default:
 		   fflush(stdout);
@@ -694,7 +694,7 @@ RTcmixMain::sockit(void *arg)
     rtcmix_debug(NULL, "RTcmixMain::sockit entered");
     if( (s = ::socket(AF_INET, SOCK_STREAM, 0)) < 0) {
       perror("socket");
-	  run_status = RT_ERROR;	// Notify inTraverse()
+	  setRunStatus(RT_ERROR);	// Notify inTraverse()
       exit(1);
     }
 
@@ -712,7 +712,7 @@ RTcmixMain::sockit(void *arg)
     err = ::bind(s, (struct sockaddr *)&sss, sizeof(sss));
     if (err < 0) {
       perror("bind");
-	  run_status = RT_ERROR;	// Notify inTraverse()
+	  setRunStatus(RT_ERROR);	// Notify inTraverse()
 	  sleep(1);
       exit(1);
     }
@@ -727,7 +727,7 @@ RTcmixMain::sockit(void *arg)
     ns = ::accept(s, (struct sockaddr *)&sss, &len);
     if(ns < 0) {
         perror("RTcmixMain::sockit: accept");
-        run_status = RT_ERROR;	// Notify inTraverse()
+        setRunStatus(RT_ERROR);	// Notify inTraverse()
         exit(1);
     }
     else {
@@ -806,7 +806,7 @@ RTcmixMain::sockit(void *arg)
 	  }
 
       // Main socket reading loop
-      while (1) {
+      while (true) {
 		sptr = (char *)sinfo;
 		amt = read(ns, (void *)sptr, sizeof(struct sockdata));
         while (amt < sizeof(struct sockdata)) {
@@ -818,7 +818,7 @@ RTcmixMain::sockit(void *arg)
         }
 		if (strcmp(sinfo->name, "RTcmix_off") == 0) {
 			RTPrintf("RTcmix termination cmd received.\n");
-			run_status = RT_SHUTDOWN;	// Notify inTraverse()
+			setRunStatus(RT_SHUTDOWN);	// Notify inTraverse()
  			shutdown(s,0);
 			delete sinfo;
 			return NULL;
@@ -833,7 +833,7 @@ RTcmixMain::sockit(void *arg)
 #endif
 			}
 			RTPrintf("Resuming normal mode\n");
-			run_status = RT_GOOD;	// Notify inTraverse()
+			setRunStatus(RT_GOOD);	// Notify inTraverse()
             continue;
 		}
         else if (strcmp(sinfo->name, "score")==0) {
@@ -883,7 +883,7 @@ void
 RTcmixMain::resetQueueHeap()
 {
 	rtcmix_advise(NULL, "Flushing all instrument queues");
-	run_status = RT_FLUSH;	// This gets reset in inTraverse()
+	setRunStatus(RT_FLUSH);	// This gets reset in inTraverse()
 }
 
 // BGG mm -- this is the loading code for instrument development using rtcmix~

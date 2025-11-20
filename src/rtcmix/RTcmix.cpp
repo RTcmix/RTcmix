@@ -332,7 +332,7 @@ RTcmix::RTcmix(bool dummy) {}
 RTcmix::~RTcmix()
 {
     rtcmix_debug("~RTcmix", "shutting down and freeing memory");
-	run_status = RT_SHUTDOWN;
+	setRunStatus(RT_SHUTDOWN);
 	waitForMainLoop();	// This calls close()
 	free_globals();
 #ifdef EMBEDDED
@@ -735,7 +735,7 @@ int RTcmix::stopAudio()
 void RTcmix::close()
 {
 	rtcmix_debug(NULL, "RTcmix::close entered");
-	run_status = RT_SHUTDOWN;
+	setRunStatus(RT_SHUTDOWN);
 	AudioDevice *dev = audioDevice;
 	audioDevice = NULL;
 	delete dev;

@@ -82,11 +82,12 @@ int RTcmix::runMainLoop()
         // This interactive mode is specifically the standalone one - not the embedded one.
 		if (interactive()) {
             int ret = 0;
-			if (run_status == RT_GOOD || run_status == RT_PANIC)
+			RTstatus status = getRunStatus();
+			if (status == RT_GOOD || status == RT_PANIC)
 				continue;
-			else if (run_status == RT_SHUTDOWN)
+			else if (status == RT_SHUTDOWN)
 				RTPrintf("runMainLoop:  shutting down\n");
-            else if (run_status == RT_ERROR) {
+            else if (status == RT_ERROR) {
 				RTPrintf("runMainLoop:  shutting down due to error\n");
                 ret = -1;
             }
@@ -118,7 +119,7 @@ int RTcmix::runMainLoop()
 		if (RTcmix::bufTimeOffset > 0) {
             const FRAMETYPE bufOffset = (FRAMETYPE)(RTcmix::bufTimeOffset * sr());
 			RTPrintf("Skipping %f seconds (%llu frames)", RTcmix::bufTimeOffset, (unsigned long long)bufOffset);
-			run_status = RT_SKIP;
+			setRunStatus(RT_SKIP);
 			int dot = 0, dotskip = (int)(sr()/bufsamps());	// dots in a second of audio
 			while (bufStartSamp < bufOffset) {
                 if (inTraverse(audioDevice, this) == false) {
@@ -131,7 +132,7 @@ int RTcmix::runMainLoop()
 				}
 			}
             RTPrintf("\n");
-			run_status = RT_GOOD;
+			setRunStatus(RT_GOOD);
 		}
 #endif
 		if (startAudio(inTraverse, doneTraverse, this) != 0) {
@@ -192,14 +193,14 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
         return status;
 	}
 
-    if (interactive() && run_status == RT_PANIC) {
+    if (interactive() && getRunStatus() == RT_PANIC) {
         panic = YES;
     }
 #ifdef EMBEDDED
-        else if (interactive() && run_status == RT_FLUSH) {
+        else if (interactive() && getRunStatus() == RT_FLUSH) {
             resetHeapAndQueue();
             rtsendzeros(device, false);
-            run_status = RT_GOOD;
+            setRunStatus(RT_GOOD);
             notifyIsFinished(bufEndSamp);
             return true;
         }
@@ -671,7 +672,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	if (panic) {
 		rtsendzeros(device, false);
 	}
-	else if (run_status != RT_SKIP) {
+	else if (getRunStatus() != RT_SKIP) {
         // Write buf to audio device - - - - - - - - - - - - - - - - - - - - -
 #ifdef DBUG
         printf("Writing samples----------\n");
@@ -696,20 +697,21 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 
 	// read in an input buffer (if audio input is active)
 	if (rtrecord) {
-		if (!panic && run_status != RT_SKIP)
+		if (!panic && getRunStatus() != RT_SKIP)
 			rtgetsamps(device);
 	}
 
 	bool playEm = true;
 	
     // Check status from other threads
-    if (run_status == RT_SHUTDOWN) {
+	RTstatus current_status = getRunStatus();
+    if (current_status == RT_SHUTDOWN) {
 #ifndef EMBEDDED
         RTPrintf("inTraverse:  shutting down\n");
 #endif
         playEm = false;
     }
-    else if (run_status == RT_ERROR) {
+    else if (current_status == RT_ERROR) {
 #ifndef EMBEDDED
         RTPrintf("inTraverse:  shutting down due to error\n");
 #endif
@@ -740,7 +742,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			notifyIsFinished(bufEndSamp);
 		}
 #endif
-		if (panic && run_status == RT_GOOD) {
+		if (panic && current_status == RT_GOOD) {
 #ifndef EMBEDDED
             RTPrintf("inTraverse:  panic mode finished\n");
 #endif
@@ -748,7 +750,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		}
 		// DT_PANIC_MOD
 		if (panic && instrumentQueueIsEmpty)
-			run_status = RT_GOOD;
+			setRunStatus(RT_GOOD);
 	}
 #ifdef WBUG
     RTPrintf("EXITING inTraverse()\n");

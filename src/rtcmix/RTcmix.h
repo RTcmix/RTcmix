@@ -185,6 +185,8 @@ protected:
 
 	static void setSR(float sr) { sSamplingRate = sr; }
     static void setRTBUFSAMPS(int samps) { sBufferFrameCount = samps; }
+	static void setRunStatus(RTstatus s) { run_status = s; }
+	static RTstatus getRunStatus() { return run_status; }
 
 	// Cleanup methods
 	static void free_globals();
@@ -215,8 +217,6 @@ protected:
 	static int		audio_config;
 
 	static AudioDevice *audioDevice;
-
-	static RTstatus	run_status;
 
 	static pthread_mutex_t audio_config_lock;
 
@@ -267,6 +267,7 @@ private:
 	
 	friend void set_SR(float);	// hack to allow C code to initialize SR
 
+	static RTstatus	run_status;
 	static int		audioNCHANS;
 
 	/* ---------------------------------------------------------------------- */
@@ -286,8 +287,6 @@ private:
 	static float    	bufTimeOffset;
 	static FRAMETYPE 	bufStartSamp;
 	static FRAMETYPE	elapsed;
-
-	// HACK ALERT!!!  D.S. WAS HERE!!!!
 public:
 	static rt_item *rt_list;
 private:
