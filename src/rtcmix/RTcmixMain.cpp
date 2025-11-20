@@ -56,7 +56,7 @@ usage()
       "           -i       run in interactive mode\n"
       "           -n       no init script (interactive mode only)\n"
 #ifdef OSC
-      "           -o       run with background OSC server\n"
+      "           -o <port> run with background OSC server on given port (default if not provided)\n"
 #endif
 #ifdef LINUX
       "           -p NUM   set process priority to NUM (as root only)\n"
@@ -128,6 +128,7 @@ int				RTcmixMain::parseOnly       = 0;
 int				RTcmixMain::socknew			= 0;
 
 #ifdef OSC
+const char *	RTcmixMain::osc_port = NULL;
 lo_server_thread       RTcmixMain::osc_thread_handle = NULL;
 #endif
 
@@ -272,6 +273,9 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                break;
             case 'o':
 #ifdef OSC
+         		if (++i < argc) {
+         			set_osc_port(argv[i]);
+         		}
                 setInteractive(true);
                 setUseOSC(true);
                 audio_config = 0;
@@ -408,6 +412,15 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
 }
 
 #ifdef OSC
+
+void RTcmixMain::set_osc_port(const char *port) {
+	osc_port = port;
+}
+
+const char * RTcmixMain::get_osc_port() {
+	return (osc_port != NULL) ? osc_port : DEFAULT_OSC_PORT;
+}
+
 int
 RTcmixMain::runUsingOSC()
 {
@@ -655,7 +668,7 @@ RTcmixMain::set_sig_handlers()
 
 #ifdef OSC
 void * RTcmixMain::OSC_Server(void *arg){
-    osc_thread_handle = start_osc_thread(&parse_score_buffer);
+    osc_thread_handle = start_osc_thread(get_osc_port(), &parse_score_buffer);
     return NULL; //suppress warning
 }
 #endif

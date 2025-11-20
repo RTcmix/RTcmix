@@ -33,6 +33,8 @@ protected:
 
 	static void *	sockit(void *);
 #ifdef OSC
+	static void		set_osc_port(const char *port);
+	static const char *	get_osc_port();
     int             runUsingOSC();
 	static void *   OSC_Server(void *);
 #endif
@@ -52,6 +54,7 @@ private:
 	/* for more than 1 socket, set by -s flag to CMIX as offset from MYPORT */
 	static int		socknew;
 #ifdef OSC
+	static const char *osc_port;
     static lo_server_thread osc_thread_handle;
 #endif
 };

@@ -208,6 +208,11 @@ RTcmix::rtsetparams(double p[], int n_args)
 #endif
 
 	if (rtsetparams_was_called()) {
+		if (interactive()) {
+			// ignore multiple calls in interactive mode
+			rtcmix_warn("rtsetparams", "Ignoring duplicate call");
+			return 0.0;
+		}
 		die("rtsetparams", "You can only call rtsetparams once!");
         RTExit(CONFIGURATION_ERROR);
 	}
