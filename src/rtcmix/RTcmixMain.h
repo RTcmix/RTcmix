@@ -33,10 +33,14 @@ protected:
 
 	static void *	sockit(void *);
 #ifdef OSC
+	// Give access to command_handler()
+	friend lo_server_thread start_osc_thread(const char *, int (*)(const char*, int));
 	static void		set_osc_port(const char *port);
 	static const char *	get_osc_port();
     int             runUsingOSC();
 	static void *   OSC_Server(void *);
+	static int		command_handler(const char *path, const char *types, lo_arg **argv,
+									int argc, lo_message data, void *user_data);
 #endif
     int             runUsingSockit();
 private:

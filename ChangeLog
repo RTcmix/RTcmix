@@ -1,6 +1,11 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2025-11-21 Douglas Scott <netdscott-at-netscape.net>
+    * Many small fixes to system, including ALSA fixes, memory crashers, etc.  See Git history for details.
+    * Reworked and improved OSC support: Direct commands are now possible without needing to parse a score.
+    * Bumped version to 5.8.0.
+
 2025-08-08 Douglas Scott <netdscott-at-netscape.net>
 	* Removed 95% of all "automatic array" uses (declaring an array using a non-const variable) which are not in the strict C++ standard.
 	  I did this by using MAXCHANS for any array involved in channel counts, determined the maximum pfield index used for 'p' arrays.

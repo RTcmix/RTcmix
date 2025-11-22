@@ -467,6 +467,76 @@ Failed:
     return retcode;
 }
 
+#define MAX_OSC_ARGS 8
+
+int RTcmixMain::command_handler(const char *path, const char *types, lo_arg **argv,
+				  int argc, lo_message data, void *user_data) {
+	int status = 0;
+	// Parse meta commands
+	if (strcmp(path, "/RTcmix/stop") == 0) {
+		rtcmix_advise(NULL, "Shutting down audio");
+		RTcmix::setRunStatus(RT_SHUTDOWN);	// Notify inTraverse()
+	}
+	// treat everything else as a score command
+	else if (strncmp(path, "/RTcmix/", 8) == 0) {
+		const char *commandName = path + 8;
+		if (types == NULL) {
+			cmd(commandName);
+		}
+		else {
+			bool stringArgs = false;
+			double argvalues[MAX_OSC_ARGS];
+			char *stringvalues[MAX_OSC_ARGS];
+			int argcount = 0;
+			for (const char *t = types; *t != '\0'; t++) {
+				if (argcount >= MAX_OSC_ARGS) {
+					rtcmix_warn(NULL, "OSC: too many arguments for command\n");
+					return -1;
+				}
+				switch (*t) {
+					case LO_STRING:
+						stringArgs = true;
+						stringvalues[argcount] = &argv[argcount]->s;
+						break;
+					case LO_FLOAT:
+						if (stringArgs) {
+							rtcmix_warn(NULL, "OSC: cannot mix string and float arguments in commands\n");
+							return -1;
+						}
+						argvalues[argcount] = argv[argcount]->f;
+						break;
+					case LO_DOUBLE:
+						if (stringArgs) {
+							rtcmix_warn(NULL, "OSC: cannot mix string and float arguments in commands\n");
+							return -1;
+						}
+						argvalues[argcount] = argv[argcount]->d;
+						break;
+					case LO_INT32:
+						if (stringArgs) {
+							rtcmix_warn(NULL, "OSC: cannot mix string and float arguments in commands\n");
+							return -1;
+						}
+						argvalues[argcount] = (double) argv[argcount]->i;
+						break;
+					default:
+						rtcmix_warn(NULL, "OSC: unknown argument type '%c' for command\n", *t);
+						return -1;
+				}
+				++argcount;
+			}
+			if (stringArgs) {
+				cmd(commandName, argcount , stringvalues[0], stringvalues[1], stringvalues[2], stringvalues[3], stringvalues[4],
+					stringvalues[5], stringvalues[6], stringvalues[7]);
+			}
+			else {
+				cmd(commandName, argcount, argvalues[0], argvalues[1], argvalues[2], argvalues[3], argvalues[4], argvalues[5], argvalues[6], argvalues[7]);
+			}
+		}
+	}
+	return status;
+}
+
 #endif
 
 int     RTcmixMain::runUsingSockit()
