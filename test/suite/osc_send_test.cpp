@@ -106,9 +106,20 @@ int main(int argc, char *argv[]){
 	if (mode == Command) {
 		std::istringstream in(content);
 		std::string line;
-
+		char cmd[1024];
+		if (verbose) printf("Parsing command strings...\n");
 		while (std::getline(in, line)) {
-			char cmd[1024];
+			// Handle meta commands (no parenthesis)
+			strcpy(cmd, "/RTcmix/");
+			if (line.compare("stop") == 0) {
+				strcat(cmd, line.c_str());
+				if (lo_send(t, cmd, "s", NULL) == -1) {
+					fprintf(stderr, "OSC error %d: %s\n", lo_address_errno(t),
+							lo_address_errstr(t));
+				}
+				continue;
+			}
+			// Assuming everything else is an RTcmix command
 			std::string::size_type lpar = line.find('(');
 			std::string::size_type rpar = line.find(')');
 
@@ -132,6 +143,7 @@ int main(int argc, char *argv[]){
 				std::fprintf(stderr, "Parse failure on line - skipping\n");
 				continue;
 			}
+			if (verbose) printf("Sending command '%s'\n", cmd);
 			// Send the message with all accumulated arguments
 			if (lo_send_message(t, cmd, parsedMessage) == -1) {
 				fprintf(stderr, "OSC error %d: %s\n", lo_address_errno(t),
@@ -142,7 +154,7 @@ int main(int argc, char *argv[]){
 		}
 	}
 	else {
-	    std::printf("\nsending '\n%s\n'", content.c_str());
+	    std::printf("\nsending score: '\n%s\n'", content.c_str());
 		if (lo_send(t, "/RTcmix/ScoreCommands", "s", content.c_str()) == -1) {
 			fprintf(stderr, "OSC error %d: %s\n", lo_address_errno(t),
 					lo_address_errstr(t));
