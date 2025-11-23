@@ -530,7 +530,8 @@ int RTcmixMain::command_handler(const char *path, const char *types, lo_arg **ar
 					stringvalues[5], stringvalues[6], stringvalues[7]);
 			}
 			else {
-				cmd(commandName, argcount, argvalues[0], argvalues[1], argvalues[2], argvalues[3], argvalues[4], argvalues[5], argvalues[6], argvalues[7]);
+				cmd(commandName, argcount, argvalues[0], argvalues[1], argvalues[2], argvalues[3], argvalues[4],
+				    argvalues[5], argvalues[6], argvalues[7]);
 			}
 		}
 	}

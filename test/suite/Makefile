@@ -196,6 +196,6 @@ clean:
 	@echo Cleaning test suite.
 	$(RM) *.o $(PROGS)
 
-install:
-	@echo Nothing to install here.
+install: osc_send
+	$(INSTALL) osc_send ${CMIXDIR}/bin
 
