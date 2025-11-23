@@ -44,7 +44,7 @@ glue.o: depend glue.cpp DisplayPField.h
 
 .PHONY: $(APP)
 $(APP): 
-	cd $(APP); xcodebuild ARCHS="$(BUILD_ARCH)" SDKROOT=${SDKROOT} MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET} -configuration ${APP_TARGET}
+	cd $(APP); xcodebuild ARCHS="$(BUILD_ARCH)" SDKROOT=${SDKROOT} MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET} -configuration ${APP_TARGET} -quiet
 
 depend:
 	-$(SHELL) -ec '$(CXX) -M $(CXXFLAGS) $(SRCS)' > depend
