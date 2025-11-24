@@ -74,7 +74,7 @@ profile()
 	UG_INTRO("gaussrand", m_gaussrand);
 	UG_INTRO("prob", m_prob);
 	UG_INTRO("constrain", m_constrain);
-	UG_INTRO("map", m_map);
+	UG_INTRO("remap", m_remap);
 
 	// from joel/tuning
 	UG_INTRO("diapason", m_diapason);
