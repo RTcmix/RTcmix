@@ -53,7 +53,7 @@ int RTcmix::runMainLoop()
 {
 	Bool audio_configured = NO;
 
-    rtcmix_debug(NULL, "runMainLoop():  entering function");
+    rtcmix_debug(NULL, "RTcmix::runMainLoop():  entering function");
 
 	// Initialize everything ... cause it's good practice
 	bufStartSamp = 0;  // current end sample for buffer
@@ -67,12 +67,12 @@ int RTcmix::runMainLoop()
 	::pthread_mutex_lock(&audio_config_lock);
 	if (!audio_config) {
 		if (RTOption::print())
-			RTPrintf("runMainLoop():  waiting for audio_config . . .\n");
+			RTPrintf("RTcmix::runMainLoop():  waiting for audio_config . . .\n");
 	}
 	::pthread_mutex_unlock(&audio_config_lock);
 
 	while (!audio_configured) {
-//        rtcmix_debug(NULL, "runMainLoop():  top of !audio_configured loop");
+//        rtcmix_debug(NULL, "RTcmix::runMainLoop():  top of !audio_configured loop");
 		::pthread_mutex_lock(&audio_config_lock);
 		if (audio_config) {
 			audio_configured = YES;
@@ -86,9 +86,9 @@ int RTcmix::runMainLoop()
 			if (status == RT_GOOD || status == RT_PANIC)
 				continue;
 			else if (status == RT_SHUTDOWN)
-				RTPrintf("runMainLoop:  shutting down\n");
+				RTPrintf("RTcmix::runMainLoop:  shutting down\n");
             else if (status == RT_ERROR) {
-				RTPrintf("runMainLoop:  shutting down due to error\n");
+				RTPrintf("RTcmix::runMainLoop:  shutting down due to error\n");
                 ret = -1;
             }
 			audioDone = true;
@@ -102,10 +102,10 @@ int RTcmix::runMainLoop()
 #ifndef EMBEDDED
 	if (audio_configured && interactive()) {
 		if (RTOption::print())
-			RTPrintf("runMainLoop():  audio configured.\n");
+			RTPrintf("RTcmix::runMainLoop():  audio configured.\n");
 	}
 #else
-	rtcmix_debug(NULL, "runMainLoop():  audio configured.");
+	rtcmix_debug(NULL, "RTcmix::runMainLoop():  audio configured.");
 #endif
 
 	// NOTE: audioin, aux and output buffers are zero'd during allocation
@@ -113,7 +113,7 @@ int RTcmix::runMainLoop()
 	if (rtsetparams_was_called()) {
 		startupBufCount = 0;
 
-		rtcmix_debug(NULL, "runMainLoop():  calling startAudio()");
+		rtcmix_debug(NULL, "RTcmix::runMainLoop():  calling startAudio()");
 		
 #ifndef EMBEDDED
 		if (RTcmix::bufTimeOffset > 0) {
@@ -124,7 +124,7 @@ int RTcmix::runMainLoop()
 			while (bufStartSamp < bufOffset) {
                 if (inTraverse(audioDevice, this) == false) {
                     audioDone = true;
-                    rtcmix_debug(NULL, "runMainLoop():  exiting with -1");
+                    rtcmix_debug(NULL, "RTcmix::runMainLoop():  exiting with -1");
                     return -1;    // Signal caller not to wait.
                 }
 				if (dot++ % dotskip == 0) {
@@ -137,10 +137,10 @@ int RTcmix::runMainLoop()
 #endif
 		if (startAudio(inTraverse, doneTraverse, this) != 0) {
 			audioDone = true;
-            rtcmix_debug(NULL, "runMainLoop():  exiting with -1");
+            rtcmix_debug(NULL, "RTcmix::runMainLoop():  exiting with -1");
             return -1;
 		}
-		rtcmix_debug(NULL, "runMainLoop():  exiting function");
+		rtcmix_debug(NULL, "RTcmix::runMainLoop():  exiting function");
 		return 0;	// Playing, thru HW and/or to FILE.
 	}
 	audioDone = true;
@@ -149,14 +149,14 @@ int RTcmix::runMainLoop()
 
 int RTcmix::waitForMainLoop()
 {
-	rtcmix_debug(NULL, "waitForMainLoop():  entering function, audioDone = %d", audioDone);
+	rtcmix_debug(NULL, "RTcmix::waitForMainLoop():  entering function, audioDone = %d", audioDone);
     if (!audioDone) { RTPrintf("Playing...\n"); }
 	while (!audioDone) {
 		usleep(10000);
 	}
 	close();
 	bufEndSamp = 0;		// reset
-	rtcmix_debug(NULL, "waitForMainLoop():  exiting function");
+	rtcmix_debug(NULL, "RTcmix::waitForMainLoop():  exiting function");
 	return 0;
 }
 
