@@ -120,8 +120,8 @@ extern "C" {
 int 			RTcmixMain::xargc;
 char *			RTcmixMain::xargv[MAXARGS + 1];
 char **			RTcmixMain::xenv = NULL;
-int				RTcmixMain::interrupt_handler_called = 0;
-int				RTcmixMain::signal_handler_called = 0;
+volatile sig_atomic_t	RTcmixMain::interrupt_handler_called = 0;
+volatile sig_atomic_t	RTcmixMain::signal_handler_called = 0;
 
 int				RTcmixMain::noParse         = 0;
 int				RTcmixMain::parseOnly       = 0;
@@ -130,6 +130,7 @@ int				RTcmixMain::socknew			= 0;
 #ifdef OSC
 const char *	RTcmixMain::osc_port = NULL;
 lo_server_thread       RTcmixMain::osc_thread_handle = NULL;
+bool			RTcmixMain::exit_osc = false;
 #endif
 
 #ifdef NETAUDIO
@@ -268,7 +269,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                break;
             case 'i':               /* for separate parseit thread */
                setInteractive(true);
-               audio_config = 0;
+               audio_config = NO;
                RTOption::exitOnError(false);  /* we cannot simply quit when in interactive mode */
                break;
             case 'o':
@@ -278,7 +279,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
          		}
                 setInteractive(true);
                 setUseOSC(true);
-                audio_config = 0;
+                audio_config = NO;
                 RTOption::exitOnError(false);
 #else
                  fprintf(stderr, "This build does not include OSC support\n");
@@ -367,7 +368,6 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
             case 'e':               /* time to stop playing (unimplemented) */
                fprintf(stderr, "-d, -e options not yet implemented\n");
                exit(1);
-               break;
             case 'f':     /* use file name arg instead of stdin as score */
                if (++i >= argc || argv[i][0] == '-') {
                   fprintf(stderr, "You didn't give a file name.\n");
@@ -377,7 +377,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                use_script_file(infile);
                break;
             case '-':           /* accept "--debug" and pass to Perl as "-d" */
-               if (strncmp(&arg[2], "debug", 10) == 0)
+               if (strncmp(&arg[2], "debug", 5) == 0)
                   xargv[xargc++] = strdup("-d");
 			   else
 				   xargv[xargc++] = arg;    /* copy all other --arguments to parser */
@@ -432,34 +432,45 @@ RTcmixMain::runUsingOSC()
         rterror("RTcmixMain", "OSC_Server() thread create failed\n");
         goto Failed;
     }
-    
-    /* Create scheduling thread. */
-    rtcmix_debug(NULL, "calling runMainLoop()");
-    retcode = runMainLoop();
-    if (retcode != 0) {
-        rterror("RTcmixMain", "runMainLoop() failed\n");
-        goto Failed;
+	// Loop here until server killed
+    while (getRunStatus() != RT_ERROR) {
+	    /* Create scheduling thread. */
+    	rtcmix_debug(NULL, "calling runMainLoop()");
+    	retcode = runMainLoop();
+    	if (retcode != 0) {
+    		rterror("RTcmixMain", "runMainLoop() failed\n");
+    		goto Failed;
+    	}
+    	else {
+    		rtcmix_debug("RTcmixMain", "runMainLoop() returned");
+    	}
+
+    	/* Wait for audio thread. */
+    	rtcmix_debug("RTcmixMain", "calling waitForMainLoop()");
+    	retcode = waitForMainLoop();
+    	if (retcode != 0) {
+    		rterror("RTcmixMain", "waitForMainLoop() failed\n");
+    		goto Failed;
+    	}
+    	if (osc_thread_handle != NULL && !exit_osc) {
+    		setRunStatus(RT_GOOD);	// reset for server loop
+    		rtsetparams_called = false;
+    	}
+    	else {
+    		rtcmix_debug("RTcmixMain", "OSC server not running - exiting loop");
+    		break;
+    	}
     }
-    else {
-        rtcmix_debug("RTcmixMain", "runMainLoop() returned");
-    }
-    
-    /* Join parsing thread. */
-    rtcmix_debug("RTcmixMain", "joining server thread");
-    retcode = pthread_join(serverThread, NULL);
-    if (retcode != 0) {
-        rterror("RTcmixMain", "OSC_Server() thread join failed\n");
-        goto Failed;
-    }
-    
-    /* Wait for audio thread. */
-    rtcmix_debug("RTcmixMain", "calling waitForMainLoop()");
-    retcode = waitForMainLoop();
-    if (retcode != 0) {
-        rterror("RTcmixMain", "waitForMailLoop() failed\n");
-        goto Failed;
-    }
-Failed:
+	stop_OSC_Server();
+	/* Join server thread. */
+	rtcmix_debug("RTcmixMain", "joining OSC_Server() thread");
+	retcode = pthread_join(serverThread, NULL);
+	if (retcode != 0) {
+		rterror("RTcmixMain", "OSC_Server() thread join failed\n");
+		goto Failed;
+	}
+
+	Failed:
 #ifndef EMBEDDED
     if (!noParse)
         destroy_parser();
@@ -474,7 +485,12 @@ int RTcmixMain::command_handler(const char *path, const char *types, lo_arg **ar
 	int status = 0;
 	// Parse meta commands
 	if (strcmp(path, "/RTcmix/stop") == 0) {
-		rtcmix_advise(NULL, "Shutting down audio");
+		rtcmix_advise("Cmd", "Shutting down audio");
+		RTcmix::setRunStatus(RT_SHUTDOWN);	// Notify inTraverse()
+	}
+	else if (strcmp(path, "/RTcmix/quit") == 0) {
+		rtcmix_advise("Cmd", "Closing down OSC server");
+		exit_osc = true;
 		RTcmix::setRunStatus(RT_SHUTDOWN);	// Notify inTraverse()
 	}
 	// treat everything else as a score command
@@ -586,7 +602,7 @@ int     RTcmixMain::runUsingSockit()
     rtcmix_debug("RTcmixMain", "calling waitForMainLoop()");
     retcode = waitForMainLoop();
     if (retcode != 0) {
-        rterror("RTcmixMain", "waitForMailLoop() failed\n");
+        rterror("RTcmixMain", "waitForMainLoop() failed\n");
         goto Failed;
     }
 Failed:
@@ -675,24 +691,20 @@ RTcmixMain::interrupt_handler(int signo)
 	// Dont do handler work more than once
 	if (!interrupt_handler_called) {
 		interrupt_handler_called = 1;
-	   fprintf(stderr, "\n<<< Caught interrupt signal >>>\n");
+		fprintf(stderr, "\n<<< Caught interrupt signal >>>\n");
 #ifdef OSC
-       if (osc_thread_handle != NULL) {
-           fprintf(stderr, "shutting down OSC server...\n");
-           lo_server_thread_stop(osc_thread_handle);
-           free(osc_thread_handle);
-       }
+		exit_osc = true;
 #endif
-       if (audioDevice) {
-           fprintf(stderr, "flushing audio...\n");
-       }
-       // Notify rendering loop no matter what.
-       setRunStatus(RT_SHUTDOWN);
+		if (audioDevice) {
+			fprintf(stderr, "flushing audio...\n");
+		}
+		// Notify rendering loop no matter what.
+		setRunStatus(RT_SHUTDOWN);
 
-       if (!audioLoopStarted) {
-           fprintf(stderr, "exiting\n");
-           exit(0);    // We exit if we have not yet configured audio.
-       }
+		if (!audioLoopStarted) {
+			fprintf(stderr, "exiting\n");
+			exit(0); // We exit if we have not yet configured audio.
+		}
 	}
 }
 
@@ -711,7 +723,6 @@ RTcmixMain::signal_handler(int signo)
 		   fflush(stdout);
 		   fflush(stderr);
   	 	   exit(1);
-	       break;
 	   }
 	}
 }
@@ -741,6 +752,18 @@ RTcmixMain::set_sig_handlers()
 void * RTcmixMain::OSC_Server(void *arg){
     osc_thread_handle = start_osc_thread(get_osc_port(), &parse_score_buffer);
     return NULL; //suppress warning
+}
+
+void RTcmixMain::stop_OSC_Server() {
+	if (osc_thread_handle != NULL) {
+		fprintf(stderr, "shutting down OSC server...\n");
+		lo_server_thread_stop(osc_thread_handle);
+		lo_server_thread_free(osc_thread_handle);
+		osc_thread_handle = NULL;
+		rtcmix_debug("RTcmixMain::stop_OSC_Server()", "OSC server shut down");
+	} else {
+		rtcmix_debug("RTcmixMain::stop_OSC_Server()", "OSC server not running");
+	}
 }
 #endif
 
@@ -802,7 +825,7 @@ RTcmixMain::sockit(void *arg)
         exit(1);
     }
     else {
-      sinfo = new (struct sockdata);
+      sinfo = new struct sockdata;
       // Zero the socket structure
       sinfo->name[0] = '\0';
       for (i=0;i<MAXDISPARGS;i++) {
@@ -834,7 +857,12 @@ RTcmixMain::sockit(void *arg)
 		  sptr = (char *)sinfo;
 		  amt = read(ns, (void *)sptr, sizeof(struct sockdata));
           while (amt < sizeof(struct sockdata)) {
-              amt += read(ns, (void *)(sptr+amt), sizeof(struct sockdata)-amt);
+              int amtread = read(ns, (void *)(sptr+amt), sizeof(struct sockdata)-amt);
+			  if (amtread <= 0) {
+			  	rtcmix_warn(NULL, "failed to read needed data from socket");
+				break;
+			  }
+			  amt += amtread;
           }
           if (strlen(sinfo->name) == 0) {
               rtcmix_warn(NULL, "bad socket command (NULL command name)");
@@ -842,7 +870,7 @@ RTcmixMain::sockit(void *arg)
           }
           if (strcmp(sinfo->name, "score")==0) {
               for (int n = 0; n < sinfo->n_args; ++n) {
-                  parse_score_buffer(sinfo->data.text[n], (int)strlen(sinfo->data.text[0]));
+                  parse_score_buffer(sinfo->data.text[n], (int)strlen(sinfo->data.text[n]));
               }
           }
           else {
@@ -854,7 +882,8 @@ RTcmixMain::sockit(void *arg)
                 // these two commands use text data
                 // replace the text[i] with p[i] pointers
                 for (i = 0; i < sinfo->n_args; i++)
-                  strcpy(ttext[i],sinfo->data.text[i]);
+                for (i = 0; i < sinfo->n_args; i++)
+                  strncpy(ttext[i],sinfo->data.text[i],MAXTEXTARGS);
                 for (i = 0; i < sinfo->n_args; i++) {
                   sinfo->data.p[i] = STRING_TO_DOUBLE(ttext[i]);
                 }
@@ -909,11 +938,11 @@ RTcmixMain::sockit(void *arg)
 		}
         else if (strcmp(sinfo->name, "score")==0) {
             for (int n = 0; n < sinfo->n_args; ++n) {
-                parse_score_buffer(sinfo->data.text[n], (int)strlen(sinfo->data.text[0]));
+                parse_score_buffer(sinfo->data.text[n], (int)strlen(sinfo->data.text[n]));
             }
             continue;
         }
-		else {
+        else {
             if (strcmp(sinfo->name, "rtinput") == 0 ||
                 strcmp(sinfo->name, "rtoutput") == 0 ||
                 strcmp(sinfo->name,"set_option") == 0 ||
@@ -923,7 +952,7 @@ RTcmixMain::sockit(void *arg)
                 // these two commands use text data
                 // replace the text[i] with p[i] pointers
                 for (i = 0; i < sinfo->n_args; i++)
-                    strcpy(ttext[i],sinfo->data.text[i]);
+                    strncpy(ttext[i],sinfo->data.text[i],MAXTEXTARGS);
                 for (i = 0; i < sinfo->n_args; i++) {
                     sinfo->data.p[i] = STRING_TO_DOUBLE(ttext[i]);
                 }

@@ -96,7 +96,7 @@ int main(int argc, char *argv[]){
         }
 		input = &ifs;
 	}
-	else {
+	else if (isatty(STDIN_FILENO)) {
 		std::printf("Enter %s followed by <control>-D\n", mode == Command ? "any number of commands, one per line," : "score");
 	}
     lo_address t = lo_address_new(hostIP, portID);
@@ -111,7 +111,7 @@ int main(int argc, char *argv[]){
 		while (std::getline(in, line)) {
 			// Handle meta commands (no parenthesis)
 			strcpy(cmd, "/RTcmix/");
-			if (line.compare("stop") == 0) {
+			if (line.compare("stop") == 0 || line.compare("quit") == 0) {
 				strcat(cmd, line.c_str());
 				if (lo_send(t, cmd, "s", NULL) == -1) {
 					fprintf(stderr, "OSC error %d: %s\n", lo_address_errno(t),
@@ -129,7 +129,7 @@ int main(int argc, char *argv[]){
 				rpar < lpar)
 			{
 				fprintf(stderr,
-						"Malformed command (missing or misplaced parentheses): '%s' - skipping\n",
+						"OSC: Malformed command (missing or misplaced parentheses): '%s' - skipping\n",
 						line.c_str());
 				continue;
 			}
@@ -140,7 +140,7 @@ int main(int argc, char *argv[]){
 				parsedMessage = scan_string_command(line, cmd);
 			}
 			if (parsedMessage == NULL) {
-				std::fprintf(stderr, "Parse failure on line - skipping\n");
+				std::fprintf(stderr, "OSC: Parse failure on line - skipping\n");
 				continue;
 			}
 			if (verbose) printf("Sending command '%s'\n", cmd);
@@ -170,7 +170,7 @@ lo_message scan_double_command(std::string &line, char *outCmd) {
 						 &outCmd[8], &args[0], &args[1], &args[2], &args[3], &args[4], &args[5], &args[6], &args[7]);
 	if (matched < 1) {
 		// nothing usable on this line; skip or handle as error
-		std::fprintf(stderr, "Parse error on line: '%s' - skipping\n", line.c_str());
+		std::fprintf(stderr, "OSC: Parse error on line: '%s' - skipping\n", line.c_str());
 		return NULL;
 	}
 	else if (matched == 1) {
@@ -195,7 +195,7 @@ lo_message scan_string_command(std::string &line, char *outCmd) {
 	lo_message m = lo_message_new();
 	if (matched < 1) {
 		// nothing usable on this line; skip or handle as error
-		std::fprintf(stderr, "Parse error on line: '%s' - skipping\n", line.c_str());
+		std::fprintf(stderr, "OSC: Parse error on line: '%s' - skipping\n", line.c_str());
 		return NULL;
 	}
 	else if (matched == 0) {

@@ -260,7 +260,7 @@ RTcmix::free_globals()
 	bufTimeOffset			= 0.0;
 	rtsetparams_called 		= 0;
 	audioLoopStarted 		= 0;
-	audio_config 			= 1;
+	audio_config 			= YES;
 	elapsed 				= 0;
 	run_status      		= RT_GOOD;
 	rtrecord 				= false;

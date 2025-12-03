@@ -41,6 +41,7 @@ protected:
 	static void *   OSC_Server(void *);
 	static int		command_handler(const char *path, const char *types, lo_arg **argv,
 									int argc, lo_message data, void *user_data);
+	static void		stop_OSC_Server();
 #endif
     int             runUsingSockit();
 private:
@@ -48,8 +49,8 @@ private:
 	static int 		xargc;	// local copy of arg count
 	static char *	xargv[/*MAXARGS + 1*/];
 	static char **	xenv;
-	static int 		interrupt_handler_called;
-	static int 		signal_handler_called;
+	static volatile sig_atomic_t interrupt_handler_called;
+	static volatile sig_atomic_t signal_handler_called;
 	static int		noParse;
 	static int		parseOnly;
 #ifdef NETAUDIO
@@ -60,6 +61,7 @@ private:
 #ifdef OSC
 	static const char *osc_port;
     static lo_server_thread osc_thread_handle;
+	static bool exit_osc;
 #endif
 };
 

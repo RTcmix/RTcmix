@@ -16,7 +16,7 @@ announce:
 	@echo Running RTcmix test suite
 	@echo "***************************************************************"
 
-all_tests:	\
+TESTS = \
 test_unreadable_input \
 test_bogus_input \
 test_null_input \
@@ -36,12 +36,21 @@ test_minc \
 run_stresstest \
 run_sockettest \
 $(NULL)
+ifeq ($(OSC_SUPPORT), TRUE)
+TESTS += run_osctests
+endif
+ifeq ($(EMBEDDED), TRUE)
+TESTS += test_embedded
+endif
+
+all_tests: $(TESTS)
 
 STRESSOBJS = stresstest.o
 SOCKOBJS = sockettest.o
 SOCKSENDOBJS = socksend.o
 IMBCMIXOBJS += $(PROFILE_O)
 PROGS = stresstest sockettest osc_send
+
 TESTLEN = 30
 
 stresstest: $(STRESSOBJS) $(IMBCMIXOBJS)
@@ -63,6 +72,10 @@ osc_send_test.o:	osc_send_test.cpp
 osc_send: osc_send_test.o
 	$(CXX) -g -o $@ osc_send_test.o ${LIBLO_LIBS}
 
+run_osctests: osc_send
+	@echo
+	@echo Running OSC tests
+	cd ./osc; make all;
 
 run_stresstest:	stresstest
 	@echo
@@ -157,7 +170,7 @@ test_stereo:
 test_load:
 	@echo
 	@echo Testing load of all shlib dsos
-	@find ${CMIXDIR}/shlib/ -name lib\*.so | grep -v conn | grep -v libPV\* | sed 's/\(.*\)/if (load("&") != 1) { exit("& LOAD FAILED"); }/' > load_test.sco
+	@find ${CMIXDIR}/shlib/ -name lib\*.so | grep -v conn | grep -v MAX | grep -v libPV\* | sed 's/\(.*\)/if (load("&") != 1) { exit("& LOAD FAILED"); }/' > load_test.sco
 	-$(CMD) < load_test.sco
 #	rm load_test.sco
 
