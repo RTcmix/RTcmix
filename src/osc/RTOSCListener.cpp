@@ -43,7 +43,7 @@ int score_handler(const char *path, const char *types, lo_arg **argv,
 }
 
 void osc_err_handler(int num, const char *msg, const char *where) {
-    std::cerr << "OSC server startup failure, code " << num << ": " << (msg ? msg : "(no detail)") << std::endl;
+    std::cerr << "OSC server failure, code " << num << ": " << (msg ? msg : "(no detail)") << std::endl;
     exit(1);
 }
 
