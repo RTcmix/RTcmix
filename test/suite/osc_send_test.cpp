@@ -115,7 +115,7 @@ int main(int argc, char *argv[]){
 			if (line.compare("stop") == 0 || line.compare("quit") == 0) {
 				strcat(cmd, line.c_str());
 				if (verbose) printf("Sending meta command '%s'\n", cmd);
-				if (lo_send(t, cmd, "s", NULL) == -1) {
+				if (lo_send(t, cmd, "") == -1) {
 					fprintf(stderr, "OSC error %d: %s\n", lo_address_errno(t),
 							lo_address_errstr(t));
 				}
