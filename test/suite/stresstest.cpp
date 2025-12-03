@@ -66,20 +66,28 @@ main(int argc, char *argv[])
 			exit(1);
 		}
 	}
-
-	rrr = new RTcmix(44100.0, 2, bufsize, hwopt);
+	try {
+		rrr = new RTcmix(44100.0, 2, bufsize, hwopt);
+	}
+	catch (...) {
+		exit(1);
+	}
 	if (verbose)
 		rrr->printOn();
 	else
 		rrr->printOff();
 
-	rrr->cmd("load", 1, "STRUM");
-	rrr->cmd("load", 1, "TRANS");
-	rrr->cmd("load", 1, "STEREO");
-	rrr->cmd("rtinput", 1, "./sinetone.wav");
+	try {
+		rrr->cmd("load", 1, "STRUM");
+		rrr->cmd("load", 1, "TRANS");
+		rrr->cmd("load", 1, "STEREO");
+		rrr->cmd("rtinput", 1, "./sinetone.wav");
 
-	rrr->cmd("setline", 8, 0., 0., 1., 1., 100., 1., 110., 0.);
-	
+		rrr->cmd("setline", 8, 0., 0., 1., 1., 100., 1., 110., 0.);
+	}
+	catch (...) {
+		exit(1);
+	}
 	checkInterval = 1000000 / maxsleep;	// about once per second
 	checkCount = checkInterval;
 
