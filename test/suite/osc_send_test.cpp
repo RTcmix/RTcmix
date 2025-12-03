@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <fstream>
 #include <string>
+#include <cstring>
 
 void fail_error(const char *cmd)
 {
