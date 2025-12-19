@@ -22,9 +22,10 @@ main(int argc, char *argv[])
 	int num;
 	unsigned totalcmds = 0;
 	int numcommands = 4;
-	int minsleep = 1000;	// in microseconds
-	int maxsleep = 5000;
+	int minsleep = 500;	// in microseconds
+	int maxsleep = 2000;
 	const char *hwopt = NULL;
+	const char *printopt = NULL;
 	int checkCount, checkInterval;
 	int i;
 	int verbose = 0;
@@ -33,6 +34,8 @@ main(int argc, char *argv[])
 	double start, pval, pval2, pval3, spread;
 	struct timeval tv;
 	struct timezone tz;
+	int bus;
+	char busout[12], busin[12];
 	double base_sec, sec, usec;
 
 	for (int arg = 1; arg < argc; ++arg)
@@ -45,6 +48,7 @@ main(int argc, char *argv[])
 				break;
 			case 'v':
 				verbose = 1;
+					printopt = "print=6";
 				break;
 			case 'd':
 				duration = atoi(argv[++arg]);
@@ -67,7 +71,7 @@ main(int argc, char *argv[])
 		}
 	}
 	try {
-		rrr = new RTcmix(44100.0, 2, bufsize, hwopt);
+		rrr = new RTcmix(44100.0, 2, bufsize, hwopt ? hwopt : printopt ? printopt : NULL);
 	}
 	catch (...) {
 		exit(1);
@@ -100,12 +104,11 @@ main(int argc, char *argv[])
 		num = random() % numcommands;			// random command
 
 		switch (num) {
-			case 0:
 			case 3:
 				pval = irand(5.0, 5.05);
 				spread = irand(0.0, 1.0);
 				rrr->cmd("bus_config", 2, "START", "out0-1");
-				rrr->cmd("START", 9, 0.0, 1.0, pval, 1.0, 0.7, 10000.0, 1.0, spread, 1.0);
+				rrr->cmd("START", 9, 0.0, 1.0, pval, 1.0, 0.5, 10000.0, 1.0, spread, 1.0);
 				totalcmds += 2;
 				break;
 			case 1:
@@ -113,18 +116,22 @@ main(int argc, char *argv[])
 				pval2 = irand(0.0, 1.0);			// pan
 				pval3 = irand(0.05, 0.5);			// dur	
 				rrr->cmd("bus_config", 3, "TRANS3", "in0", "out0-1");
-				rrr->cmd("TRANS3", 5, 0.0, 0.0, pval3, 0.1, pval, pval2);
+				rrr->cmd("TRANS3", 5, 0.0, 0.0, pval3, 0.25, pval, pval2);
 				totalcmds += 2;
 				break;
+			case 0:
 			case 2:
-				rrr->cmd("bus_config", 3, "TRANS", "in0", "aox0");
-				rrr->cmd("bus_config", 3, "STEREO", "aix0", "out0-1");
+				bus = random() % 5;
+				snprintf(busout, sizeof(busout), "aux %d out", bus);
+				snprintf(busin, sizeof(busin), "aux %d in", bus);
+				rrr->cmd("bus_config", 3, "TRANS", "in0", busout);
+				rrr->cmd("bus_config", 3, "STEREO", busin, "out0-1");
 				pval = irand(-0.04, 0.04);
 				pval3 = irand(0.05, 0.5);			// dur	
-				rrr->cmd("TRANS", 5, 0.0, 0.0, pval3, 0.5, pval);
+				rrr->cmd("TRANS", 5, 0.0, 0.0, pval3, 1, pval);
 				pval2 = irand(0.0, 1.0);
-				rrr->cmd("STEREO", 5, 0.0, 0.0, pval3, 0.5, pval2);
-				totalcmds += 2;
+				rrr->cmd("STEREO", 5, 0.0, 0.0, pval3, 0.25, pval2);
+				totalcmds += 4;
 				break;
 			default:
 				break;
@@ -136,13 +143,14 @@ main(int argc, char *argv[])
 		  sec = (double)tv.tv_sec;
 		  if ((int) (sec - base_sec) > duration)
 		  {
-		  	printf("Reached %d seconds.  Shutting down...", duration);
-			sleep(2);
+		  	printf("Reached %d seconds.  Shutting down...\n", duration);
+		  	sleep(1);
 			rrr->panic();
+			sleep(1);
 			rrr->close();
 			sleep(1);
 			delete rrr;
-		  	printf("Exiting.\n");
+		  	printf("\n%d commands executed.  Exiting.\n", totalcmds);
 			exit(0);
 		  }
 		  checkCount = checkInterval;

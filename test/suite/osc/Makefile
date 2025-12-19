@@ -61,6 +61,14 @@ test_var_across_audio_stop:
 	@cat use_var.sco | $(SCORE)
 	$(STOP_SERVER)
 
+test_instrument_command:
+	@echo "Sending a command with instrument call"
+	$(RUN_SERVER)
+	$(START_AUDIO)
+	@echo 'WAVETABLE(0, 5, 10000, 440);' | $(COMMAND)
+	@sleep 6
+	$(STOP_SERVER)
+
 test_bad_command:
 	@echo "Sending a malformed command"
 	$(RUN_SERVER)

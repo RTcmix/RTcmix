@@ -40,6 +40,9 @@
 #include "globals.h"
 #ifdef EMBEDDED
 #include "../parser/rtcmix_parse.h"
+#define INTERACTIVE_DEFAULT 0
+#else
+#define INTERACTIVE_DEFAULT 1
 #endif
 
 #define TLEN 20  /* maximum number of time/tempo pairs */
@@ -68,7 +71,7 @@ bool			RTcmix::runToOffset		= false;
 float   		RTcmix::bufTimeOffset	= 0.0;
 FRAMETYPE		RTcmix::bufStartSamp 	= 0;
 
-int				RTcmix::rtInteractive = 0;
+int				RTcmix::rtInteractive = INTERACTIVE_DEFAULT;
 int             RTcmix::rtUsingOSC = 0;
 
 int				RTcmix::rtsetparams_called = 0; // will call at object instantiation, though
@@ -77,6 +80,7 @@ int				RTcmix::audio_config 	= 1;
 FRAMETYPE		RTcmix::elapsed 		= 0;
 RTstatus		RTcmix::run_status      = RT_GOOD;
 AudioDevice *	RTcmix::audioDevice     = NULL;
+pthread_mutex_t RTcmix::audio_config_lock = PTHREAD_MUTEX_INITIALIZER;
 
 heap *			RTcmix::rtHeap			= NULL;
 RTQueue *		RTcmix::rtQueue			= NULL;
@@ -108,19 +112,8 @@ InputFile *	RTcmix::inputFileTable = NULL;
 long		RTcmix::max_input_fds = 0;
 int			RTcmix::last_input_index = -1;
 
-pthread_mutex_t RTcmix::audio_config_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t RTcmix::aux_to_aux_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t RTcmix::to_aux_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t RTcmix::to_out_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t RTcmix::inst_bus_config_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t RTcmix::bus_in_config_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t RTcmix::has_child_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t RTcmix::has_parent_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t RTcmix::aux_in_use_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t RTcmix::aux_out_in_use_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t RTcmix::out_in_use_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t RTcmix::revplay_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t RTcmix::bus_slot_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_rwlock_t RTcmix::bus_playlist_rwlock = PTHREAD_RWLOCK_INITIALIZER;
+pthread_rwlock_t RTcmix::bus_config_rwlock = PTHREAD_RWLOCK_INITIALIZER;
 
 short *			RTcmix::AuxToAuxPlayList = NULL;
 short *			RTcmix::ToOutPlayList = NULL;
@@ -559,7 +552,7 @@ RTcmix::cmdval(const char *name, int n_args, const char* p0, ...)
 
 void RTcmix::printOn()
 {
-	RTOption::print(MMP_PRINTALL);
+	RTOption::print(MMP_DEBUG);	// XXX REVERT ME!
 	RTOption::reportClipping(true);
 
 	/* Banner */

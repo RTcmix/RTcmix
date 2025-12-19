@@ -16,6 +16,7 @@ class Lock {
 public:
 	inline Lock(LockHandle h);
 	inline ~Lock();
+protected:
 	inline void Unlock();
 private:
 	LockHandle _handle;
@@ -39,6 +40,7 @@ class Unlock {
 public:
 	inline Unlock(LockHandle h);
 	inline ~Unlock();
+protected:
 	inline void Relock();
 private:
 	LockHandle _handle;

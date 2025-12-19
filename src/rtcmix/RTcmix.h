@@ -12,6 +12,8 @@
 #include "Locked.h"
 #include <vector>
 
+#include "rwlock.h"
+
 extern "C" void set_SR(float);
 
 class Instrument;
@@ -290,19 +292,11 @@ private:
 public:
 	static rt_item *rt_list;
 private:
-	static pthread_mutex_t aux_to_aux_lock;
-	static pthread_mutex_t to_aux_lock;
-	static pthread_mutex_t to_out_lock;
-	static pthread_mutex_t inst_bus_config_lock;
-	static pthread_mutex_t bus_in_config_lock;
-	static pthread_mutex_t has_child_lock;
-	static pthread_mutex_t has_parent_lock;
-	static pthread_mutex_t aux_in_use_lock;
-	static pthread_mutex_t aux_out_in_use_lock;
-	static pthread_mutex_t out_in_use_lock;
-	static pthread_mutex_t revplay_lock;
-	static pthread_mutex_t bus_slot_lock;
-	
+	static pthread_rwlock_t bus_playlist_rwlock;
+	static pthread_rwlock_t bus_config_rwlock;
+	static RWLockHandle getBusPlaylistLock() { return (RWLockHandle) &bus_playlist_rwlock; }
+	static RWLockHandle getBusConfigLock() { return (RWLockHandle) &bus_config_rwlock; }
+
 	static bool		rtrecord;
 	static int		rtfileit;		// 1 if rtoutput() succeeded
 	static int		rtoutfile;

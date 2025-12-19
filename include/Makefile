@@ -8,6 +8,7 @@ all:
 	ln -sf ../src/rtcmix/spray.h .
 	ln -sf ../src/rtcmix/RefCounted.h .
 	ln -sf ../src/rtcmix/lock.h .
+	ln -sf ../src/rtcmix/rwlock.h .
 	ln -sf ../src/rtcmix/Lockable.h .
 	ln -sf ../src/rtcmix/Locked.h .
 	ln -sf ../src/rtcmix/Instrument.h .
@@ -46,6 +47,7 @@ cleanall:
 	$(RM) RefCounted.h
 	$(RM) Instrument.h
 	$(RM) lock.h
+	$(RM) rwlock.h
 	$(RM) Lockable.h
 	$(RM) Locked.h
 	$(RM) MMprint.h
