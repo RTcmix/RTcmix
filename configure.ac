@@ -8,7 +8,7 @@
 # from the configure process, but we don't, at least for now.
 # -JGG, 7/29/04
 
-AC_INIT([RTcmix],[5.5])
+AC_INIT([RTcmix],[5.8])
 AC_CONFIG_SRCDIR(src/rtcmix/main.cpp)
 
 CMIXDIR=`pwd`
@@ -57,6 +57,13 @@ AC_SUBST([BUILD_ARCH])
 # Check for programs.
 AC_PROG_CC
 AC_PROG_CXX
+
+# Check if user has specified 'prefix' for a custom install
+AS_IF([test "${prefix+set}" = set],
+      [prefix_specified=yes],
+      [prefix_specified=no])
+
+AC_SUBST([prefix_specified])
 
 # Check for X11 support.
 XMKMF='false'
@@ -495,5 +502,8 @@ echo "  " Build with FFTW support............................... : $WITH_FFTW
 echo "  " Build with MIDI support............................... : $WITH_MIDI
 echo "  " Build with external PortMIDI library.................. : $WITH_EXTERNAL_PMLIB
 echo "  " Build with OSC support................................ : $WITH_OSC
+if test "$prefix_specified" = yes; then
+echo "  " Top-level install location set to......................: $prefix
+fi
 echo
 
