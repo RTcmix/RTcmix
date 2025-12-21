@@ -93,14 +93,14 @@ static int paCallback(const void *input,
 							PaStreamCallbackFlags statusFlags,
 							void *userData)
 {
-	RTcmix_runAudio((void *)input, output, frames);
+	int status = RTcmix_runAudio((void *)input, output, frames);
 	if (rescaleFactor != 1.0) {
 		float *buf = (float *) output;
 		unsigned long len = frames * numOutChannels;
 		for (unsigned long i = 0; i < len; i++)
 			*buf++ *= rescaleFactor;
 	}
-	return paContinue;
+	return (status == 0) ? paContinue : paAbort;
 }
 
 int initAudio()
@@ -187,7 +187,10 @@ int initRTcmix()
 
 	if (printJobOutput) {
 		char str[64] = "set_option(\"print = 6\");\n";
-		RTcmix_parseScore(str, strlen(str));
+		int status = RTcmix_parseScore(str, strlen(str));
+		if (status != 0) {
+			goto error;
+		}
 		RTcmix_setPrintCallback(rtcmixPrintCallback, NULL);
 	}
 
@@ -211,6 +214,10 @@ void playScores()
 	for (int i = 0; i < numScores; i++) {
         if (verbose) printf("Playing score '%s'...\n", scoreNames[i]);
 		ret = RTcmix_parseScore(scores[i], strlen(scores[i]));
+		if (ret != 0) {
+			fprintf(stderr, "Score parsing failed\n");
+			exit(1);
+		}
 		if (!withAudio) {
 			// must do this to collect printout
 			float *output = (float *) calloc(framesPerBuffer * numOutChannels, sizeof(float));
