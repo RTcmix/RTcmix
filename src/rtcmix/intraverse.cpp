@@ -692,8 +692,14 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 
 	// read in an input buffer (if audio input is active)
 	if (rtrecord) {
-		if (!panic && getRunStatus() != RT_SKIP)
-			rtgetsamps(device);
+		if (!panic && getRunStatus() != RT_SKIP) {
+			if (rtgetsamps(device) != 0) {
+#ifdef WBUG
+				RTPrintf("EXITING inTraverse() with error\n");
+#endif
+				return false;
+			}
+		}
 	}
 
 	bool playEm = true;

@@ -120,7 +120,7 @@ public:
 	static int get_last_input_index() { return last_input_index; }
 	static off_t seekInputFile(int fdIndex, int frames, int chans, int whence);
 	static void readFromInputFile(BufPtr dest, int dest_chans, int dest_frms, const short src_chan_list[], short src_chans, int fdIndex, off_t *outFileOffset);
-	static void rtgetsamps(AudioDevice *inputDevice);
+	static int rtgetsamps(AudioDevice *inputDevice);
 	// Output	   
 	static void addToBus(BusType type, int bus, BufPtr buf, int offset, int endfr, int chans);
 #ifdef MULTI_THREAD

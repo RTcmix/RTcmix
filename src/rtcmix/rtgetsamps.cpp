@@ -17,14 +17,15 @@
 #include "RTOption.h"
 
 /* ----------------------------------------------------------- rtgetsamps --- */
-void
+int
 RTcmix::rtgetsamps(AudioDevice *inputDevice)
 {
 	assert(RTOption::record() == true);
-
-	if (inputDevice->getFrames(audioin_buffer, bufsamps()) < 0)
+	int status;
+	if ((status = inputDevice->getFrames(audioin_buffer, bufsamps())) < 0)
 	{
 		rtcmix_warn("rtgetsamps", "%s\n", inputDevice->getLastError());
 	}
+	return status;
 }
 

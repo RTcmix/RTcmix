@@ -279,6 +279,10 @@ RTcmix::parse_rtoutput_args(int nargs, double pp[])
 double
 RTcmix::rtoutput(double p[], int n_args)
 {
+#ifdef EMBEDDED
+   rterror("rtoutput", "This function cannot be called on an embedded system");
+   return rtOptionalThrow(CONFIGURATION_ERROR);
+#endif
    int         error;
    struct stat statbuf;
 
