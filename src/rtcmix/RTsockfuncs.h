@@ -9,9 +9,9 @@ int newRTsock(char *ihost, int rtsno);
 
 int RTsock(char *ihost, int rtsno);
 
-int RTopensocket(int socket, char *binaryname);
+int RTopensocket(int socket, const char *binaryname);
 
-int RTopensocket_syscall(int socket, char *binaryname);
+int RTopensocket_syscall(int socket, const char *binaryname);
 
 void RTkillsocket(int socket, int pid);
 

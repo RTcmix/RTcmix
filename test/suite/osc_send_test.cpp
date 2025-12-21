@@ -131,8 +131,8 @@ int main(int argc, char *argv[]){
 				rpar < lpar)
 			{
 				fprintf(stderr,
-						"OSC: Malformed command (missing or misplaced parentheses): '%s' - skipping\n",
-						line.c_str());
+						"%s: OSC: Malformed command (missing or misplaced parentheses): '%s' - skipping\n",
+						argv[0], line.c_str());
 				continue;
 			}
 			strcpy(cmd, "/RTcmix/");
@@ -142,13 +142,13 @@ int main(int argc, char *argv[]){
 				parsedMessage = scan_string_command(line, cmd);
 			}
 			if (parsedMessage == NULL) {
-				std::fprintf(stderr, "OSC: Parse failure on line - skipping\n");
+				std::fprintf(stderr, "%s: OSC: Parse failure on line - skipping\n", argv[0]);
 				continue;
 			}
 			if (verbose) printf("Sending command '%s'\n", cmd);
 			// Send the message with all accumulated arguments
 			if (lo_send_message(t, cmd, parsedMessage) == -1) {
-				fprintf(stderr, "OSC error %d: %s\n", lo_address_errno(t),
+				fprintf(stderr, "%s: OSC error %d: %s\n", argv[0], lo_address_errno(t),
 					lo_address_errstr(t));
 				return -1;
 			}
@@ -158,7 +158,7 @@ int main(int argc, char *argv[]){
 	else {
 	    std::printf("\nsending score: '\n%s\n'", content.c_str());
 		if (lo_send(t, "/RTcmix/ScoreCommands", "s", content.c_str()) == -1) {
-			fprintf(stderr, "OSC error %d: %s\n", lo_address_errno(t),
+			fprintf(stderr, "%s: OSC error %d: %s\n", argv[0], lo_address_errno(t),
 					lo_address_errstr(t));
 			return -1;
 		}

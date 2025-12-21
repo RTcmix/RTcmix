@@ -563,11 +563,12 @@ int     RTcmixMain::runUsingSockit()
 #ifndef EMBEDDED
     /* Read an initialization score. */
     if (!noParse) {
-        int status;
         rtcmix_debug("RTcmixMain", "Parsing once ...");
-        status = ::parse_score(xargc, xargv, xenv);
-        if (status != 0)
-            exit(1);
+        retcode = ::parse_score(xargc, xargv, xenv);
+    	if (retcode != 0) {
+    		rtcmix_debug("RTcmixMain", "parse_score() failed");
+    		goto Failed;
+    	}
     }
 #endif // EMBEDDED
     
@@ -832,7 +833,7 @@ RTcmixMain::sockit(void *arg)
 		sinfo->data.p[i] = 0;
       }
 
-      // we do this when the -n flag is set, it has to parse rtsetparams()
+      // We do this when the -n flag is set: It has to parse rtsetparams()
       // coming over the socket before it can access the values of RTBUFSAMPS,
       // SR, NCHANS, etc.
       if (noParse) {

@@ -79,7 +79,7 @@ int RTsock(char *ihost, int rtsno) {
    number (again counted up from MYPORT) and returns the process id of the
    relevant cmix process */
 
-int RTopensocket(int socket, char *binaryname) {
+int RTopensocket(int socket, const char *binaryname) {
 	char syscall[60];
 	char flags[30];
 	char socknumber[2];
@@ -104,7 +104,7 @@ int RTopensocket(int socket, char *binaryname) {
 }
 
 /* Slightly different version that does not use fork() */
-int RTopensocket_syscall(int socket, char *binaryname) {
+int RTopensocket_syscall(int socket, const char *binaryname) {
 	char syscall[60];
 	char flags[30];
 	int pid;
