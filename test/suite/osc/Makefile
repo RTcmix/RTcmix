@@ -2,14 +2,19 @@
 
 COMMAND = ../osc_send -c
 SCORE = ../osc_send -s
+CMIX_ARGS =
+
+# Common log file for the server
+CMIX_LOG = cmix.log
 
 .PHONY: test_quit test_restart
 
-all:	command_tests
+all:	command_tests cleanup
 
 define RUN_SERVER
 	@echo "STARTING SERVER"
-	@CMIX -o &
+	@rm -f $(CMIX_LOG)
+	@CMIX -o $(CMIX_ARGS) 2>&1 | tee $(CMIX_LOG) &
 	@sleep 2
 endef
 
@@ -31,7 +36,8 @@ define STOP_AUDIO
 	@sleep 1
 endef
 
-command_tests: test_restart test_var_across_scores test_var_across_audio_stop
+command_tests: test_restart test_var_across_scores test_var_across_audio_stop \
+test_instrument_command test_bad_command test_empty_command test_mixed_arg_type_command
 
 test_quit:
 	$(RUN_SERVER)
@@ -62,15 +68,16 @@ test_var_across_audio_stop:
 	$(STOP_SERVER)
 
 test_instrument_command:
-	@echo "Sending a command with instrument call"
+	@echo "Sending a command with load and instrument call"
 	$(RUN_SERVER)
 	$(START_AUDIO)
+	@echo 'load("WAVETABLE");' | $(COMMAND)
 	@echo 'WAVETABLE(0, 5, 10000, 440);' | $(COMMAND)
 	@sleep 6
 	$(STOP_SERVER)
 
 test_bad_command:
-	@echo "Sending a malformed command"
+	@echo "Sending a malformed command (will fail)"
 	$(RUN_SERVER)
 	$(START_AUDIO)
 	@echo "NOTACOMMAND" | $(COMMAND)
@@ -90,6 +97,11 @@ test_mixed_arg_type_command:
 	@echo 'maketable("line", 1000, 0, 1, 1, 0);' | $(COMMAND)
 	$(STOP_SERVER)
 
-.EXIT:
+cleanup:
+	@rm -f $(CMIX_LOG)
 	@echo "killing stray CMIX processes"
-	@killall CMIX
+	@-killall -q CMIX
+
+.EXIT: .END
+
+.END: cleanup
