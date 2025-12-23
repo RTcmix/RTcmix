@@ -116,10 +116,8 @@ RTcmix::setparams(float sr, int nchans, int bufsamps, bool recording, int bus_co
         rtcmix_advise("rtsetparams", "Audio set:  %g sampling rate, %d channels", RTcmix::sr(), NCHANS);
     
 	/* inTraverse waits for this. Set it even if play_audio is false! */
-	pthread_mutex_lock(&audio_config_lock);
-	audio_config = 1;
-	pthread_mutex_unlock(&audio_config_lock);
-	
+	setAudioConfigured(true);
+
 	rtsetparams_called = 1;	/* Put this at end to allow re-call due to error */
 	
 	return 0;
@@ -180,9 +178,7 @@ int RTcmix::resetparams(float sr, int chans, int bufsamps, bool recording)
 #endif
 
 	/* inTraverse waits for this. Set it even if play_audio is false! */
-	pthread_mutex_lock(&audio_config_lock);
-	audio_config = 1;
-	pthread_mutex_unlock(&audio_config_lock);
+	setAudioConfigured(true);
 	
 	rtcmix_debug(NULL, "RTcmix::resetparams exited");
 	return 0;

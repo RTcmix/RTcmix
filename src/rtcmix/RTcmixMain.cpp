@@ -269,7 +269,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                break;
             case 'i':               /* for separate parseit thread */
                setInteractive(true);
-               audio_config = NO;
+         		setAudioConfigured(false);
                RTOption::exitOnError(false);  /* we cannot simply quit when in interactive mode */
                break;
             case 'o':
@@ -279,7 +279,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
          		}
                 setInteractive(true);
                 setUseOSC(true);
-                audio_config = NO;
+         		setAudioConfigured(false);
                 RTOption::exitOnError(false);
 #else
                  fprintf(stderr, "This build does not include OSC support\n");
@@ -455,6 +455,7 @@ RTcmixMain::runUsingOSC()
     	if (osc_thread_handle != NULL && !exit_osc) {
     		setRunStatus(RT_GOOD);	// reset for server loop
     		rtsetparams_called = false;
+    		setAudioConfigured(false); // Reset configuration state for the next run
     	}
     	else {
     		rtcmix_debug("RTcmixMain", "OSC server not running - exiting loop");
@@ -487,11 +488,13 @@ int RTcmixMain::command_handler(const char *path, const char *types, lo_arg **ar
 	if (strcmp(path, "/RTcmix/stop") == 0) {
 		rtcmix_advise("Cmd", "Shutting down audio");
 		RTcmix::setRunStatus(RT_SHUTDOWN);	// Notify inTraverse()
-	}
+		RTcmix::setAudioConfigured(false);  // Wake up runMainLoop if waiting
+}
 	else if (strcmp(path, "/RTcmix/quit") == 0) {
 		rtcmix_advise("Cmd", "Closing down OSC server");
 		exit_osc = true;
 		RTcmix::setRunStatus(RT_SHUTDOWN);	// Notify inTraverse()
+		RTcmix::setAudioConfigured(false);  // Wake up runMainLoop if waiting
 	}
 	// treat everything else as a score command
 	else if (strncmp(path, "/RTcmix/", 8) == 0) {
@@ -658,7 +661,8 @@ RTcmixMain::run()
  //                 perror("setpriority");
 #endif
            rtcmix_debug("RTcmixMain", "run: calling runMainLoop()");
-           if ((status = runMainLoop()) == 0) {
+       		setAudioConfigured(true); // Ensure standalone mode proceeds
+          if ((status = runMainLoop()) == 0) {
               rtcmix_debug("RTcmixMain", "run: calling waitForMainLoop()");
               waitForMainLoop();
            }
@@ -701,6 +705,7 @@ RTcmixMain::interrupt_handler(int signo)
 		}
 		// Notify rendering loop no matter what.
 		setRunStatus(RT_SHUTDOWN);
+		RTcmix::setAudioConfigured(false);  // Wake up runMainLoop if waiting
 
 		if (!audioLoopStarted) {
 			fprintf(stderr, "exiting\n");
@@ -767,6 +772,8 @@ void RTcmixMain::stop_OSC_Server() {
 	}
 }
 #endif
+
+/* XXX TODO: sockit needs to up updated to use the pthread_cond_wait() like above */
 
 void *
 RTcmixMain::sockit(void *arg)

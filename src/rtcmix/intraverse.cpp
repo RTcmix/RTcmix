@@ -52,7 +52,7 @@ static bool audioDone = true;   // set to false in runMainLoop
 
 int RTcmix::runMainLoop()
 {
-	Bool audio_configured = NO;
+	bool audio_configured = false;
 
     rtcmix_debug(NULL, "RTcmix::runMainLoop():  entering function");
 
@@ -66,19 +66,13 @@ int RTcmix::runMainLoop()
 
 	// Wait for the ok to go ahead
 	::pthread_mutex_lock(&audio_config_lock);
-	if (!audio_config) {
-		if (RTOption::print())
+	while (!audio_config) {
+		if (RTOption::print()) {
 			RTPrintf("RTcmix::runMainLoop():  waiting for audio_config . . .\n");
-	}
-	::pthread_mutex_unlock(&audio_config_lock);
-
-	while (!audio_configured) {
-//        rtcmix_debug(NULL, "RTcmix::runMainLoop():  top of !audio_configured loop");
-		::pthread_mutex_lock(&audio_config_lock);
-		if (audio_config) {
-			audio_configured = YES;
 		}
-		::pthread_mutex_unlock(&audio_config_lock);
+		// Efficiently wait for signal from the thread that configures audio
+		::pthread_cond_wait(&audio_config_cond, &audio_config_lock);
+
 #ifndef EMBEDDED
         // This interactive mode is specifically the standalone one - not the embedded one.
 		if (interactive()) {
@@ -93,15 +87,25 @@ int RTcmix::runMainLoop()
                 ret = -1;
             }
 			audioDone = true;
+			::pthread_mutex_unlock(&audio_config_lock); // Fix the leak
 			return ret;
 		}
 #endif
-       usleep(1000*100);   // no reason to run loop faster that 1 per 100 ms.
 	}
+	// Capture state while locked, then unlock immediately
+	audio_configured = (audio_config == YES);
+	::pthread_mutex_unlock(&audio_config_lock);
+
+	if (!audio_configured) {
+		audioDone = true;
+		rtcmix_debug(NULL, "RTcmix::runMainLoop():  Configuration interrupted.");
+		return -1;
+	}
+
 	bufEndSamp = bufsamps();	// NOTE: This has to be set *after* audio is configured
 
 #ifndef EMBEDDED
-	if (audio_configured && interactive()) {
+	if (interactive()) {
 		if (RTOption::print())
 			RTPrintf("RTcmix::runMainLoop():  audio configured.\n");
 	}

@@ -41,8 +41,10 @@
 #ifdef EMBEDDED
 #include "../parser/rtcmix_parse.h"
 #define INTERACTIVE_DEFAULT 0
+#define AUDIO_CONFIG_DEFAULT 1
 #else
 #define INTERACTIVE_DEFAULT 1
+#define AUDIO_CONFIG_DEFAULT 0
 #endif
 
 #define TLEN 20  /* maximum number of time/tempo pairs */
@@ -76,11 +78,12 @@ int             RTcmix::rtUsingOSC = 0;
 
 int				RTcmix::rtsetparams_called = 0; // will call at object instantiation, though
 int				RTcmix::audioLoopStarted = 0;
-int				RTcmix::audio_config 	= 1;
+int				RTcmix::audio_config 	= AUDIO_CONFIG_DEFAULT;	// XXX NOTE: RESET DURING BUG FIX
 FRAMETYPE		RTcmix::elapsed 		= 0;
 RTstatus		RTcmix::run_status      = RT_GOOD;
 AudioDevice *	RTcmix::audioDevice     = NULL;
 pthread_mutex_t RTcmix::audio_config_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t  RTcmix::audio_config_cond = PTHREAD_COND_INITIALIZER;
 
 heap *			RTcmix::rtHeap			= NULL;
 RTQueue *		RTcmix::rtQueue			= NULL;
@@ -612,6 +615,13 @@ int RTcmix::getBusCount()
 	return busCount;
 }
 
+void RTcmix::setAudioConfigured(bool configured) {
+	::pthread_mutex_lock(&audio_config_lock);
+	audio_config = configured ? YES : NO;
+	::pthread_cond_signal(&audio_config_cond);
+	::pthread_mutex_unlock(&audio_config_lock);
+}
+
 void RTcmix::setBufTimeOffset(float inOffset, bool inRunToOffset) {
 	bufTimeOffset = inOffset; runToOffset = inRunToOffset;
 }
@@ -732,7 +742,7 @@ void RTcmix::close()
 	AudioDevice *dev = audioDevice;
 	audioDevice = NULL;
 	delete dev;
-	audio_config = NO;
+	setAudioConfigured(false);
 	free_buffers();
 #ifdef MULTI_THREAD
 	InputFile::destroyConversionBuffers();

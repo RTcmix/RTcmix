@@ -195,6 +195,7 @@ protected:
 	
 	// Audio loop methods
 	
+	static void setAudioConfigured(bool configured);
 	int runMainLoop();
 	int waitForMainLoop();
 
@@ -221,6 +222,7 @@ protected:
 	static AudioDevice *audioDevice;
 
 	static pthread_mutex_t audio_config_lock;
+	static pthread_cond_t  audio_config_cond;
 
 	// BGG -- used for the [flush] message (flush_sched()/resetQueueHeap())
 	// DT:  main heap structure used to queue instruments
