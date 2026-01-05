@@ -147,7 +147,7 @@ void CONTROLLER::doupdate(FRAMETYPE currentFrame)
 
     // The following happens in the CONTROLLER which was given the -1 value.
     if (_cancelPending) {
- //       rtcmix_advise("CONTROLLER", "%p: Cancelling ctlr %d on channel %d (curframe %d)", this, _controllerNumber, _midiChannel, (int)currentFrame);
+        PRINT("doUpdate(%p): Cancelling ctlr %d on channel %d (curframe %d)\n", this, _controllerNumber, _midiChannel, (int)currentFrame);
         setCancel(_midiChannel, _controllerNumber);     // set up the globals to indicate cancel-in-progress
         _cancelPending = false;
         _cancelled = true;      // The next call to doupdate() will just return below
@@ -161,7 +161,7 @@ void CONTROLLER::doupdate(FRAMETYPE currentFrame)
 
     // This happens in the CONTROLLER which picks up the cancel request
     if (wasCancelled(_midiChannel, _controllerNumber)) {
-//        rtcmix_advise("CONTROLLER", "%p: Ctlr %d on channel %d cancelled (curframe %d)", this, _controllerNumber, _midiChannel, (int)currentFrame);
+        PRINT("doUpdate(%p): Ctlr %d on channel %d was cancelled (curframe %d)\n", this, _controllerNumber, _midiChannel, (int)currentFrame);
         _cancelled = true;  // avoids duplicate messages
         setendsamp(0);
     } else if (_controllerValue < 0.0) {

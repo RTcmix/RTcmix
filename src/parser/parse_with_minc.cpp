@@ -65,7 +65,7 @@ run_parser(const char *caller)
         rtcmix_warn(caller, "caught parse exception: %s", errType);
         status = err;
     }
-    catch (int otherError) {
+    catch (RTcmixStatus otherError) {
         const char *errname;
         switch (otherError) {
             case FUNCTION_NOT_FOUND:

@@ -1138,17 +1138,17 @@ MincValue MincFunctionHandler::callMincFunction(MincFunction *function, const ch
         returnedValue = returned;
     }
     catch (MincError err) {
-        sCalledFunctions.pop_back();
         if (!sCalledFunctions.empty()) {
             RTFPrintf(stderr, "[During call to '%s']\n", sCalledFunctions.back());
+            sCalledFunctions.pop_back();
         }
         decrementFunctionCallDepth();
         throw;
     }
     catch(...) {    // Anything else is an error
-        sCalledFunctions.pop_back();
         if (!sCalledFunctions.empty()) {
             RTFPrintf(stderr, "[During call to '%s']\n", sCalledFunctions.back());
+            sCalledFunctions.pop_back();
         }
         decrementFunctionCallDepth();
         throw;
@@ -1256,15 +1256,15 @@ void NodeFunctionCall::callBuiltinFunction(const char *functionName)
             break;
         case FUNCTION_NOT_FOUND:
 #if defined(ERROR_FAIL_ON_UNDEFINED_FUNCTION)
-            throw result;
+            throw RTcmixStatus(result);
 #else
         if (RTOption::bailOnUndefinedFunction()) {
-            throw result;
+            throw RTcmixStatus(result);
         }
 #endif
             break;
         default:
-            throw result;
+            throw RTcmixStatus(result);
     }
 }
 

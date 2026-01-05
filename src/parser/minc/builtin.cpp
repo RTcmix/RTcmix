@@ -34,6 +34,7 @@ static MincFloat _minc_insert(const MincValue args[], int nargs);
 static MincString _minc_type(const MincValue args[], int nargs);
 static MincString _minc_tostring(const MincValue args[], int nargs);
 static MincString _minc_substring(const MincValue args[], int nargs);
+static MincFloat _minc_throw(const MincValue args[], int nargs);
 
 /* other prototypes */
 static int _find_builtin(const char *funcname);
@@ -57,6 +58,7 @@ static struct _builtins {
    { "contains",  _minc_contains, NULL },
    { "remove",    _minc_remove,   NULL },
    { "insert",    _minc_insert,   NULL },
+//   { "throw",     _minc_throw,    NULL },     /* THIS IS HERE TO ALLOW ME TO TEST EXCEPTION HANDLING */
    { "type",      NULL,          _minc_type },
    { "tostring",  NULL,          _minc_tostring },
    { "substring", NULL,          _minc_substring },
@@ -536,6 +538,30 @@ _minc_error(const MincValue args[], int nargs)
     MincString p = (MincString) args[0];
     minc_die("%s", p);
     return -1.0;
+}
+
+MincFloat
+_minc_throw(const MincValue args[], int nargs) {
+    int exc = (int) (MincFloat)args[0];
+    if (exc == 0)
+        return 0;
+    else
+        switch (exc) {
+        case 1:     // legacy RTcmixStatus
+                minc_warn("Throwing legacy RTcmixStatus SYSTEM_ERROR exception");
+                throw SYSTEM_ERROR;
+        case 2:     // MincError (these are what minc_die(), etc., return
+                minc_warn("Throwing MincError MincParserError exception");
+                 throw MincParserError;
+        case 3:     // RTException
+                minc_warn("Throwing RTFatalException exception");
+                throw RTFatalException("Testing RTFatalException throw");
+        case 4:     // "die"
+        default:    // ... exception
+                minc_warn("Throwing unknown exception");
+                throw "A string exception";
+        }
+    return 0;
 }
 
 /* ------------------------------------------------------------------- len -- */
