@@ -34,6 +34,8 @@ protected:
 	virtual int doSetQueueSize(int *pWriteSize, int *pCount);
 	virtual int	doGetFrames(void *frameBuffer, int frameCount);
 	virtual int	doSendFrames(void *frameBuffer, int frameCount);
+	// Local helper functions
+	void		sendZeros(int zFrames);
 private:
 	const char *		_deviceName;
 	snd_pcm_t *			_handle;

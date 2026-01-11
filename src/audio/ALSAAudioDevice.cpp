@@ -113,30 +113,46 @@ int ALSAAudioDevice::doPause(bool isPaused)
 
 int ALSAAudioDevice::waitForDevice(unsigned int wTime)
 {
-	// Wait wTime msecs for snd_pcm_wait to return, then bail.
-	int ret = 0;
-	if (!stopping()) {
-		// If wTime == 0, wait forever by passing -1 for time.
-		int waitRet = snd_pcm_wait(_handle, wTime == 0 ? -1 : wTime);
-		if (waitRet <= 0) {
-			if (errno != -EINTR) {
-				switch (waitRet) {
-				case 0:
-					fprintf(stderr, "ALSAAudioDevice::waitForDevice: snd_pcm_wait timed out\n");
-					break;
-				default:
-					fprintf(stderr, "ALSAAudioDevice::waitForDevice: snd_pcm_wait returned error %d\n", errno);
-					break;
+	const bool finite = (wTime != 0);
+	const int timeout_ms = finite ? (int) wTime : -1;
+
+	for (;;) {
+		if (stopping()) {
+			PRINT1("ALSAAudioDevice::waitForDevice: stopping == true\n");
+			return 1;
+		}
+
+		int waitRet = snd_pcm_wait(_handle, timeout_ms);
+
+		if (waitRet > 0) {
+			return 0;   // ready
+		}
+
+		switch (waitRet) {
+			case 0:
+				fprintf(stderr, "ALSAAudioDevice::waitForDevice: snd_pcm_wait timed out%s\n", finite ? "" : " (unexpected)");
+				return -1;
+
+			case -EINTR:
+				PRINT1("ALSAAudioDevice::waitForDevice: got EINTR -- continuing\n");
+				continue;
+
+			case -EPIPE: {
+				int r = snd_pcm_prepare(_handle);
+				if (r < 0) {
+					fprintf(stderr, "ALSAAudioDevice::waitForDevice: prepare failed: %s (%d)\n",
+							snd_strerror(r), r);
+					return -1;
 				}
+				continue;
 			}
-			ret = -1;
+
+			default:
+				fprintf(stderr, "ALSAAudioDevice::waitForDevice: snd_pcm_wait returned '%s' (%d)\n",
+						snd_strerror(waitRet), waitRet);
+				return -1;
 		}
 	}
-	else {
-		PRINT1("ALSAAudioDevice::waitForDevice: stopping == true\n");
-		ret = 1;
-	}
-	return ret;
 }
 
 int ALSAAudioDevice::doStop()
@@ -414,9 +430,15 @@ int	ALSAAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 		if (fwritten == -EPIPE) {
 			PRINT1("ALSAAudioDevice::doSendFrames: underrun on write -- recovering and calling again\n");
 			snd_pcm_prepare(_handle);
+			sendZeros(frameCount);
+			continue;
+		}
+		else if (fwritten == -EINTR) {
+			PRINT1("ALSAAudioDevice::doSendFrames: got EINTR -- continuing\n");
+			continue;
 		}
 		else if (fwritten < 0) {
-			fprintf(stderr, "ALSAAudioDevice::doSendFrames: error writing to device: %s\n", snd_strerror(fwritten));
+			fprintf(stderr, "ALSAAudioDevice::doSendFrames: error writing to device: %s (%d)\n", snd_strerror(fwritten), fwritten);
 			return error("Error writing to device: ", snd_strerror(fwritten));
 		}
 	}
@@ -442,6 +464,14 @@ static char *nonInterleavedZeroBuffer[] = {
 	interleavedZeroBuffer
 };
 
+void ALSAAudioDevice::sendZeros(int zFrames) {
+	PRINT0("ALSAAudioDevice::sendZeros: sending %d zeros to HW...\n", zFrames);
+	if (isDeviceInterleaved())
+		doSendFrames(interleavedZeroBuffer, zFrames);
+	else
+		doSendFrames(nonInterleavedZeroBuffer, zFrames * getDeviceChannels());
+}
+
 void ALSAAudioDevice::run()
 {
 	PRINT0("ALSAAudioDevice::run: top of loop\n");
@@ -454,11 +484,7 @@ void ALSAAudioDevice::run()
 	PRINT0("ALSAAudioDevice::run: after loop\n");
 	if (ret >= 0 && !_stopDuringPause && isOpen() && isPlaying()) {
 		const int zFrames = (int) _periodSize;
-		PRINT0("ALSAAudioDevice::run: sending %d zeros to HW...\n", zFrames);
-		if (isDeviceInterleaved())
-			doSendFrames(interleavedZeroBuffer, zFrames);
-		else
-			doSendFrames(nonInterleavedZeroBuffer, zFrames * getDeviceChannels());
+		sendZeros(zFrames);
 		snd_pcm_drain(_handle);
 		_stopDuringPause = false;	// reset
 	}
