@@ -1,34 +1,32 @@
 include ../../makefile.conf
 
-OBJS = RTOSCListener.o
+OSCLIB = libosclstnr.a
+
+OBJECTS = RTOSCListener.o
 SRCS = RTOSCListener.cpp
+SCRIPT = osc_server_init.sco
+SCRIPT_PATH = $(LIBDIR)/$(SCRIPT)
 
 CXXFLAGS += -I. -I../parser $(LIBLO_CFLAGS)
 
-LIBOSCLSTNR = libosclstnr.dylib
+all: $(OSCLIB)
 
-
-all: libosclstnr.dylib
-#all: $(LIBOSCLSTNR)
-#For some reason when I try to use the $(LIBOSCLSTNR) macro
-#in the all target, it says everything is made and doesn't
-#do anything.
-
-$(LIBOSCLSTNR): $(OBJS)
+$(OSCLIB): $(OBJECTS)
 	$(RM) $@
-	$(CXX) $(DYNAMIC_LDFLAGS) -o $@ $(OBJS) $(LIBLO_LIBS)
+	ar q $@ $(OBJECTS)
+	$(RANLIB) $@
 
 RTOSCListener.o: RTOSCListener.cpp RTOSCListener.h
-	$(CXX) $(CXXFLAGS) -c -o $@ RTOSCListener.cpp 
+	$(CXX) $(CXXFLAGS) -DSCRIPT_PATH=\"$(SCRIPT_PATH)\" -c -o $@ RTOSCListener.cpp
 
 install: all
-	$(INSTALL) $(LIBOSCLSTNR) $(LIBDESTDIR)
+	$(INSTALL) $(SCRIPT) $(LIBDIR)
 
 uninstall:
-	$(RM) $(LIBDESTDIR)/$(LIBOSCLSTNR)
+	$(RM) $(LIBDIR)/$(SCRIPT)
 
 clean:
-	$(RM) *.o $(LIBOSCLSTNR)
+	$(RM) *.o $(OSCLIB)
 
 cleanall: clean
 	$(RM) depend
