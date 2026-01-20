@@ -594,7 +594,7 @@ inline char * endArray(char *buf, const char *end) {
 }
 
 inline char * addDouble(char *buf, const char *end, double value, bool first = true) {
-	buf += snprintf(buf, end - buf, first ? "%g" : ",%g", value);
+	buf += snprintf(buf, end - buf, first ? "%.12f" : ",%.12f", value);
 	return buf;
 }
 
@@ -607,7 +607,7 @@ inline char * addBool(char *buf, const char *end, bool value, bool first = true)
 	if (!first) {
 		buf += snprintf(buf, end - buf, ",");
 	}
-	buf += snprintf(buf, end - buf, "%s, ",  value ? "true" : "false");
+	buf += snprintf(buf, end - buf, "%s",  value ? "true" : "false");
 	return buf;
 }
 
@@ -662,11 +662,22 @@ int RTcmixMain::default_osc_handler(const char *path, const char *types, lo_arg 
 				sb = addDouble(sb, sbend, (double)argv[argcount++]->i, firstElement);
 				firstElement = false;
 				break;
+			case LO_INT64:
+				{
+				double asDouble = (double)argv[argcount]->i64;
+				if ((int64_t)asDouble != argv[argcount]->i64) {
+					rtcmix_warn(NULL, "OSC: 64-bit integer argument out of range for Minc argument\n");
+					status = -1;
+				}
+				sb = addDouble(sb, sbend, asDouble, firstElement);
+				++argcount;
+				firstElement = false;
+				}
+				break;
 			default:
-				rtcmix_warn(NULL, "OSC: unknown/unsupported argument type '%c'\n", *t);
+				rtcmix_warn(NULL, "OSC: unsupported argument type '%c'\n", *t);
 				status = -1;
 		}
-		++argcount;
 	}
 	if (status == 0) {
 		// Finish the "master" array
