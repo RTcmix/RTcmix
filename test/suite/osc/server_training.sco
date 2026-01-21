@@ -4,6 +4,6 @@ float testMessageHandler(list args)
 	return 0;
 }
 
-registerOSCMessageHandler("/test", testMessageHandler);
+oscRegisterMessageHandler("/test", testMessageHandler);
 
 
