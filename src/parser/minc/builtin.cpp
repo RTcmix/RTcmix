@@ -950,9 +950,15 @@ int call_list_method(MincValue &object, const char *methodName, const MincValue 
         *retval = list_append(theList, arglist);
     }
     else if (strcmp (methodName, "min") == 0) {
+        if (theList->len == 0) {
+            minc_die("%s: empty list", methodName);
+        }
         *retval = list_min(theList);
     }
     else if (strcmp (methodName, "max") == 0) {
+        if (theList->len == 0) {
+            minc_die("%s: empty list", methodName);
+        }
         *retval = list_max(theList);
     }
     else if (strcmp(methodName, "copy") == 0) {
