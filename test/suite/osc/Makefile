@@ -2,6 +2,7 @@
 
 COMMAND = ../osc_send -c
 SCORE = ../osc_send -s
+SEND = oscsend 127.0.0.1 7777
 CMIX_ARGS =
 
 # Common log file for the server
@@ -37,7 +38,8 @@ define STOP_AUDIO
 endef
 
 command_tests: test_restart test_var_across_scores test_var_across_audio_stop \
-test_instrument_command test_bad_command test_empty_command test_mixed_arg_type_command
+test_instrument_command test_bad_command test_empty_command test_mixed_arg_type_command \
+test_osc_commands
 
 test_quit:
 	$(RUN_SERVER)
@@ -95,6 +97,16 @@ test_mixed_arg_type_command:
 	$(RUN_SERVER)
 	$(START_AUDIO)
 	@echo 'maketable("line", 1000, 0, 1, 1, 0);' | $(COMMAND)
+	$(STOP_SERVER)
+	
+test_osc_commands:
+	@echo "Testing OSC messaging"
+	$(RUN_SERVER)
+	$(START_AUDIO)
+	@echo "Sending OSC training score"
+	@cat server_training.sco | $(SCORE)
+	@echo "Sending OSC commands"
+	@ $(SEND) /test ddsifT 77.7 88.8 "foobar" 9 100.1
 	$(STOP_SERVER)
 
 cleanup:

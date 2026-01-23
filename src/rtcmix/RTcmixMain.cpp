@@ -642,6 +642,14 @@ int RTcmixMain::default_osc_handler(const char *path, const char *types, lo_arg 
 			case ']':
 				sb = endArray(sb, sbend);
 				break;
+			case LO_CHAR:
+				{
+				char cstring[2];
+				snprintf(cstring, 2, "%c", argv[argcount++]->c);	// convert char to a string
+				sb = addString(sb, sbend, cstring, firstElement);
+				firstElement = false;
+				}
+				break;
 			case LO_STRING:
 				sb = addString(sb, sbend, &argv[argcount++]->s, firstElement);
 				firstElement = false;
