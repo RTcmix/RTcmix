@@ -207,7 +207,7 @@ RTcmix::init_globals()
    }
 #ifndef EMBEDDED
 	max_input_fds = sysconf(_SC_OPEN_MAX);
-	if (max_input_fds == -1)	// call failed
+	if (max_input_fds == -1 || max_input_fds > 8192)	// call failed or returned unbounded
 		max_input_fds = 128;		// what we used to hardcode
 	else
 		max_input_fds -= RESERVE_INPUT_FDS;
