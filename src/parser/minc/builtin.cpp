@@ -739,8 +739,7 @@ _minc_contains(const MincValue args[], int nargs)
         return 0;
     }
     if (!(bool)args[0]) {
-        minc_warn("contains: container is NULL");
-        return -1.0;
+        return 0;
     }
     MincDataType argtype = args[1].dataType() ;
     assert(argtype != MincVoidType);
@@ -908,6 +907,9 @@ static float list_append(MincList *inList, const MincValue arglist[])
 
 static MincValue list_min(MincList *inList)
 {
+    if (inList->len == 0) {
+        return MincValue(0.0);
+    }
     MincValue val = inList->data[0];
     for (int i = 0; i < inList->len; ++i) {
         const MincValue &item = inList->data[i];
@@ -920,6 +922,9 @@ static MincValue list_min(MincList *inList)
 
 static MincValue list_max(MincList *inList)
 {
+    if (inList->len == 0) {
+        return MincValue(0.0);
+    }
     MincValue val = inList->data[0];
     for (int i = 0; i < inList->len; ++i) {
         const MincValue &item = inList->data[i];

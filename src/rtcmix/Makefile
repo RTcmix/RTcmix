@@ -26,8 +26,8 @@ CONFDIR = ../conf
 CXXFLAGS += $(SOUND_DRIVER)
 INCLUDES += -I$(INCLUDEDIR) -I../include -I$(AUDIODIR) -I$(SNDLIBDIR) -I./heap -I../conf
 INCLUDES += -I../osc
-# Source file listings
 
+# Source file listings
 COMMON_CSRCS = \
 check_byte_order.c \
 command_line.c \
@@ -165,11 +165,6 @@ MIX_OBJS = ../../insts/base/MIX/MIX.o
 
 MAIN_OBJS = RTcmixMain.o main.o
 
-ifeq ($(OSC_SUPPORT), TRUE)
-	MAIN_OBJS += ../osc/RTOSCListener.o
-endif
-
-
 
 # The initial set of objects used by all builds
 COMMON_OBJS = $(CPPOBJS) $(COBJS) $(GENOBJS) $(RTHEAPOBJS) $(MIX_OBJS) $(AUDIODIR)/audio_devices.o
@@ -198,7 +193,8 @@ LIBGEN = ../../genlib/libgen.a
 LIBCONF = $(CONFDIR)/libconf.a
 LIBMINC = ../parser/minc/libminc.a
 SNDLIB = $(SNDLIBDIR)/sndlib.a
-# NB: the last two defs will be empty if the features are not configured
+LIBOSCLSTNR = ../osc/libosclstnr.a
+# NB: the last three defs will be empty if the features are not configured
 LIBRTAUDIO = $(AUDIODIR)/librtaudio.a $(FFTW_LIBS) $(JACK_LIBS)
 LIBINLET = ../control/maxmsp/libinlet.a
 LIBPFBUS = ../control/pfbus/libpfbus.a
@@ -305,7 +301,12 @@ $(LIBRTAUDIO):
 	(cd $(AUDIODIR); $(MAKE) $(MFLAGS) all;)
 
 $(MIX_OBJS):	
-	(cd ../../insts/base/MIX; make all)
+	(cd ../../insts/base/MIX; make all;)
+
+ifeq ($(OSC_SUPPORT), TRUE)
+$(LIBOSCLSTNR):
+	(cd ../osc; make $(MFLAGS) all;)
+endif
 
 # This target attempts to do builds in all the directories outside of the current one.
 ifneq ($(BUILDTYPE), STANDALONE)
@@ -400,8 +401,8 @@ ifeq ($(BUILDTYPE), STANDALONE)
 $(RTLIB): depend $(COMMON_OBJS) $(LIBS)
 	$(LOAD) $@ $(COMMON_OBJS) $(INST_OBJS) $(LIB_OBJS) $(LIBS) $(SYSLIBS)
 	$(RANLIB) $@
-MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O) 
-	$(CXX) $(CXXFLAGS) -o MIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) $(M_O) -L. $(LDFLAGS) $(SYS_LDFLAGS)
+MIX: $(MAIN_OBJS) $(M_O) $(PROFILE_O) $(LIBOSCLSTNR)
+	$(CXX) $(CXXFLAGS) -o MIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) $(M_O) -L. $(LIBOSCLSTNR) $(LDFLAGS) $(SYS_LDFLAGS)
 
 install:	all
 	@if test ! -d $(DESTDIR); then mkdir -p $(DESTDIR); fi;
@@ -431,18 +432,18 @@ install:	all
 
 endif
 
-PMIX: $(MAIN_OBJS) $(P_O) $(LIBS) $(PROFILE_O)
+PMIX: $(MAIN_OBJS) $(P_O) $(PROFILE_O) $(LIBOSCLSTNR)
 ifeq ($(PERL_SUPPORT), TRUE)
 	$(CXX) $(CXXFLAGS) -o PMIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) \
-		$(P_O) -L. $(LDFLAGS) $(PERL_LDFLAGS) $(SYS_LDFLAGS)
+		$(P_O) $(LIBOSCLSTNR) -L. $(LDFLAGS) $(PERL_LDFLAGS) $(SYS_LDFLAGS)
 else
 	@echo "You haven't configured with PERL_SUPPORT!"
 endif
 
-PYMIX: $(MAIN_OBJS) $(PY_O) $(LIBS) $(PROFILE_O)
+PYMIX: $(MAIN_OBJS) $(PY_O) $(PROFILE_O) $(LIBOSCLSTNR)
 ifeq ($(PYTHON_SUPPORT), TRUE)
 	$(CXX) $(CXXFLAGS) $(PYTHON_LDFLAGS) -o PYMIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) \
-		$(PY_O) -L. $(LDFLAGS) $(PYEXT) $(PYTHONLIBS) $(SYS_LDFLAGS)
+		$(PY_O) $(LIBOSCLSTNR) -L. $(LDFLAGS) $(PYEXT) $(PYTHONLIBS) $(SYS_LDFLAGS)
   ifeq ($(ARCH),MACOSX)
 		/bin/sh ../parser/python/fix_libpython_path.sh $(PYTHON)
 		/usr/bin/codesign --force -s - PYMIX

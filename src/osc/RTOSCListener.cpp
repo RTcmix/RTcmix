@@ -2,7 +2,7 @@
 #include <cstring>
 
 #include "RTOSCListener.h"
-#include "RTcmixMain.h"
+#include "../rtcmix/RTcmixMain.h"
 #include "lo/lo.h"
 
 // This is for future debugging
@@ -58,9 +58,23 @@ lo_server_thread start_osc_thread(const char *osc_port, int (*parseCallback)(con
             std::cerr << "ERROR: installed version of the OSC library must be >= 0.32" << std::endl;
             exit(1);
         }
+        if (lo_server_thread_add_method(st, NULL, NULL,
+                &RTcmixMain::default_osc_handler, (void*) NULL) == NULL) {
+            std::cerr << "ERROR: installed version of the OSC library must be >= 0.32" << std::endl;
+            exit(1);
+        }
         lo_server_thread_start(st);
     }
     return st;
 }
 
+#ifndef SCRIPT_PATH
+#error Build system failed to provide macro for SCRIPT_PATH
+#endif
 
+const char *get_osc_init_script_path()
+{
+    static char script_path[256];
+    snprintf(script_path, 256, SCRIPT_PATH);
+    return script_path;
+}

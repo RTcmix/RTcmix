@@ -274,7 +274,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                break;
             case 'o':
 #ifdef OSC
-         		if (i+1 < argc) {
+         		if (i+1 < argc && argv[i+1][0] != '-') {
          			set_osc_port(argv[++i]);
          		}
                 setInteractive(true);
@@ -426,7 +426,33 @@ RTcmixMain::runUsingOSC()
 {
     int retcode;
     pthread_t   serverThread;
-    rtcmix_debug("RTcmixMain", "creating OSC_Server() thread");
+	const char *initScriptPath = get_osc_init_script_path();
+	if (initScriptPath) {
+		rtcmix_debug("RTcmixMain", "reading OSC server init script");
+		FILE *f = fopen(initScriptPath, "r");
+		if (f == NULL) {
+			rterror("RTcmixMain", "cannot open OSC init script '%s'\n", initScriptPath);
+			return -1;
+		}
+		struct stat st;
+		if (fstat(fileno(f), &st) != 0) {
+			rterror("RTcmixMain", "cannot stat OSC init script '%s'\n", initScriptPath);
+			return -1;
+		}
+		char *scriptBuffer = new char[st.st_size];
+		if (fread(scriptBuffer, st.st_size, 1, f) != 1) {
+			rterror("RTcmixMain", "cannot read OSC init script '%s'\n", initScriptPath);
+			return -1;
+		}
+		retcode = parse_score_buffer(scriptBuffer, st.st_size);
+		delete [] scriptBuffer;
+		fclose(f);
+		if (retcode != 0) {
+			rterror("RTcmixMain", "parse_score_buffer() failed on OSC init script\n");
+			return -1;
+		}
+	}
+	rtcmix_debug("RTcmixMain", "creating OSC_Server() thread");
     retcode = pthread_create(&serverThread, NULL, &RTcmixMain::OSC_Server, (void *) this);
     if (retcode != 0) {
         rterror("RTcmixMain", "OSC_Server() thread create failed\n");
@@ -557,6 +583,120 @@ int RTcmixMain::command_handler(const char *path, const char *types, lo_arg **ar
 	return status;
 }
 
+inline char * startArray(char *buf, const char *end, bool first = true) {
+	buf += snprintf(buf, end - buf, first ? "{" : ",{");
+	return buf;
+}
+
+inline char * endArray(char *buf, const char *end) {
+	buf += snprintf(buf, end - buf, "}");
+	return buf;
+}
+
+inline char * addDouble(char *buf, const char *end, double value, bool first = true) {
+	buf += snprintf(buf, end - buf, first ? "%.12f" : ",%.12f", value);
+	return buf;
+}
+
+inline char * addString(char *buf, const char *end, const char *string, bool first = true) {
+	buf += snprintf(buf, end - buf, first ? "\"%s\"" : ",\"%s\"", string);
+	return buf;
+}
+
+inline char * addBool(char *buf, const char *end, bool value, bool first = true) {
+	if (!first) {
+		buf += snprintf(buf, end - buf, ",");
+	}
+	buf += snprintf(buf, end - buf, "%s",  value ? "true" : "false");
+	return buf;
+}
+
+int RTcmixMain::default_osc_handler(const char *path, const char *types, lo_arg **argv,
+								int argc, lo_message data, void *user_data) {
+	rtcmix_debug(NULL, "OSC: command '%s'\n", path);
+	char *scoreBuffer = new char[1024];
+	char *sbend = scoreBuffer + 1024;
+	int argcount = 0, status = 0;
+	bool firstElement = true;	// is this value the first at current array level?
+	// Begin buffer with Minc handler command
+	char *sb = scoreBuffer + snprintf(scoreBuffer, 1024, "handleOSCMessage(\"%s\",", path);
+	// Begin the "master" array which will be the second argument to handleOSCMessage()
+	sb = startArray(sb, sbend, true);
+	// Walk the types array, converting arguments into MinC array items.
+	for (const char *t = types; *t != '\0' && argcount < argc && status == 0; t++) {
+		switch (*t) {
+			case 'T':
+				// boolean true present
+				sb = addBool(sb, sbend, true, firstElement);
+				firstElement = false;
+				break;
+			case 'F':
+				// boolean false present
+				sb = addBool(sb, sbend, false, firstElement);
+				firstElement = false;
+				break;
+			case '[':
+				sb = startArray(sb, sbend, firstElement);
+				firstElement = true;
+				break;
+			case ']':
+				sb = endArray(sb, sbend);
+				break;
+			case LO_CHAR:
+				{
+				char cstring[2];
+				snprintf(cstring, 2, "%c", argv[argcount++]->c);	// convert char to a string
+				sb = addString(sb, sbend, cstring, firstElement);
+				firstElement = false;
+				}
+				break;
+			case LO_STRING:
+				sb = addString(sb, sbend, &argv[argcount++]->s, firstElement);
+				firstElement = false;
+				break;
+			case LO_SYMBOL:
+				sb = addString(sb, sbend, &argv[argcount++]->S, firstElement);
+				firstElement = false;
+				break;
+			case LO_FLOAT:
+				sb = addDouble(sb, sbend, (double)argv[argcount++]->f, firstElement);
+				firstElement = false;
+				break;
+			case LO_DOUBLE:
+				sb = addDouble(sb, sbend, argv[argcount++]->d, firstElement);
+				firstElement = false;
+				break;
+			case LO_INT32:
+				sb = addDouble(sb, sbend, (double)argv[argcount++]->i, firstElement);
+				firstElement = false;
+				break;
+			case LO_INT64:
+				{
+				double asDouble = (double)argv[argcount]->i64;
+				if ((int64_t)asDouble != argv[argcount]->i64) {
+					rtcmix_warn(NULL, "OSC: 64-bit integer argument out of range for Minc argument\n");
+					status = -1;
+				}
+				sb = addDouble(sb, sbend, asDouble, firstElement);
+				++argcount;
+				firstElement = false;
+				}
+				break;
+			default:
+				rtcmix_warn(NULL, "OSC: unsupported argument type '%c'\n", *t);
+				status = -1;
+		}
+	}
+	if (status == 0) {
+		// Finish the "master" array
+		sb = endArray(sb, sbend);
+		sb = sb + snprintf(sb, sbend-sb, ");\n");
+		parse_score_buffer(scoreBuffer, strlen(scoreBuffer));
+	}
+	delete [] scoreBuffer;
+	return status;
+}
+
 #endif
 
 int     RTcmixMain::runUsingSockit()
@@ -645,6 +785,10 @@ RTcmixMain::run()
     }
     else      // not interactive
     {
+    	if (parseOnly) {
+    		RTOption::play(false);
+    		RTOption::record(false);
+    	}
         int status = ::parse_score(xargc, xargv, xenv);
         if (parseOnly) {
             rtcmix_debug("RTcmixMain", "run: parse-only returned status %d", status);
@@ -784,7 +928,6 @@ RTcmixMain::sockit(void *arg)
     // socket stuff
     int s, ns;
     struct sockaddr_in sss;
-    int err;
     struct sockdata *sinfo = NULL;
     size_t amt;
     char *sptr;
@@ -811,7 +954,7 @@ RTcmixMain::sockit(void *arg)
     // socknew is offset from MYPORT to allow more than one inst
     sss.sin_port = htons(MYPORT+socknew);
 
-    err = ::bind(s, (struct sockaddr *)&sss, sizeof(sss));
+    int err = ::bind(s, (struct sockaddr *)&sss, sizeof(sss));
     if (err < 0) {
       perror("bind");
 	  setRunStatus(RT_ERROR);	// Notify inTraverse()
