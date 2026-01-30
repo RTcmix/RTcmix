@@ -785,6 +785,10 @@ RTcmixMain::run()
     }
     else      // not interactive
     {
+    	if (parseOnly) {
+    		RTOption::play(false);
+    		RTOption::record(false);
+    	}
         int status = ::parse_score(xargc, xargv, xenv);
         if (parseOnly) {
             rtcmix_debug("RTcmixMain", "run: parse-only returned status %d", status);
