@@ -193,7 +193,9 @@ LIBGEN = ../../genlib/libgen.a
 LIBCONF = $(CONFDIR)/libconf.a
 LIBMINC = ../parser/minc/libminc.a
 SNDLIB = $(SNDLIBDIR)/sndlib.a
-LIBOSCLSTNR = ../osc/libosclstnr.a
+ifeq ($(OSC_SUPPORT), TRUE)
+	LIBOSCLSTNR = ../osc/libosclstnr.a
+endif
 # NB: the last three defs will be empty if the features are not configured
 LIBRTAUDIO = $(AUDIODIR)/librtaudio.a $(FFTW_LIBS) $(JACK_LIBS)
 LIBINLET = ../control/maxmsp/libinlet.a
