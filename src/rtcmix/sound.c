@@ -99,10 +99,10 @@ static int _flayout(float *out, int *chlist, int fno);
 static int _iwipeout(float *out, int fno);
 static int _fwipeout(float *out, int fno);
 
-int (*addoutpointer[NFILES])();
-int (*layoutpointer[NFILES])();
-int (*wipeoutpointer[NFILES])();
-int (*getinpointer[NFILES])();
+int (*addoutpointer[NFILES])(float *, int);
+int (*layoutpointer[NFILES])(float *, int *, int);
+int (*wipeoutpointer[NFILES])(float *, int);
+int (*getinpointer[NFILES])(float *, int);
 
 /*****   for macros */
 static float FTEMP1,FTEMP2,FTEMP3,FTEMP4;
