@@ -98,6 +98,10 @@ run_parser(const char *caller)
         rterror(caller, "Caught exception: %s", errname);
         status = otherError;
     }
+    catch (std::bad_alloc) {
+        rterror(caller, "Caught std::bad_alloc");
+        status = MEMORY_ERROR;
+    }
     catch (...) {
         rterror(caller, "Caught unknown exception");
         status = -1;
