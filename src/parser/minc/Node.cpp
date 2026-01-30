@@ -312,7 +312,10 @@ Node *	Node::exct()
 #ifdef DEBUG_FILENAME_INCLUDES
     printf("%s::exct(%p) setting current location to '%s', current_lineno to %d\n", classname(), this, includeFilename, lineno);
 #endif
-    if (RTOption::parserWarnings() < MincAllWarnings) {
+    if (RTOption::parserWarnings() == MincNoWarnings) {
+        sMincWarningLevel = MincNoWarnings;
+    }
+    else if (RTOption::parserWarnings() < MincAllWarnings) {
         sMincWarningLevel = MincNoDefaultedArgWarnings;
     }
     yy_store_lineno(lineno);
