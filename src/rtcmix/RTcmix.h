@@ -23,6 +23,7 @@ class heap;
 class AudioDevice;
 struct Arg;
 class TaskManager;
+class TierManager;
 
 struct _handle;
 typedef struct _handle *Handle;
@@ -127,6 +128,9 @@ public:
     static void mixToBus();
 #endif
 	static void releaseInput(int fdIndex);
+
+	// Tier-based pull model support
+	static TierManager* getTierManager() { return tierManager; }
 
     // Tempo methods
     static double tbase(double p[], int n_args);
@@ -310,6 +314,9 @@ private:
 	static BufPtr	*audioin_buffer;    /* input from ADC, not file */
 	static BufPtr	*aux_buffer;
 	static BufPtr	*out_buffer;
+	// Tier-based pull model support
+	static TierManager *tierManager;
+
 #ifdef MULTI_THREAD
 	static TaskManager *taskManager;
 //	static pthread_mutex_t aux_buffer_lock;

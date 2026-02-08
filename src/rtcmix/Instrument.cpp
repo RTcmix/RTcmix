@@ -14,6 +14,8 @@
 #include <sndlibsupport.h>
 #include <bus.h>
 #include "BusSlot.h"
+#include "TierManager.h"
+#include "Tier.h"
 #include <assert.h>
 #include <ugens.h>
 #include "heap/heap.h"
@@ -40,7 +42,8 @@ float			Instrument::SR     = 0;
 Instrument::Instrument() : RefCounted(true),
 	  _start(0.0), _dur(0.0), cursamp(0), chunksamps(0), i_chunkstart(0),
 	  endsamp(0), output_offset(0), outputchans(0), _name(NULL),
-	  needs_to_run(true), _nsamps(0), inputChainBuf(NULL)
+	  needs_to_run(true), _nsamps(0), inputChainBuf(NULL),
+	  inputTier(NULL), inputTierConsumerID(-1)
 {
 #if defined(DEBUG_MEMORY) || defined(DEBUG_INST)
 	rtcmix_print("Instrument::Instrument(this = %p)\n", this);
@@ -111,9 +114,22 @@ void Instrument::set_bus_config(const char *inst_name)
 
   _busSlot = RTcmix::get_bus_config(inst_name);
   _busSlot->ref();		// add our reference to this
-  
+
   _input.inputchans = _busSlot->in_count + _busSlot->auxin_count;
   outputchans = _busSlot->out_count + _busSlot->auxout_count;
+
+  // Register with tier system for pull-based audio routing
+  TierManager* tierMgr = RTcmix::getTierManager();
+
+  // Register as writer to all auxout buses
+  for (int i = 0; i < _busSlot->auxout_count; i++) {
+    tierMgr->addWriter(_busSlot->auxout[i], this);
+  }
+  // Register as consumer of all auxin buses
+  // (This also sets our inputTier and inputTierConsumerID)
+  for (int i = 0; i < _busSlot->auxin_count; i++) {
+    tierMgr->addConsumer(_busSlot->auxin[i], this);
+  }
 }
 
 double Instrument::s_dArray[MAXDISPARGS];
@@ -477,6 +493,19 @@ int Instrument::setChainedInputBuffer(BUFTYPE *inputBuf, int inputChans)
 	}
 	inputChainBuf = inputBuf;
 	return 0;
+}
+
+/* ----------------------------------------------------------------- setInputTier --- */
+/* Configures the instrument to pull input from a tier (aux bus with ring buffer) */
+
+void Instrument::setInputTier(Tier* tier, int consumerID)
+{
+	inputTier = tier;
+	inputTierConsumerID = consumerID;
+#ifdef DEBUG_INST
+	rtcmix_print("Instrument::setInputTier(this = %p [%s]): tier=%p, consumerID=%d\n",
+				 this, _name, tier, consumerID);
+#endif
 }
 
 const PField &

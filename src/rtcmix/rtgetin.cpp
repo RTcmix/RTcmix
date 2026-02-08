@@ -16,9 +16,13 @@
 #include <Instrument.h>
 #include "BusSlot.h"
 #include "InputFile.h"
+#include "Tier.h"
 #include <ugens.h>
 #include <rtdefs.h>
 #include <assert.h>
+
+/* Debug macros for tier-based input */
+#undef TBUG
 
 #undef DEBUG
 
@@ -237,42 +241,57 @@ int	Instrument::rtgetin(float *inarr, int nsamps)
 	const short in_count = busSlot->in_count;
 	const int fdindex = _input.fdIndex;
 	const int frames = nsamps / inchans;
-	
+
 #ifdef DEBUG
 	printf("%s::rtgetin(%p): doing normal read from input\n", name(), this);
 #endif
 
 	assert(inarr != NULL);
-	
+
+	/* Tier-based pull model: pull from input tier if available */
+	if (hasInputTier()) {
+#ifdef TBUG
+		printf("%s::rtgetin(%p): pulling %d frames from tier (consumer %d)\n",
+			   name(), this, frames, inputTierConsumerID);
+#endif
+		int pulled = inputTier->pullFrames(inputTierConsumerID, frames, inarr);
+#ifdef TBUG
+		printf("%s::rtgetin(%p): tier returned %d frames\n",
+			   name(), this, pulled);
+#endif
+		return pulled * inchans;
+	}
+
+	/* Legacy path: fixed frame count constraint for push model */
 	if (frames > RTcmix::bufsamps()) {
 		die(name(), "Internal Error: rtgetin: nsamps out of range!");
 		return -1;
 	}
-	
+
 	if (fdindex == NO_DEVICE_FDINDEX) {               /* input from aux buses */
 		const short *auxin = busSlot->auxin;        /* auxin channel list */
 		const short auxin_count = busSlot->auxin_count;
-		
+
 		assert(auxin_count > 0);
-		
+
 		RTcmix::readFromAuxBus(inarr, inchans, frames, auxin, auxin_count, output_offset);
 	}
 	else if (RTcmix::isInputAudioDevice(fdindex)) {  /* input from mic/line */
 		const short *in = busSlot->in;              /* in channel list */
-		
+
 		assert(in_count > 0);
-		
+
 		RTcmix::readFromAudioDevice(inarr, inchans, frames, in, in_count, output_offset);
 	}
 	else {                                            /* input from file */
 		const short *in = busSlot->in;              /* in channel list */
-		
+
 		assert(in_count > 0);
-		
+
 		RTcmix::readFromInputFile(inarr, inchans, frames, in, in_count,
 								  fdindex, &_input.fileOffset);
 	}
-	
+
 	return nsamps;   // this seems pointless, but no insts pay attention anyway
 }
 

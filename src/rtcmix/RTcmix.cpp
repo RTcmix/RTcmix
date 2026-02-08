@@ -33,6 +33,7 @@
 #ifdef MULTI_THREAD
 #include "TaskManager.h"
 #endif
+#include "TierManager.h"
 #include "rt.h"
 #include "heap.h"
 #include "maxdispargs.h"
@@ -129,6 +130,9 @@ TaskManager *	RTcmix::taskManager = NULL;
 std::vector<RTcmix::MixData> RTcmix::mixVectors[RT_THREAD_COUNT];
 #endif
 
+// Tier-based pull model support
+TierManager *	RTcmix::tierManager = NULL;
+
 std::vector<RTcmix::CallbackInfo> RTcmix::audioStartCallbacks;
 std::vector<RTcmix::CallbackInfo> RTcmix::audioStopCallbacks;
 std::vector<RTcmix::CallbackInfo> RTcmix::destroyCallbacks;
@@ -196,6 +200,13 @@ RTcmix::init_globals()
         mixVectors[i].reserve(busCount);
     }
 #endif
+
+   // Initialize tier manager for pull-based audio routing
+   tierManager = new TierManager(busCount, NCHANS, sBufferFrameCount);
+#ifdef MULTI_THREAD
+   tierManager->setTaskManager(taskManager);
+#endif
+
 	BusConfigs = new BusConfig[busCount];
 	AuxToAuxPlayList = new short[busCount];
 	ToOutPlayList = new short[busCount];
@@ -265,6 +276,10 @@ RTcmix::free_globals()
 	output_data_format 		= -1;
 	output_header_type 		= -1;
 	
+	// Clean up tier manager before task manager
+	delete tierManager;
+	tierManager = NULL;
+
 #ifdef MULTI_THREAD
 	delete taskManager;
 	taskManager = NULL;
