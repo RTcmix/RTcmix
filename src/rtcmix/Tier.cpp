@@ -37,7 +37,6 @@
 
 /* Initial capacity for dynamic arrays */
 #define INITIAL_WRITER_CAPACITY 8
-#define INITIAL_CONSUMER_CAPACITY 4
 
 
 /* ------------------------------------------------------------ Tier::Tier --- */
@@ -52,11 +51,7 @@ Tier::Tier(int busID, int numChannels, int bufferSize, int bufsamps)
       mFramesProduced(0),
       mWriters(NULL),
       mWriterCount(0),
-      mWriterCapacity(0),
-      mReadCursors(NULL),
-      mFramesConsumed(NULL),
-      mConsumerCount(0),
-      mConsumerCapacity(0)
+      mWriterCapacity(0)
 #ifdef MULTI_THREAD
       , mTaskManager(NULL)
 #endif
@@ -81,11 +76,6 @@ Tier::Tier(int busID, int numChannels, int bufferSize, int bufsamps)
     mWriterCapacity = INITIAL_WRITER_CAPACITY;
     mWriters = new Instrument*[mWriterCapacity];
 
-    /* Allocate consumer arrays */
-    mConsumerCapacity = INITIAL_CONSUMER_CAPACITY;
-    mReadCursors = new int[mConsumerCapacity];
-    mFramesConsumed = new FRAMETYPE[mConsumerCapacity];
-
 #ifdef TBUG
     printf("Tier %d: allocated ring buffer %d frames x %d chans = %d samples\n",
            mBusID, mBufferSize, mNumChannels, mBufferSize * mNumChannels);
@@ -107,8 +97,6 @@ Tier::~Tier()
 
     delete[] mRingBuffer;
     delete[] mWriters;
-    delete[] mReadCursors;
-    delete[] mFramesConsumed;
 
 #ifdef WBUG
     printf("EXITING Tier::~Tier()\n");
@@ -131,16 +119,17 @@ void Tier::reset()
     memset(mRingBuffer, 0, sizeof(BUFTYPE) * mBufferSize * mNumChannels);
 
     /* Reset all consumer cursors */
-    for (int i = 0; i < mConsumerCount; ++i) {
-        mReadCursors[i] = 0;
-        mFramesConsumed[i] = 0;
+    for (std::map<Instrument*, ConsumerState>::iterator it = mConsumers.begin();
+         it != mConsumers.end(); ++it) {
+        it->second.readCursor = 0;
+        it->second.framesConsumed = 0;
     }
 
     /* Note: We don't clear the writers array - instruments are still registered */
 
 #ifdef TBUG
     printf("Tier %d: reset complete, %d writers, %d consumers\n",
-           mBusID, mWriterCount, mConsumerCount);
+           mBusID, mWriterCount, (int)mConsumers.size());
 #endif
 
 #ifdef WBUG
@@ -202,44 +191,39 @@ void Tier::removeWriter(Instrument* inst)
 
 /* ------------------------------------------------------ Tier::addConsumer --- */
 
-int Tier::addConsumer()
+void Tier::addConsumer(Instrument* inst)
 {
-    if (mConsumerCount >= mConsumerCapacity) {
-        growConsumers();
-    }
-
-    int consumerID = mConsumerCount;
-    mReadCursors[consumerID] = mWritePosition;
-    mFramesConsumed[consumerID] = 0;
-    ++mConsumerCount;
+    ConsumerState state;
+    state.readCursor = mWritePosition;
+    state.framesConsumed = 0;
+    mConsumers[inst] = state;
 
 #ifdef TBUG
-    printf("Tier %d: addConsumer() returning ID %d, now %d consumers\n",
-           mBusID, consumerID, mConsumerCount);
+    printf("Tier %d: addConsumer(%p [%s]), now %d consumers\n",
+           mBusID, inst, inst->name(), (int)mConsumers.size());
 #endif
-
-    return consumerID;
 }
 
 
 /* -------------------------------------------------- Tier::framesAvailable --- */
 
-int Tier::framesAvailable(int consumerID) const
+int Tier::framesAvailable(Instrument* consumer) const
 {
-    if (consumerID < 0 || consumerID >= mConsumerCount) {
+    std::map<Instrument*, ConsumerState>::const_iterator it = mConsumers.find(consumer);
+    if (it == mConsumers.end()) {
 #ifdef DBUG
-        printf("Tier %d: framesAvailable() invalid consumerID %d\n",
-               mBusID, consumerID);
+        printf("Tier %d: framesAvailable() unknown consumer %p\n",
+               mBusID, consumer);
 #endif
         return 0;
     }
 
     /* Available = produced - consumed */
-    FRAMETYPE available = mFramesProduced - mFramesConsumed[consumerID];
+    FRAMETYPE available = mFramesProduced - it->second.framesConsumed;
 
 #ifdef TBUG
-    printf("Tier %d: framesAvailable(consumer=%d) = %lld (produced=%lld, consumed=%lld)\n",
-           mBusID, consumerID, available, mFramesProduced, mFramesConsumed[consumerID]);
+    printf("Tier %d: framesAvailable(consumer=%p) = %lld (produced=%lld, consumed=%lld)\n",
+           mBusID, consumer, available, mFramesProduced, it->second.framesConsumed);
 #endif
 
     /* Clamp to buffer size (ring buffer constraint) */
@@ -253,29 +237,32 @@ int Tier::framesAvailable(int consumerID) const
 
 /* ----------------------------------------------------- Tier::pullFrames --- */
 
-int Tier::pullFrames(int consumerID, int requestedFrames, BufPtr dest)
+int Tier::pullFrames(Instrument* consumer, int requestedFrames, BufPtr dest)
 {
 #ifdef WBUG
-    printf("ENTERING Tier::pullFrames(bus=%d, consumer=%d, frames=%d)\n",
-           mBusID, consumerID, requestedFrames);
+    printf("ENTERING Tier::pullFrames(bus=%d, consumer=%p, frames=%d)\n",
+           mBusID, consumer, requestedFrames);
 #endif
 
-    if (consumerID < 0 || consumerID >= mConsumerCount) {
+    std::map<Instrument*, ConsumerState>::iterator it = mConsumers.find(consumer);
+    if (it == mConsumers.end()) {
 #ifdef DBUG
-        printf("Tier %d: pullFrames() invalid consumerID %d\n",
-               mBusID, consumerID);
+        printf("Tier %d: pullFrames() unknown consumer %p\n",
+               mBusID, consumer);
 #endif
         return 0;
     }
 
+    ConsumerState& state = it->second;
+
 #ifdef TBUG
-    printf("Tier %d: consumer %d requesting %d frames, available=%d\n",
-           mBusID, consumerID, requestedFrames, framesAvailable(consumerID));
+    printf("Tier %d: consumer %p requesting %d frames, available=%d\n",
+           mBusID, consumer, requestedFrames, framesAvailable(consumer));
 #endif
 
     /* Run production cycles until we have enough frames */
     int cycleCount = 0;
-    while (framesAvailable(consumerID) < requestedFrames) {
+    while (framesAvailable(consumer) < requestedFrames) {
         /* Check for no writers - would loop forever */
         if (mWriterCount == 0) {
 #ifdef DBUG
@@ -295,23 +282,21 @@ int Tier::pullFrames(int consumerID, int requestedFrames, BufPtr dest)
     }
 
 #ifdef TBUG
-    printf("Tier %d: copying %d frames from readPos=%d to consumer %d\n",
-           mBusID, requestedFrames, mReadCursors[consumerID], consumerID);
+    printf("Tier %d: copying %d frames from readPos=%d to consumer %p\n",
+           mBusID, requestedFrames, state.readCursor, consumer);
 #endif
 
     /* Copy requested frames to consumer's buffer */
-    copyToConsumer(dest, mReadCursors[consumerID], requestedFrames);
+    copyToConsumer(dest, state.readCursor, requestedFrames);
 
     /* Advance this consumer's read cursor */
-    int oldPos = mReadCursors[consumerID];
-    mReadCursors[consumerID] =
-        (mReadCursors[consumerID] + requestedFrames) % mBufferSize;
-    mFramesConsumed[consumerID] += requestedFrames;
+    int oldPos = state.readCursor;
+    state.readCursor = (state.readCursor + requestedFrames) % mBufferSize;
+    state.framesConsumed += requestedFrames;
 
 #ifdef TBUG
-    printf("Tier %d: consumer %d readCursor %d -> %d, consumed=%lld\n",
-           mBusID, consumerID, oldPos, mReadCursors[consumerID],
-           mFramesConsumed[consumerID]);
+    printf("Tier %d: consumer %p readCursor %d -> %d, consumed=%lld\n",
+           mBusID, consumer, oldPos, state.readCursor, state.framesConsumed);
 #endif
 
 #ifdef WBUG
@@ -470,32 +455,6 @@ void Tier::growWriters()
 }
 
 
-/* -------------------------------------------------- Tier::growConsumers --- */
-
-void Tier::growConsumers()
-{
-    int newCapacity = mConsumerCapacity * 2;
-    int* newCursors = new int[newCapacity];
-    FRAMETYPE* newConsumed = new FRAMETYPE[newCapacity];
-
-    for (int i = 0; i < mConsumerCount; ++i) {
-        newCursors[i] = mReadCursors[i];
-        newConsumed[i] = mFramesConsumed[i];
-    }
-
-    delete[] mReadCursors;
-    delete[] mFramesConsumed;
-    mReadCursors = newCursors;
-    mFramesConsumed = newConsumed;
-    mConsumerCapacity = newCapacity;
-
-#ifdef TBUG
-    printf("Tier %d: grew consumers array to capacity %d\n",
-           mBusID, mConsumerCapacity);
-#endif
-}
-
-
 /* ------------------------------------------------ Tier::getWriterCount --- */
 
 int Tier::getWriterCount() const
@@ -508,5 +467,5 @@ int Tier::getWriterCount() const
 
 int Tier::getConsumerCount() const
 {
-    return mConsumerCount;
+    return (int)mConsumers.size();
 }

@@ -142,20 +142,21 @@ void TierManager::addWriter(int busID, Instrument* inst)
 
 /* ------------------------------------------------- TierManager::addConsumer --- */
 
-int TierManager::addConsumer(int busID, Instrument* inst)
+void TierManager::addConsumer(int busID, Instrument* inst)
 {
     Tier* tier = getOrCreateTier(busID);
-    int consumerID = tier->addConsumer();
+    tier->addConsumer(inst);
 
-    /* Configure the instrument with its tier and consumer ID */
-    inst->setInputTier(tier, consumerID);
+    /* NOTE: Don't enable tier path yet - intraverse.cpp integration not complete.
+     * When Phase 2 is implemented, uncomment this line:
+     * inst->setInputTier(tier);
+     * For now, instruments use the legacy aux_buffer path in rtgetin().
+     */
 
 #ifdef TBUG
-    printf("TierManager: added consumer %p [%s] to bus %d with consumerID %d\n",
-           inst, inst->name(), busID, consumerID);
+    printf("TierManager: added consumer %p [%s] to bus %d\n",
+           inst, inst->name(), busID);
 #endif
-
-    return consumerID;
 }
 
 

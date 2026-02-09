@@ -28,6 +28,7 @@
 #include <rt_types.h>
 #include <bus.h>
 
+#include <map>
 #ifdef MULTI_THREAD
 #include <vector>
 #endif
@@ -41,8 +42,6 @@ class TaskManager;
 /* Default ring buffer size multiplier (relative to RTBUFSAMPS) */
 #define TIER_BUFFER_MULTIPLIER 4
 
-/* Special consumer ID for hardware output */
-#define TIER_HARDWARE_CONSUMER -1
 
 
 class Tier {
@@ -63,20 +62,20 @@ public:
      * Request frames from this tier.
      * Triggers production cycles as needed to satisfy the request.
      *
-     * @param consumerID      ID returned by addConsumer()
+     * @param consumer        The instrument requesting frames
      * @param requestedFrames Number of frames requested
      * @param dest            Destination buffer (interleaved)
      * @return                Number of frames actually delivered
      */
-    int pullFrames(int consumerID, int requestedFrames, BufPtr dest);
+    int pullFrames(Instrument* consumer, int requestedFrames, BufPtr dest);
 
     /**
      * Register a consumer that will read from this tier.
      * Each consumer gets an independent read cursor.
      *
-     * @return Consumer ID to use with pullFrames()
+     * @param inst  The instrument that reads from this tier
      */
-    int addConsumer();
+    void addConsumer(Instrument* inst);
 
     /**
      * Register an instrument that writes to this tier.
@@ -110,10 +109,10 @@ public:
     /**
      * Get frames available for a specific consumer.
      *
-     * @param consumerID  The consumer ID
-     * @return            Number of frames available to read
+     * @param consumer  The instrument requesting availability info
+     * @return          Number of frames available to read
      */
-    int framesAvailable(int consumerID) const;
+    int framesAvailable(Instrument* consumer) const;
 
 #ifdef MULTI_THREAD
     /**
@@ -141,11 +140,13 @@ private:
     int mWriterCount;
     int mWriterCapacity;
 
-    /* Readers (downstream consumers) */
-    int* mReadCursors;        /* per-consumer read position */
-    FRAMETYPE* mFramesConsumed; /* per-consumer total consumed */
-    int mConsumerCount;
-    int mConsumerCapacity;
+    /* Readers (downstream consumers) - keyed by Instrument pointer */
+    struct ConsumerState {
+        int readCursor;           /* position in ring buffer (frames) */
+        FRAMETYPE framesConsumed; /* total frames consumed */
+        ConsumerState() : readCursor(0), framesConsumed(0) {}
+    };
+    std::map<Instrument*, ConsumerState> mConsumers;
 
     /**
      * Run one production cycle.
@@ -176,11 +177,6 @@ private:
      * Grow the writers array if needed.
      */
     void growWriters();
-
-    /**
-     * Grow the consumers array if needed.
-     */
-    void growConsumers();
 
 #ifdef MULTI_THREAD
     TaskManager* mTaskManager;

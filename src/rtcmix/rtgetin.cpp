@@ -251,10 +251,10 @@ int	Instrument::rtgetin(float *inarr, int nsamps)
 	/* Tier-based pull model: pull from input tier if available */
 	if (hasInputTier()) {
 #ifdef TBUG
-		printf("%s::rtgetin(%p): pulling %d frames from tier (consumer %d)\n",
-			   name(), this, frames, inputTierConsumerID);
+		printf("%s::rtgetin(%p): pulling %d frames from tier\n",
+			   name(), this, frames);
 #endif
-		int pulled = inputTier->pullFrames(inputTierConsumerID, frames, inarr);
+		int pulled = inputTier->pullFrames(this, frames, inarr);
 #ifdef TBUG
 		printf("%s::rtgetin(%p): tier returned %d frames\n",
 			   name(), this, pulled);

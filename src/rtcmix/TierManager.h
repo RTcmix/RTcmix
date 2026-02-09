@@ -76,9 +76,8 @@ public:
      *
      * @param busID  The aux bus number
      * @param inst   The instrument that reads from this bus
-     * @return       Consumer ID for the instrument
      */
-    int addConsumer(int busID, Instrument* inst);
+    void addConsumer(int busID, Instrument* inst);
 
     /**
      * Remove a writer from a tier.

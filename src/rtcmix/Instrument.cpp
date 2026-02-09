@@ -43,7 +43,7 @@ Instrument::Instrument() : RefCounted(true),
 	  _start(0.0), _dur(0.0), cursamp(0), chunksamps(0), i_chunkstart(0),
 	  endsamp(0), output_offset(0), outputchans(0), _name(NULL),
 	  needs_to_run(true), _nsamps(0), inputChainBuf(NULL),
-	  inputTier(NULL), inputTierConsumerID(-1)
+	  inputTier(NULL)
 {
 #if defined(DEBUG_MEMORY) || defined(DEBUG_INST)
 	rtcmix_print("Instrument::Instrument(this = %p)\n", this);
@@ -498,13 +498,12 @@ int Instrument::setChainedInputBuffer(BUFTYPE *inputBuf, int inputChans)
 /* ----------------------------------------------------------------- setInputTier --- */
 /* Configures the instrument to pull input from a tier (aux bus with ring buffer) */
 
-void Instrument::setInputTier(Tier* tier, int consumerID)
+void Instrument::setInputTier(Tier* tier)
 {
 	inputTier = tier;
-	inputTierConsumerID = consumerID;
 #ifdef DEBUG_INST
-	rtcmix_print("Instrument::setInputTier(this = %p [%s]): tier=%p, consumerID=%d\n",
-				 this, _name, tier, consumerID);
+	rtcmix_print("Instrument::setInputTier(this = %p [%s]): tier=%p\n",
+				 this, _name, tier);
 #endif
 }
 
