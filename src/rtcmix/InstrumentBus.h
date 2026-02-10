@@ -4,9 +4,9 @@
 */
 
 /*
- * Tier.h - Tier-based pull model for elastic audio bus buffering
+ * InstrumentBus.h - Pull model for elastic audio bus buffering
  *
- * A Tier wraps a bus with a ring buffer, enabling instruments with
+ * An InstrumentBus wraps a bus with a ring buffer, enabling instruments with
  * different input/output frame ratios to work correctly in chains.
  *
  * Key invariants:
@@ -22,44 +22,42 @@
  * Author: Claude Code / RTcmix Development Team
  */
 
-#ifndef _TIER_H_
-#define _TIER_H_
+#ifndef _INSTRUMENTBUS_H_
+#define _INSTRUMENTBUS_H_
 
 #include <rt_types.h>
 #include <bus.h>
 
 #include <map>
-#ifdef MULTI_THREAD
 #include <vector>
-#endif
 
 class Instrument;
 class TaskManager;
 
-/* Debug macro for tier operations - define TBUG to enable */
-#undef TBUG
+/* Debug macro for InstrumentBus operations - define IBUG to enable */
+#undef IBUG
 
 /* Default ring buffer size multiplier (relative to RTBUFSAMPS) */
-#define TIER_BUFFER_MULTIPLIER 4
+#define INSTBUS_BUFFER_MULTIPLIER 4
 
 
 
-class Tier {
+class InstrumentBus {
 public:
     /**
-     * Create a new tier for the specified bus.
+     * Create a new InstrumentBus for the specified bus.
      *
-     * @param busID         The bus number this tier manages
+     * @param busID         The bus number this InstrumentBus manages
      * @param numChannels   Number of audio channels for this bus
      * @param bufferSize    Size of ring buffer in frames (0 = auto-calculate)
      * @param bufsamps      The RTBUFSAMPS value (frames per chunk)
      */
-    Tier(int busID, int numChannels, int bufferSize, int bufsamps);
+    InstrumentBus(int busID, int numChannels, int bufferSize, int bufsamps);
 
-    ~Tier();
+    ~InstrumentBus();
 
     /**
-     * Request frames from this tier.
+     * Request frames from this InstrumentBus.
      * Triggers production cycles as needed to satisfy the request.
      *
      * @param consumer        The instrument requesting frames
@@ -70,22 +68,22 @@ public:
     int pullFrames(Instrument* consumer, int requestedFrames, BufPtr dest);
 
     /**
-     * Register a consumer that will read from this tier.
+     * Register a consumer that will read from this InstrumentBus.
      * Each consumer gets an independent read cursor.
      *
-     * @param inst  The instrument that reads from this tier
+     * @param inst  The instrument that reads from this InstrumentBus
      */
     void addConsumer(Instrument* inst);
 
     /**
-     * Register an instrument that writes to this tier.
+     * Register an instrument that writes to this InstrumentBus.
      *
-     * @param inst  The instrument that produces audio for this tier
+     * @param inst  The instrument that produces audio for this InstrumentBus
      */
     void addWriter(Instrument* inst);
 
     /**
-     * Remove a writer from this tier.
+     * Remove a writer from this InstrumentBus.
      * Called when an instrument finishes.
      *
      * @param inst  The instrument to remove
@@ -135,10 +133,8 @@ private:
     int mWritePosition;       /* current write position (frame offset) */
     FRAMETYPE mFramesProduced; /* total frames produced since reset */
 
-    /* Writers (instruments that produce to this tier) */
-    Instrument** mWriters;
-    int mWriterCount;
-    int mWriterCapacity;
+    /* Writers (instruments that produce to this InstrumentBus) */
+    std::vector<Instrument*> mWriters;
 
     /* Readers (downstream consumers) - keyed by Instrument pointer */
     struct ConsumerState {
@@ -173,19 +169,14 @@ private:
      */
     void copyToConsumer(BufPtr dest, int readPos, int numFrames);
 
-    /**
-     * Grow the writers array if needed.
-     */
-    void growWriters();
-
 #ifdef MULTI_THREAD
     TaskManager* mTaskManager;
     std::vector<Instrument*> mActiveWriters;  /* temp for current cycle */
 #endif
 
     /* Prevent copying */
-    Tier(const Tier&);
-    Tier& operator=(const Tier&);
+    InstrumentBus(const InstrumentBus&);
+    InstrumentBus& operator=(const InstrumentBus&);
 };
 
-#endif /* _TIER_H_ */
+#endif /* _INSTRUMENTBUS_H_ */

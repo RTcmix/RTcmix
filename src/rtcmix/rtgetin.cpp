@@ -16,12 +16,12 @@
 #include <Instrument.h>
 #include "BusSlot.h"
 #include "InputFile.h"
-#include "Tier.h"
+#include "InstrumentBus.h"
 #include <ugens.h>
 #include <rtdefs.h>
 #include <assert.h>
 
-/* Debug macros for tier-based input */
+/* Debug macros for InstrumentBus-based input */
 #undef TBUG
 
 #undef DEBUG
@@ -248,15 +248,15 @@ int	Instrument::rtgetin(float *inarr, int nsamps)
 
 	assert(inarr != NULL);
 
-	/* Tier-based pull model: pull from input tier if available */
-	if (hasInputTier()) {
+	/* InstrumentBus-based pull model: pull from input bus if available */
+	if (hasInputInstBus()) {
 #ifdef TBUG
-		printf("%s::rtgetin(%p): pulling %d frames from tier\n",
+		printf("%s::rtgetin(%p): pulling %d frames from InstrumentBus\n",
 			   name(), this, frames);
 #endif
-		int pulled = inputTier->pullFrames(this, frames, inarr);
+		int pulled = inputInstBus->pullFrames(this, frames, inarr);
 #ifdef TBUG
-		printf("%s::rtgetin(%p): tier returned %d frames\n",
+		printf("%s::rtgetin(%p): InstrumentBus returned %d frames\n",
 			   name(), this, pulled);
 #endif
 		return pulled * inchans;

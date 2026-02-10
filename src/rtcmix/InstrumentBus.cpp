@@ -4,12 +4,12 @@
 */
 
 /*
- * Tier.cpp - Tier-based pull model implementation
+ * InstrumentBus.cpp - Pull model implementation for elastic audio bus buffering
  *
- * See Tier.h for design overview.
+ * See InstrumentBus.h for design overview.
  */
 
-#include "Tier.h"
+#include "InstrumentBus.h"
 #include "Instrument.h"
 #include <RTcmix.h>
 #include <string.h>
@@ -22,48 +22,41 @@
 #endif
 
 /* Debug macros - match pattern from intraverse.cpp */
-#undef TBUG      /* Tier-specific debugging */
+#undef BBUG      /* InstrumentBus-specific debugging */
 #undef WBUG      /* "Where we are" prints */
 #undef IBUG      /* Instrument debugging */
 #undef DBUG      /* General debug */
 #undef ALLBUG    /* All debug output */
 
 #ifdef ALLBUG
-#define TBUG
+#define BBUG
 #define WBUG
 #define IBUG
 #define DBUG
 #endif
 
-/* Initial capacity for dynamic arrays */
-#define INITIAL_WRITER_CAPACITY 8
+/* -------------------------------------------- InstrumentBus::InstrumentBus --- */
 
-
-/* ------------------------------------------------------------ Tier::Tier --- */
-
-Tier::Tier(int busID, int numChannels, int bufferSize, int bufsamps)
+InstrumentBus::InstrumentBus(int busID, int numChannels, int bufferSize, int bufsamps)
     : mBusID(busID),
       mNumChannels(numChannels),
       mBufsamps(bufsamps),
       mRingBuffer(NULL),
       mBufferSize(0),
       mWritePosition(0),
-      mFramesProduced(0),
-      mWriters(NULL),
-      mWriterCount(0),
-      mWriterCapacity(0)
+      mFramesProduced(0)
 #ifdef MULTI_THREAD
       , mTaskManager(NULL)
 #endif
 {
 #ifdef WBUG
-    printf("ENTERING Tier::Tier(busID=%d, chans=%d, bufSize=%d, bufsamps=%d)\n",
+    printf("ENTERING InstrumentBus::InstrumentBus(busID=%d, chans=%d, bufSize=%d, bufsamps=%d)\n",
            busID, numChannels, bufferSize, bufsamps);
 #endif
 
     /* Calculate buffer size if not specified */
     if (bufferSize <= 0) {
-        mBufferSize = bufsamps * TIER_BUFFER_MULTIPLIER;
+        mBufferSize = bufsamps * INSTBUS_BUFFER_MULTIPLIER;
     } else {
         mBufferSize = bufferSize;
     }
@@ -72,44 +65,39 @@ Tier::Tier(int busID, int numChannels, int bufferSize, int bufsamps)
     mRingBuffer = new BUFTYPE[mBufferSize * mNumChannels];
     memset(mRingBuffer, 0, sizeof(BUFTYPE) * mBufferSize * mNumChannels);
 
-    /* Allocate writer array */
-    mWriterCapacity = INITIAL_WRITER_CAPACITY;
-    mWriters = new Instrument*[mWriterCapacity];
-
-#ifdef TBUG
-    printf("Tier %d: allocated ring buffer %d frames x %d chans = %d samples\n",
+#ifdef BBUG
+    printf("InstBus %d: allocated ring buffer %d frames x %d chans = %d samples\n",
            mBusID, mBufferSize, mNumChannels, mBufferSize * mNumChannels);
 #endif
 
 #ifdef WBUG
-    printf("EXITING Tier::Tier()\n");
+    printf("EXITING InstrumentBus::InstrumentBus()\n");
 #endif
 }
 
 
-/* ----------------------------------------------------------- Tier::~Tier --- */
+/* ------------------------------------------- InstrumentBus::~InstrumentBus --- */
 
-Tier::~Tier()
+InstrumentBus::~InstrumentBus()
 {
 #ifdef WBUG
-    printf("ENTERING Tier::~Tier(busID=%d)\n", mBusID);
+    printf("ENTERING InstrumentBus::~InstrumentBus(busID=%d)\n", mBusID);
 #endif
 
     delete[] mRingBuffer;
-    delete[] mWriters;
 
 #ifdef WBUG
-    printf("EXITING Tier::~Tier()\n");
+    printf("EXITING InstrumentBus::~InstrumentBus()\n");
 #endif
 }
 
 
-/* ---------------------------------------------------------- Tier::reset --- */
+/* -------------------------------------------------- InstrumentBus::reset --- */
 
-void Tier::reset()
+void InstrumentBus::reset()
 {
 #ifdef WBUG
-    printf("ENTERING Tier::reset(busID=%d)\n", mBusID);
+    printf("ENTERING InstrumentBus::reset(busID=%d)\n", mBusID);
 #endif
 
     mWritePosition = 0;
@@ -127,92 +115,85 @@ void Tier::reset()
 
     /* Note: We don't clear the writers array - instruments are still registered */
 
-#ifdef TBUG
-    printf("Tier %d: reset complete, %d writers, %d consumers\n",
-           mBusID, mWriterCount, (int)mConsumers.size());
+#ifdef BBUG
+    printf("InstBus %d: reset complete, %d writers, %d consumers\n",
+           mBusID, (int)mWriters.size(), (int)mConsumers.size());
 #endif
 
 #ifdef WBUG
-    printf("EXITING Tier::reset()\n");
+    printf("EXITING InstrumentBus::reset()\n");
 #endif
 }
 
 
-/* ------------------------------------------------------- Tier::addWriter --- */
+/* ----------------------------------------------- InstrumentBus::addWriter --- */
 
-void Tier::addWriter(Instrument* inst)
+void InstrumentBus::addWriter(Instrument* inst)
 {
 #ifdef IBUG
-    printf("Tier %d: addWriter(%p [%s])\n", mBusID, inst, inst->name());
+    printf("InstBus %d: addWriter(%p [%s])\n", mBusID, inst, inst->name());
 #endif
 
-    if (mWriterCount >= mWriterCapacity) {
-        growWriters();
-    }
+    mWriters.push_back(inst);
 
-    mWriters[mWriterCount++] = inst;
-
-#ifdef TBUG
-    printf("Tier %d: now has %d writers\n", mBusID, mWriterCount);
+#ifdef BBUG
+    printf("InstBus %d: now has %d writers\n", mBusID, (int)mWriters.size());
 #endif
 }
 
 
-/* ---------------------------------------------------- Tier::removeWriter --- */
+/* -------------------------------------------- InstrumentBus::removeWriter --- */
 
-void Tier::removeWriter(Instrument* inst)
+void InstrumentBus::removeWriter(Instrument* inst)
 {
 #ifdef IBUG
-    printf("Tier %d: removeWriter(%p [%s])\n", mBusID, inst, inst->name());
+    printf("InstBus %d: removeWriter(%p [%s])\n", mBusID, inst, inst->name());
 #endif
 
-    for (int i = 0; i < mWriterCount; ++i) {
-        if (mWriters[i] == inst) {
-            /* Shift remaining writers down */
-            for (int j = i; j < mWriterCount - 1; ++j) {
-                mWriters[j] = mWriters[j + 1];
-            }
-            --mWriterCount;
+    for (std::vector<Instrument*>::iterator it = mWriters.begin();
+         it != mWriters.end(); ++it) {
+        if (*it == inst) {
+            mWriters.erase(it);
 
-#ifdef TBUG
-            printf("Tier %d: removed writer, now has %d writers\n",
-                   mBusID, mWriterCount);
+#ifdef BBUG
+            printf("InstBus %d: removed writer, now has %d writers\n",
+                   mBusID, (int)mWriters.size());
 #endif
             return;
         }
     }
 
 #ifdef DBUG
-    printf("Tier %d: WARNING - removeWriter called for unknown inst %p\n",
+    printf("InstBus %d: WARNING - removeWriter called for unknown inst %p\n",
            mBusID, inst);
 #endif
 }
 
 
-/* ------------------------------------------------------ Tier::addConsumer --- */
+/* ---------------------------------------------- InstrumentBus::addConsumer --- */
 
-void Tier::addConsumer(Instrument* inst)
+void InstrumentBus::addConsumer(Instrument* inst)
 {
     ConsumerState state;
     state.readCursor = mWritePosition;
     state.framesConsumed = 0;
     mConsumers[inst] = state;
 
-#ifdef TBUG
-    printf("Tier %d: addConsumer(%p [%s]), now %d consumers\n",
+#ifdef BBUG
+    printf("InstBus %d: addConsumer(%p [%s]), now %d consumers\n",
            mBusID, inst, inst->name(), (int)mConsumers.size());
 #endif
 }
 
 
-/* -------------------------------------------------- Tier::framesAvailable --- */
+/* ------------------------------------------ InstrumentBus::framesAvailable --- */
 
-int Tier::framesAvailable(Instrument* consumer) const
+int InstrumentBus::framesAvailable(Instrument* consumer) const
 {
     std::map<Instrument*, ConsumerState>::const_iterator it = mConsumers.find(consumer);
     if (it == mConsumers.end()) {
 #ifdef DBUG
-        printf("Tier %d: framesAvailable() unknown consumer %p\n",
+        printf("InstBus %d: framesAvailable() unknown consumer %p\n",
                mBusID, consumer);
 #endif
         return 0;
@@ -221,8 +202,8 @@ int Tier::framesAvailable(Instrument* consumer) const
     /* Available = produced - consumed */
     FRAMETYPE available = mFramesProduced - it->second.framesConsumed;
 
-#ifdef TBUG
-    printf("Tier %d: framesAvailable(consumer=%p) = %lld (produced=%lld, consumed=%lld)\n",
+#ifdef BBUG
+    printf("InstBus %d: framesAvailable(consumer=%p) = %lld (produced=%lld, consumed=%lld)\n",
            mBusID, consumer, available, mFramesProduced, it->second.framesConsumed);
 #endif
 
@@ -235,19 +216,19 @@ int Tier::framesAvailable(Instrument* consumer) const
 }
 
 
-/* ----------------------------------------------------- Tier::pullFrames --- */
+/* --------------------------------------------- InstrumentBus::pullFrames --- */
 
-int Tier::pullFrames(Instrument* consumer, int requestedFrames, BufPtr dest)
+int InstrumentBus::pullFrames(Instrument* consumer, int requestedFrames, BufPtr dest)
 {
 #ifdef WBUG
-    printf("ENTERING Tier::pullFrames(bus=%d, consumer=%p, frames=%d)\n",
+    printf("ENTERING InstrumentBus::pullFrames(bus=%d, consumer=%p, frames=%d)\n",
            mBusID, consumer, requestedFrames);
 #endif
 
     std::map<Instrument*, ConsumerState>::iterator it = mConsumers.find(consumer);
     if (it == mConsumers.end()) {
 #ifdef DBUG
-        printf("Tier %d: pullFrames() unknown consumer %p\n",
+        printf("InstBus %d: pullFrames() unknown consumer %p\n",
                mBusID, consumer);
 #endif
         return 0;
@@ -255,8 +236,8 @@ int Tier::pullFrames(Instrument* consumer, int requestedFrames, BufPtr dest)
 
     ConsumerState& state = it->second;
 
-#ifdef TBUG
-    printf("Tier %d: consumer %p requesting %d frames, available=%d\n",
+#ifdef BBUG
+    printf("InstBus %d: consumer %p requesting %d frames, available=%d\n",
            mBusID, consumer, requestedFrames, framesAvailable(consumer));
 #endif
 
@@ -264,9 +245,9 @@ int Tier::pullFrames(Instrument* consumer, int requestedFrames, BufPtr dest)
     int cycleCount = 0;
     while (framesAvailable(consumer) < requestedFrames) {
         /* Check for no writers - would loop forever */
-        if (mWriterCount == 0) {
+        if (mWriters.empty()) {
 #ifdef DBUG
-            printf("Tier %d: pullFrames() no writers, returning zeros\n",
+            printf("InstBus %d: pullFrames() no writers, returning zeros\n",
                    mBusID);
 #endif
             /* Fill with zeros and return */
@@ -274,15 +255,17 @@ int Tier::pullFrames(Instrument* consumer, int requestedFrames, BufPtr dest)
             return requestedFrames;
         }
 
-#ifdef TBUG
-        printf("Tier %d: need more frames, running cycle %d\n",
+#ifdef BBUG
+        printf("InstBus %d: need more frames, running cycle %d\n",
                mBusID, ++cycleCount);
+#else
+        (void)cycleCount;  /* suppress unused variable warning */
 #endif
         runWriterCycle();
     }
 
-#ifdef TBUG
-    printf("Tier %d: copying %d frames from readPos=%d to consumer %p\n",
+#ifdef BBUG
+    printf("InstBus %d: copying %d frames from readPos=%d to consumer %p\n",
            mBusID, requestedFrames, state.readCursor, consumer);
 #endif
 
@@ -294,13 +277,15 @@ int Tier::pullFrames(Instrument* consumer, int requestedFrames, BufPtr dest)
     state.readCursor = (state.readCursor + requestedFrames) % mBufferSize;
     state.framesConsumed += requestedFrames;
 
-#ifdef TBUG
-    printf("Tier %d: consumer %p readCursor %d -> %d, consumed=%lld\n",
+#ifdef BBUG
+    printf("InstBus %d: consumer %p readCursor %d -> %d, consumed=%lld\n",
            mBusID, consumer, oldPos, state.readCursor, state.framesConsumed);
+#else
+    (void)oldPos;  /* suppress unused variable warning */
 #endif
 
 #ifdef WBUG
-    printf("EXITING Tier::pullFrames(bus=%d) returning %d\n",
+    printf("EXITING InstrumentBus::pullFrames(bus=%d) returning %d\n",
            mBusID, requestedFrames);
 #endif
 
@@ -308,19 +293,19 @@ int Tier::pullFrames(Instrument* consumer, int requestedFrames, BufPtr dest)
 }
 
 
-/* ------------------------------------------------- Tier::runWriterCycle --- */
+/* ----------------------------------------- InstrumentBus::runWriterCycle --- */
 
-void Tier::runWriterCycle()
+void InstrumentBus::runWriterCycle()
 {
 #ifdef WBUG
-    printf("ENTERING Tier::runWriterCycle() for bus %d\n", mBusID);
+    printf("ENTERING InstrumentBus::runWriterCycle() for bus %d\n", mBusID);
 #endif
 
     /* 1. Clear the ring buffer region we're about to write */
     clearRegion(mWritePosition, mBufsamps);
 
-#ifdef TBUG
-    printf("Tier %d: cleared region [%d, %d)\n",
+#ifdef BBUG
+    printf("InstBus %d: cleared region [%d, %d)\n",
            mBusID, mWritePosition, mWritePosition + mBufsamps);
 #endif
 
@@ -329,7 +314,7 @@ void Tier::runWriterCycle()
 #endif
 
     /* 2. Execute all writers */
-    for (int i = 0; i < mWriterCount; ++i) {
+    for (size_t i = 0; i < mWriters.size(); ++i) {
         Instrument* inst = mWriters[i];
 
         /* Set up instrument for this chunk */
@@ -337,7 +322,7 @@ void Tier::runWriterCycle()
         inst->set_output_offset(0);
 
 #ifdef IBUG
-        printf("Tier %d: processing inst %p [%s]\n",
+        printf("InstBus %d: processing inst %p [%s]\n",
                mBusID, inst, inst->name());
 #endif
 
@@ -360,7 +345,7 @@ void Tier::runWriterCycle()
     /* 3. Wait for all writers to complete */
     if (mTaskManager != NULL && !mActiveWriters.empty()) {
 #ifdef DBUG
-        printf("Tier %d: waiting for %d instrument tasks\n",
+        printf("InstBus %d: waiting for %d instrument tasks\n",
                mBusID, (int)mActiveWriters.size());
 #endif
         mTaskManager->waitForTasks(mActiveWriters);
@@ -374,20 +359,20 @@ void Tier::runWriterCycle()
     mWritePosition = (mWritePosition + mBufsamps) % mBufferSize;
     mFramesProduced += mBufsamps;
 
-#ifdef TBUG
-    printf("Tier %d: writePosition now %d, framesProduced=%lld\n",
+#ifdef BBUG
+    printf("InstBus %d: writePosition now %d, framesProduced=%lld\n",
            mBusID, mWritePosition, mFramesProduced);
 #endif
 
 #ifdef WBUG
-    printf("EXITING Tier::runWriterCycle() for bus %d\n", mBusID);
+    printf("EXITING InstrumentBus::runWriterCycle() for bus %d\n", mBusID);
 #endif
 }
 
 
-/* ---------------------------------------------------- Tier::clearRegion --- */
+/* -------------------------------------------- InstrumentBus::clearRegion --- */
 
-void Tier::clearRegion(int startFrame, int numFrames)
+void InstrumentBus::clearRegion(int startFrame, int numFrames)
 {
     /* Handle wrap-around */
     int endFrame = startFrame + numFrames;
@@ -409,9 +394,9 @@ void Tier::clearRegion(int startFrame, int numFrames)
 }
 
 
-/* ------------------------------------------------- Tier::copyToConsumer --- */
+/* ----------------------------------------- InstrumentBus::copyToConsumer --- */
 
-void Tier::copyToConsumer(BufPtr dest, int readPos, int numFrames)
+void InstrumentBus::copyToConsumer(BufPtr dest, int readPos, int numFrames)
 {
     /* Handle wrap-around */
     int endPos = readPos + numFrames;
@@ -433,39 +418,17 @@ void Tier::copyToConsumer(BufPtr dest, int readPos, int numFrames)
 }
 
 
-/* ---------------------------------------------------- Tier::growWriters --- */
+/* ---------------------------------------- InstrumentBus::getWriterCount --- */
 
-void Tier::growWriters()
+int InstrumentBus::getWriterCount() const
 {
-    int newCapacity = mWriterCapacity * 2;
-    Instrument** newArray = new Instrument*[newCapacity];
-
-    for (int i = 0; i < mWriterCount; ++i) {
-        newArray[i] = mWriters[i];
-    }
-
-    delete[] mWriters;
-    mWriters = newArray;
-    mWriterCapacity = newCapacity;
-
-#ifdef TBUG
-    printf("Tier %d: grew writers array to capacity %d\n",
-           mBusID, mWriterCapacity);
-#endif
+    return (int)mWriters.size();
 }
 
 
-/* ------------------------------------------------ Tier::getWriterCount --- */
+/* -------------------------------------- InstrumentBus::getConsumerCount --- */
 
-int Tier::getWriterCount() const
-{
-    return mWriterCount;
-}
-
-
-/* ---------------------------------------------- Tier::getConsumerCount --- */
-
-int Tier::getConsumerCount() const
+int InstrumentBus::getConsumerCount() const
 {
     return (int)mConsumers.size();
 }

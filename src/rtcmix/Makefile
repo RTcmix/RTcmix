@@ -120,8 +120,8 @@ sound_sample_buf_read.cpp \
 table.cpp \
 tableutils.cpp \
 tempo.cpp \
-Tier.cpp \
-TierManager.cpp \
+InstrumentBus.cpp \
+InstrumentBusManager.cpp \
 modtable.cpp \
 ops.cpp \
 handle.cpp \

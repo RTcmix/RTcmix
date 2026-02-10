@@ -14,8 +14,8 @@
 #include <sndlibsupport.h>
 #include <bus.h>
 #include "BusSlot.h"
-#include "TierManager.h"
-#include "Tier.h"
+#include "InstrumentBusManager.h"
+#include "InstrumentBus.h"
 #include <assert.h>
 #include <ugens.h>
 #include "heap/heap.h"
@@ -43,7 +43,7 @@ Instrument::Instrument() : RefCounted(true),
 	  _start(0.0), _dur(0.0), cursamp(0), chunksamps(0), i_chunkstart(0),
 	  endsamp(0), output_offset(0), outputchans(0), _name(NULL),
 	  needs_to_run(true), _nsamps(0), inputChainBuf(NULL),
-	  inputTier(NULL)
+	  inputInstBus(NULL)
 {
 #if defined(DEBUG_MEMORY) || defined(DEBUG_INST)
 	rtcmix_print("Instrument::Instrument(this = %p)\n", this);
@@ -118,17 +118,17 @@ void Instrument::set_bus_config(const char *inst_name)
   _input.inputchans = _busSlot->in_count + _busSlot->auxin_count;
   outputchans = _busSlot->out_count + _busSlot->auxout_count;
 
-  // Register with tier system for pull-based audio routing
-  TierManager* tierMgr = RTcmix::getTierManager();
+  // Register with InstrumentBus system for pull-based audio routing
+  InstrumentBusManager* instBusMgr = RTcmix::getInstBusManager();
 
   // Register as writer to all auxout buses
   for (int i = 0; i < _busSlot->auxout_count; i++) {
-    tierMgr->addWriter(_busSlot->auxout[i], this);
+    instBusMgr->addWriter(_busSlot->auxout[i], this);
   }
   // Register as consumer of all auxin buses
-  // (This also sets our inputTier and inputTierConsumerID)
+  // (This also sets our inputInstBus)
   for (int i = 0; i < _busSlot->auxin_count; i++) {
-    tierMgr->addConsumer(_busSlot->auxin[i], this);
+    instBusMgr->addConsumer(_busSlot->auxin[i], this);
   }
 }
 
@@ -467,9 +467,8 @@ void	Instrument::clearOutput(int length)
 }
 
 /* ----------------------------------------------------------------- gone --- */
-/* If the reference count on the file referenced by the instrument
-   reaches zero, close the input soundfile and set the state to 
-   make sure this is obvious.
+/* Called when the instrument is finished. Releases input soundfile reference
+   and unregisters from any InstrumentBus objects this instrument was using.
 */
 void Instrument::gone()
 {
@@ -480,6 +479,14 @@ void Instrument::gone()
    if (_input.fdIndex >= 0) {
       RTcmix::releaseInput(_input.fdIndex);
       _input.fdIndex = NO_DEVICE_FDINDEX;
+   }
+
+   /* Unregister from InstrumentBus system */
+   InstrumentBusManager* mgr = RTcmix::getInstBusManager();
+   if (mgr != NULL && _busSlot != NULL) {
+      for (int i = 0; i < _busSlot->auxout_count; i++) {
+         mgr->removeWriter(_busSlot->auxout[i], this);
+      }
    }
 }
 
@@ -495,15 +502,15 @@ int Instrument::setChainedInputBuffer(BUFTYPE *inputBuf, int inputChans)
 	return 0;
 }
 
-/* ----------------------------------------------------------------- setInputTier --- */
-/* Configures the instrument to pull input from a tier (aux bus with ring buffer) */
+/* ------------------------------------------------------------- setInputInstBus --- */
+/* Configures the instrument to pull input from an InstrumentBus (aux bus with ring buffer) */
 
-void Instrument::setInputTier(Tier* tier)
+void Instrument::setInputInstBus(InstrumentBus* instBus)
 {
-	inputTier = tier;
+	inputInstBus = instBus;
 #ifdef DEBUG_INST
-	rtcmix_print("Instrument::setInputTier(this = %p [%s]): tier=%p\n",
-				 this, _name, tier);
+	rtcmix_print("Instrument::setInputInstBus(this = %p [%s]): instBus=%p\n",
+				 this, _name, instBus);
 #endif
 }
 
