@@ -1,0 +1,4 @@
+# To resume the last checked-in session:
+
+claude --resume 6fa53f5b-8a56-4cfa-9363-df302568b2b2
+
