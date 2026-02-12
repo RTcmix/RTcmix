@@ -22,10 +22,10 @@
 #endif
 
 /* Debug macros - match pattern from intraverse.cpp */
-#undef BBUG      /* InstrumentBus-specific debugging */
+#undef BBUG      /* Verbose bus debugging */
 #undef WBUG      /* "Where we are" prints */
-#undef IBUG      /* Instrument debugging */
-#undef DBUG      /* General debug */
+#define IBUG      /* Instrument and InstrumentBus debugging */
+#define DBUG      /* General debug */
 #undef ALLBUG    /* All debug output */
 
 #ifdef ALLBUG
@@ -37,12 +37,10 @@
 
 /* -------------------------------------------- InstrumentBus::InstrumentBus --- */
 
-InstrumentBus::InstrumentBus(int busID, int numChannels, int bufferSize, int bufsamps)
+InstrumentBus::InstrumentBus(int busID, int bufsamps)
     : mBusID(busID),
-      mNumChannels(numChannels),
       mBufsamps(bufsamps),
-      mRingBuffer(NULL),
-      mBufferSize(0),
+      mBufferSize(bufsamps * INSTBUS_BUFFER_MULTIPLIER),
       mWritePosition(0),
       mFramesProduced(0)
 #ifdef MULTI_THREAD
@@ -50,24 +48,17 @@ InstrumentBus::InstrumentBus(int busID, int numChannels, int bufferSize, int buf
 #endif
 {
 #ifdef WBUG
-    printf("ENTERING InstrumentBus::InstrumentBus(busID=%d, chans=%d, bufSize=%d, bufsamps=%d)\n",
-           busID, numChannels, bufferSize, bufsamps);
+    printf("ENTERING InstrumentBus::InstrumentBus(busID=%d, bufsamps=%d)\n",
+           busID, bufsamps);
 #endif
 
-    /* Calculate buffer size if not specified */
-    if (bufferSize <= 0) {
-        mBufferSize = bufsamps * INSTBUS_BUFFER_MULTIPLIER;
-    } else {
-        mBufferSize = bufferSize;
-    }
+    /* Ring buffer uses aux_buffer directly - no allocation here.
+     * aux_buffer is allocated larger (mBufferSize) by InstrumentBusManager.
+     */
 
-    /* Allocate ring buffer (interleaved) */
-    mRingBuffer = new BUFTYPE[mBufferSize * mNumChannels];
-    memset(mRingBuffer, 0, sizeof(BUFTYPE) * mBufferSize * mNumChannels);
-
-#ifdef BBUG
-    printf("InstBus %d: allocated ring buffer %d frames x %d chans = %d samples\n",
-           mBusID, mBufferSize, mNumChannels, mBufferSize * mNumChannels);
+#ifdef IBUG
+    printf("InstBus %d: using aux_buffer as ring buffer, %d frames\n",
+           mBusID, mBufferSize);
 #endif
 
 #ifdef WBUG
@@ -84,7 +75,7 @@ InstrumentBus::~InstrumentBus()
     printf("ENTERING InstrumentBus::~InstrumentBus(busID=%d)\n", mBusID);
 #endif
 
-    delete[] mRingBuffer;
+    /* aux_buffer is freed by RTcmix::free_buffers() - nothing to do here */
 
 #ifdef WBUG
     printf("EXITING InstrumentBus::~InstrumentBus()\n");
@@ -103,8 +94,10 @@ void InstrumentBus::reset()
     mWritePosition = 0;
     mFramesProduced = 0;
 
-    /* Clear ring buffer */
-    memset(mRingBuffer, 0, sizeof(BUFTYPE) * mBufferSize * mNumChannels);
+    /* Clear aux_buffer (our ring buffer) */
+    BufPtr buf = RTcmix::aux_buffer[mBusID];
+    assert(buf != NULL);
+    memset(buf, 0, sizeof(BUFTYPE) * mBufferSize);
 
     /* Reset all consumer cursors */
     for (std::map<Instrument*, ConsumerState>::iterator it = mConsumers.begin();
@@ -115,7 +108,7 @@ void InstrumentBus::reset()
 
     /* Note: We don't clear the writers array - instruments are still registered */
 
-#ifdef BBUG
+#ifdef IBUG
     printf("InstBus %d: reset complete, %d writers, %d consumers\n",
            mBusID, (int)mWriters.size(), (int)mConsumers.size());
 #endif
@@ -136,7 +129,7 @@ void InstrumentBus::addWriter(Instrument* inst)
 
     mWriters.push_back(inst);
 
-#ifdef BBUG
+#ifdef IBUG
     printf("InstBus %d: now has %d writers\n", mBusID, (int)mWriters.size());
 #endif
 }
@@ -155,7 +148,7 @@ void InstrumentBus::removeWriter(Instrument* inst)
         if (*it == inst) {
             mWriters.erase(it);
 
-#ifdef BBUG
+#ifdef IBUG
             printf("InstBus %d: removed writer, now has %d writers\n",
                    mBusID, (int)mWriters.size());
 #endif
@@ -179,7 +172,7 @@ void InstrumentBus::addConsumer(Instrument* inst)
     state.framesConsumed = 0;
     mConsumers[inst] = state;
 
-#ifdef BBUG
+#ifdef IBUG
     printf("InstBus %d: addConsumer(%p [%s]), now %d consumers\n",
            mBusID, inst, inst->name(), (int)mConsumers.size());
 #endif
@@ -191,18 +184,12 @@ void InstrumentBus::addConsumer(Instrument* inst)
 int InstrumentBus::framesAvailable(Instrument* consumer) const
 {
     std::map<Instrument*, ConsumerState>::const_iterator it = mConsumers.find(consumer);
-    if (it == mConsumers.end()) {
-#ifdef DBUG
-        printf("InstBus %d: framesAvailable() unknown consumer %p\n",
-               mBusID, consumer);
-#endif
-        return 0;
-    }
+    assert(it != mConsumers.end());
 
     /* Available = produced - consumed */
     FRAMETYPE available = mFramesProduced - it->second.framesConsumed;
 
-#ifdef BBUG
+#ifdef IBUG
     printf("InstBus %d: framesAvailable(consumer=%p) = %lld (produced=%lld, consumed=%lld)\n",
            mBusID, consumer, available, mFramesProduced, it->second.framesConsumed);
 #endif
@@ -218,7 +205,7 @@ int InstrumentBus::framesAvailable(Instrument* consumer) const
 
 /* --------------------------------------------- InstrumentBus::pullFrames --- */
 
-int InstrumentBus::pullFrames(Instrument* consumer, int requestedFrames, BufPtr dest)
+int InstrumentBus::pullFrames(Instrument* consumer, int requestedFrames)
 {
 #ifdef WBUG
     printf("ENTERING InstrumentBus::pullFrames(bus=%d, consumer=%p, frames=%d)\n",
@@ -226,17 +213,12 @@ int InstrumentBus::pullFrames(Instrument* consumer, int requestedFrames, BufPtr 
 #endif
 
     std::map<Instrument*, ConsumerState>::iterator it = mConsumers.find(consumer);
-    if (it == mConsumers.end()) {
-#ifdef DBUG
-        printf("InstBus %d: pullFrames() unknown consumer %p\n",
-               mBusID, consumer);
-#endif
-        return 0;
-    }
+    assert(it != mConsumers.end());
 
     ConsumerState& state = it->second;
+    int readPos = state.readCursor;
 
-#ifdef BBUG
+#ifdef IBUG
     printf("InstBus %d: consumer %p requesting %d frames, available=%d\n",
            mBusID, consumer, requestedFrames, framesAvailable(consumer));
 #endif
@@ -247,15 +229,14 @@ int InstrumentBus::pullFrames(Instrument* consumer, int requestedFrames, BufPtr 
         /* Check for no writers - would loop forever */
         if (mWriters.empty()) {
 #ifdef DBUG
-            printf("InstBus %d: pullFrames() no writers, returning zeros\n",
+            printf("InstBus %d: pullFrames() no writers, aux_buffer is zeros\n",
                    mBusID);
 #endif
-            /* Fill with zeros and return */
-            memset(dest, 0, sizeof(BUFTYPE) * requestedFrames * mNumChannels);
-            return requestedFrames;
+            /* aux_buffer should already be zeroed, just return the position */
+            break;
         }
 
-#ifdef BBUG
+#ifdef IBUG
         printf("InstBus %d: need more frames, running cycle %d\n",
                mBusID, ++cycleCount);
 #else
@@ -264,32 +245,24 @@ int InstrumentBus::pullFrames(Instrument* consumer, int requestedFrames, BufPtr 
         runWriterCycle();
     }
 
-#ifdef BBUG
-    printf("InstBus %d: copying %d frames from readPos=%d to consumer %p\n",
-           mBusID, requestedFrames, state.readCursor, consumer);
-#endif
-
-    /* Copy requested frames to consumer's buffer */
-    copyToConsumer(dest, state.readCursor, requestedFrames);
-
     /* Advance this consumer's read cursor */
+#ifdef IBUG
     int oldPos = state.readCursor;
+#endif
     state.readCursor = (state.readCursor + requestedFrames) % mBufferSize;
     state.framesConsumed += requestedFrames;
 
-#ifdef BBUG
+#ifdef IBUG
     printf("InstBus %d: consumer %p readCursor %d -> %d, consumed=%lld\n",
            mBusID, consumer, oldPos, state.readCursor, state.framesConsumed);
-#else
-    (void)oldPos;  /* suppress unused variable warning */
 #endif
 
 #ifdef WBUG
-    printf("EXITING InstrumentBus::pullFrames(bus=%d) returning %d\n",
-           mBusID, requestedFrames);
+    printf("EXITING InstrumentBus::pullFrames(bus=%d) returning readPos=%d\n",
+           mBusID, readPos);
 #endif
 
-    return requestedFrames;
+    return readPos;
 }
 
 
@@ -304,7 +277,7 @@ void InstrumentBus::runWriterCycle()
     /* 1. Clear the ring buffer region we're about to write */
     clearRegion(mWritePosition, mBufsamps);
 
-#ifdef BBUG
+#ifdef IBUG
     printf("InstBus %d: cleared region [%d, %d)\n",
            mBusID, mWritePosition, mWritePosition + mBufsamps);
 #endif
@@ -317,9 +290,12 @@ void InstrumentBus::runWriterCycle()
     for (size_t i = 0; i < mWriters.size(); ++i) {
         Instrument* inst = mWriters[i];
 
-        /* Set up instrument for this chunk */
+        /* Set up instrument for this chunk.
+         * output_offset is set to mWritePosition so addToBus writes
+         * at the correct ring buffer position.
+         */
         inst->setchunk(mBufsamps);
-        inst->set_output_offset(0);
+        inst->set_output_offset(mWritePosition);
 
 #ifdef IBUG
         printf("InstBus %d: processing inst %p [%s]\n",
@@ -359,7 +335,7 @@ void InstrumentBus::runWriterCycle()
     mWritePosition = (mWritePosition + mBufsamps) % mBufferSize;
     mFramesProduced += mBufsamps;
 
-#ifdef BBUG
+#ifdef IBUG
     printf("InstBus %d: writePosition now %d, framesProduced=%lld\n",
            mBusID, mWritePosition, mFramesProduced);
 #endif
@@ -374,22 +350,22 @@ void InstrumentBus::runWriterCycle()
 
 void InstrumentBus::clearRegion(int startFrame, int numFrames)
 {
-    /* Handle wrap-around */
+    BufPtr buf = RTcmix::aux_buffer[mBusID];
+    assert(buf != NULL);
+
+    /* Handle wrap-around (aux buses are mono) */
     int endFrame = startFrame + numFrames;
 
     if (endFrame <= mBufferSize) {
         /* No wrap - single clear */
-        memset(&mRingBuffer[startFrame * mNumChannels], 0,
-               sizeof(BUFTYPE) * numFrames * mNumChannels);
+        memset(&buf[startFrame], 0, sizeof(BUFTYPE) * numFrames);
     } else {
         /* Wrap around - two clears */
         int firstPart = mBufferSize - startFrame;
         int secondPart = numFrames - firstPart;
 
-        memset(&mRingBuffer[startFrame * mNumChannels], 0,
-               sizeof(BUFTYPE) * firstPart * mNumChannels);
-        memset(&mRingBuffer[0], 0,
-               sizeof(BUFTYPE) * secondPart * mNumChannels);
+        memset(&buf[startFrame], 0, sizeof(BUFTYPE) * firstPart);
+        memset(&buf[0], 0, sizeof(BUFTYPE) * secondPart);
     }
 }
 
@@ -398,22 +374,22 @@ void InstrumentBus::clearRegion(int startFrame, int numFrames)
 
 void InstrumentBus::copyToConsumer(BufPtr dest, int readPos, int numFrames)
 {
-    /* Handle wrap-around */
+    BufPtr buf = RTcmix::aux_buffer[mBusID];
+    assert(buf != NULL);
+
+    /* Handle wrap-around (aux buses are mono) */
     int endPos = readPos + numFrames;
 
     if (endPos <= mBufferSize) {
         /* No wrap - single copy */
-        memcpy(dest, &mRingBuffer[readPos * mNumChannels],
-               sizeof(BUFTYPE) * numFrames * mNumChannels);
+        memcpy(dest, &buf[readPos], sizeof(BUFTYPE) * numFrames);
     } else {
         /* Wrap around - two copies */
         int firstPart = mBufferSize - readPos;
         int secondPart = numFrames - firstPart;
 
-        memcpy(dest, &mRingBuffer[readPos * mNumChannels],
-               sizeof(BUFTYPE) * firstPart * mNumChannels);
-        memcpy(&dest[firstPart * mNumChannels], &mRingBuffer[0],
-               sizeof(BUFTYPE) * secondPart * mNumChannels);
+        memcpy(dest, &buf[readPos], sizeof(BUFTYPE) * firstPart);
+        memcpy(&dest[firstPart], &buf[0], sizeof(BUFTYPE) * secondPart);
     }
 }
 

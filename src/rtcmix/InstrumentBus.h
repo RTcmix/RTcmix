@@ -37,8 +37,17 @@ class TaskManager;
 /* Debug macro for InstrumentBus operations - define IBUG to enable */
 #undef IBUG
 
-/* Default ring buffer size multiplier (relative to RTBUFSAMPS) */
+/* Define INSTBUS_PERSIST_DATA to enable cross-cycle data persistence.
+ * When defined: aux_buffer is larger, data persists across inTraverse cycles.
+ * When undefined: aux_buffer is normal size, everything balances per cycle.
+ */
+#undef INSTBUS_PERSIST_DATA
+
+#ifdef INSTBUS_PERSIST_DATA
 #define INSTBUS_BUFFER_MULTIPLIER 4
+#else
+#define INSTBUS_BUFFER_MULTIPLIER 1
+#endif
 
 
 
@@ -46,26 +55,28 @@ class InstrumentBus {
 public:
     /**
      * Create a new InstrumentBus for the specified bus.
+     * The InstrumentBus uses the global aux_buffer directly as its ring buffer.
      *
      * @param busID         The bus number this InstrumentBus manages
-     * @param numChannels   Number of audio channels for this bus
-     * @param bufferSize    Size of ring buffer in frames (0 = auto-calculate)
      * @param bufsamps      The RTBUFSAMPS value (frames per chunk)
      */
-    InstrumentBus(int busID, int numChannels, int bufferSize, int bufsamps);
+    InstrumentBus(int busID, int bufsamps);
 
     ~InstrumentBus();
 
     /**
      * Request frames from this InstrumentBus.
-     * Triggers production cycles as needed to satisfy the request.
+     * Triggers production cycles as needed to satisfy the request,
+     * then advances this consumer's read cursor.
+     *
+     * After calling this, the caller should read directly from
+     * aux_buffer[busID] starting at the returned position.
      *
      * @param consumer        The instrument requesting frames
      * @param requestedFrames Number of frames requested
-     * @param dest            Destination buffer (interleaved)
-     * @return                Number of frames actually delivered
+     * @return                Read position in aux_buffer (frame offset)
      */
-    int pullFrames(Instrument* consumer, int requestedFrames, BufPtr dest);
+    int pullFrames(Instrument* consumer, int requestedFrames);
 
     /**
      * Register a consumer that will read from this InstrumentBus.
@@ -95,10 +106,16 @@ public:
      */
     void reset();
 
+    /**
+     * Reset write position to start of buffer.
+     * Called at start of each inTraverse cycle in non-persistent mode.
+     */
+    void resetWritePosition() { mWritePosition = 0; }
+
     /* Accessors */
     int getBusID() const { return mBusID; }
-    int getNumChannels() const { return mNumChannels; }
     int getWritePosition() const { return mWritePosition; }
+    int getBufferSize() const { return mBufferSize; }
     FRAMETYPE getFramesProduced() const { return mFramesProduced; }
     int getWriterCount() const;
     int getConsumerCount() const;
@@ -124,12 +141,10 @@ public:
 private:
     /* Bus identification */
     int mBusID;
-    int mNumChannels;
     int mBufsamps;      /* frames per production chunk */
 
-    /* Ring buffer */
-    BufPtr mRingBuffer;
-    int mBufferSize;          /* total size in frames */
+    /* Ring buffer state (uses aux_buffer directly, no separate allocation) */
+    int mBufferSize;          /* total size in frames (INSTBUS_BUFFER_MULTIPLIER * bufsamps) */
     int mWritePosition;       /* current write position (frame offset) */
     FRAMETYPE mFramesProduced; /* total frames produced since reset */
 

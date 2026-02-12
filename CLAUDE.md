@@ -1,8 +1,8 @@
-# RTcmix Bus System: Tier-Based Pull Model Conversion
+# RTcmix Bus System: InstrumentBus-Based Pull Model Conversion
 
 ## Project Overview
 
-This document describes the plan to convert RTcmix's audio bus routing system from a push model to a tier-based pull model. The goal is to enable instruments with different input/output frame ratios (e.g., interpolators, decimators, time-stretchers) to work correctly in instrument chains.
+This document describes the plan to convert RTcmix's audio bus routing system from a push model to an InstrumentBus-based pull model. The goal is to enable instruments with different input/output frame ratios (e.g., interpolators, decimators, time-stretchers) to work correctly in instrument chains.
 
 ## The Problem with the Current Push Model
 
@@ -17,18 +17,18 @@ Problem: TRANS receives 1024 input frames but can only produce 512 output frames
 
 The output stage MUST receive exactly RTBUFSAMPS frames or it will starve/overflow. But pushing fixed frame counts forces all intermediate instruments to have input==output, which isn't true for rate-changing instruments.
 
-## The Solution: Tier-Based Pull Model
+## The Solution: InstrumentBus-Based Pull Model
 
-### Core Concept: Tiers
+### Core Concept: InstrumentBus
 
-A **tier** is structurally equivalent to the current bus grouping:
+An **InstrumentBus** wraps a bus with ring buffer management:
 - A bus (e.g., aux0)
 - The instruments that write to it
-- A ring buffer (fixed size for any given run)
-- Read cursors (one per downstream consumer)
+- Uses aux_buffer directly as ring buffer (with configurable multiplier for persistence)
+- Read cursors (one per downstream consumer, tracked by Instrument pointer)
 - Write tracking (for accumulating multiple writers)
 
-The tier uses the **same threading model** as the current per-bus execution:
+The InstrumentBus uses the **same threading model** as the current per-bus execution:
 - All writers run in parallel via TaskManager
 - Synchronization via `waitForTasks()`
 - Accumulation merged via `mixToBus()`
@@ -41,19 +41,19 @@ The tier uses the **same threading model** as the current per-bus execution:
 This asymmetry is the key insight:
 - Production: fixed-size chunks (`framesToRun()` per instrument per run)
 - Consumption: variable-size requests from downstream
-- The tier's ring buffer absorbs the mismatch
+- The InstrumentBus ring buffer absorbs the mismatch
 
 ### How It Works
 
 ```
 True Pull:
-  output requests 1024 frames from out0 tier
+  output requests 1024 frames from output InstrumentBus
        ↓
   TRANS (2:1): "To output 1024, I need 2048 input frames"
        ↓
-  aux0 tier: runs WAVETABLE twice (2 × 1024 = 2048 frames)
+  aux0 InstrumentBus: runs WAVETABLE twice (2 × 1024 = 2048 frames)
        ↓
-  TRANS: reads 2048 from aux0 tier, outputs 1024
+  TRANS: reads 2048 from aux0 InstrumentBus, outputs 1024
        ↓
   output receives 1024 frames ✓
 ```
@@ -146,20 +146,20 @@ Analysis of `insts/` directory confirms:
 | WAVETABLE | None (generator) | Fixed `framesToRun()` |
 | MIX | Fixed `framesToRun()` | Fixed `framesToRun()` |
 
-## Tier Architecture
+## InstrumentBus Architecture
 
 ### Structure
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    TIER (e.g., aux0)                    │
+│               INSTRUMENTBUS (e.g., aux0)                │
 │                                                         │
 │  ┌─────────────────────────────────────────────────┐   │
-│  │           Ring Buffer (fixed size)               │   │
+│  │     aux_buffer (used as ring buffer)             │   │
 │  │  [frame0][frame1][frame2]...[frameN]            │   │
 │  │      ↑                          ↑                │   │
 │  │   read cursors              write cursor         │   │
-│  │   (per consumer)            (fixed chunks)       │   │
+│  │   (per consumer Instrument) (fixed chunks)       │   │
 │  └─────────────────────────────────────────────────┘   │
 │                         ↑                               │
 │           ┌─────────────┴─────────────┐                │
@@ -187,17 +187,22 @@ Analysis of `insts/` directory confirms:
 
 ### Ring Buffer Management
 
+**Buffer allocation:**
+- InstrumentBus uses aux_buffer directly (no separate allocation)
+- Buffer size controlled by `INSTBUS_BUFFER_MULTIPLIER` (1 for non-persistent, 4 for persistent mode)
+- Configured via `INSTBUS_PERSIST_DATA` define
+
 **Write side (fixed chunks, parallel execution):**
-- Clear the next region of the ring buffer
-- Add tasks for ALL input instruments to TaskManager
+- Clear the next region of aux_buffer
+- Add tasks for ALL writer instruments to TaskManager
 - `waitForTasks()` - block until all complete
-- `mixToBus()` - merge per-thread accumulations into ring buffer
+- `mixToBus()` - merge per-thread accumulations into aux_buffer
 - Advance write cursor by `framesToRun()`
 
 **Read side (variable requests):**
-- Each consumer has its own read cursor
-- Consumers request arbitrary frame counts
-- Single read from ring buffer, single write to consumer's input buffer
+- Each consumer tracked by Instrument pointer in `std::map<Instrument*, ConsumerState>`
+- Consumers request arbitrary frame counts via `pullFrames()`
+- `pullFrames()` returns read position; caller reads directly from aux_buffer
 - Read cursors advance independently
 
 **Safe to overwrite:**
@@ -210,7 +215,7 @@ can_overwrite_up_to = oldest_read
 
 For instruments reading from aux buses (not file input):
 - All consumers are time-synchronized
-- Frame N in the tier buffer represents the same moment for all readers
+- Frame N in the InstrumentBus buffer represents the same moment for all readers
 - Read cursors may diverge due to different consumption rates
 - But they're reading from the same timeline
 
@@ -248,279 +253,323 @@ Match the existing debug macro pattern from `intraverse.cpp`:
 #undef DBUG      // General debug
 #undef WBUG      // "Where we are" prints
 #undef IBUG      // Instrument debugging
-#undef TBUG      // NEW: Tier debugging
+#undef BBUG      // Verbose bus debugging
 ```
 
 All new code must include equivalent debug logging:
 
 ```cpp
-#ifdef TBUG
-    printf("Tier::pullFrames(consumer=%d, requested=%d) entering\n",
-           consumerID, requestedFrames);
+#ifdef IBUG
+    printf("InstrumentBus::pullFrames(consumer=%p, requested=%d) entering\n",
+           consumer, requestedFrames);
+    printf("InstBus: adding inst %p to taskmgr [%s]\n", inst, inst->name());
 #endif
 
 #ifdef WBUG
-    printf("ENTERING Tier::runWriterCycle()\n");
-#endif
-
-#ifdef IBUG
-    printf("Tier: adding inst %p to taskmgr [%s]\n", inst, inst->name());
+    printf("ENTERING InstrumentBus::runWriterCycle()\n");
 #endif
 ```
 
+Note: IBUG is used for both Instrument and InstrumentBus debugging.
+
 ## Implementation Plan
 
-### Phase 1: Tier Class
+### Phase 1: InstrumentBus Class
 
-Create new `Tier` class that wraps a bus with ring buffer management.
+Create new `InstrumentBus` class that wraps a bus with ring buffer management.
 Must support both MULTI_THREAD and single-threaded builds:
 
 ```cpp
-class Tier {
+class InstrumentBus {
 public:
-    Tier(int busID, int bufferSize, int numChannels);
-    ~Tier();
+    InstrumentBus(int busID, int bufsamps);
+    ~InstrumentBus();
 
     // Called by downstream instruments to request input
-    int pullFrames(int consumerID, int requestedFrames, BufPtr dest);
+    // Returns read position in aux_buffer; caller reads directly
+    int pullFrames(Instrument* consumer, int requestedFrames);
 
-    // Register a consumer, returns consumerID
-    int addConsumer();
+    // Register a consumer (tracked by Instrument pointer)
+    void addConsumer(Instrument* inst);
 
-    // Register an input instrument
+    // Register/remove a writer instrument
     void addWriter(Instrument* inst);
+    void removeWriter(Instrument* inst);
+
+    // State management
+    void reset();
+    void resetWritePosition();
 
     // Accessors for debugging
-    int getBusID() const { return busID; }
-    int getWritePosition() const { return writePosition; }
-    int getFramesProduced() const { return framesProduced; }
+    int getBusID() const { return mBusID; }
+    int getWritePosition() const { return mWritePosition; }
+    FRAMETYPE getFramesProduced() const { return mFramesProduced; }
+    int framesAvailable(Instrument* consumer) const;
 
 private:
-    int busID;
-    int numChannels;
+    int mBusID;
+    int mBufsamps;           // Frames per production chunk
 
-    // Ring buffer
-    BufPtr ringBuffer;
-    int bufferSize;          // Total size in frames
-    int writePosition;       // Current write position
-    int framesProduced;      // Total frames produced (for availability calc)
+    // Ring buffer state (uses aux_buffer directly)
+    int mBufferSize;         // Total size (INSTBUS_BUFFER_MULTIPLIER * bufsamps)
+    int mWritePosition;      // Current write position
+    FRAMETYPE mFramesProduced; // Total frames produced
 
-    // Writers (instruments that produce to this tier)
-    std::vector<Instrument*> writers;
+    // Writers (instruments that produce to this InstrumentBus)
+    std::vector<Instrument*> mWriters;
 
-    // Readers (downstream consumers)
-    std::vector<int> readCursors;    // Per-consumer read position
-    std::vector<int> framesConsumed; // Per-consumer total consumed
+    // Readers - tracked by Instrument pointer
+    struct ConsumerState {
+        int readCursor;
+        FRAMETYPE framesConsumed;
+    };
+    std::map<Instrument*, ConsumerState> mConsumers;
 
     // Run one production cycle (handles both threaded and non-threaded)
     void runWriterCycle();
 
-    // How many frames available for a given consumer
-    int framesAvailable(int consumerID);
-
     // Ring buffer utilities
-    void clearRegion(int start, int length);
-    void copyToConsumer(BufPtr dest, int readPos, int frames);
+    void clearRegion(int startFrame, int numFrames);
+    void copyToConsumer(BufPtr dest, int readPos, int numFrames);
 
 #ifdef MULTI_THREAD
-    // Reference to global TaskManager (or could be passed in)
-    TaskManager* taskManager;
+    TaskManager* mTaskManager;
+    std::vector<Instrument*> mActiveWriters;
 #endif
 };
 ```
 
-### Phase 2: Tier Production Cycle
+### Phase 2: InstrumentBus Production Cycle
 
-The tier's writer cycle mirrors the current per-bus pattern, with both MULTI_THREAD and single-threaded paths:
+The InstrumentBus writer cycle mirrors the current per-bus pattern, with both MULTI_THREAD and single-threaded paths:
 
 ```cpp
-void Tier::runWriterCycle() {
+void InstrumentBus::runWriterCycle() {
     // Matches current intraverse.cpp pattern for a single bus
 
 #ifdef WBUG
-    printf("ENTERING Tier::runWriterCycle() for bus %d\n", busID);
+    printf("ENTERING InstrumentBus::runWriterCycle() for bus %d\n", mBusID);
+#endif
+
+    // 1. Clear the aux_buffer region we're about to write
+    clearRegion(mWritePosition, mBufsamps);
+
+#ifdef BBUG
+    printf("InstBus %d: cleared region [%d, %d)\n",
+           mBusID, mWritePosition, mWritePosition + mBufsamps);
 #endif
 
 #ifdef MULTI_THREAD
-    vector<Instrument*> instruments;
-#endif
-
-    // 1. Clear the ring buffer region we're about to write
-    clearRegion(writePosition, framesToRun());
-
-#ifdef TBUG
-    printf("Tier %d: cleared region [%d, %d)\n",
-           busID, writePosition, writePosition + framesToRun());
+    mActiveWriters.clear();
 #endif
 
     // 2. Execute all writers
-    for (Instrument* inst : writers) {
+    for (size_t i = 0; i < mWriters.size(); ++i) {
+        Instrument* inst = mWriters[i];
         // Set up instrument for this chunk
-        inst->setchunk(framesToRun());
-        inst->set_output_offset(0);  // Writing to start of cleared region
+        inst->setchunk(mBufsamps);
+        inst->set_output_offset(mWritePosition);
 
 #ifdef IBUG
-        printf("Tier %d: processing inst %p [%s]\n", busID, inst, inst->name());
+        printf("InstBus %d: processing inst %p [%s]\n", mBusID, inst, inst->name());
 #endif
 
 #ifdef MULTI_THREAD
-        instruments.push_back(inst);
-        taskManager->addTask<Instrument, int, BusType, int, &Instrument::exec>
-            (inst, BUS_AUX_OUT, busID);
+        mActiveWriters.push_back(inst);
+        mTaskManager->addTask<Instrument, int, BusType, int, &Instrument::exec>
+            (inst, BUS_AUX_OUT, mBusID);
 #else
         // Single-threaded: execute directly
-        inst->exec(BUS_AUX_OUT, busID);
+        inst->exec(BUS_AUX_OUT, mBusID);
 #endif
     }
 
 #ifdef MULTI_THREAD
     // 3. Wait for all writers to complete
-    if (!instruments.empty()) {
+    if (!mActiveWriters.empty()) {
 #ifdef DBUG
-        printf("Tier %d: waiting for %d instrument tasks\n",
-               busID, (int)instruments.size());
+        printf("InstBus %d: waiting for %d instrument tasks\n",
+               mBusID, (int)mActiveWriters.size());
 #endif
-        taskManager->waitForTasks(instruments);
+        mTaskManager->waitForTasks(mActiveWriters);
 
-        // 4. Merge per-thread accumulations into ring buffer
+        // 4. Merge per-thread accumulations into aux_buffer
         RTcmix::mixToBus();
     }
 #endif
 
     // 5. Advance write position
-    writePosition = (writePosition + framesToRun()) % bufferSize;
-    framesProduced += framesToRun();
+    mWritePosition = (mWritePosition + mBufsamps) % mBufferSize;
+    mFramesProduced += mBufsamps;
 
-#ifdef TBUG
-    printf("Tier %d: writePosition now %d, framesProduced=%d\n",
-           busID, writePosition, framesProduced);
+#ifdef BBUG
+    printf("InstBus %d: writePosition now %d, framesProduced=%lld\n",
+           mBusID, mWritePosition, mFramesProduced);
 #endif
 
-    // 6. Re-queue writers if they have more to produce
-#ifdef MULTI_THREAD
-    for (Instrument* inst : instruments) {
-#else
-    for (Instrument* inst : writers) {
-#endif
-        // ... re-queue or unref logic ...
-    }
+    // NOTE: Instrument lifecycle (re-queue/unref) is an open design question.
+    // Currently handled separately from runWriterCycle.
 
 #ifdef WBUG
-    printf("EXITING Tier::runWriterCycle() for bus %d\n", busID);
+    printf("EXITING InstrumentBus::runWriterCycle() for bus %d\n", mBusID);
 #endif
 }
 ```
 
-### Phase 3: Tier Pull Interface
+### Phase 3: InstrumentBus Pull Interface
 
 ```cpp
-int Tier::pullFrames(int consumerID, int requestedFrames, BufPtr dest) {
+int InstrumentBus::pullFrames(Instrument* consumer, int requestedFrames) {
 #ifdef WBUG
-    printf("ENTERING Tier::pullFrames(bus=%d, consumer=%d, frames=%d)\n",
-           busID, consumerID, requestedFrames);
+    printf("ENTERING InstrumentBus::pullFrames(bus=%d, consumer=%p, frames=%d)\n",
+           mBusID, consumer, requestedFrames);
 #endif
 
-#ifdef TBUG
-    printf("Tier %d: consumer %d requesting %d frames, available=%d\n",
-           busID, consumerID, requestedFrames, framesAvailable(consumerID));
+    std::map<Instrument*, ConsumerState>::iterator it = mConsumers.find(consumer);
+    assert(it != mConsumers.end());
+
+    ConsumerState& state = it->second;
+    int readPos = state.readCursor;
+
+#ifdef BBUG
+    printf("InstBus %d: consumer %p requesting %d frames, available=%d\n",
+           mBusID, consumer, requestedFrames, framesAvailable(consumer));
 #endif
 
     // Loop until we have enough frames
-    int cycleCount = 0;
-    while (framesAvailable(consumerID) < requestedFrames) {
-#ifdef TBUG
-        printf("Tier %d: need more frames, running cycle %d\n",
-               busID, ++cycleCount);
-#endif
+    while (framesAvailable(consumer) < requestedFrames) {
+        if (mWriters.empty()) {
+            // No writers - aux_buffer should be zeros
+            break;
+        }
         runWriterCycle();  // Runs writers, waits, mixes, advances
     }
 
-#ifdef TBUG
-    printf("Tier %d: copying %d frames from readPos=%d to consumer %d\n",
-           busID, requestedFrames, readCursors[consumerID], consumerID);
-#endif
-
-    // Copy requested frames to consumer's buffer
-    copyToConsumer(dest, readCursors[consumerID], requestedFrames);
-
     // Advance this consumer's read cursor
-    int oldPos = readCursors[consumerID];
-    readCursors[consumerID] =
-        (readCursors[consumerID] + requestedFrames) % bufferSize;
+    state.readCursor = (state.readCursor + requestedFrames) % mBufferSize;
+    state.framesConsumed += requestedFrames;
 
-#ifdef TBUG
-    printf("Tier %d: consumer %d readCursor %d -> %d\n",
-           busID, consumerID, oldPos, readCursors[consumerID]);
+#ifdef BBUG
+    printf("InstBus %d: consumer %p readCursor %d -> %d\n",
+           mBusID, consumer, readPos, state.readCursor);
 #endif
 
 #ifdef WBUG
-    printf("EXITING Tier::pullFrames(bus=%d) returning %d\n",
-           busID, requestedFrames);
+    printf("EXITING InstrumentBus::pullFrames(bus=%d) returning readPos=%d\n",
+           mBusID, readPos);
 #endif
 
-    return requestedFrames;
+    // Return read position; caller reads directly from aux_buffer
+    return readPos;
 }
 ```
 
 ### Phase 4: Integrate with Instrument Input
 
-Modify `rtgetin()` to pull from tier:
+Modify `rtgetin()` to pull from InstrumentBus:
 
 ```cpp
-int Instrument::rtgetin(float* inarr, int requestedSamps) {
-    int requestedFrames = requestedSamps / inputChannels();
+int Instrument::rtgetin(float* inarr, int nsamps) {
+    const int inchans = inputChannels();
+    const int frames = nsamps / inchans;
 
-    if (inputTier != nullptr) {
-        // Pull from upstream tier
-        return inputTier->pullFrames(myConsumerID, requestedFrames, inarr)
-               * inputChannels();
+    // Check if InstrumentBus pull model is active for this bus
+    InstrumentBusManager* mgr = RTcmix::getInstBusManager();
+    InstrumentBus* instBus = mgr->getInstBus(auxin[0]);
+
+    if (instBus != NULL) {
+        // Pull model: trigger production and get read position
+        for (int n = 0; n < auxin_count; n++) {
+            int chan = auxin[n];
+            instBus = mgr->getInstBus(chan);
+            int readPos = instBus->pullFrames(this, frames);
+        }
+        // Read from aux_buffers and interleave into inarr
+        RTcmix::readFromAuxBus(inarr, inchans, frames, auxin, auxin_count, readPos);
+        return nsamps;
     }
 
-    // Fall back to existing file/device input
-    return existingRtgetinLogic(inarr, requestedSamps);
+    // Fall back to existing file/device/legacy aux input
+    // ... existing rtgetin logic ...
 }
 ```
 
 ### Phase 5: Entry Point (inTraverse)
 
-The main loop becomes a simple pull from the output tier:
+The main loop initiates a pull from the output InstrumentBus:
 
 ```cpp
 bool RTcmix::inTraverse(AudioDevice* device, void* arg) {
-    // ... existing setup, heap popping, etc. ...
+    // ... existing setup, heap popping, buffer management ...
 
-    // Pull RTBUFSAMPS frames from output tier
-    // This triggers cascading pulls through all upstream tiers
-    outputTier->pullFrames(HARDWARE_CONSUMER_ID, RTBUFSAMPS, out_buffer);
+    // Process all queues for SETUP only (chunk info, lifecycle tracking)
+    // but do NOT call exec() directly - instruments run via pull
+    // (See "intraverse Changes" section below for details)
+
+    // Pull RTBUFSAMPS frames from output InstrumentBus
+    // This triggers cascading pulls through all upstream InstrumentBuses
+    outputInstBus->pullFrames(HARDWARE_CONSUMER, RTBUFSAMPS);
 
     // Send to hardware (unchanged)
     rtsendsamps(device);
 
-    // ... existing cleanup ...
+    // Handle instrument lifecycle (re-queue or unref)
+    // (Open design question: where exactly this happens)
+
     return playEm;
 }
 ```
 
-### Phase 6: Tier Graph Construction
+### intraverse Changes
 
-In `bus_config()`, build the tier graph:
+The key change to intraverse is separating **setup** from **execution**:
+
+**What intraverse continues to do:**
+- Buffer cycle management (bufStartSamp, bufEndSamp, frameCount)
+- Queue management (pop instruments, track timing)
+- Chunk setup (ichunkstart, output_offset, chunksamps)
+- Initiate pull from output InstrumentBus
+- Handle instrument lifecycle (re-queue/unref) - open design question
+
+**What intraverse no longer does:**
+- Direct exec() calls for any instruments
+- The TO_AUX → AUX_TO_AUX → TO_OUT execution order is replaced by pull-based execution
+
+All instruments are triggered by the pull chain starting from output.
+
+### Phase 6: InstrumentBus Graph Construction
+
+Registration happens in `Instrument::set_bus_config()`:
 
 ```cpp
-double RTcmix::bus_config(double p[], int n_args) {
-    // ... existing parsing ...
+void Instrument::set_bus_config(const char* inst_name) {
+    // ... existing bus slot setup ...
 
-    // Create or get tier for each output bus
-    for (int i = 0; i < bus_slot->auxout_count; i++) {
-        Tier* tier = getOrCreateTier(bus_slot->auxout[i]);
-        tier->addWriter(currentInstrument);
+    // Register with InstrumentBus system for pull-based audio routing
+    InstrumentBusManager* instBusMgr = RTcmix::getInstBusManager();
+
+    // Register as writer to all auxout buses
+    for (int i = 0; i < _busSlot->auxout_count; i++) {
+        instBusMgr->addWriter(_busSlot->auxout[i], this);
     }
 
-    // Register as consumer of input tiers
-    for (int i = 0; i < bus_slot->auxin_count; i++) {
-        Tier* tier = getOrCreateTier(bus_slot->auxin[i]);
-        int consumerID = tier->addConsumer();
-        currentInstrument->setInputTier(tier, consumerID);
+    // Register as consumer of all auxin buses
+    for (int i = 0; i < _busSlot->auxin_count; i++) {
+        instBusMgr->addConsumer(_busSlot->auxin[i], this);
     }
+}
+```
+
+InstrumentBusManager creates InstrumentBus objects on demand:
+
+```cpp
+InstrumentBus* InstrumentBusManager::getOrCreateInstBus(int busID) {
+    if (mInstBuses[busID] == NULL) {
+        // aux_buffer already allocated by bus_config.cpp
+        mInstBuses[busID] = new InstrumentBus(busID, mBufsamps);
+        // ... TaskManager setup for MULTI_THREAD ...
+    }
+    return mInstBuses[busID];
 }
 ```
 
@@ -528,54 +577,64 @@ double RTcmix::bus_config(double p[], int n_args) {
 
 ```
 Configuration:
-  bus_config("WAVETABLE", "in0", "aux0out")  → writes to aux0 tier
-  bus_config("TRANS", "aux0in", "out0")      → reads aux0, writes out0 tier
+  bus_config("WAVETABLE", "aux 0 out")       → writes to aux0 InstrumentBus
+  bus_config("TRANS", "aux 0 in", "aux 1 out") → reads aux0, writes aux1 InstrumentBus
+  bus_config("STEREO", "aux 1 in", "out 0-1")  → reads aux1, writes output InstrumentBus
 
-Runtime (hardware requests 1024 frames):
+Runtime (hardware requests 512 frames):
 
-  1. inTraverse() calls outputTier->pullFrames(1024)
+  1. inTraverse() calls outputInstBus->pullFrames(512)
 
-  2. outputTier needs TRANS to produce 1024 frames
+  2. outputInstBus needs STEREO to produce 512 frames
+     - Runs STEREO via runWriterCycle()
+     - STEREO::run() calls rtgetin() requesting 512 frames
+
+  3. rtgetin() calls aux1InstBus->pullFrames(this, 512)
+
+  4. aux1InstBus needs TRANS to produce 512 frames
      - Runs TRANS via runWriterCycle()
-     - TRANS::run() calls rtgetin() requesting 2048 frames
+     - TRANS::run() calls rtgetin() requesting 1024 frames (2:1 ratio)
 
-  3. rtgetin() calls aux0Tier->pullFrames(2048)
+  5. rtgetin() calls aux0InstBus->pullFrames(this, 1024)
 
-  4. aux0Tier needs 2048 frames, has 0 available
+  6. aux0InstBus needs 1024 frames, has 0 available
      Loop iteration 1:
-       - clearRegion(0, 1024)
+       - clearRegion(0, 512)
        - addTask(WAVETABLE)
        - waitForTasks()
        - mixToBus()
-       - writePosition = 1024
+       - mWritePosition = 512, mFramesProduced = 512
 
      Loop iteration 2:
-       - clearRegion(1024, 1024)
+       - clearRegion(512, 512)
        - addTask(WAVETABLE)
        - waitForTasks()
        - mixToBus()
-       - writePosition = 2048
+       - mWritePosition = 1024, mFramesProduced = 1024
 
-     Now 2048 frames available
+     Now 1024 frames available
 
-  5. aux0Tier copies 2048 frames to TRANS input buffer
+  7. pullFrames returns readPos=0; TRANS reads 1024 frames from aux_buffer[0]
 
-  6. TRANS processes 2048 → 1024 output frames
+  8. TRANS processes 1024 input → 512 output frames to aux_buffer[1]
 
-  7. outputTier has 1024 frames, copies to out_buffer
+  9. pullFrames returns readPos=0; STEREO reads 512 frames from aux_buffer[1]
 
-  8. rtsendsamps() sends to hardware
+  10. STEREO writes to out_buffer
+
+  11. rtsendsamps() sends to hardware
 ```
 
 ## What Changes vs. Current System
 
-| Aspect | Current (Push) | Tier Model (Pull) |
-|--------|----------------|-------------------|
+| Aspect | Current (Push) | InstrumentBus Model (Pull) |
+|--------|----------------|----------------------------|
 | Trigger | Play list order | Downstream request |
 | Frame count | Fixed RTBUFSAMPS everywhere | Variable requests, fixed production |
-| Buffer type | Simple arrays, cleared each cycle | Ring buffers, persistent |
-| Threading | Per-bus: addTask→wait→mix | Per-tier: addTask→wait→mix (same) |
+| Buffer type | Simple arrays, cleared each cycle | aux_buffer as ring buffer (configurable persistence) |
+| Threading | Per-bus: addTask→wait→mix | Per-InstrumentBus: addTask→wait→mix (same) |
 | Signal flow | Implicit in play lists | Explicit in pull chain |
+| intraverse role | Setup + execution | Setup + initiate pull (execution via pull chain) |
 
 ## What Stays Unchanged
 
@@ -587,7 +646,6 @@ Runtime (hardware requests 1024 frames):
 - `mixToBus()` - merge thread-local vectors (MULTI_THREAD only)
 - `TaskManager` - parallel execution infrastructure (MULTI_THREAD only)
 - `heap` scheduling system
-- Instrument lifecycle (ref counting, re-queuing)
 - **Build configurations** - both MULTI_THREAD and single-threaded must work
 - **Debug macro pattern** - DBUG, IBUG, WBUG, BBUG, ALLBUG
 
@@ -600,15 +658,15 @@ Runtime (hardware requests 1024 frames):
 4. **EMBEDDED build** - verify compatibility
 
 ### Unit Tests
-1. Single writer, single reader tier
-2. Multiple writers to same tier (verify parallel exec + mixing)
-3. Multiple readers from same tier (verify independent cursors)
+1. Single writer, single reader InstrumentBus
+2. Multiple writers to same InstrumentBus (verify parallel exec + mixing)
+3. Multiple readers from same InstrumentBus (verify independent cursors)
 4. Request larger than single production cycle (verify looping)
 5. Request smaller than production (verify buffering)
 
 ### Integration Tests
-1. Simple chain: WAVETABLE → MIX → out
-2. Rate change: WAVETABLE → TRANS(2:1) → out
+1. Simple chain: WAVETABLE → aux → MIX → out
+2. Rate change: WAVETABLE → TRANS(2:1) → STEREO → out
 3. Multiple sources: WAVETABLE + NOISE → aux → MIX → out
 4. Deep chain: A → aux0 → B → aux1 → C → out
 
@@ -619,85 +677,107 @@ Runtime (hardware requests 1024 frames):
 
 ## Buffer Sizing
 
-Tier ring buffers must accommodate:
-- Maximum single request from any consumer
-- Enough headroom for multiple production cycles
+InstrumentBus uses aux_buffer directly with configurable size multiplier:
 
-Conservative default: `4 * RTBUFSAMPS` per tier
+```cpp
+#undef INSTBUS_PERSIST_DATA  // Define for cross-cycle persistence
 
-The output tier is special: exactly `RTBUFSAMPS` (must match hardware).
+#ifdef INSTBUS_PERSIST_DATA
+#define INSTBUS_BUFFER_MULTIPLIER 4   // Larger buffer for persistence
+#else
+#define INSTBUS_BUFFER_MULTIPLIER 1   // Standard size
+#endif
+```
+
+- Non-persistent mode (MULTIPLIER=1): Buffer equals RTBUFSAMPS, balanced per cycle
+- Persistent mode (MULTIPLIER=4): Larger buffer allows data to persist across cycles
+
+The output InstrumentBus must produce exactly `RTBUFSAMPS` frames per pull (to match hardware).
 
 ## Implementation Status
 
-### Completed (Phase 1)
+### Completed
 
 The following infrastructure has been implemented:
 
-1. **Tier class** (`src/rtcmix/Tier.h`, `src/rtcmix/Tier.cpp`)
-   - Ring buffer management with configurable size
-   - Per-consumer read cursors for independent consumption
+1. **InstrumentBus class** (`src/rtcmix/InstrumentBus.h`, `src/rtcmix/InstrumentBus.cpp`)
+   - Uses aux_buffer directly as ring buffer (no separate allocation)
+   - Per-consumer read cursors tracked by Instrument pointer (`std::map<Instrument*, ConsumerState>`)
    - Writer registration and removal
-   - `pullFrames()` - triggers production cycles to satisfy requests
+   - `pullFrames()` - triggers production cycles, returns read position
    - `runWriterCycle()` - executes writers in parallel (MULTI_THREAD) or sequentially
-   - Full debug logging support (TBUG, WBUG, IBUG, DBUG)
+   - Full debug logging support (BBUG, WBUG, IBUG, DBUG)
+   - `INSTBUS_PERSIST_DATA` / `INSTBUS_BUFFER_MULTIPLIER` for configurable persistence
 
-2. **TierManager class** (`src/rtcmix/TierManager.h`, `src/rtcmix/TierManager.cpp`)
-   - Creates and manages Tier objects per aux bus
-   - Registers writers and consumers
+2. **InstrumentBusManager class** (`src/rtcmix/InstrumentBusManager.h`, `src/rtcmix/InstrumentBusManager.cpp`)
+   - Creates and manages InstrumentBus objects per aux bus
+   - `getOrCreateInstBus()` - lazy creation
+   - `addWriter()` / `addConsumer()` - registration
+   - `removeWriter()` - cleanup
    - Integrates with TaskManager for parallel execution
 
 3. **Instrument integration** (`src/rtcmix/Instrument.h`, `src/rtcmix/Instrument.cpp`)
-   - `inputTier` and `inputTierConsumerID` fields
-   - `setInputTier()` method for tier configuration
    - Registration in `set_bus_config()` for aux buses
+   - Cleanup in destructor (removeWriter)
 
 4. **Input path modification** (`src/rtcmix/rtgetin.cpp`)
-   - Checks for `hasInputTier()` and pulls from tier if available
-   - Falls back to legacy aux_buffer path otherwise
+   - Checks for InstrumentBus via `getInstBus()`
+   - Calls `pullFrames()` for each auxin channel
+   - Uses `readFromAuxBus()` with returned read position
+   - Falls back to legacy path if no InstrumentBus
 
 5. **RTcmix integration** (`src/rtcmix/RTcmix.h`, `src/rtcmix/RTcmix.cpp`)
-   - Static `tierManager` member
-   - Initialization in `init_globals()`
-   - Cleanup in `free_globals()`
-   - `getTierManager()` accessor
+   - Static `instBusManager` member
+   - `friend class InstrumentBus` for aux_buffer access
+   - `getInstBusManager()` accessor
 
-6. **Test scores** (`test/suite/tier_*.sco`)
-   - `tier_basic_test.sco` - simple WAVETABLE → aux → MIX chain
-   - `tier_chain_test.sco` - multi-tier cascade
-   - `tier_multi_writer_test.sco` - multiple writers to same tier
+6. **Test scores** (`test/suite/instbus_*.sco`)
+   - `instbus_trans_test.sco` - WAVETABLE → TRANS → STEREO chain
+   - `instbus_trans_down_test.sco` - transpose down test
 
-### Remaining Work (Phase 2)
+### Known Issue: Double Execution
 
-The tier infrastructure is in place, but the following integration is needed for full pull-model operation:
+The current implementation has both:
+- intraverse running instruments via push model (TO_AUX → AUX_TO_AUX → TO_OUT)
+- InstrumentBus running instruments via pull model (runWriterCycle)
 
-1. **intraverse.cpp modification**
-   - The main audio loop still uses the push model
-   - Need to add tier-based triggering for aux-bus instruments
-   - When an instrument with `auxin` needs input, its tier should be signaled
+This causes instruments to execute twice, resulting in audio distortion.
 
-2. **Output tier integration**
-   - Create a special output tier that pulls from the entire graph
-   - Trigger from `inTraverse()` main loop
+### Remaining Work
 
-3. **Writer lifecycle management**
-   - Remove writers when instruments finish (`unref()`)
-   - Handle re-queuing of instruments that span multiple buffers
+1. **intraverse.cpp modification** (PRIMARY TASK)
+   - Separate setup from execution
+   - intraverse does setup/lifecycle for ALL instruments
+   - intraverse does NOT call exec() directly
+   - intraverse initiates pull from output InstrumentBus
+   - All execution happens via pull chain
 
-### Current Behavior
+2. **Output InstrumentBus**
+   - Create InstrumentBus for output buses (not just aux)
+   - Hardware is the ultimate consumer
+   - Pull initiated from intraverse (the audio callback)
 
-With the current implementation:
-- Instruments register with tiers at `set_bus_config()` time
-- Tiers are created for each aux bus
-- The `rtgetin()` path can pull from tiers
-- However, since `runWriterCycle()` isn't triggered from the main loop, the system still relies on the push model through `aux_buffer`
+3. **Instrument lifecycle management** (OPEN QUESTION)
+   - Where does re-queue/unref happen?
+   - Options: in runWriterCycle, or in intraverse after pull completes
+   - Needs design decision
 
-The infrastructure supports the pull model, but full activation requires intraverse.cpp changes.
+### Current Debug State
+
+Debug output is enabled in:
+- `InstrumentBus.cpp` - WBUG, IBUG, DBUG defined
+- `InstrumentBusManager.cpp` - WBUG, IBUG, DBUG defined
+- `rtgetin.cpp` - TBUG defined, plus unconditional printf
+- `Instrument.cpp` - unconditional printf in set_bus_config()
+
+Note: IBUG is used for both Instrument and InstrumentBus debugging.
 
 ## References
 
 - Current threading: `src/rtcmix/intraverse.cpp:424-551` (MULTI_THREAD path)
 - Task management: `src/rtcmix/TaskManager.h`
 - Per-thread accumulation: `src/rtcmix/bus_config.cpp:637-684`
-- Instrument execution: `src/rtcmix/Instrument.cpp:328-358`
-- Tier implementation: `src/rtcmix/Tier.cpp`
-- TierManager: `src/rtcmix/TierManager.cpp`
+- Instrument execution: `src/rtcmix/Instrument.cpp`
+- InstrumentBus implementation: `src/rtcmix/InstrumentBus.cpp`
+- InstrumentBusManager: `src/rtcmix/InstrumentBusManager.cpp`
+- Input path: `src/rtcmix/rtgetin.cpp`

@@ -12,6 +12,7 @@
 #include "InstrumentBusManager.h"
 #include "InstrumentBus.h"
 #include "Instrument.h"
+#include <RTcmix.h>
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
@@ -21,23 +22,24 @@
 #endif
 
 /* Debug macros - match pattern from intraverse.cpp */
-#undef BBUG      /* InstrumentBus-specific debugging */
+#undef BBUG      /* Verbose bus debugging */
 #undef WBUG      /* "Where we are" prints */
+#undef IBUG      /* Instrument and InstrumentBus debugging */
 #undef DBUG      /* General debug */
 #undef ALLBUG    /* All debug output */
 
 #ifdef ALLBUG
 #define BBUG
 #define WBUG
+#define IBUG
 #define DBUG
 #endif
 
 
 /* -------------------------- InstrumentBusManager::InstrumentBusManager --- */
 
-InstrumentBusManager::InstrumentBusManager(int busCount, int numChannels, int bufsamps)
+InstrumentBusManager::InstrumentBusManager(int busCount, int bufsamps)
     : mInstBuses(busCount, NULL),
-      mNumChannels(numChannels),
       mBufsamps(bufsamps),
       mActiveInstBusCount(0)
 #ifdef MULTI_THREAD
@@ -45,8 +47,8 @@ InstrumentBusManager::InstrumentBusManager(int busCount, int numChannels, int bu
 #endif
 {
 #ifdef WBUG
-    printf("ENTERING InstrumentBusManager::InstrumentBusManager(busCount=%d, chans=%d, bufsamps=%d)\n",
-           busCount, numChannels, bufsamps);
+    printf("ENTERING InstrumentBusManager::InstrumentBusManager(busCount=%d, bufsamps=%d)\n",
+           busCount, bufsamps);
 #endif
 
 #ifdef WBUG
@@ -81,10 +83,15 @@ InstrumentBus* InstrumentBusManager::getOrCreateInstBus(int busID)
     assert(busID >= 0 && (size_t)busID < mInstBuses.size());
 
     if (mInstBuses[busID] == NULL) {
-#ifdef BBUG
+#ifdef IBUG
         printf("InstBusMgr: creating InstrumentBus for bus %d\n", busID);
 #endif
-        mInstBuses[busID] = new InstrumentBus(busID, mNumChannels, 0, mBufsamps);
+        /* aux_buffer is already allocated by bus_config.cpp.
+         * For non-persistent mode (MULTIPLIER == 1), size is correct.
+         * For persistent mode (MULTIPLIER > 1), bus_config.cpp would need
+         * to be modified to allocate larger buffers.
+         */
+        mInstBuses[busID] = new InstrumentBus(busID, mBufsamps);
         ++mActiveInstBusCount;
 
 #ifdef MULTI_THREAD
@@ -127,7 +134,7 @@ void InstrumentBusManager::addWriter(int busID, Instrument* inst)
     InstrumentBus* instBus = getOrCreateInstBus(busID);
     instBus->addWriter(inst);
 
-#ifdef BBUG
+#ifdef IBUG
     printf("InstBusMgr: added writer %p [%s] to bus %d\n",
            inst, inst->name(), busID);
 #endif
@@ -141,13 +148,7 @@ void InstrumentBusManager::addConsumer(int busID, Instrument* inst)
     InstrumentBus* instBus = getOrCreateInstBus(busID);
     instBus->addConsumer(inst);
 
-    /* NOTE: Don't enable InstrumentBus path yet - intraverse.cpp integration not complete.
-     * When Phase 2 is implemented, uncomment this line:
-     * inst->setInputInstBus(instBus);
-     * For now, instruments use the legacy aux_buffer path in rtgetin().
-     */
-
-#ifdef BBUG
+#ifdef IBUG
     printf("InstBusMgr: added consumer %p [%s] to bus %d\n",
            inst, inst->name(), busID);
 #endif
@@ -161,7 +162,7 @@ void InstrumentBusManager::removeWriter(int busID, Instrument* inst)
     if (busID >= 0 && (size_t)busID < mInstBuses.size() && mInstBuses[busID] != NULL) {
         mInstBuses[busID]->removeWriter(inst);
 
-#ifdef BBUG
+#ifdef IBUG
         printf("InstBusMgr: removed writer %p from bus %d\n", inst, busID);
 #endif
     }
@@ -182,7 +183,7 @@ void InstrumentBusManager::reset()
         }
     }
 
-#ifdef BBUG
+#ifdef IBUG
     printf("InstBusMgr: reset %d active InstrumentBus objects\n", mActiveInstBusCount);
 #endif
 
@@ -214,7 +215,7 @@ void InstrumentBusManager::setTaskManager(TaskManager* tm)
         }
     }
 
-#ifdef BBUG
+#ifdef IBUG
     printf("InstBusMgr: set TaskManager to %p\n", tm);
 #endif
 }

@@ -1,18 +1,19 @@
 //
 // C++ Implementation: TaskManager
 //
-// Description: 
+// Description:
 //
 //
 // Author: Douglas Scott <netdscott-at-netscape-dot-net>, (C) 2010
 //
+// Nested parallelism support added 2024 for pull-based audio routing
 //
-
 
 #include "TaskManager.h"
 #include "RTSemaphore.h"
 #include "RTThread.h"
 #include "rt_types.h"
+#include <algorithm>
 #include <pthread.h>
 #include <stdio.h>
 #include <assert.h>
@@ -26,6 +27,51 @@
 #undef TASK_DEBUG
 #undef THREAD_DEBUG
 #undef POOL_DEBUG
+#undef CONTEXT_DEBUG
+
+/* --------------------------------------------------------- WaitContext --- */
+
+WaitContext::WaitContext(int taskCount)
+	: mRemainingTasks(taskCount), mSema(new RTSemaphore(0))
+{
+#ifdef CONTEXT_DEBUG
+	printf("WaitContext::WaitContext(%d tasks)\n", taskCount);
+#endif
+}
+
+WaitContext::~WaitContext()
+{
+#ifdef CONTEXT_DEBUG
+	printf("WaitContext::~WaitContext()\n");
+#endif
+	delete mSema;
+}
+
+void WaitContext::taskCompleted()
+{
+#ifdef CONTEXT_DEBUG
+	printf("WaitContext::taskCompleted() remaining before: %d\n", (int)mRemainingTasks);
+#endif
+	if (mRemainingTasks.decrementAndTest()) {
+#ifdef CONTEXT_DEBUG
+		printf("WaitContext::taskCompleted() - all done, posting semaphore\n");
+#endif
+		mSema->post();
+	}
+}
+
+bool WaitContext::isComplete() const
+{
+	return mRemainingTasks == 0;
+}
+
+void WaitContext::wait()
+{
+#ifdef CONTEXT_DEBUG
+	printf("WaitContext::wait()\n");
+#endif
+	mSema->wait();
+}
 
 class Notifiable {
 public:
@@ -106,6 +152,11 @@ void TaskThread::run()
             printf("TaskThread %d running task %p...\n", tIndex, task);
 #endif
 			task->run();
+			// Notify the task's WaitContext that this task is complete
+			WaitContext *ctx = task->getContext();
+			assert(ctx != NULL);
+			ctx->taskCompleted();
+			delete task;
 #ifdef THREAD_DEBUG
             printf("TaskThread %d task %p done\n", tIndex, task);
 #endif
@@ -124,7 +175,7 @@ void TaskThread::run()
             printf("TaskThread %d loop done in %.5f ms\n", getIndex(), elapsedNS*1.0e-06);
         }
 #endif
-		notify();
+		// Note: No longer notify pool - WaitContext handles completion signaling
 	}
 	while (!mStopping);
 #ifdef THREAD_DEBUG
@@ -135,50 +186,41 @@ void TaskThread::run()
 class ThreadPool : private Notifiable
 {
 public:
-	ThreadPool(TaskProvider *inProvider) : mRequestCount(0), mThreadSema(RT_THREAD_COUNT), mWaitSema(0) {
-		for(int i=0; i<RT_THREAD_COUNT; ++i) {
+	ThreadPool(TaskProvider *inProvider) : mProvider(inProvider) {
+		for (int i = 0; i < RT_THREAD_COUNT; ++i) {
 			mThreads[i] = new TaskThread(this, inProvider, i);
 		}
 	}
 	virtual ~ThreadPool() {
-		for(int i=0; i<RT_THREAD_COUNT; ++i)
+		for (int i = 0; i < RT_THREAD_COUNT; ++i)
 			delete mThreads[i];
 	}
 	virtual void notify(int inIndex);
-	inline void startAndWait(int taskCount);
+	inline void wakeThreads(int count);
 private:
 	TaskThread		*mThreads[RT_THREAD_COUNT];
-	AtomicInt		mRequestCount;
-	RTSemaphore		mThreadSema;
-	RTSemaphore		mWaitSema;
+	TaskProvider	*mProvider;
 };
 
-inline void ThreadPool::startAndWait(int taskCount) {
-	// Dont wake any more threads than we have tasks.
-	mRequestCount = (int) std::min(taskCount, RT_THREAD_COUNT);
-	const int count = (int) mRequestCount;
-	for(int i=0; i<count; ++i)
-		mThreads[i]->wake();
+inline void ThreadPool::wakeThreads(int count) {
+	// Wake up to 'count' threads to help process tasks
+	const int threadsToWake = std::min(count, RT_THREAD_COUNT);
 #ifdef POOL_DEBUG
-	printf("ThreadPool::startAndWait: waiting on %d threads\n", count);
+	printf("ThreadPool::wakeThreads: waking %d threads\n", threadsToWake);
 #endif
-	mWaitSema.wait();
+	for (int i = 0; i < threadsToWake; ++i) {
+		mThreads[i]->wake();
+	}
 }
 
-// Let thread pool know that the thread at index inIndex is available
-
+// Called by TaskThread when it has no more tasks - currently a no-op
+// since WaitContext handles completion signaling
 void ThreadPool::notify(int inIndex)
 {
 #ifdef POOL_DEBUG
-	printf("ThreadPool notified for index %d\n", inIndex);
+	printf("ThreadPool::notify(%d) - no-op, WaitContext handles completion\n", inIndex);
 #endif
-	if (mRequestCount.decrementAndTest())
-	{
-#if defined(POOL_DEBUG) || defined(THREAD_DEBUG)
-		printf("ThreadPool posting to wait semaphore\n");
-#endif
-		mWaitSema.post();
-	}
+	(void)inIndex;  // unused
 }
 
 TaskManagerImpl::TaskManagerImpl()
@@ -210,18 +252,59 @@ void TaskManagerImpl::startAndWait()
 #ifdef DEBUG
 	printf("TaskManagerImpl::startAndWait pushing tasks onto stack\n");
 #endif
+	// Count tasks
 	int taskCount = 0;
-	// Push entire reversed linked list into stack
-	for (Task *t = mTaskHead; t != NULL; ++taskCount) {
+	for (Task *t = mTaskHead; t != NULL; t = t->next()) {
+		++taskCount;
+	}
+
+	if (taskCount == 0) {
+		return;
+	}
+
+	// Create WaitContext for this batch
+	WaitContext context(taskCount);
+
+	// Set context on all tasks and push to stack
+	for (Task *t = mTaskHead; t != NULL; ) {
+		t->setContext(&context);
 		Task *next = t->next();
 		mTaskStack.push_atomic(t);
 		t = next;
 	}
 	mTaskHead = mTaskTail = NULL;
+
 #ifdef DEBUG
-    printf("TaskManagerImpl::startAndWait waiting on ThreadPool for %d tasks...\n", taskCount);
+	printf("TaskManagerImpl::startAndWait waking threads for %d tasks...\n", taskCount);
 #endif
-	mThreadPool->startAndWait(taskCount);
+	// Wake worker threads to help
+	mThreadPool->wakeThreads(taskCount);
+
+	// Check if this thread can participate (is a TaskThread with valid index)
+	// TaskThreads must participate to avoid deadlock in nested calls.
+	// Main thread cannot participate (no thread-local storage set up).
+	if (RTThread::IsTaskThread()) {
+		// Participatory wait: help run tasks until all are complete
+		while (!context.isComplete()) {
+			Task *task = mTaskStack.pop_atomic();
+			if (task != NULL) {
+				task->run();
+				WaitContext *ctx = task->getContext();
+				assert(ctx != NULL);
+				ctx->taskCompleted();
+				delete task;
+			} else {
+				// Stack is empty but tasks still running on other threads
+				// Wait for context completion
+				context.wait();
+				break;
+			}
+		}
+	} else {
+		// Non-TaskThread (e.g., main thread): just wait for completion
+		context.wait();
+	}
+
 #ifdef DEBUG
 	printf("TaskManagerImpl::startAndWait done\n");
 #endif

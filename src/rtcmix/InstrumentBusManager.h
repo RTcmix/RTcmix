@@ -33,10 +33,9 @@ public:
      * Create a new InstrumentBusManager.
      *
      * @param busCount     Maximum number of buses
-     * @param numChannels  Number of audio channels per bus
      * @param bufsamps     Frames per buffer (RTBUFSAMPS)
      */
-    InstrumentBusManager(int busCount, int numChannels, int bufsamps);
+    InstrumentBusManager(int busCount, int bufsamps);
 
     ~InstrumentBusManager();
 
@@ -109,7 +108,6 @@ public:
 
 private:
     std::vector<InstrumentBus*> mInstBuses;  /* InstrumentBus pointers (indexed by bus ID) */
-    int mNumChannels;            /* Channels per bus */
     int mBufsamps;               /* Frames per buffer */
     int mActiveInstBusCount;     /* Number of active InstrumentBus objects */
 

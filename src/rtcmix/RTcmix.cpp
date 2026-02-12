@@ -202,7 +202,7 @@ RTcmix::init_globals()
 #endif
 
    // Initialize InstrumentBus manager for pull-based audio routing
-   instBusManager = new InstrumentBusManager(busCount, NCHANS, sBufferFrameCount);
+   instBusManager = new InstrumentBusManager(busCount, sBufferFrameCount);
 #ifdef MULTI_THREAD
    instBusManager->setTaskManager(taskManager);
 #endif

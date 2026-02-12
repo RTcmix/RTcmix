@@ -19,7 +19,6 @@ class heap;
 class PFieldSet;
 class PField;
 class BusSlot;
-class InstrumentBus;
 
 struct InputState {
    InputState();
@@ -71,8 +70,6 @@ private:
 	BUFTYPE *		inputChainBuf;			// buffer used as input by rtgetin()
 	// BGG -- for pfbus connection (dynamic PFields)
 	int				my_pfbus;
-	// INSTRUMENTBUS-BASED PULL MODEL SUPPORT
-	InstrumentBus *	inputInstBus;			// InstrumentBus to pull input from (NULL if not aux-bus based)
 
 public:
 	// Instruments should use these to access variables.
@@ -133,12 +130,6 @@ protected:
 	friend			class CHAIN;
 	int				setChainedInputBuffer(BUFTYPE *inputBuf, int inputChannels);
 	bool			hasChainedInput() const { return inputChainBuf != NULL; }
-
-	// InstrumentBus-based pull model support
-	friend			class InstrumentBusManager;
-	void			setInputInstBus(InstrumentBus* instBus);
-	bool			hasInputInstBus() const { return inputInstBus != NULL; }
-	InstrumentBus*	getInputInstBus() const { return inputInstBus; }
 	
 	static int		rtsetoutput(float, float, Instrument *);
 	static int		rtsetinput(float, Instrument *);

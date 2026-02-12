@@ -62,6 +62,11 @@ int RTThread::GetIndexForThread() {
 	return *((int *) mem);
 }
 
+bool RTThread::IsTaskThread() {
+	void *mem = pthread_getspecific(sIndexKey);
+	return mem != NULL;
+}
+
 void RTThread::SetIndexForThread(int inIndex) {
 	int *pIndex = new int;
 	*pIndex = inIndex;

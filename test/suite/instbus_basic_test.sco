@@ -1,4 +1,4 @@
-// Basic tier system test: WAVETABLE -> aux0 -> MIX -> output
+// Basic InstrumentBus test: WAVETABLE -> aux0 -> MIX -> output
 // Tests the pull model with a simple instrument chain
 
 rtsetparams(44100, 2, 512)
@@ -23,4 +23,4 @@ WAVETABLE(0, dur, 10000, 440)
 // MIX passes aux0 to stereo output (center pan)
 MIX(0, 0, dur, 1.0, 0, 1)
 
-print("Tier basic test: WAVETABLE -> aux0 -> MIX -> output")
+print("InstrumentBus basic test: WAVETABLE -> aux0 -> MIX -> output")

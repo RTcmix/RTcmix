@@ -1,5 +1,5 @@
-// Tier multi-writer test: Multiple WAVETABLE -> aux0 -> MIX -> output
-// Tests accumulation of multiple writers to same tier
+// InstrumentBus multi-writer test: Multiple WAVETABLE -> aux0 -> MIX -> output
+// Tests accumulation of multiple writers to same bus
 
 rtsetparams(44100, 2, 512)
 load("WAVETABLE")
@@ -24,4 +24,4 @@ WAVETABLE(0, dur, 5000, 554.37)  // C#5 (major third above A4)
 // MIX passes the combined signal to stereo output
 MIX(0, 0, dur, 1.0, 0, 1)
 
-print("Tier multi-writer test: 2x WAVETABLE -> aux0 -> MIX -> output")
+print("InstrumentBus multi-writer test: 2x WAVETABLE -> aux0 -> MIX -> output")

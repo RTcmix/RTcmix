@@ -26,6 +26,7 @@
 
 #undef DEBUG_INST
 #define DEBUG_BUFFER 0  /* this turns it off */
+#define IBUG  /* Instrument and InstrumentBus debugging */
 
 using namespace std;
 
@@ -42,8 +43,7 @@ float			Instrument::SR     = 0;
 Instrument::Instrument() : RefCounted(true),
 	  _start(0.0), _dur(0.0), cursamp(0), chunksamps(0), i_chunkstart(0),
 	  endsamp(0), output_offset(0), outputchans(0), _name(NULL),
-	  needs_to_run(true), _nsamps(0), inputChainBuf(NULL),
-	  inputInstBus(NULL)
+	  needs_to_run(true), _nsamps(0), inputChainBuf(NULL)
 {
 #if defined(DEBUG_MEMORY) || defined(DEBUG_INST)
 	rtcmix_print("Instrument::Instrument(this = %p)\n", this);
@@ -78,9 +78,17 @@ Instrument::~Instrument()
 	if (sfile_on)
 		gone();                   // decrement input soundfile reference
 
+	/* Unregister from InstrumentBus system */
+	InstrumentBusManager* mgr = RTcmix::getInstBusManager();
+	if (mgr != NULL && _busSlot != NULL) {
+		for (int i = 0; i < _busSlot->auxout_count; i++) {
+			mgr->removeWriter(_busSlot->auxout[i], this);
+		}
+	}
+
 	delete [] outbuf;
 
-	RefCounted::unref(_busSlot);	// release our reference	
+	RefCounted::unref(_busSlot);	// release our reference
 
 	delete _pfields;
 	delete [] _name;
@@ -121,13 +129,21 @@ void Instrument::set_bus_config(const char *inst_name)
   // Register with InstrumentBus system for pull-based audio routing
   InstrumentBusManager* instBusMgr = RTcmix::getInstBusManager();
 
-  // Register as writer to all auxout buses
-  for (int i = 0; i < _busSlot->auxout_count; i++) {
-    instBusMgr->addWriter(_busSlot->auxout[i], this);
-  }
+#ifdef IBUG
+  printf("Instrument::set_bus_config(%s): instBusMgr=%p, auxout_count=%d, auxin_count=%d\n",
+         inst_name, instBusMgr, _busSlot->auxout_count, _busSlot->auxin_count);
+#endif
+
+  // Note: writer registration is deferred to intraverse heap-pop time,
+  // so that InstrumentBus only runs instruments that are actually scheduled.
+  // Consumer registration happens here because consumers must be known
+  // before the pull chain runs.
+
   // Register as consumer of all auxin buses
-  // (This also sets our inputInstBus)
   for (int i = 0; i < _busSlot->auxin_count; i++) {
+#ifdef IBUG
+    printf("  -> addConsumer(bus %d)\n", _busSlot->auxin[i]);
+#endif
     instBusMgr->addConsumer(_busSlot->auxin[i], this);
   }
 }
@@ -467,9 +483,7 @@ void	Instrument::clearOutput(int length)
 }
 
 /* ----------------------------------------------------------------- gone --- */
-/* Called when the instrument is finished. Releases input soundfile reference
-   and unregisters from any InstrumentBus objects this instrument was using.
-*/
+/* Decrements reference to input soundfile. */
 void Instrument::gone()
 {
 #ifdef DEBUG
@@ -479,14 +493,6 @@ void Instrument::gone()
    if (_input.fdIndex >= 0) {
       RTcmix::releaseInput(_input.fdIndex);
       _input.fdIndex = NO_DEVICE_FDINDEX;
-   }
-
-   /* Unregister from InstrumentBus system */
-   InstrumentBusManager* mgr = RTcmix::getInstBusManager();
-   if (mgr != NULL && _busSlot != NULL) {
-      for (int i = 0; i < _busSlot->auxout_count; i++) {
-         mgr->removeWriter(_busSlot->auxout[i], this);
-      }
    }
 }
 
@@ -500,18 +506,6 @@ int Instrument::setChainedInputBuffer(BUFTYPE *inputBuf, int inputChans)
 	}
 	inputChainBuf = inputBuf;
 	return 0;
-}
-
-/* ------------------------------------------------------------- setInputInstBus --- */
-/* Configures the instrument to pull input from an InstrumentBus (aux bus with ring buffer) */
-
-void Instrument::setInputInstBus(InstrumentBus* instBus)
-{
-	inputInstBus = instBus;
-#ifdef DEBUG_INST
-	rtcmix_print("Instrument::setInputInstBus(this = %p [%s]): instBus=%p\n",
-				 this, _name, instBus);
-#endif
 }
 
 const PField &

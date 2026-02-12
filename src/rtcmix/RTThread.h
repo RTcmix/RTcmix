@@ -17,6 +17,7 @@ public:
 	RTThread(int inThreadIndex);
 	virtual ~RTThread();
 	static int	GetIndexForThread();
+	static bool	IsTaskThread();
 protected:
 	void start();
 	virtual void run()=0;

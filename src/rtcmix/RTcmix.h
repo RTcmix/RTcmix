@@ -274,6 +274,7 @@ private:
 	static void clear_output_buffers();
 	
 	friend void set_SR(float);	// hack to allow C code to initialize SR
+	friend class InstrumentBus;	// needs access to aux_buffer for pull model
 
 	static RTstatus	run_status;
 	static int		audioNCHANS;

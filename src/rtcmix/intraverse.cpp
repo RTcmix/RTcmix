@@ -18,6 +18,7 @@
 #include <RTOption.h>
 #include <bus.h>
 #include "BusSlot.h"
+#include "InstrumentBusManager.h"
 #include "dbug.h"
 #include "rwlock.h"
 #include <ugens.h>
@@ -25,6 +26,7 @@
 #ifdef MULTI_THREAD
 #include "TaskManager.h"
 #include <vector>
+#include <utility>
 #endif
 
 #ifdef EMBEDDED
@@ -254,6 +256,20 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 
         iBus = Iptr->getBusSlot();
 
+		// Register as writer on InstrumentBus now that instrument is scheduled.
+		// This is deferred from set_bus_config so that InstrumentBus only
+		// runs instruments that have actually reached their start time.
+		{
+			InstrumentBusManager* instBusMgr = RTcmix::getInstBusManager();
+			for (int b = 0; b < iBus->auxout_count; b++) {
+#ifdef IBUG
+				RTPrintf("intraverse: addWriter inst %p [%s] to bus %d\n",
+						 Iptr, Iptr->name(), iBus->auxout[b]);
+#endif
+				instBusMgr->addWriter(iBus->auxout[b], Iptr);
+			}
+		}
+
 		// DJT Now we push things onto different queues
 		IBusClass bus_class = iBus->Class();
 		switch (bus_class) {
@@ -333,6 +349,13 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	instruments.reserve(busCount);
 #endif
 	bool instrumentFound = false;
+#ifdef MULTI_THREAD
+	/* Deferred instruments: TO_AUX and AUX_TO_AUX instruments whose lifecycle
+	 * is deferred until after TO_OUT triggers their execution via pull.
+	 * Each pair is (Instrument*, busq) to enable correct re-queuing.
+	 */
+	vector<pair<Instrument*, int>> deferredInsts;
+#endif
 	// rtQueue[] playback shuffling ++++++++++++++++++++++++++++++++++++++++
 	RWLock listLock(getBusPlaylistLock());
 	while (!aux_pb_done) {
@@ -481,11 +504,21 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 						
 			// DT_PANIC_MOD
 			if (!panic) {
+				if (qStatus == TO_OUT) {
+					/* TO_OUT: execute directly, pulls will trigger upstream instruments */
 #ifdef IBUG
-                printf("putting inst %p into taskmgr (bus_type %d, bus %d) [%s]\n", Iptr, bus_type, bus, Iptr->name());
+					printf("putting inst %p into taskmgr (bus_type %d, bus %d) [%s]\n", Iptr, bus_type, bus, Iptr->name());
 #endif
-				instruments.push_back(Iptr);
-				taskManager->addTask<Instrument, int, BusType, int, &Instrument::exec>(Iptr, bus_type, bus);
+					instruments.push_back(Iptr);
+					taskManager->addTask<Instrument, int, BusType, int, &Instrument::exec>(Iptr, bus_type, bus);
+				}
+				else {
+					/* TO_AUX, AUX_TO_AUX: defer execution, will be pulled by TO_OUT */
+#ifdef IBUG
+					printf("deferring inst %p (bus_type %d, busq %d) [%s] for pull\n", Iptr, bus_type, busq, Iptr->name());
+#endif
+					deferredInsts.push_back(make_pair(Iptr, busq));
+				}
 			}
             else { // DT_PANIC_MOD ... just keep on incrementing endsamp
 				endsamp += chunksamps;
@@ -550,6 +583,49 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
         rtQueue[busq].sort();
 		instruments.clear();
 	}  // end while (!aux_pb_done) --------------------------------------------------
+
+	/* Process lifecycle for deferred TO_AUX/AUX_TO_AUX instruments.
+	 * These were executed via pull when TO_OUT instruments called rtgetin().
+	 */
+	for (vector<pair<Instrument*, int>>::iterator it = deferredInsts.begin();
+		 it != deferredInsts.end(); ++it) {
+		Iptr = it->first;
+		busq = it->second;
+		int chunksamps = Iptr->framesToRun();
+		FRAMETYPE endsamp = Iptr->getendsamp();
+		int inst_chunk_finished = Iptr->needsToRun();
+		rtQchunkStart = Iptr->get_ichunkstart();
+
+		if (endsamp > bufEndSamp && !panic) {
+#ifdef IBUG
+			printf("re-queueing deferred inst %p on rtQueue[%d]\n", Iptr, busq);
+#endif
+			rtQueue[busq].push(Iptr, rtQchunkStart + chunksamps);
+		}
+		else {
+			iBus = Iptr->getBusSlot();
+			IBusClass busClass = iBus->Class();
+			/* For deferred instruments, check if this is their final bus class */
+			if ((busClass == TO_AUX || busClass == AUX_TO_AUX) && inst_chunk_finished) {
+#ifdef IBUG
+				printf("unref'ing deferred inst %p\n", Iptr);
+#endif
+				Iptr->unref();
+			}
+			/* TO_AUX_AND_OUT: only unref after TO_OUT processing (handled separately) */
+		}
+
+		rtQSize = rtQueue[busq].getSize();
+		if (rtQSize) {
+			allQSize += rtQSize;
+		}
+	}
+	/* Sort any queues that received deferred re-queued instruments */
+	for (vector<pair<Instrument*, int>>::iterator it = deferredInsts.begin();
+		 it != deferredInsts.end(); ++it) {
+		rtQueue[it->second].sort();
+	}
+	deferredInsts.clear();
 
 #else   // MULTI_THREAD
     // Play elements on queue (insert back in if needed) ++++++++++++++++++

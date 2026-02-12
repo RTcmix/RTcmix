@@ -1,11 +1,12 @@
 //
 // C++ Interface: TaskManager
 //
-// Description: 
+// Description:
 //
 //
 // Author: Douglas Scott <netdscott-at-netscape-dot-net>, (C) 2010
 //
+// Nested parallelism support added 2024 for pull-based audio routing
 //
 
 #ifndef _TASKMANAGER_H_
@@ -13,6 +14,7 @@
 
 #include <vector>
 #include "atomic_stack.h"
+#include "rt_types.h"
 
 #ifndef RT_THREAD_COUNT
 #define RT_THREAD_COUNT 2
@@ -20,15 +22,20 @@
 
 using namespace std;
 
+class WaitContext;
+
 class Task
 {
 public:
-	Task() : mNext(NULL) {}
+	Task() : mNext(NULL), mContext(NULL) {}
 	virtual ~Task() {}
 	virtual void run()=0;
 	Task *&	next() { return mNext; }
+	void setContext(WaitContext *ctx) { mContext = ctx; }
+	WaitContext *getContext() const { return mContext; }
 private:
 	Task	*mNext;
+	WaitContext *mContext;
 };
 
 class TaskProvider {
@@ -83,6 +90,34 @@ private:
 };
 
 class ThreadPool;
+class RTSemaphore;
+
+/**
+ * WaitContext - Per-invocation synchronization for nested parallelism.
+ *
+ * Each call to startAndWait() creates a WaitContext that tracks completion
+ * of that specific batch of tasks. This allows nested calls (e.g., from within
+ * a running task) without conflicting with outer invocations.
+ */
+class WaitContext
+{
+public:
+	WaitContext(int taskCount);
+	~WaitContext();
+
+	// Called when a task from this context completes
+	void taskCompleted();
+
+	// Check if all tasks are done
+	bool isComplete() const;
+
+	// Wait for completion (called only if stack exhausted but tasks remain)
+	void wait();
+
+private:
+	AtomicInt mRemainingTasks;
+	RTSemaphore *mSema;
+};
 
 class TaskManagerImpl : public TaskProvider
 {

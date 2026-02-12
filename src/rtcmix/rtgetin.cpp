@@ -17,12 +17,13 @@
 #include "BusSlot.h"
 #include "InputFile.h"
 #include "InstrumentBus.h"
+#include "InstrumentBusManager.h"
 #include <ugens.h>
 #include <rtdefs.h>
 #include <assert.h>
 
 /* Debug macros for InstrumentBus-based input */
-#undef TBUG
+#define IBUG
 
 #undef DEBUG
 
@@ -248,39 +249,67 @@ int	Instrument::rtgetin(float *inarr, int nsamps)
 
 	assert(inarr != NULL);
 
-	/* InstrumentBus-based pull model: pull from input bus if available */
-	if (hasInputInstBus()) {
-#ifdef TBUG
-		printf("%s::rtgetin(%p): pulling %d frames from InstrumentBus\n",
-			   name(), this, frames);
-#endif
-		int pulled = inputInstBus->pullFrames(this, frames, inarr);
-#ifdef TBUG
-		printf("%s::rtgetin(%p): InstrumentBus returned %d frames\n",
-			   name(), this, pulled);
-#endif
-		return pulled * inchans;
-	}
-
-	/* Legacy path: fixed frame count constraint for push model */
-	if (frames > RTcmix::bufsamps()) {
-		die(name(), "Internal Error: rtgetin: nsamps out of range!");
-		return -1;
-	}
-
 	if (fdindex == NO_DEVICE_FDINDEX) {               /* input from aux buses */
 		const short *auxin = busSlot->auxin;        /* auxin channel list */
 		const short auxin_count = busSlot->auxin_count;
 
 		assert(auxin_count > 0);
 
-		RTcmix::readFromAuxBus(inarr, inchans, frames, auxin, auxin_count, output_offset);
+		/* Check if InstrumentBus pull model is active for this bus */
+		InstrumentBusManager *mgr = RTcmix::getInstBusManager();
+		InstrumentBus *instBus = mgr->getInstBus(auxin[0]);
+
+#ifdef IBUG
+		printf("%s::rtgetin: mgr=%p, auxin[0]=%d, instBus=%p\n",
+			   name(), mgr, auxin[0], instBus);
+#endif
+
+		if (instBus != NULL) {
+			/* Pull model: trigger production for all auxin buses first */
+#ifdef IBUG
+			printf("%s::rtgetin(%p): pulling %d frames from %d InstrumentBus channels\n",
+				   name(), this, frames, auxin_count);
+#endif
+			int readPos = 0;
+			for (int n = 0; n < auxin_count; n++) {
+				int chan = auxin[n];
+				instBus = mgr->getInstBus(chan);
+				assert(instBus != NULL);
+
+				/* Trigger production and get read position in aux_buffer */
+				readPos = instBus->pullFrames(this, frames);
+#ifdef IBUG
+				printf("%s::rtgetin: pullFrames(bus %d) returned readPos=%d\n",
+					   name(), chan, readPos);
+#endif
+			}
+
+			/* Now read from aux_buffers and interleave into inarr.
+			 * readFromAuxBus uses the offset to read from the correct position.
+			 */
+			RTcmix::readFromAuxBus(inarr, inchans, frames, auxin, auxin_count, readPos);
+#ifdef IBUG
+			printf("%s::rtgetin(%p): InstrumentBus pull complete\n", name(), this);
+#endif
+		}
+		else {
+			/* Legacy path: read directly from aux_buffer */
+			if (frames > RTcmix::bufsamps()) {
+				die(name(), "Internal Error: rtgetin: nsamps out of range!");
+				return -1;
+			}
+			RTcmix::readFromAuxBus(inarr, inchans, frames, auxin, auxin_count, output_offset);
+		}
 	}
 	else if (RTcmix::isInputAudioDevice(fdindex)) {  /* input from mic/line */
 		const short *in = busSlot->in;              /* in channel list */
 
 		assert(in_count > 0);
 
+		if (frames > RTcmix::bufsamps()) {
+			die(name(), "Internal Error: rtgetin: nsamps out of range!");
+			return -1;
+		}
 		RTcmix::readFromAudioDevice(inarr, inchans, frames, in, in_count, output_offset);
 	}
 	else {                                            /* input from file */
