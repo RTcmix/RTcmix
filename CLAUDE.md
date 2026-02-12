@@ -717,7 +717,8 @@ The following infrastructure has been implemented:
    - Integrates with TaskManager for parallel execution
 
 3. **Instrument integration** (`src/rtcmix/Instrument.h`, `src/rtcmix/Instrument.cpp`)
-   - Registration in `set_bus_config()` for aux buses
+   - Consumer registration in `set_bus_config()` for auxin buses
+   - Writer registration **deferred** to intraverse heap-pop time (NOT in set_bus_config)
    - Cleanup in destructor (removeWriter)
 
 4. **Input path modification** (`src/rtcmix/rtgetin.cpp`)
@@ -731,46 +732,113 @@ The following infrastructure has been implemented:
    - `friend class InstrumentBus` for aux_buffer access
    - `getInstBusManager()` accessor
 
-6. **Test scores** (`test/suite/instbus_*.sco`)
+6. **TaskManager nested parallelism** (`src/rtcmix/TaskManager.cpp`, `src/rtcmix/TaskManager.h`)
+   - WaitContext support for nested `startAndWait()` calls
+   - Participatory waiting (TaskThreads help run tasks while waiting)
+   - Non-TaskThread callers (main thread) block on semaphore
+
+7. **intraverse.cpp modifications** (`src/rtcmix/intraverse.cpp`)
+   - Writer registration added to heap-pop loop (after configure())
+   - TO_AUX and AUX_TO_AUX instruments are **deferred** (not exec'd directly)
+   - Only TO_OUT instruments are executed, triggering pull chain via rtgetin
+   - Deferred instrument lifecycle (re-queue/unref) handled after TO_OUT completes
+   - `deferredInsts` vector tracks deferred instruments with their busq for re-queuing
+
+8. **Test scores** (`test/suite/instbus_*.sco`) - 17 test scores:
+   - `instbus_basic_test.sco` - single WAVETABLE → aux → MIX → out
+   - `instbus_chain_test.sco` - WAVETABLE → aux → MIX → aux → MIX → out
+   - `instbus_multi_writer_test.sco` - 2 WAVETABLEs → same aux → MIX → out
    - `instbus_trans_test.sco` - WAVETABLE → TRANS → STEREO chain
    - `instbus_trans_down_test.sco` - transpose down test
+   - `instbus_dual_mono_separate_test.sco` - 2 WAVETABLEs on separate aux buses
+   - `instbus_dual_mono_to_stereo_test.sco` - 2 mono aux → stereo output
+   - `instbus_multilevel_merge_test.sco` - 3-level cascade, 3 sources (PASS: ~12000)
+   - `instbus_multi_writer_cascade_test.sco` - 2 writers/bus at 2 stages (PASS: ~12000)
+   - `instbus_deep_chain_test.sco` - 5-stage MIX chain (PASS: ~11809)
+   - `instbus_asymmetric_tree_test.sco` - 3 branches depth 3/2/1 (FAIL: 20000 vs expected 12000)
+   - `instbus_staggered_entry_test.sco` - 3 writers staggered t=0,1,2 (FAIL: only ~4267)
+   - `instbus_diamond_test.sco` - diamond routing topology
+   - `instbus_parallel_merge_test.sco` - parallel paths merging
+   - `instbus_stereo_merge_test.sco` - stereo merge routing
+   - `instbus_quad_test.sco` - quad output routing
+   - `instbus_complex_quad_test.sco` - complex quad routing
 
-### Known Issue: Double Execution
+### Resolved Issues
 
-The current implementation has both:
-- intraverse running instruments via push model (TO_AUX → AUX_TO_AUX → TO_OUT)
-- InstrumentBus running instruments via pull model (runWriterCycle)
+1. **Double execution** (FIXED): intraverse now defers TO_AUX/AUX_TO_AUX instruments
+   instead of executing them directly. Only TO_OUT instruments exec, triggering
+   pulls through the InstrumentBus chain.
 
-This causes instruments to execute twice, resulting in audio distortion.
+2. **Crash from unconfigured instruments** (FIXED): Writer registration moved from
+   `set_bus_config()` (parse time) to intraverse heap-pop (runtime), so only
+   instruments that have reached their start time are registered.
 
-### Remaining Work
+3. **STEREO pan issue** (FIXED): `instbus_dual_mono_to_stereo_test.sco` was using
+   `STEREO(0, 0, dur, 1, 0.5)` with 2 input channels but only 1 pan pfield.
+   Fixed to `STEREO(0, 0, dur, 1, 1.0, 0.0)`.
 
-1. **intraverse.cpp modification** (PRIMARY TASK)
-   - Separate setup from execution
-   - intraverse does setup/lifecycle for ALL instruments
-   - intraverse does NOT call exec() directly
-   - intraverse initiates pull from output InstrumentBus
-   - All execution happens via pull chain
+### Active Architectural Issue: runWriterCycle vs intraverse Queue Ownership
 
-2. **Output InstrumentBus**
-   - Create InstrumentBus for output buses (not just aux)
-   - Hardware is the ultimate consumer
-   - Pull initiated from intraverse (the audio callback)
+**This is the primary design question that must be resolved before proceeding.**
 
-3. **Instrument lifecycle management** (OPEN QUESTION)
-   - Where does re-queue/unref happen?
-   - Options: in runWriterCycle, or in intraverse after pull completes
-   - Needs design decision
+The current `runWriterCycle()` operates autonomously: it runs ALL registered writers
+with its own `setchunk(mBufsamps)` and `set_output_offset(mWritePosition)`, completely
+bypassing intraverse's per-instrument timing (offset, chunksamps, rtQchunkStart).
+
+This causes two problems:
+1. **Staggered entry fails**: Writers that haven't reached their start time get run anyway
+   (partially fixed by deferring registration, but timing within a buffer cycle is wrong)
+2. **Queue desync**: If `pullFrames()` runs writers multiple times (elastic case for TRANS),
+   instruments advance further than intraverse's re-queue logic expects
+
+**Three options were discussed:**
+
+**Option A: runWriterCycle absorbs queue processing**
+- `runWriterCycle` receives the rtQueue and does full pop/timing/exec/re-queue internally
+- Problem: lifecycle management (re-queue at correct position) must live inside InstrumentBus
+
+**Option B: Two-phase split (prepareWriter + executeWriters)**
+- Phase 1: intraverse calls `prepareWriter(inst)` for each queue entry after setup
+- Phase 2: InstrumentBus calls `executeWriters()` to run them all
+- Problem: on re-runs (elastic case), InstrumentBus must re-configure instruments AND
+  intraverse's rtQueue can't track the extra runs (queue position goes out of sync)
+
+**Option C: InstrumentBus becomes thin buffer tracker, all logic stays in intraverse** ← LEADING OPTION
+- InstrumentBus only tracks: read cursors, write cursor, framesAvailable, buffer management
+- No `runWriterCycle` — all execution stays in intraverse
+- intraverse has a `processAuxBus(busID, framesNeeded)` function that:
+  - Loops: pop queue, compute timing, exec, re-queue/unref, advance write cursor
+  - Continues until `framesAvailable >= framesNeeded`
+  - `bufEndSamp` advances per-bus (InstrumentBus::mFramesProduced tracks this)
+- Pull chain: TO_OUT instrument's rtgetin → asks InstrumentBus for frames →
+  InstrumentBus sees it doesn't have enough → calls back to intraverse's processAuxBus
+- Clean because queue/lifecycle stays in one place; InstrumentBus is just buffer accounting
+- **Key detail**: `bufEndSamp` is global (shared across buses). processAuxBus needs a
+  per-bus notion of "how far we've produced" — this is `InstrumentBus::mFramesProduced`
+
+### Known Test Failures
+
+1. **instbus_asymmetric_tree_test**: Peak 20000 instead of expected 12000
+   - 3 branches of depth 3/2/1 converge on aux 6
+   - Likely: extra writers being registered or MIX instruments counted as writers multiple times
+
+2. **instbus_staggered_entry_test**: Peak ~4267 instead of expected ~12000
+   - 3 WAVETABLEs at t=0,1,2 writing to same aux bus
+   - Only first writer contributes properly; `runWriterCycle` overrides per-instrument timing
+
+3. **Channel 1 = 0 on MIX-to-output tests**: MIX with `MIX(0, 0, dur, 1, 0, 1)` outputs
+   mono to ch0 only. May be expected behavior for mono aux → stereo out routing.
 
 ### Current Debug State
 
-Debug output is enabled in:
-- `InstrumentBus.cpp` - WBUG, IBUG, DBUG defined
-- `InstrumentBusManager.cpp` - WBUG, IBUG, DBUG defined
-- `rtgetin.cpp` - TBUG defined, plus unconditional printf
-- `Instrument.cpp` - unconditional printf in set_bus_config()
+Debug output is **very verbose** (IBUG and DBUG #defined, not #undef'd):
+- `InstrumentBus.cpp` - IBUG, DBUG defined (lines 27-28)
+- `Instrument.cpp` - IBUG defined (line 29)
+- `rtgetin.cpp` - IBUG defined (line 26)
+- `InstrumentBusManager.cpp` - check for IBUG/DBUG defines
 
-Note: IBUG is used for both Instrument and InstrumentBus debugging.
+**Before running tests**: either #undef these or pipe output through grep for specific lines.
+Tests will appear to hang if debug output is active and piped through `head`/`tail`.
 
 ## References
 
