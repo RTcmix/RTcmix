@@ -725,6 +725,56 @@ Node *    OperationBase::do_op_float_list(Node *node, MincFloat val, const MincL
     return node;
 }
 
+const char *opNames[] {
+    "Invalid",
+    "Invalid",
+    "plus",
+    "minus",
+    "mul",
+    "div",
+    "mod",
+    "pow",
+    "neg",
+    "equal",
+    "notEqual",
+    "less",
+    "greater",
+    "lessEqual",
+    "greaterEqual",
+    "plusElus",
+    "minusMinus"
+};
+
+static const char *op_to_method_name(const char *structType, MincDataType argType, OpKind op) {
+    static char buf[128];
+//    snprintf(buf, 128, "%s.__%s%s", structType, opNames[op], argType == MincFloatType ? "f" : "");
+    snprintf(buf, 128, "%s.__%s", structType, opNames[op]);
+    return strsave(buf);
+}
+
+/* ---------------------------------------------------- do_op_float_list -- */
+/* Search symbols for custom operator function for this struct type and this <op>,
+ * and retrieve and execute it if found.
+ */
+
+Node *    OperationBase::do_op_struct_float(Node *node, MincStruct *srcStruct, MincFloat val, OpKind  op)
+{
+    const char *structType = srcStruct->typeName();
+    const char *methodName = op_to_method_name(structType, MincFloatType, op);
+    Symbol *methodSymbol = lookupSymbol(methodName, AnyLevel);
+    if (methodSymbol) {
+        MincFunction *theMethod = (MincFunction *)methodSymbol->value();
+        MincValue retVal = MincFunctionHandler::callMincFunction(theMethod, methodSymbol->name(), srcStruct);
+        node->setValue(retVal);
+    }
+    else {
+        minc_die("variable '%s' of type 'struct %s' has no operator method defined for '%s'",
+                 node->child(0)->symbol()->name(),
+                 srcStruct->typeName(), printOpKind(op));
+    }
+    return node;
+}
+
 /* ========================================================================== */
 /* Node execution and disposal */
 
@@ -1676,7 +1726,21 @@ Node *OperationBase::doOperation(Node *node, const MincValue &lhs, const MincVal
             }
             break;
         case MincStructType:
-        case MincMapType:
+        {
+            FunctionBalance fb(push_list, pop_list);
+            sMincList[0] = rhs;
+            sMincListLen = 1;
+            switch (rhs.dataType()) {
+                case MincFloatType:
+                    do_op_struct_float(node, (MincStruct *)lhs, (MincFloat)rhs, op);
+                    break;
+                default:
+                    minc_internal_error("operator '%s': invalid rhs type: %s", printOpKind(op), MincTypeName(rhs.dataType()));
+                    break;
+            }
+            break;
+        }
+       case MincMapType:
         case MincFunctionType:
             minc_warn("operator '%s': a %s cannot be used for this operation", printOpKind(op), MincTypeName(lhs.dataType()));
             break;
