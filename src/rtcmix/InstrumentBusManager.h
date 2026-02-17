@@ -21,7 +21,6 @@
 
 class InstrumentBus;
 class Instrument;
-class TaskManager;
 
 
 class InstrumentBusManager {
@@ -53,14 +52,6 @@ public:
     InstrumentBus* getInstBus(int busID) const;
 
     /**
-     * Check if an InstrumentBus exists for the specified bus.
-     *
-     * @param busID  The aux bus number
-     * @return       true if an InstrumentBus exists
-     */
-    bool hasInstBus(int busID) const;
-
-    /**
      * Register an instrument as a consumer of an InstrumentBus.
      *
      * @param busID  The aux bus number
@@ -78,23 +69,10 @@ public:
      */
     int getActiveInstBusCount() const;
 
-#ifdef MULTI_THREAD
-    /**
-     * Set the TaskManager for all InstrumentBus objects.
-     *
-     * @param tm  Pointer to the TaskManager
-     */
-    void setTaskManager(TaskManager* tm);
-#endif
-
 private:
     std::vector<InstrumentBus*> mInstBuses;  /* InstrumentBus pointers (indexed by bus ID) */
     int mBufsamps;               /* Frames per buffer */
     int mActiveInstBusCount;     /* Number of active InstrumentBus objects */
-
-#ifdef MULTI_THREAD
-    TaskManager* mTaskManager;
-#endif
 
     /* Prevent copying */
     InstrumentBusManager(const InstrumentBusManager&);

@@ -21,9 +21,7 @@
 #include <ugens.h>
 #include <rtdefs.h>
 #include <assert.h>
-
-/* Debug macros for InstrumentBus-based input */
-#undef IBUG
+#include "dbug.h"
 
 #undef DEBUG
 

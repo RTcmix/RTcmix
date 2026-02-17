@@ -22,10 +22,10 @@
 #include <PFieldSet.h>
 #include <maxdispargs.h>
 #include <PFBusData.h>
+#include "dbug.h"
 
 #undef DEBUG_INST
 #define DEBUG_BUFFER 0  /* this turns it off */
-#undef IBUG  /* Instrument and InstrumentBus debugging */
 
 using namespace std;
 

@@ -224,7 +224,7 @@ void ThreadPool::notify(int inIndex)
 }
 
 TaskManagerImpl::TaskManagerImpl()
-	: mThreadPool(new ThreadPool(this)), mTaskHead(NULL), mTaskTail(NULL) {}
+	: mThreadPool(new ThreadPool(this)), mTaskHead(NULL) {}
 
 TaskManagerImpl::~TaskManagerImpl() { delete mThreadPool; }
 
@@ -293,7 +293,7 @@ void TaskManagerImpl::startAndWait()
 			mTaskStack.push_atomic(t);
 			t = next;
 		}
-		mTaskHead = mTaskTail = NULL;
+		mTaskHead = NULL;
 
 #ifdef DEBUG
 		printf("TaskManagerImpl::startAndWait waking threads for %d tasks...\n", taskCount);

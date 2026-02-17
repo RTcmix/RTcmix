@@ -39,10 +39,6 @@
 #include "Lockable.h"
 
 class Instrument;
-class TaskManager;
-
-/* Debug macro for InstrumentBus operations - define IBUG to enable */
-#undef IBUG
 
 /* Define INSTBUS_PERSIST_DATA to enable cross-cycle data persistence.
  * When defined: aux_buffer is larger, data persists across inTraverse cycles.
@@ -124,15 +120,6 @@ public:
      */
     int getReadPosition(Instrument* consumer, int frames);
 
-#ifdef MULTI_THREAD
-    /**
-     * Set the TaskManager for parallel writer execution.
-     *
-     * @param tm  Pointer to the TaskManager
-     */
-    void setTaskManager(TaskManager* tm) { mTaskManager = tm; }
-#endif
-
 private:
     /* Bus identification */
     int mBusID;
@@ -166,20 +153,6 @@ private:
      * @param numFrames   Number of frames to clear
      */
     void clearRegion(int startFrame, int numFrames);
-
-    /**
-     * Copy frames from ring buffer to consumer's destination buffer.
-     * Handles wrap-around at ring buffer end.
-     *
-     * @param dest       Destination buffer
-     * @param readPos    Read position in ring buffer (frames)
-     * @param numFrames  Number of frames to copy
-     */
-    void copyToConsumer(BufPtr dest, int readPos, int numFrames);
-
-#ifdef MULTI_THREAD
-    TaskManager* mTaskManager;
-#endif
 
     /* Per-bus production lock: serializes pullFrames/runWriterCycle.
      * In the push model, bus production was inherently serial (phase ordering).

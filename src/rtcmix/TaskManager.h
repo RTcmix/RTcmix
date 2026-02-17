@@ -131,7 +131,6 @@ public:
 private:
 	ThreadPool *			mThreadPool;
 	Task *					mTaskHead;
-	Task *					mTaskTail;
 	TAtomicStack2<Task>		mTaskStack;
 };
 

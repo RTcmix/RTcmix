@@ -39,11 +39,7 @@ extern "C" {
 
 using namespace std;
 
-#undef ALLBUG
-#undef BBUG /* this one turns on bus debugging (verbose!) */
-#undef DBUG
-#undef WBUG	/* this new one turns on prints of where we are */
-#undef IBUG	/* debug what Instruments are doing */
+/* Debug macros defined in dbug.h (included above) */
 
 // Temporary globals
 

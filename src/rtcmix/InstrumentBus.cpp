@@ -18,23 +18,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#ifdef MULTI_THREAD
-#include "TaskManager.h"
-#endif
-
-/* Debug macros - match pattern from intraverse.cpp */
-#undef BBUG      /* Verbose bus debugging */
-#undef WBUG      /* "Where we are" prints */
-#undef IBUG      /* Instrument and InstrumentBus debugging */
-#undef DBUG      /* General debug */
-#undef ALLBUG    /* All debug output */
-
-#ifdef ALLBUG
-#define BBUG
-#define WBUG
-#define IBUG
-#define DBUG
-#endif
+#include "dbug.h"
 
 /* -------------------------------------------- InstrumentBus::InstrumentBus --- */
 
@@ -43,22 +27,10 @@ InstrumentBus::InstrumentBus(int busID, int bufsamps)
       mBufsamps(bufsamps),
       mBufferSize(bufsamps * INSTBUS_BUFFER_MULTIPLIER),
       mFramesProduced(RTcmix::bufStartSamp)
-#ifdef MULTI_THREAD
-      , mTaskManager(NULL)
-#endif
 {
-#ifdef WBUG
-    printf("ENTERING InstrumentBus::InstrumentBus(busID=%d, bufsamps=%d)\n",
-           busID, bufsamps);
-#endif
-
 #ifdef IBUG
     printf("InstBus %d: created, bufferSize=%d frames (multiplier=%d)\n",
            mBusID, mBufferSize, INSTBUS_BUFFER_MULTIPLIER);
-#endif
-
-#ifdef WBUG
-    printf("EXITING InstrumentBus::InstrumentBus()\n");
 #endif
 }
 
@@ -67,15 +39,7 @@ InstrumentBus::InstrumentBus(int busID, int bufsamps)
 
 InstrumentBus::~InstrumentBus()
 {
-#ifdef WBUG
-    printf("ENTERING InstrumentBus::~InstrumentBus(busID=%d)\n", mBusID);
-#endif
-
     /* aux_buffer is freed by RTcmix::free_buffers() - nothing to do here */
-
-#ifdef WBUG
-    printf("EXITING InstrumentBus::~InstrumentBus()\n");
-#endif
 }
 
 
@@ -83,10 +47,6 @@ InstrumentBus::~InstrumentBus()
 
 void InstrumentBus::reset()
 {
-#ifdef WBUG
-    printf("ENTERING InstrumentBus::reset(busID=%d)\n", mBusID);
-#endif
-
     mFramesProduced = 0;
 
     /* Clear aux_buffer (our ring buffer) */
@@ -102,10 +62,6 @@ void InstrumentBus::reset()
 #ifdef IBUG
     printf("InstBus %d: reset complete, %d consumers\n",
            mBusID, (int)mConsumers.size());
-#endif
-
-#ifdef WBUG
-    printf("EXITING InstrumentBus::reset()\n");
 #endif
 }
 
@@ -477,34 +433,6 @@ void InstrumentBus::clearRegion(int startFrame, int numFrames)
 #ifdef BBUG
         printf("InstBus %d: clearRegion wrapped: [%d, %d) + [0, %d)\n",
                mBusID, startFrame, mBufferSize, secondPart);
-#endif
-    }
-}
-
-
-/* ----------------------------------------- InstrumentBus::copyToConsumer --- */
-
-void InstrumentBus::copyToConsumer(BufPtr dest, int readPos, int numFrames)
-{
-    BufPtr buf = RTcmix::aux_buffer[mBusID];
-
-    /* Handle wrap-around (aux buses are mono) */
-    int endPos = readPos + numFrames;
-
-    if (endPos <= mBufferSize) {
-        /* No wrap - single copy */
-        memcpy(dest, &buf[readPos], sizeof(BUFTYPE) * numFrames);
-    } else {
-        /* Wrap around - two copies */
-        int firstPart = mBufferSize - readPos;
-        int secondPart = numFrames - firstPart;
-
-        memcpy(dest, &buf[readPos], sizeof(BUFTYPE) * firstPart);
-        memcpy(&dest[firstPart], &buf[0], sizeof(BUFTYPE) * secondPart);
-
-#ifdef BBUG
-        printf("InstBus %d: copyToConsumer wrapped: [%d, %d) + [0, %d)\n",
-               mBusID, readPos, mBufferSize, secondPart);
 #endif
     }
 }
