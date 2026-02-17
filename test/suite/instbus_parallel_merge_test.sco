@@ -29,14 +29,14 @@ bus_config("WAVETABLE", "aux 0 out")
 WAVETABLE(0, dur, amp, 220)
 
 bus_config("TRANS", "aux 0 in", "aux 10 out")
-TRANS(0, 0, dur, 1, 2.0)  /* +12 semitones = 2x frequency */
+TRANS(0, 0, dur, 1, 1.0)  /* +12 semitones (1 octave) in oct.pc */
 
 /* === Lower chain: 220Hz -> -1 octave -> 110Hz === */
 bus_config("WAVETABLE", "aux 5 out")
 WAVETABLE(0, dur, amp, 220)
 
 bus_config("TRANS", "aux 5 in", "aux 11 out")
-TRANS(0, 0, dur, 1, 0.5)  /* -12 semitones = 0.5x frequency */
+TRANS(0, 0, dur, 1, -1.0)  /* -12 semitones (1 octave down) in oct.pc */
 
 /* === Merge: aux 10 -> left, aux 11 -> right === */
 bus_config("STEREO", "aux 10 in", "out 0-1")

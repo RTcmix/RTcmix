@@ -14,6 +14,7 @@
 
 #include <vector>
 #include "atomic_stack.h"
+#include "Lockable.h"
 #include "rt_types.h"
 
 #ifndef RT_THREAD_COUNT
@@ -119,7 +120,7 @@ private:
 	RTSemaphore *mSema;
 };
 
-class TaskManagerImpl : public TaskProvider
+class TaskManagerImpl : public TaskProvider, public Lockable
 {
 public:
 	TaskManagerImpl();

@@ -230,6 +230,7 @@ TaskManagerImpl::~TaskManagerImpl() { delete mThreadPool; }
 
 void TaskManagerImpl::addTask(Task *inTask)
 {
+	AutoLock al(this);
 #ifdef DEBUG
 	printf("TaskManagerImpl::addTask: adding task %p to linked list\n", inTask);
 #endif
@@ -249,43 +250,65 @@ Task * TaskManagerImpl::getSingleTask()
 
 void TaskManagerImpl::startAndWait()
 {
-#ifdef DEBUG
-	printf("TaskManagerImpl::startAndWait pushing tasks onto stack\n");
-#endif
-	// Count tasks
-	int taskCount = 0;
-	for (Task *t = mTaskHead; t != NULL; t = t->next()) {
-		++taskCount;
-	}
+	/*
+	 * Submission phase: protected by Lockable mutex.
+	 *
+	 * Multiple InstrumentBus instances may call addTask + startAndWait
+	 * concurrently from different TaskThreads (sibling buses pulling
+	 * in parallel).  The mTaskHead linked list is not atomic, so we
+	 * serialize the submission phase — count, set context, push to the
+	 * atomic stack, clear head, wake threads.
+	 *
+	 * The wait phase runs mutex-free: once tasks are on the atomic stack
+	 * with their WaitContext set, everything is lock-free.
+	 */
 
-	if (taskCount == 0) {
-		return;
-	}
+	int taskCount;
+	WaitContext *context = NULL;
 
-	// Create WaitContext for this batch
-	WaitContext context(taskCount);
-
-	// Set context on all tasks and push to stack
-	for (Task *t = mTaskHead; t != NULL; ) {
-		t->setContext(&context);
-		Task *next = t->next();
-		mTaskStack.push_atomic(t);
-		t = next;
-	}
-	mTaskHead = mTaskTail = NULL;
+	{
+		AutoLock submitLock(this);
 
 #ifdef DEBUG
-	printf("TaskManagerImpl::startAndWait waking threads for %d tasks...\n", taskCount);
+		printf("TaskManagerImpl::startAndWait pushing tasks onto stack\n");
 #endif
-	// Wake worker threads to help
-	mThreadPool->wakeThreads(taskCount);
+		// Count tasks
+		taskCount = 0;
+		for (Task *t = mTaskHead; t != NULL; t = t->next()) {
+			++taskCount;
+		}
+
+		if (taskCount == 0) {
+			return;
+		}
+
+		// Create WaitContext for this batch (heap-allocated so it
+		// survives beyond the locked scope)
+		context = new WaitContext(taskCount);
+
+		// Set context on all tasks and push to stack
+		for (Task *t = mTaskHead; t != NULL; ) {
+			t->setContext(context);
+			Task *next = t->next();
+			mTaskStack.push_atomic(t);
+			t = next;
+		}
+		mTaskHead = mTaskTail = NULL;
+
+#ifdef DEBUG
+		printf("TaskManagerImpl::startAndWait waking threads for %d tasks...\n", taskCount);
+#endif
+		// Wake worker threads to help
+		mThreadPool->wakeThreads(taskCount);
+
+	}	// AutoLock releases here — wait phase is mutex-free
 
 	// Check if this thread can participate (is a TaskThread with valid index)
 	// TaskThreads must participate to avoid deadlock in nested calls.
 	// Main thread cannot participate (no thread-local storage set up).
 	if (RTThread::IsTaskThread()) {
 		// Participatory wait: help run tasks until all are complete
-		while (!context.isComplete()) {
+		while (!context->isComplete()) {
 			Task *task = mTaskStack.pop_atomic();
 			if (task != NULL) {
 				task->run();
@@ -296,14 +319,16 @@ void TaskManagerImpl::startAndWait()
 			} else {
 				// Stack is empty but tasks still running on other threads
 				// Wait for context completion
-				context.wait();
+				context->wait();
 				break;
 			}
 		}
 	} else {
 		// Non-TaskThread (e.g., main thread): just wait for completion
-		context.wait();
+		context->wait();
 	}
+
+	delete context;
 
 #ifdef DEBUG
 	printf("TaskManagerImpl::startAndWait done\n");

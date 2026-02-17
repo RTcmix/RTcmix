@@ -15,7 +15,6 @@
 #include <bus.h>
 #include "BusSlot.h"
 #include "InstrumentBusManager.h"
-#include "InstrumentBus.h"
 #include <assert.h>
 #include <ugens.h>
 #include "heap/heap.h"
@@ -26,7 +25,7 @@
 
 #undef DEBUG_INST
 #define DEBUG_BUFFER 0  /* this turns it off */
-#define IBUG  /* Instrument and InstrumentBus debugging */
+#undef IBUG  /* Instrument and InstrumentBus debugging */
 
 using namespace std;
 
@@ -78,20 +77,14 @@ Instrument::~Instrument()
 	if (sfile_on)
 		gone();                   // decrement input soundfile reference
 
-	/* Unregister from InstrumentBus system */
-	InstrumentBusManager* mgr = RTcmix::getInstBusManager();
-	if (mgr != NULL && _busSlot != NULL) {
-		for (int i = 0; i < _busSlot->auxout_count; i++) {
-			mgr->removeWriter(_busSlot->auxout[i], this);
-		}
-	}
-
 	delete [] outbuf;
 
 	RefCounted::unref(_busSlot);	// release our reference
+	_busSlot = NULL;  // poison after unref
 
 	delete _pfields;
 	delete [] _name;
+	_name = NULL;     // poison after delete
 }
 
 /* ------------------------------------------------------- setName --- */
@@ -134,10 +127,9 @@ void Instrument::set_bus_config(const char *inst_name)
          inst_name, instBusMgr, _busSlot->auxout_count, _busSlot->auxin_count);
 #endif
 
-  // Note: writer registration is deferred to intraverse heap-pop time,
-  // so that InstrumentBus only runs instruments that are actually scheduled.
   // Consumer registration happens here because consumers must be known
-  // before the pull chain runs.
+  // before the pull chain runs. Writer execution is handled by
+  // InstrumentBus::runWriterCycle() which pops instruments from rtQueue.
 
   // Register as consumer of all auxin buses
   for (int i = 0; i < _busSlot->auxin_count; i++) {
@@ -160,6 +152,8 @@ int Instrument::setup(PFieldSet *pfields)
 	int nargs = MAXDISPARGS;
 	update(s_dArray, nargs);
 	int samps = init(s_dArray, pfields->size());
+	if (samps == DONT_SCHEDULE)
+		return DONT_SCHEDULE;
 	_skip = int(SR / (float) resetval);
 	if (_skip < 1)
 		_skip = 1;
@@ -361,9 +355,14 @@ int Instrument::exec(BusType bus_type, int bus)
 {
    bool done;
 
-#if DEBUG_BUFFER
-printf("Instrument::exec(%p [%s] bus_type %d, bus %d, needs_to_run %d)\n", this, name(), (int)bus_type, bus, needs_to_run);
-#endif
+   if (_busSlot == NULL) {
+	   fprintf(stderr, "FATAL: Instrument::exec(%p [%s]) _busSlot is NULL before run! "
+			   "bus_type=%d bus=%d outputchans=%d sfile_on=%d outbuf=%p\n",
+			   this, _name ? _name : "(null)", bus_type, bus,
+			   outputchans, sfile_on, (void*)outbuf);
+	   abort();
+   }
+
    run(needs_to_run);	// Only does anything if true.
 
    addout(bus_type, bus);
@@ -436,6 +435,11 @@ void Instrument::addout(BusType bus_type, int bus)
 
 	if (bus_type != BUS_NONE_OUT) {
 
+	   if (_busSlot == NULL) {
+		   fprintf(stderr, "FATAL: Instrument::addout(%p [%s]) _busSlot is NULL! bus_type=%d bus=%d\n",
+				   this, _name, bus_type, bus);
+		   abort();
+	   }
 	   bus_list = _busSlot->getBusList(bus_type, &buses);
 	   src_chan = -1;
 	   for (int i = 0; i < buses; i++) {

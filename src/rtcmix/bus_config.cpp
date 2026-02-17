@@ -637,6 +637,7 @@ RTcmix::get_bus_config(const char *inst_name)
 void
 RTcmix::addToBus(BusType type, int bus, BufPtr src, int offset, int endfr, int chans)
 {
+    AutoLock al(mixLock);
     mixVectors[RTThread::GetIndexForThread()].push_back(
 						MixData(
 								src,
@@ -644,7 +645,7 @@ RTcmix::addToBus(BusType type, int bus, BufPtr src, int offset, int endfr, int c
 								endfr - offset,
 								chans)
                         );
-	
+
 }
 
 void
@@ -675,6 +676,7 @@ RTcmix::mixOperation(MixData &m)
 void
 RTcmix::mixToBus()
 {
+    AutoLock al(mixLock);
     // Mix all vectors from each thread down to the final mix buses
     for (int i = 0; i < RT_THREAD_COUNT; ++i) {
         std::vector<MixData> &vector = mixVectors[i];

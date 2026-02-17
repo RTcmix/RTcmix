@@ -332,6 +332,7 @@ private:
     };
     static void mixOperation(MixData &m);
     static std::vector<MixData> mixVectors[];
+    static Lockable mixLock;
 #endif
 	
 	static short *AuxToAuxPlayList; /* The playback order for AUX buses */

@@ -23,9 +23,6 @@ class InstrumentBus;
 class Instrument;
 class TaskManager;
 
-/* Debug macro for InstrumentBusManager operations */
-#undef BBUG
-
 
 class InstrumentBusManager {
 public:
@@ -64,28 +61,12 @@ public:
     bool hasInstBus(int busID) const;
 
     /**
-     * Register an instrument as a writer to an InstrumentBus.
-     *
-     * @param busID  The aux bus number
-     * @param inst   The instrument that writes to this bus
-     */
-    void addWriter(int busID, Instrument* inst);
-
-    /**
      * Register an instrument as a consumer of an InstrumentBus.
      *
      * @param busID  The aux bus number
      * @param inst   The instrument that reads from this bus
      */
     void addConsumer(int busID, Instrument* inst);
-
-    /**
-     * Remove a writer from an InstrumentBus.
-     *
-     * @param busID  The aux bus number
-     * @param inst   The instrument to remove
-     */
-    void removeWriter(int busID, Instrument* inst);
 
     /**
      * Reset all InstrumentBus objects for a new audio run.

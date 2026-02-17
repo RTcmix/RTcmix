@@ -34,18 +34,19 @@ makegen(1, 24, 1000, 0,0, 0.1,1, 0.9,1, 1,0)
 makegen(2, 10, 1000, 1, 0.5, 0.3, 0.2)
 
 dur = 3.0
+transdur = 6.0
 amp = 5000
 
 /* ===== FRONT LEFT: 220Hz + 330Hz ===== */
 bus_config("WAVETABLE", "aux 0 out")
 WAVETABLE(0, dur, amp, 110)
 bus_config("TRANS", "aux 0 in", "aux 1 out")
-TRANS(0, 0, dur, 1, 2.0)  /* 110 -> 220Hz */
+TRANS(0, 0, transdur, 1, 1.0)  /* +12 semitones: 110 -> 220Hz */
 
 bus_config("WAVETABLE", "aux 2 out")
 WAVETABLE(0, dur, amp, 110)
 bus_config("TRANS", "aux 2 in", "aux 3 out")
-TRANS(0, 0, dur, 1, 3.0)  /* 110 -> 330Hz */
+TRANS(0, 0, transdur, 1, 1.07)  /* +19 semitones: 110 -> 330Hz */
 
 bus_config("MIX", "aux 1 in", "aux 10 out")
 MIX(0, 0, dur, 0.7)
@@ -59,12 +60,12 @@ MIX(0, 0, dur, 1)
 bus_config("WAVETABLE", "aux 4 out")
 WAVETABLE(0, dur, amp, 110)
 bus_config("TRANS", "aux 4 in", "aux 5 out")
-TRANS(0, 0, dur, 1, 4.0)  /* 110 -> 440Hz */
+TRANS(0, 0, transdur, 1, 2.0)  /* +24 semitones: 110 -> 440Hz */
 
 bus_config("WAVETABLE", "aux 6 out")
 WAVETABLE(0, dur, amp, 110)
 bus_config("TRANS", "aux 6 in", "aux 7 out")
-TRANS(0, 0, dur, 1, 5.04)  /* 110 -> ~554Hz (major 3rd above 440) */
+TRANS(0, 0, transdur, 1, 2.04)  /* +28 semitones: 110 -> ~554Hz (major 3rd above 440) */
 
 bus_config("MIX", "aux 5 in", "aux 11 out")
 MIX(0, 0, dur, 0.7)
@@ -85,7 +86,7 @@ MIX(0, 0, dur, 1)
 bus_config("WAVETABLE", "aux 9 out")
 WAVETABLE(0, dur, amp, 55)
 bus_config("TRANS", "aux 9 in", "aux 13 out")
-TRANS(0, 0, dur, 1, 4.0)  /* 55 -> 220Hz */
+TRANS(0, 0, transdur, 1, 2.0)  /* +24 semitones: 55 -> 220Hz */
 
 bus_config("MIX", "aux 13 in", "out 3")
 MIX(0, 0, dur, 1)

@@ -777,44 +777,31 @@ The following infrastructure has been implemented:
    `STEREO(0, 0, dur, 1, 0.5)` with 2 input channels but only 1 pan pfield.
    Fixed to `STEREO(0, 0, dur, 1, 1.0, 0.0)`.
 
-### Active Architectural Issue: runWriterCycle vs intraverse Queue Ownership
+### Resolved: InstrumentBus Owns Queue-Based Production Loop
 
-**This is the primary design question that must be resolved before proceeding.**
+**Design resolved 2026-02-14. Full plan: `~/.claude/plans/eager-zooming-pancake.md`**
 
-The current `runWriterCycle()` operates autonomously: it runs ALL registered writers
-with its own `setchunk(mBufsamps)` and `set_output_offset(mWritePosition)`, completely
-bypassing intraverse's per-instrument timing (offset, chunksamps, rtQchunkStart).
+The autonomous `runWriterCycle()` (using mWriters list) is replaced with a
+queue-based production loop inside `pullFrames()` that pops from rtQueue,
+computes timing, execs, and re-queues — the same pattern as intraverse but
+driven by demand.
 
-This causes two problems:
-1. **Staggered entry fails**: Writers that haven't reached their start time get run anyway
-   (partially fixed by deferring registration, but timing within a buffer cycle is wrong)
-2. **Queue desync**: If `pullFrames()` runs writers multiple times (elastic case for TRANS),
-   instruments advance further than intraverse's re-queue logic expects
-
-**Three options were discussed:**
-
-**Option A: runWriterCycle absorbs queue processing**
-- `runWriterCycle` receives the rtQueue and does full pop/timing/exec/re-queue internally
-- Problem: lifecycle management (re-queue at correct position) must live inside InstrumentBus
-
-**Option B: Two-phase split (prepareWriter + executeWriters)**
-- Phase 1: intraverse calls `prepareWriter(inst)` for each queue entry after setup
-- Phase 2: InstrumentBus calls `executeWriters()` to run them all
-- Problem: on re-runs (elastic case), InstrumentBus must re-configure instruments AND
-  intraverse's rtQueue can't track the extra runs (queue position goes out of sync)
-
-**Option C: InstrumentBus becomes thin buffer tracker, all logic stays in intraverse** ← LEADING OPTION
-- InstrumentBus only tracks: read cursors, write cursor, framesAvailable, buffer management
-- No `runWriterCycle` — all execution stays in intraverse
-- intraverse has a `processAuxBus(busID, framesNeeded)` function that:
-  - Loops: pop queue, compute timing, exec, re-queue/unref, advance write cursor
-  - Continues until `framesAvailable >= framesNeeded`
-  - `bufEndSamp` advances per-bus (InstrumentBus::mFramesProduced tracks this)
-- Pull chain: TO_OUT instrument's rtgetin → asks InstrumentBus for frames →
-  InstrumentBus sees it doesn't have enough → calls back to intraverse's processAuxBus
-- Clean because queue/lifecycle stays in one place; InstrumentBus is just buffer accounting
-- **Key detail**: `bufEndSamp` is global (shared across buses). processAuxBus needs a
-  per-bus notion of "how far we've produced" — this is `InstrumentBus::mFramesProduced`
+**Key decisions:**
+1. **No global bufEndSamp/bufStartSamp** — output InstrumentBus's `mFramesProduced`
+   is the system master clock. Each aux bus has its own timeline.
+2. **Ring buffer positions derived** — `mWritePosition` eliminated; use
+   `mFramesProduced % mBufferSize`. Only absolute counters stored.
+3. **Instruments re-enqueue/dequeue through rtQueue** — each production iteration
+   is a full mini-buffer-cycle. rtQueue handles all timing edge cases.
+4. **InstrumentBus owns pullFrames + production loop** — accesses rtQueue,
+   TaskManager, mixToBus via RTcmix statics. No callback mechanism needed.
+   Processes both TO_AUX and AUX_TO_AUX queues for its bus.
+5. **Parameter timing for rate-changing chains** — known characteristic of new
+   functionality. Real-time params (MIDI, OSC) upstream of rate changers update
+   at output buffer rate, not scaled. No regression (TRANS/PVOC can't read aux
+   buses in push model).
+6. **Heap pop V1 limitation** — instruments starting beyond output ceiling on
+   upstream buses may be delayed one buffer. Acceptable for V1.
 
 ### Known Test Failures
 

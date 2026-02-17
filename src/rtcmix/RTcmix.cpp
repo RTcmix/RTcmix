@@ -128,6 +128,7 @@ short *			RTcmix::ToAuxPlayList = NULL;
 //pthread_mutex_t RTcmix::out_buffer_lock = PTHREAD_MUTEX_INITIALIZER;
 TaskManager *	RTcmix::taskManager = NULL;
 std::vector<RTcmix::MixData> RTcmix::mixVectors[RT_THREAD_COUNT];
+Lockable RTcmix::mixLock;
 #endif
 
 // InstrumentBus-based pull model support

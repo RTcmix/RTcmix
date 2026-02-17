@@ -28,15 +28,15 @@ makegen(2, 10, 1000, 1)
 /* 220Hz source */
 WAVETABLE(0, 2, 10000, 220)
 
-/* +7 semitones = ratio of 2^(7/12) = 1.498 */
-TRANS(0, 0, 2, 1, 1.498)
+/* +7 semitones in octave.pc format (0.07 = 0 octaves, 7 semitones) */
+TRANS(0, 0, 2, 1, 0.07)
 
 /* Second pitch shift: reconfigure TRANS for next stage */
 bus_config("TRANS", "aux 1 in", "aux 2 out")
 
-/* +5 semitones = ratio of 2^(5/12) = 1.335 */
-/* Combined: 220 * 1.498 * 1.335 = 440Hz */
-TRANS(0, 0, 2, 1, 1.335)
+/* +5 semitones in octave.pc format (0.05 = 0 octaves, 5 semitones) */
+/* Combined: 220 * 2^(7/12) * 2^(5/12) = 220 * 2 = 440Hz */
+TRANS(0, 0, 2, 1, 0.05)
 
 /* Final output */
 bus_config("STEREO", "aux 2 in", "out 0-1")

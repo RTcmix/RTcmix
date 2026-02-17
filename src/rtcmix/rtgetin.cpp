@@ -23,7 +23,7 @@
 #include <assert.h>
 
 /* Debug macros for InstrumentBus-based input */
-#define IBUG
+#undef IBUG
 
 #undef DEBUG
 

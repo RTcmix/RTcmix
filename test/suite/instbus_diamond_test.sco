@@ -33,11 +33,11 @@ WAVETABLE(0, dur, amp, 220)
 
 /* Branch 1: +7 semitones (perfect 5th) -> 330Hz */
 bus_config("TRANS", "aux 0 in", "aux 2 out")
-TRANS(0, 0, dur, 1, 1.498)
+TRANS(0, 0, dur, 1, 0.07)  /* +7 semitones in oct.pc */
 
 /* Branch 2: +12 semitones (octave) -> 440Hz */
 bus_config("TRANS", "aux 0 in", "aux 3 out")
-TRANS(0, 0, dur, 1, 2.0)
+TRANS(0, 0, dur, 1, 1.0)  /* +12 semitones in oct.pc */
 
 /* Merge: combine aux 2 and 3 into aux 5 */
 bus_config("MIX", "aux 2-3 in", "aux 5 out")

@@ -7,15 +7,6 @@ CMD = ${CMIXDIR}/bin/CMIX
 CXXFLAGS += -DCMIXDIR=${CMIXDIR}
 LDFLAGS = $(ARCH_BITFLAGS)
 
-all:	announce all_tests
-
-test: unit_tests
-
-announce:
-	@echo "***************************************************************"
-	@echo Running RTcmix test suite
-	@echo "***************************************************************"
-
 TESTS = \
 test_unreadable_input \
 test_bogus_input \
@@ -34,8 +25,64 @@ test_stereo \
 test_load \
 test_minc \
 run_stresstest \
-run_sockettest \
-$(NULL)
+run_sockettest
+
+INSTBUS_TESTS = \
+test_instbus_basic \
+test_instbus_chain \
+test_instbus_multi_writer \
+test_instbus_deep_chain \
+test_instbus_trans \
+test_instbus_trans_down \
+test_instbus_staggered_entry \
+test_instbus_multi_writer_cascade \
+test_instbus_asymmetric_tree \
+test_instbus_diamond \
+test_instbus_parallel_merge \
+test_instbus_complex_quad \
+test_instbus_dual_mono_separate \
+test_instbus_dual_mono_to_stereo \
+test_instbus_multilevel_merge \
+test_instbus_stereo_merge \
+test_instbus_quad \
+test_instbus_trans_reuse
+
+all:	announce all_tests
+
+instbus_tests: announce $(INSTBUS_TESTS)
+	@echo
+	@echo "======================================="
+	@echo "InstrumentBus test suite complete."
+	@echo "======================================="
+
+test: unit_tests
+
+announce:
+	@echo "***************************************************************"
+	@echo Running RTcmix test suite
+	@echo "***************************************************************"
+
+# Extract peak amplitude from channel 0 and compare to expected value.
+# Usage: $(call check_peak,<score>,<expected_peak>,<tolerance_pct>)
+# Runs CMIX, extracts the first "channel 0:" peak value, compares within tolerance.
+define check_peak
+	@PEAK=$$($(CMD) -f $(1) 2>&1 | awk '/channel 0:/{print $$3; exit}'); \
+	EXPECTED=$(2); \
+	TOL=$(3); \
+	if [ -z "$$PEAK" ]; then \
+		echo "  FAIL: no peak amplitude found in output"; \
+	else \
+		LOWER=$$(echo "$$EXPECTED * (100 - $$TOL) / 100" | bc); \
+		UPPER=$$(echo "$$EXPECTED * (100 + $$TOL) / 100" | bc); \
+		IPEAK=$$(echo "$$PEAK" | awk '{printf "%d", $$1}'); \
+		if [ $$IPEAK -ge $$LOWER ] && [ $$IPEAK -le $$UPPER ]; then \
+			echo "  PASS: peak=$$IPEAK expected=$$EXPECTED (±$$TOL%)"; \
+		else \
+			echo "  FAIL: peak=$$IPEAK expected=$$EXPECTED (±$$TOL%), range=[$$LOWER,$$UPPER]"; \
+		fi; \
+	fi
+endef
+
 ifeq ($(OSC_SUPPORT), TRUE)
 TESTS += run_osctests
 endif
@@ -208,6 +255,100 @@ test_embedded:
 	@find ${CMIXDIR}/shlib/ -name lib\* | grep -v conn | sed 's/^.*lib//' | sed 's/\.so/(0,0,1,1,1,1,1,1,1,1)/' >> embedded_test.sco
 	-./embeddedtest embedded_test.sco
 	@rm -rf function_scores
+
+# ===== InstrumentBus Pull Model Tests =====
+# Each test runs a score and checks peak amplitude on channel 0
+# against expected value within tolerance (default 10%).
+
+test_instbus_basic:
+	@echo
+	@echo "Testing instbus basic (WAVETABLE -> aux -> MIX -> out):"
+	$(call check_peak,instbus_basic_test.sco,10000,10)
+
+test_instbus_chain:
+	@echo
+	@echo "Testing instbus chain (WAVETABLE -> TRANS -> TRANS -> STEREO):"
+	$(call check_peak,instbus_chain_test.sco,5000,10)
+
+test_instbus_multi_writer:
+	@echo
+	@echo "Testing instbus multi-writer (2x WAVETABLE -> aux -> MIX -> out):"
+	$(call check_peak,instbus_multi_writer_test.sco,10000,10)
+
+test_instbus_deep_chain:
+	@echo
+	@echo "Testing instbus deep chain (5-stage MIX chain):"
+	$(call check_peak,instbus_deep_chain_test.sco,11810,10)
+
+test_instbus_trans:
+	@echo
+	@echo "Testing instbus TRANS up (WAVETABLE -> TRANS +1oct -> STEREO):"
+	$(call check_peak,instbus_trans_test.sco,5000,10)
+
+test_instbus_trans_down:
+	@echo
+	@echo "Testing instbus TRANS down (WAVETABLE -> TRANS -1oct -> STEREO):"
+	$(call check_peak,instbus_trans_down_test.sco,5000,10)
+
+test_instbus_staggered_entry:
+	@echo
+	@echo "Testing instbus staggered entry (3 writers at t=0,1,2):"
+	$(call check_peak,instbus_staggered_entry_test.sco,12000,10)
+
+test_instbus_multi_writer_cascade:
+	@echo
+	@echo "Testing instbus multi-writer cascade (2 writers/bus, 2 stages):"
+	$(call check_peak,instbus_multi_writer_cascade_test.sco,12000,10)
+
+test_instbus_asymmetric_tree:
+	@echo
+	@echo "Testing instbus asymmetric tree (3 branches depth 3/2/1):"
+	$(call check_peak,instbus_asymmetric_tree_test.sco,12000,10)
+
+test_instbus_diamond:
+	@echo
+	@echo "Testing instbus diamond (source splits to 2 TRANS, merges):"
+	$(call check_peak,instbus_diamond_test.sco,2100,15)
+
+test_instbus_parallel_merge:
+	@echo
+	@echo "Testing instbus parallel merge (2 TRANS chains -> stereo):"
+	$(call check_peak,instbus_parallel_merge_test.sco,8000,10)
+
+test_instbus_complex_quad:
+	@echo
+	@echo "Testing instbus complex quad (multi-stage to 4ch):"
+	$(call check_peak,instbus_complex_quad_test.sco,6000,15)
+
+test_instbus_dual_mono_separate:
+	@echo
+	@echo "Testing instbus dual mono separate (aux -> L, aux -> R):"
+	$(call check_peak,instbus_dual_mono_separate_test.sco,8000,10)
+
+test_instbus_dual_mono_to_stereo:
+	@echo
+	@echo "Testing instbus dual mono to stereo (2 aux -> stereo):"
+	$(call check_peak,instbus_dual_mono_to_stereo_test.sco,8000,10)
+
+test_instbus_multilevel_merge:
+	@echo
+	@echo "Testing instbus multilevel merge (3 sources, 3 levels):"
+	$(call check_peak,instbus_multilevel_merge_test.sco,12000,10)
+
+test_instbus_stereo_merge:
+	@echo
+	@echo "Testing instbus stereo merge (2 mono -> stereo):"
+	$(call check_peak,instbus_stereo_merge_test.sco,8000,10)
+
+test_instbus_quad:
+	@echo
+	@echo "Testing instbus quad (4 sources -> 4 channels):"
+	$(call check_peak,instbus_quad_test.sco,6000,10)
+
+test_instbus_trans_reuse:
+	@echo
+	@echo "Testing instbus TRANS reuse (long TRANS, staggered writers):"
+	$(call check_peak,instbus_trans_reuse_test.sco,5000,10)
 
 clean:
 	@echo Cleaning test suite.

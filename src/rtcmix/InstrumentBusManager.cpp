@@ -95,9 +95,7 @@ InstrumentBus* InstrumentBusManager::getOrCreateInstBus(int busID)
         ++mActiveInstBusCount;
 
 #ifdef MULTI_THREAD
-        if (mTaskManager != NULL) {
-            mInstBuses[busID]->setTaskManager(mTaskManager);
-        }
+        mInstBuses[busID]->setTaskManager(mTaskManager);
 #endif
     }
 
@@ -127,20 +125,6 @@ bool InstrumentBusManager::hasInstBus(int busID) const
 }
 
 
-/* --------------------------------- InstrumentBusManager::addWriter --- */
-
-void InstrumentBusManager::addWriter(int busID, Instrument* inst)
-{
-    InstrumentBus* instBus = getOrCreateInstBus(busID);
-    instBus->addWriter(inst);
-
-#ifdef IBUG
-    printf("InstBusMgr: added writer %p [%s] to bus %d\n",
-           inst, inst->name(), busID);
-#endif
-}
-
-
 /* ------------------------------- InstrumentBusManager::addConsumer --- */
 
 void InstrumentBusManager::addConsumer(int busID, Instrument* inst)
@@ -152,20 +136,6 @@ void InstrumentBusManager::addConsumer(int busID, Instrument* inst)
     printf("InstBusMgr: added consumer %p [%s] to bus %d\n",
            inst, inst->name(), busID);
 #endif
-}
-
-
-/* ------------------------------ InstrumentBusManager::removeWriter --- */
-
-void InstrumentBusManager::removeWriter(int busID, Instrument* inst)
-{
-    if (busID >= 0 && (size_t)busID < mInstBuses.size() && mInstBuses[busID] != NULL) {
-        mInstBuses[busID]->removeWriter(inst);
-
-#ifdef IBUG
-        printf("InstBusMgr: removed writer %p from bus %d\n", inst, busID);
-#endif
-    }
 }
 
 

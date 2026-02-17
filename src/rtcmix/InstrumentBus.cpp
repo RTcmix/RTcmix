@@ -12,6 +12,7 @@
 #include "InstrumentBus.h"
 #include "Instrument.h"
 #include <RTcmix.h>
+#include <heap/heap.h>
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -24,8 +25,8 @@
 /* Debug macros - match pattern from intraverse.cpp */
 #undef BBUG      /* Verbose bus debugging */
 #undef WBUG      /* "Where we are" prints */
-#define IBUG      /* Instrument and InstrumentBus debugging */
-#define DBUG      /* General debug */
+#undef IBUG      /* Instrument and InstrumentBus debugging */
+#undef DBUG      /* General debug */
 #undef ALLBUG    /* All debug output */
 
 #ifdef ALLBUG
@@ -41,8 +42,7 @@ InstrumentBus::InstrumentBus(int busID, int bufsamps)
     : mBusID(busID),
       mBufsamps(bufsamps),
       mBufferSize(bufsamps * INSTBUS_BUFFER_MULTIPLIER),
-      mWritePosition(0),
-      mFramesProduced(0)
+      mFramesProduced(RTcmix::bufStartSamp)
 #ifdef MULTI_THREAD
       , mTaskManager(NULL)
 #endif
@@ -52,13 +52,9 @@ InstrumentBus::InstrumentBus(int busID, int bufsamps)
            busID, bufsamps);
 #endif
 
-    /* Ring buffer uses aux_buffer directly - no allocation here.
-     * aux_buffer is allocated larger (mBufferSize) by InstrumentBusManager.
-     */
-
 #ifdef IBUG
-    printf("InstBus %d: using aux_buffer as ring buffer, %d frames\n",
-           mBusID, mBufferSize);
+    printf("InstBus %d: created, bufferSize=%d frames (multiplier=%d)\n",
+           mBusID, mBufferSize, INSTBUS_BUFFER_MULTIPLIER);
 #endif
 
 #ifdef WBUG
@@ -91,26 +87,21 @@ void InstrumentBus::reset()
     printf("ENTERING InstrumentBus::reset(busID=%d)\n", mBusID);
 #endif
 
-    mWritePosition = 0;
     mFramesProduced = 0;
 
     /* Clear aux_buffer (our ring buffer) */
     BufPtr buf = RTcmix::aux_buffer[mBusID];
-    assert(buf != NULL);
     memset(buf, 0, sizeof(BUFTYPE) * mBufferSize);
 
     /* Reset all consumer cursors */
     for (std::map<Instrument*, ConsumerState>::iterator it = mConsumers.begin();
          it != mConsumers.end(); ++it) {
-        it->second.readCursor = 0;
         it->second.framesConsumed = 0;
     }
 
-    /* Note: We don't clear the writers array - instruments are still registered */
-
 #ifdef IBUG
-    printf("InstBus %d: reset complete, %d writers, %d consumers\n",
-           mBusID, (int)mWriters.size(), (int)mConsumers.size());
+    printf("InstBus %d: reset complete, %d consumers\n",
+           mBusID, (int)mConsumers.size());
 #endif
 
 #ifdef WBUG
@@ -119,62 +110,34 @@ void InstrumentBus::reset()
 }
 
 
-/* ----------------------------------------------- InstrumentBus::addWriter --- */
-
-void InstrumentBus::addWriter(Instrument* inst)
-{
-#ifdef IBUG
-    printf("InstBus %d: addWriter(%p [%s])\n", mBusID, inst, inst->name());
-#endif
-
-    mWriters.push_back(inst);
-
-#ifdef IBUG
-    printf("InstBus %d: now has %d writers\n", mBusID, (int)mWriters.size());
-#endif
-}
-
-
-/* -------------------------------------------- InstrumentBus::removeWriter --- */
-
-void InstrumentBus::removeWriter(Instrument* inst)
-{
-#ifdef IBUG
-    printf("InstBus %d: removeWriter(%p [%s])\n", mBusID, inst, inst->name());
-#endif
-
-    for (std::vector<Instrument*>::iterator it = mWriters.begin();
-         it != mWriters.end(); ++it) {
-        if (*it == inst) {
-            mWriters.erase(it);
-
-#ifdef IBUG
-            printf("InstBus %d: removed writer, now has %d writers\n",
-                   mBusID, (int)mWriters.size());
-#endif
-            return;
-        }
-    }
-
-#ifdef DBUG
-    printf("InstBus %d: WARNING - removeWriter called for unknown inst %p\n",
-           mBusID, inst);
-#endif
-}
-
-
 /* ---------------------------------------------- InstrumentBus::addConsumer --- */
 
 void InstrumentBus::addConsumer(Instrument* inst)
 {
+    /* Lock required: addConsumer is called from the parser thread
+     * (via set_bus_config) while pullFrames/framesAvailable may be
+     * accessing mConsumers from TaskThreads. */
+    AutoLock al(mPullLock);
+
+    /* Initialize framesConsumed to the later of mFramesProduced and
+     * the global clock.  On an idle bus mFramesProduced is stale,
+     * so the global clock gives the correct starting point.  On an
+     * active bus mFramesProduced is at or ahead of the global clock
+     * and is the right value. */
+    FRAMETYPE startFrame = mFramesProduced;
+    if (RTcmix::bufStartSamp > startFrame)
+        startFrame = RTcmix::bufStartSamp;
+
     ConsumerState state;
-    state.readCursor = mWritePosition;
-    state.framesConsumed = 0;
+    state.framesConsumed = startFrame;
     mConsumers[inst] = state;
 
 #ifdef IBUG
-    printf("InstBus %d: addConsumer(%p [%s]), now %d consumers\n",
-           mBusID, inst, inst->name(), (int)mConsumers.size());
+    printf("InstBus %d: addConsumer(%p [%s]), framesConsumed=%lld "
+           "(mFramesProduced=%lld, bufStartSamp=%lld), now %d consumers\n",
+           mBusID, inst, inst->name(), (long long)startFrame,
+           (long long)mFramesProduced, (long long)RTcmix::bufStartSamp,
+           (int)mConsumers.size());
 #endif
 }
 
@@ -189,9 +152,11 @@ int InstrumentBus::framesAvailable(Instrument* consumer) const
     /* Available = produced - consumed */
     FRAMETYPE available = mFramesProduced - it->second.framesConsumed;
 
-#ifdef IBUG
-    printf("InstBus %d: framesAvailable(consumer=%p) = %lld (produced=%lld, consumed=%lld)\n",
-           mBusID, consumer, available, mFramesProduced, it->second.framesConsumed);
+#ifdef BBUG
+    printf("InstBus %d: framesAvailable(consumer=%p) = %lld "
+           "(produced=%lld, consumed=%lld)\n",
+           mBusID, consumer, (long long)available,
+           (long long)mFramesProduced, (long long)it->second.framesConsumed);
 #endif
 
     /* Clamp to buffer size (ring buffer constraint) */
@@ -200,6 +165,30 @@ int InstrumentBus::framesAvailable(Instrument* consumer) const
     }
 
     return (int)available;
+}
+
+
+/* ------------------------------------------ InstrumentBus::getReadPosition --- */
+
+int InstrumentBus::getReadPosition(Instrument* consumer, int frames)
+{
+    std::map<Instrument*, ConsumerState>::iterator it = mConsumers.find(consumer);
+    assert(it != mConsumers.end());
+
+    ConsumerState& state = it->second;
+    int readPos = (int)(state.framesConsumed % mBufferSize);
+
+#ifdef IBUG
+    printf("InstBus %d: getReadPosition(consumer=%p, frames=%d) "
+           "readPos=%d, framesConsumed=%lld -> %lld\n",
+           mBusID, consumer, frames, readPos,
+           (long long)state.framesConsumed,
+           (long long)(state.framesConsumed + frames));
+#endif
+
+    state.framesConsumed += frames;
+
+    return readPos;
 }
 
 
@@ -212,11 +201,28 @@ int InstrumentBus::pullFrames(Instrument* consumer, int requestedFrames)
            mBusID, consumer, requestedFrames);
 #endif
 
-    std::map<Instrument*, ConsumerState>::iterator it = mConsumers.find(consumer);
-    assert(it != mConsumers.end());
+    /* Serialize production per bus. In the push model, bus production was
+     * inherently serial (phase ordering). Multiple consumers may call
+     * pullFrames concurrently from different TaskThreads; without this lock,
+     * concurrent runWriterCycle calls corrupt the rtQueue (std::vector). */
+    AutoLock al(mPullLock);  // Required: serializes runWriterCycle per bus
 
-    ConsumerState& state = it->second;
-    int readPos = state.readCursor;
+    /* If the bus has been idle, mFramesProduced may be behind the
+     * consumer's framesConsumed (which was set to bufStartSamp in
+     * addConsumer).  Fast-forward the bus so runWriterCycle pops
+     * instruments at the correct time.  Both counters stay in sync
+     * so no phantom frames are created. */
+    std::map<Instrument*, ConsumerState>::iterator cit = mConsumers.find(consumer);
+    assert(cit != mConsumers.end());
+    if (mFramesProduced < cit->second.framesConsumed) {
+#ifdef IBUG
+        printf("InstBus %d: fast-forward mFramesProduced %lld -> %lld "
+               "(consumer %p framesConsumed)\n",
+               mBusID, (long long)mFramesProduced,
+               (long long)cit->second.framesConsumed, consumer);
+#endif
+        mFramesProduced = cit->second.framesConsumed;
+    }
 
 #ifdef IBUG
     printf("InstBus %d: consumer %p requesting %d frames, available=%d\n",
@@ -226,36 +232,24 @@ int InstrumentBus::pullFrames(Instrument* consumer, int requestedFrames)
     /* Run production cycles until we have enough frames */
     int cycleCount = 0;
     while (framesAvailable(consumer) < requestedFrames) {
-        /* Check for no writers - would loop forever */
-        if (mWriters.empty()) {
-#ifdef DBUG
-            printf("InstBus %d: pullFrames() no writers, aux_buffer is zeros\n",
-                   mBusID);
-#endif
-            /* aux_buffer should already be zeroed, just return the position */
-            break;
-        }
-
 #ifdef IBUG
-        printf("InstBus %d: need more frames, running cycle %d\n",
+        printf("InstBus %d: need more frames, running production cycle %d\n",
                mBusID, ++cycleCount);
 #else
-        (void)cycleCount;  /* suppress unused variable warning */
+        (void)cycleCount;
 #endif
         runWriterCycle();
     }
 
-    /* Advance this consumer's read cursor */
 #ifdef IBUG
-    int oldPos = state.readCursor;
+    if (cycleCount > 0) {
+        printf("InstBus %d: production complete after %d cycles, "
+               "available=%d\n",
+               mBusID, cycleCount, framesAvailable(consumer));
+    }
 #endif
-    state.readCursor = (state.readCursor + requestedFrames) % mBufferSize;
-    state.framesConsumed += requestedFrames;
 
-#ifdef IBUG
-    printf("InstBus %d: consumer %p readCursor %d -> %d, consumed=%lld\n",
-           mBusID, consumer, oldPos, state.readCursor, state.framesConsumed);
-#endif
+    int readPos = getReadPosition(consumer, requestedFrames);
 
 #ifdef WBUG
     printf("EXITING InstrumentBus::pullFrames(bus=%d) returning readPos=%d\n",
@@ -274,70 +268,184 @@ void InstrumentBus::runWriterCycle()
     printf("ENTERING InstrumentBus::runWriterCycle() for bus %d\n", mBusID);
 #endif
 
-    /* 1. Clear the ring buffer region we're about to write */
-    clearRegion(mWritePosition, mBufsamps);
+    int writeStart = getWriteRegionStart();
+    FRAMETYPE localBufEnd = mFramesProduced + mBufsamps;
 
-#ifdef IBUG
+#ifdef BBUG
+    printf("InstBus %d: writeStart=%d, mFramesProduced=%lld, localBufEnd=%lld\n",
+           mBusID, writeStart, (long long)mFramesProduced, (long long)localBufEnd);
+#endif
+
+    /* 1. Clear the write region */
+    clearRegion(writeStart, mBufsamps);
+
+#ifdef BBUG
     printf("InstBus %d: cleared region [%d, %d)\n",
-           mBusID, mWritePosition, mWritePosition + mBufsamps);
+           mBusID, writeStart, writeStart + mBufsamps);
 #endif
 
-#ifdef MULTI_THREAD
-    mActiveWriters.clear();
+    int busCount = RTcmix::busCount;
+    int busqs[2] = { mBusID, mBusID + busCount };  /* TO_AUX, AUX_TO_AUX */
+
+    struct QueuedInst {
+        Instrument* inst;
+        int busq;
+    };
+    std::vector<QueuedInst> queuedInsts;
+
+    bool panic = (RTcmix::getRunStatus() == RT_PANIC);
+
+    /* 2. Pop and exec from both TO_AUX and AUX_TO_AUX queues */
+    for (int q = 0; q < 2; q++) {
+        int busq = busqs[q];
+        RTQueue &queue = RTcmix::rtQueue[busq];
+
+#ifdef BBUG
+        printf("InstBus %d: checking rtQueue[%d] (size=%d, %s)\n",
+               mBusID, busq, queue.getSize(),
+               q == 0 ? "TO_AUX" : "AUX_TO_AUX");
 #endif
 
-    /* 2. Execute all writers */
-    for (size_t i = 0; i < mWriters.size(); ++i) {
-        Instrument* inst = mWriters[i];
+        while (queue.getSize() > 0) {
+            FRAMETYPE rtQchunkStart = queue.nextChunk();
+            if (rtQchunkStart >= localBufEnd) {
+#ifdef BBUG
+                printf("InstBus %d: nextChunk %lld >= localBufEnd %lld, "
+                       "done with queue[%d]\n",
+                       mBusID, (long long)rtQchunkStart,
+                       (long long)localBufEnd, busq);
+#endif
+                break;
+            }
 
-        /* Set up instrument for this chunk.
-         * output_offset is set to mWritePosition so addToBus writes
-         * at the correct ring buffer position.
-         */
-        inst->setchunk(mBufsamps);
-        inst->set_output_offset(mWritePosition);
+            Instrument *Iptr = queue.pop(&rtQchunkStart);
+            Iptr->set_ichunkstart(rtQchunkStart);
+
+            FRAMETYPE endsamp = Iptr->getendsamp();
+            int offset = (int)(rtQchunkStart - mFramesProduced);
 
 #ifdef IBUG
-        printf("InstBus %d: processing inst %p [%s]\n",
-               mBusID, inst, inst->name());
+            printf("InstBus %d: popped inst %p [%s] from queue[%d], "
+                   "rtQchunkStart=%lld, endsamp=%lld, offset=%d\n",
+                   mBusID, Iptr, Iptr->name(), busq,
+                   (long long)rtQchunkStart, (long long)endsamp, offset);
 #endif
 
-#ifdef MULTI_THREAD
-        if (mTaskManager != NULL) {
-            mActiveWriters.push_back(inst);
-            mTaskManager->addTask<Instrument, int, BusType, int, &Instrument::exec>
-                (inst, BUS_AUX_OUT, mBusID);
-        } else {
-            /* Fallback to sequential if no TaskManager */
-            inst->exec(BUS_AUX_OUT, mBusID);
-        }
-#else
-        /* Single-threaded: execute directly */
-        inst->exec(BUS_AUX_OUT, mBusID);
+            if (offset < 0) {
+#ifdef DBUG
+                printf("InstBus %d: WARNING - scheduler behind queue, "
+                       "offset=%d, adjusting\n", mBusID, offset);
 #endif
+                endsamp += offset;
+                offset = 0;
+            }
+            Iptr->set_output_offset(writeStart + offset);
+
+            int chunksamps;
+            if (endsamp < localBufEnd)
+                chunksamps = (int)(endsamp - rtQchunkStart);
+            else
+                chunksamps = (int)(localBufEnd - rtQchunkStart);
+            if (chunksamps > mBufsamps) {
+#ifdef DBUG
+                printf("InstBus %d: ERROR - chunksamps %d > bufsamps %d, "
+                       "limiting\n", mBusID, chunksamps, mBufsamps);
+#endif
+                chunksamps = mBufsamps;
+            }
+            else if (chunksamps + offset > mBufsamps) {
+#ifdef DBUG
+                printf("InstBus %d: ERROR - chunksamps+offset %d > bufsamps %d, "
+                       "limiting\n", mBusID, chunksamps + offset, mBufsamps);
+#endif
+                chunksamps = mBufsamps - offset;
+            }
+
+            Iptr->setchunk(chunksamps);
+
+#ifdef IBUG
+            printf("InstBus %d: inst %p [%s] output_offset=%d, chunksamps=%d\n",
+                   mBusID, Iptr, Iptr->name(), writeStart + offset, chunksamps);
+#endif
+
+            QueuedInst qi = { Iptr, busq };
+            queuedInsts.push_back(qi);
+
+            if (!panic) {
+                /* Execute writers sequentially on the current thread.
+                 * runWriterCycle is always called from a TaskThread
+                 * (via pullFrames -> rtgetin -> Instrument::run -> exec).
+                 * Using TaskManager here would cause nested startAndWait,
+                 * where participatory waiting steals unrelated tasks from
+                 * the global stack, causing unbounded recursion. */
+                Iptr->exec(BUS_AUX_OUT, mBusID);
+#ifdef IBUG
+                printf("InstBus %d: executed inst %p [%s] directly\n",
+                       mBusID, Iptr, Iptr->name());
+#endif
+            }
+#ifdef DBUG
+            else {
+                printf("InstBus %d: panic mode, skipping exec for inst %p\n",
+                       mBusID, Iptr);
+            }
+#endif
+        }
     }
 
 #ifdef MULTI_THREAD
-    /* 3. Wait for all writers to complete */
-    if (mTaskManager != NULL && !mActiveWriters.empty()) {
-#ifdef DBUG
-        printf("InstBus %d: waiting for %d instrument tasks\n",
-               mBusID, (int)mActiveWriters.size());
-#endif
-        mTaskManager->waitForTasks(mActiveWriters);
-
-        /* 4. Merge per-thread accumulations into ring buffer */
+    /* In MULTI_THREAD mode, addToBus() queues mix operations per-thread.
+     * Even though writers execute sequentially, mixToBus() is still
+     * needed to apply the queued operations to aux_buffer. */
+    if (!queuedInsts.empty()) {
         RTcmix::mixToBus();
     }
 #endif
 
-    /* 5. Advance write position */
-    mWritePosition = (mWritePosition + mBufsamps) % mBufferSize;
+    /* 3. Re-queue or unref after all writers have completed */
+    for (size_t i = 0; i < queuedInsts.size(); i++) {
+        Instrument *Iptr = queuedInsts[i].inst;
+        int busq = queuedInsts[i].busq;
+        FRAMETYPE endsamp = Iptr->getendsamp();
+        FRAMETYPE rtQchunkStart = Iptr->get_ichunkstart();
+        int chunksamps = Iptr->framesToRun();
+
+        if (endsamp > localBufEnd && !panic) {
+#ifdef IBUG
+            printf("InstBus %d: re-queuing inst %p [%s] on queue[%d] at %lld\n",
+                   mBusID, Iptr, Iptr->name(), busq,
+                   (long long)(rtQchunkStart + chunksamps));
+#endif
+            RTcmix::rtQueue[busq].pushUnsorted(Iptr, rtQchunkStart + chunksamps);
+        } else {
+            int inst_chunk_finished = Iptr->needsToRun();
+            if (inst_chunk_finished) {
+#ifdef IBUG
+                printf("InstBus %d: unref'ing inst %p [%s]\n",
+                       mBusID, Iptr, Iptr->name());
+#endif
+                Iptr->unref();
+            }
+#ifdef IBUG
+            else {
+                printf("InstBus %d: inst %p [%s] not yet finished, "
+                       "keeping ref\n", mBusID, Iptr, Iptr->name());
+            }
+#endif
+        }
+    }
+
+    /* Sort queues that received re-queued instruments */
+    for (int q = 0; q < 2; q++) {
+        RTcmix::rtQueue[busqs[q]].sort();
+    }
+
+    /* 4. Advance production counter */
     mFramesProduced += mBufsamps;
 
 #ifdef IBUG
-    printf("InstBus %d: writePosition now %d, framesProduced=%lld\n",
-           mBusID, mWritePosition, mFramesProduced);
+    printf("InstBus %d: mFramesProduced now %lld\n",
+           mBusID, (long long)mFramesProduced);
 #endif
 
 #ifdef WBUG
@@ -351,7 +459,6 @@ void InstrumentBus::runWriterCycle()
 void InstrumentBus::clearRegion(int startFrame, int numFrames)
 {
     BufPtr buf = RTcmix::aux_buffer[mBusID];
-    assert(buf != NULL);
 
     /* Handle wrap-around (aux buses are mono) */
     int endFrame = startFrame + numFrames;
@@ -366,6 +473,11 @@ void InstrumentBus::clearRegion(int startFrame, int numFrames)
 
         memset(&buf[startFrame], 0, sizeof(BUFTYPE) * firstPart);
         memset(&buf[0], 0, sizeof(BUFTYPE) * secondPart);
+
+#ifdef BBUG
+        printf("InstBus %d: clearRegion wrapped: [%d, %d) + [0, %d)\n",
+               mBusID, startFrame, mBufferSize, secondPart);
+#endif
     }
 }
 
@@ -375,7 +487,6 @@ void InstrumentBus::clearRegion(int startFrame, int numFrames)
 void InstrumentBus::copyToConsumer(BufPtr dest, int readPos, int numFrames)
 {
     BufPtr buf = RTcmix::aux_buffer[mBusID];
-    assert(buf != NULL);
 
     /* Handle wrap-around (aux buses are mono) */
     int endPos = readPos + numFrames;
@@ -390,15 +501,12 @@ void InstrumentBus::copyToConsumer(BufPtr dest, int readPos, int numFrames)
 
         memcpy(dest, &buf[readPos], sizeof(BUFTYPE) * firstPart);
         memcpy(&dest[firstPart], &buf[0], sizeof(BUFTYPE) * secondPart);
+
+#ifdef BBUG
+        printf("InstBus %d: copyToConsumer wrapped: [%d, %d) + [0, %d)\n",
+               mBusID, readPos, mBufferSize, secondPart);
+#endif
     }
-}
-
-
-/* ---------------------------------------- InstrumentBus::getWriterCount --- */
-
-int InstrumentBus::getWriterCount() const
-{
-    return (int)mWriters.size();
 }
 
 
