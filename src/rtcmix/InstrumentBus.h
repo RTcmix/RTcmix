@@ -93,6 +93,15 @@ public:
      */
     void reset();
 
+    /**
+     * Advance the production counter after intraverse completes a phased
+     * TO_AUX or AUX_TO_AUX cycle for this bus.  Called from the main thread
+     * between waitForTasks() and the next phase, so no locking is needed.
+     *
+     * @param frames  Number of frames produced (typically RTBUFSAMPS)
+     */
+    void advanceProduction(int frames);
+
     /* Accessors */
     int getBusID() const { return mBusID; }
     int getBufferSize() const { return mBufferSize; }

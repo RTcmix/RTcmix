@@ -66,6 +66,19 @@ void InstrumentBus::reset()
 }
 
 
+/* ---------------------------------------- InstrumentBus::advanceProduction --- */
+
+void InstrumentBus::advanceProduction(int frames)
+{
+    mFramesProduced += frames;
+
+#ifdef IBUG
+    printf("InstBus %d: advanceProduction(%d), mFramesProduced now %lld\n",
+           mBusID, frames, (long long)mFramesProduced);
+#endif
+}
+
+
 /* ---------------------------------------------- InstrumentBus::addConsumer --- */
 
 void InstrumentBus::addConsumer(Instrument* inst)

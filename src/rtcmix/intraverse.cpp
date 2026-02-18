@@ -18,6 +18,7 @@
 #include <RTOption.h>
 #include <bus.h>
 #include "BusSlot.h"
+#include "InstrumentBus.h"
 #include "InstrumentBusManager.h"
 #include "dbug.h"
 #include "rwlock.h"
@@ -410,14 +411,14 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 #endif
 			continue;
 		}
-		/* Skip TO_AUX and AUX_TO_AUX: instruments stay in queues,
-		 * pulled on-demand by InstrumentBus::runWriterCycle() */
-		if (qStatus != TO_OUT) {
-#ifdef IBUG
-			printf("Skipping bus %d (qStatus %d) — handled by InstrumentBus pull\n", bus, qStatus);
-#endif
-			continue;
-		}
+		/* TO_AUX and AUX_TO_AUX buses are executed here in parallel via
+		 * TaskManager (same as the original push model).  InstrumentBus
+		 * production counters are advanced after each bus completes so
+		 * that pullFrames() in the TO_OUT phase sees frames available
+		 * without needing runWriterCycle().  The sequential fallback in
+		 * runWriterCycle() remains for rate-changing instruments that
+		 * need additional production cycles beyond what intraverse
+		 * provides. */
 #if defined(BBUG) || defined(DBUG)
 		printf("\nAdding instruments for current slice [end = %.3f ms] and bus [%d]\n",
 			   1000 * bufEndSamp/sr(), busq);
@@ -504,6 +505,16 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
             printf("Done waiting... mixing all signals\n");
 #endif
         	RTcmix::mixToBus();
+			// Notify InstrumentBus that a production cycle completed for this bus
+			if (bus_type == BUS_AUX_OUT) {
+				InstrumentBusManager *mgr = RTcmix::getInstBusManager();
+				if (mgr) {
+					InstrumentBus *instBus = mgr->getInstBus(bus);
+					if (instBus) {
+						instBus->advanceProduction(frameCount);
+					}
+				}
+			}
 #if defined(IBUG)
 			printf("Re-queuing instruments\n");
 #endif

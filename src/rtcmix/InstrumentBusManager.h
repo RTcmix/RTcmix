@@ -60,6 +60,15 @@ public:
     void addConsumer(int busID, Instrument* inst);
 
     /**
+     * Advance production counters on all active InstrumentBus objects.
+     * Called from intraverse after completing a phased TO_AUX or AUX_TO_AUX
+     * cycle (after waitForTasks + mixToBus, before the next phase).
+     *
+     * @param frames  Number of frames produced (typically RTBUFSAMPS)
+     */
+    void advanceAllProduction(int frames);
+
+    /**
      * Reset all InstrumentBus objects for a new audio run.
      */
     void reset();

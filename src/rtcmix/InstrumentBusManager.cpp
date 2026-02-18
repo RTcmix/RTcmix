@@ -87,6 +87,17 @@ void InstrumentBusManager::addConsumer(int busID, Instrument* inst)
 }
 
 
+/* ----------------------- InstrumentBusManager::advanceAllProduction --- */
+
+void InstrumentBusManager::advanceAllProduction(int frames)
+{
+    for (size_t i = 0; i < mInstBuses.size(); ++i) {
+        if (mInstBuses[i] != NULL)
+            mInstBuses[i]->advanceProduction(frames);
+    }
+}
+
+
 /* ----------------------------------- InstrumentBusManager::reset --- */
 
 void InstrumentBusManager::reset()
