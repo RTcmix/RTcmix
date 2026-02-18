@@ -741,7 +741,7 @@ const char *opNames[] {
     "greater",
     "lessEqual",
     "greaterEqual",
-    "plusElus",
+    "plusPlus",
     "minusMinus"
 };
 
@@ -768,7 +768,7 @@ Node *    OperationBase::do_op_struct_float(Node *node, MincStruct *srcStruct, M
         node->setValue(retVal);
     }
     else {
-        minc_die("variable '%s' of type 'struct %s' has no operator method defined for '%s'",
+        minc_warn("variable '%s' of type 'struct %s' has no operator method defined for '%s'",
                  node->child(0)->symbol()->name(),
                  srcStruct->typeName(), printOpKind(op));
     }
@@ -1524,13 +1524,15 @@ Node *	NodeOpAssign::doExct()		// was exct_opassign()
     // ++ and -- are special-case for floats only
     if (theOp == OpPlusPlus || theOp == OpMinusMinus) {
         const char *opname = printOpKind(theOp);
-        if (tp0->dataType() != MincFloatType || tp1->dataType() != MincFloatType) {
-            minc_warn("can only use '%s' with number values", opname);
+        if (tp0->dataType() != MincFloatType && tp0->dataType() != MincStructType) {
+            minc_warn("can only use '%s' with float or struct variables", opname);
             copyValue(tp0->symbol());
             return this;
         }
-        // doOperation does not support ++ and -- directly, so convert.
-        theOp = (theOp == OpPlusPlus) ? OpPlus : OpMinus;
+        // doOperation does not support ++ and -- directly for builtin types, so convert.
+        if (tp0->dataType() != MincStructType) {
+            theOp = (theOp == OpPlusPlus) ? OpPlus : OpMinus;
+        }
     }
 	MincValue symValue = tp0->symbol()->value();
     MincValue rhs = tp1->value();
@@ -1735,12 +1737,13 @@ Node *OperationBase::doOperation(Node *node, const MincValue &lhs, const MincVal
                     do_op_struct_float(node, (MincStruct *)lhs, (MincFloat)rhs, op);
                     break;
                 default:
-                    minc_internal_error("operator '%s': invalid rhs type: %s", printOpKind(op), MincTypeName(rhs.dataType()));
+                    minc_warn("operator '%s': argument type '%s' not yet supported for operator methods",
+                              printOpKind(op), MincTypeName(rhs.dataType()));
                     break;
             }
             break;
         }
-       case MincMapType:
+        case MincMapType:
         case MincFunctionType:
             minc_warn("operator '%s': a %s cannot be used for this operation", printOpKind(op), MincTypeName(lhs.dataType()));
             break;
