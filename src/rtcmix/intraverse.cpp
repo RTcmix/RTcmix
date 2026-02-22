@@ -411,6 +411,23 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 #endif
 			continue;
 		}
+		/* Guard: skip InstrumentBus-managed aux buses whose ring buffer
+		 * still has unconsumed data.  Instruments remain on rtQueue and
+		 * will be executed later via pullFrames/runWriterCycle when the
+		 * downstream consumer actually needs the data. */
+		if (bus_type == BUS_AUX_OUT) {
+			InstrumentBusManager *ibmgr = getInstBusManager();
+			InstrumentBus *ib = ibmgr ? ibmgr->getInstBus(bus) : NULL;
+			if (ib && !ib->hasRoomForProduction()) {
+#ifdef IBUG
+				printf("intraverse: skipping bus %d — no room for production\n", bus);
+#endif
+				int qSize = rtQueue[busq].getSize();
+				if (qSize) allQSize += qSize;
+				continue;
+			}
+		}
+
 		/* TO_AUX and AUX_TO_AUX buses are executed here in parallel via
 		 * TaskManager (same as the original push model).  InstrumentBus
 		 * production counters are advanced after each bus completes so
@@ -423,6 +440,20 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		printf("\nAdding instruments for current slice [end = %.3f ms] and bus [%d]\n",
 			   1000 * bufEndSamp/sr(), busq);
 #endif
+
+		/* For InstrumentBus-managed aux buses, use the ring buffer write
+		 * position for output_offset.  All timing (offsets, chunksamps,
+		 * re-queue decisions) stays in the global bufStartSamp timeline. */
+		int instBusWriteStart = 0;
+		InstrumentBus *instBus = NULL;
+		if (bus_type == BUS_AUX_OUT) {
+			InstrumentBusManager *ibmgr = getInstBusManager();
+			instBus = ibmgr ? ibmgr->getInstBus(bus) : NULL;
+			if (instBus) {
+				instBusWriteStart = instBus->prepareForIntraverseWrite();
+			}
+		}
+
 		// Play elements on queue (insert back in if needed) ++++++++++++++++++
 		while (rtQSize > 0 && rtQchunkStart < bufEndSamp) {
 			int chunksamps = 0;
@@ -431,7 +462,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			Iptr = rtQueue[busq].pop(&rtQchunkStart);  // get next instrument off queue
 #ifdef IBUG
             printf("Iptr %p popped from rtQueue[%d] at rtQchunkStart %lld\n", Iptr, busq, rtQchunkStart);
-#endif			
+#endif
 			Iptr->set_ichunkstart(rtQchunkStart);
 
 			FRAMETYPE endsamp = Iptr->getendsamp();
@@ -439,9 +470,6 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			// difference in sample start (countdown)
 			int offset = int(rtQchunkStart - bufStartSamp);
 
-			// DJT:  may have to expand here.  IE., conditional above
-			// (rtQchunkStart >= bufStartSamp)
-			// unlcear what that will do just now
 			if (offset < 0) { // BGG: added this trap for robustness
 #ifndef EMBEDDED
                 printf("WARNING: the scheduler is behind the queue!\n");
@@ -452,7 +480,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 				offset = 0;
 			}
 
-			Iptr->set_output_offset(offset);
+			Iptr->set_output_offset(instBusWriteStart + offset);
 
 			if (endsamp < bufEndSamp) {  // compute # of samples to write
 				chunksamps = int(endsamp-rtQchunkStart);
@@ -506,14 +534,8 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 #endif
         	RTcmix::mixToBus();
 			// Notify InstrumentBus that a production cycle completed for this bus
-			if (bus_type == BUS_AUX_OUT) {
-				InstrumentBusManager *mgr = RTcmix::getInstBusManager();
-				if (mgr) {
-					InstrumentBus *instBus = mgr->getInstBus(bus);
-					if (instBus) {
-						instBus->advanceProduction(frameCount);
-					}
-				}
+			if (instBus) {
+				instBus->advanceProduction(frameCount);
 			}
 #if defined(IBUG)
 			printf("Re-queuing instruments\n");
@@ -565,6 +587,30 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	}  // end while (!aux_pb_done) --------------------------------------------------
 
 #else   // MULTI_THREAD
+    {
+        /* For InstrumentBus-managed aux buses, use the ring buffer write
+         * position for output_offset.  All timing stays in global timeline. */
+        int instBusWriteStart = 0;
+        InstrumentBus *instBus = NULL;
+
+        /* Guard: skip InstrumentBus-managed aux buses whose ring buffer
+         * still has unconsumed data. */
+        if (bus != -1 && bus_type == BUS_AUX_OUT) {
+            InstrumentBusManager *ibmgr = getInstBusManager();
+            instBus = ibmgr ? ibmgr->getInstBus(bus) : NULL;
+            if (instBus && !instBus->hasRoomForProduction()) {
+#ifdef IBUG
+                printf("intraverse: skipping bus %d — no room for production\n", bus);
+#endif
+                int qSize = rtQueue[busq].getSize();
+                if (qSize) allQSize += qSize;
+                goto single_thread_skip;
+            }
+            if (instBus) {
+                instBusWriteStart = instBus->prepareForIntraverseWrite();
+            }
+        }
+
     // Play elements on queue (insert back in if needed) ++++++++++++++++++
     while (rtQSize > 0 && rtQchunkStart < bufEndSamp && bus != -1) {
         int chunksamps = 0;
@@ -574,15 +620,12 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		printf("Iptr %p popped from rtQueue[%d] at rtQchunkStart %lld\n", Iptr, busq, rtQchunkStart);
 #endif
         Iptr->set_ichunkstart(rtQchunkStart);
-                
+
         FRAMETYPE endsamp = Iptr->getendsamp();
-        
+
         // difference in sample start (countdown)
         int offset = int(rtQchunkStart - bufStartSamp);
-        
-        // DJT:  may have to expand here.  IE., conditional above
-        // (rtQchunkStart >= bufStartSamp)
-        // unlcear what that will do just now
+
         if (offset < 0) { // BGG: added this trap for robustness
 #ifndef EMBEDDED
             printf("WARNING: the scheduler is behind the queue!\n");
@@ -592,9 +635,9 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
             endsamp += offset;  // DJT:  added this (with hope)
             offset = 0;
         }
-        
-        Iptr->set_output_offset(offset);
-        
+
+        Iptr->set_output_offset(instBusWriteStart + offset);
+
         if (endsamp < bufEndSamp) {  // compute # of samples to write
             chunksamps = int(endsamp-rtQchunkStart);
         }
@@ -656,7 +699,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 				Iptr = NULL;
             }
         }  // end rtQueue or unref ----------------------------------------
-        
+
         // DJT:  not sure this check before new rtQchunkStart is necessary
         rtQSize = rtQueue[busq].getSize();
         if (rtQSize) {
@@ -670,6 +713,14 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
         printf("Iteration done==========\n\n");
 #endif
     } // end while() [Play elements on queue (insert back in if needed)] -----------
+
+        /* Advance InstrumentBus production counter (single-threaded path) */
+        if (instBus) {
+            instBus->advanceProduction(frameCount);
+        }
+single_thread_skip:
+        ;
+    } // end instBusWriteStart scope
 }  // end while (!aux_pb_done) --------------------------------------------------
 
 #endif  // MULTI_THREAD

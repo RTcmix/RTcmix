@@ -706,6 +706,10 @@ The following infrastructure has been implemented:
    - Writer registration and removal
    - `pullFrames()` - triggers production cycles, returns read position
    - `runWriterCycle()` - executes writers in parallel (MULTI_THREAD) or sequentially
+   - `hasRoomForProduction()` - checks if producing another chunk would overwrite
+     unconsumed data (used by intraverse to skip production for rate-changing chains)
+   - `prepareForIntraverseWrite()` - clears write region, returns write position
+   - `advanceProduction()` - advances `mFramesProduced` after intraverse production
    - Full debug logging support (BBUG, WBUG, IBUG, DBUG)
    - `INSTBUS_PERSIST_DATA` / `INSTBUS_BUFFER_MULTIPLIER` for configurable persistence
 
@@ -743,20 +747,29 @@ The following infrastructure has been implemented:
    - Only TO_OUT instruments are executed, triggering pull chain via rtgetin
    - Deferred instrument lifecycle (re-queue/unref) handled after TO_OUT completes
    - `deferredInsts` vector tracks deferred instruments with their busq for re-queuing
+   - **Production guard**: `hasRoomForProduction()` check skips InstrumentBus-managed
+     aux buses when ring buffer has unconsumed data (prevents overwrite for rate-changing
+     instruments like TRANS-down)
+   - Uses `instBus->prepareForIntraverseWrite()` for ring buffer write position
+   - All timing (offsets, chunksamps, re-queue) stays in global `bufStartSamp` timeline
+
+9. **Buffer clearing** (`src/rtcmix/buffers.cpp`)
+   - `clear_aux_buffers()` skips InstrumentBus-managed buses — they manage their own
+     clearing via `clearRegion()` in `runWriterCycle()` and `prepareForIntraverseWrite()`
 
 8. **Test scores** (`test/suite/instbus_*.sco`) - 17 test scores:
    - `instbus_basic_test.sco` - single WAVETABLE → aux → MIX → out
    - `instbus_chain_test.sco` - WAVETABLE → aux → MIX → aux → MIX → out
    - `instbus_multi_writer_test.sco` - 2 WAVETABLEs → same aux → MIX → out
    - `instbus_trans_test.sco` - WAVETABLE → TRANS → STEREO chain
-   - `instbus_trans_down_test.sco` - transpose down test
+   - `instbus_trans_down_test.sco` - transpose down test (PASS: ~5000)
    - `instbus_dual_mono_separate_test.sco` - 2 WAVETABLEs on separate aux buses
    - `instbus_dual_mono_to_stereo_test.sco` - 2 mono aux → stereo output
    - `instbus_multilevel_merge_test.sco` - 3-level cascade, 3 sources (PASS: ~12000)
    - `instbus_multi_writer_cascade_test.sco` - 2 writers/bus at 2 stages (PASS: ~12000)
    - `instbus_deep_chain_test.sco` - 5-stage MIX chain (PASS: ~11809)
    - `instbus_asymmetric_tree_test.sco` - 3 branches depth 3/2/1 (FAIL: 20000 vs expected 12000)
-   - `instbus_staggered_entry_test.sco` - 3 writers staggered t=0,1,2 (FAIL: only ~4267)
+   - `instbus_staggered_entry_test.sco` - 3 writers staggered t=0,1,2 (PASS: ~12000)
    - `instbus_diamond_test.sco` - diamond routing topology
    - `instbus_parallel_merge_test.sco` - parallel paths merging
    - `instbus_stereo_merge_test.sco` - stereo merge routing
@@ -776,6 +789,27 @@ The following infrastructure has been implemented:
 3. **STEREO pan issue** (FIXED): `instbus_dual_mono_to_stereo_test.sco` was using
    `STEREO(0, 0, dur, 1, 0.5)` with 2 input channels but only 1 pan pfield.
    Fixed to `STEREO(0, 0, dur, 1, 1.0, 0.0)`.
+
+4. **TRANS-down distortion** (FIXED): `instbus_trans_down_test.sco` had peak 5623
+   vs expected 5000, with audible distortion (every other buffer skipped).
+   Two problems combined:
+   - `clear_aux_buffers()` ran at end of every `inTraverse` cycle and zeroed ALL
+     aux buffers, destroying InstrumentBus ring buffer data not yet consumed.
+   - intraverse always produced for every aux bus every cycle, overwriting data
+     before TRANS-down (which only consumes every other cycle) could read it.
+   **Fix (3 changes):**
+   - `clear_aux_buffers()` now skips InstrumentBus-managed buses (`buffers.cpp`)
+   - New `hasRoomForProduction()` method on InstrumentBus checks whether producing
+     another chunk would overwrite unconsumed consumer data (`InstrumentBus.h/.cpp`)
+   - intraverse skips production for InstrumentBus aux buses when
+     `!hasRoomForProduction()`, leaving instruments on rtQueue for later execution
+     via `pullFrames`/`runWriterCycle` (`intraverse.cpp`, both build paths)
+   **Key design insight:** All timing (offsets, chunksamps, re-queue decisions)
+   stays in the global `bufStartSamp` timeline. Only `output_offset` uses the
+   InstrumentBus ring buffer write position. An earlier attempt to remap timing
+   into a local `mFramesProduced` timeline caused instruments to never finish
+   (endsamp in global time could never be reached in local time for rate-changing
+   chains).
 
 ### Resolved: InstrumentBus Owns Queue-Based Production Loop
 
@@ -809,23 +843,53 @@ driven by demand.
    - 3 branches of depth 3/2/1 converge on aux 6
    - Likely: extra writers being registered or MIX instruments counted as writers multiple times
 
-2. **instbus_staggered_entry_test**: Peak ~4267 instead of expected ~12000
-   - 3 WAVETABLEs at t=0,1,2 writing to same aux bus
-   - Only first writer contributes properly; `runWriterCycle` overrides per-instrument timing
-
-3. **Channel 1 = 0 on MIX-to-output tests**: MIX with `MIX(0, 0, dur, 1, 0, 1)` outputs
+2. **Channel 1 = 0 on MIX-to-output tests**: MIX with `MIX(0, 0, dur, 1, 0, 1)` outputs
    mono to ch0 only. May be expected behavior for mono aux → stereo out routing.
+
+3. **instbus_diamond_test**: Choppy/distorted output, silence after ~1 second.
+
+   **Topology**: WAVETABLE→aux0→{TRANS(+7semi)→aux2, TRANS(+12semi)→aux3}→MIX→aux5→STEREO→out
+
+   **Two distinct problems identified:**
+
+   **(a) Premature upstream consumption (silence after ~1s):**
+   TRANS calls `rtgetin(in, this, RTBUFSAMPS * inchans)` multiple times per run()
+   (once per 512-frame buffer exhaustion). For upward transposition (_increment>1),
+   TRANS consumes input faster than it produces output. Each extra rtgetin call
+   triggers `runWriterCycle` on the upstream bus, which pops WAVETABLE from rtQueue
+   and advances its timeline. Result: WAVETABLE is consumed at ~2x rate, finishing
+   at ~1 second instead of 2 seconds. This is fundamental to the pull model — NOT
+   specific to INSTBUS_BUFFER_MULTIPLIER.
+
+   **(b) Sample-level discontinuities (63 jumps >2000 in steady-state):**
+   Even with MULTIPLIER=2 (which prevents ring buffer overwrite), the output has
+   large sample-to-sample jumps (~7469 max, expected ~263 for these frequencies).
+   Peak amplitude improved from ~2100 (MULTIPLIER=1) to ~7032 (MULTIPLIER=2),
+   indicating partial fix, but discontinuities remain. Root cause under investigation.
+
+   **Open questions:**
+   - Why do sample discontinuities persist with MULTIPLIER=2? The ring buffer
+     positions appear correct in tracing but the output has glitches.
+   - Should the pull model prevent `runWriterCycle` from running upstream instruments
+     ahead of schedule? This would fix premature consumption but means rate-changing
+     instruments can't get enough input in a single cycle.
+
+4. **instbus_complex_quad_test**: Hangs (never completes).
+   - Uses TRANS with `transdur=6.0` reading from WAVETABLE with `dur=3.0`
+   - When WAVETABLE finishes and is unref'd, TRANS still calls `pullFrames` on
+     the now-empty upstream bus. `runWriterCycle` finds nothing on rtQueue,
+     produces no frames, `framesAvailable` never increases → infinite loop.
+   - Same root cause as diamond test problem (a): pull model doesn't handle
+     upstream instrument finishing before downstream consumer.
 
 ### Current Debug State
 
-Debug output is **very verbose** (IBUG and DBUG #defined, not #undef'd):
-- `InstrumentBus.cpp` - IBUG, DBUG defined (lines 27-28)
-- `Instrument.cpp` - IBUG defined (line 29)
-- `rtgetin.cpp` - IBUG defined (line 26)
-- `InstrumentBusManager.cpp` - check for IBUG/DBUG defines
+All debug macros are **disabled** via `src/rtcmix/dbug.h` (IBUG, DBUG, WBUG, BBUG
+all `#undef`'d). To enable, change `#undef` to `#define` in `dbug.h` or define
+before including it in a specific `.cpp` file.
 
-**Before running tests**: either #undef these or pipe output through grep for specific lines.
-Tests will appear to hang if debug output is active and piped through `head`/`tail`.
+**Warning**: Debug output is extremely verbose. Tests will appear to hang if
+debug output is active and piped through `head`/`tail`.
 
 ## References
 

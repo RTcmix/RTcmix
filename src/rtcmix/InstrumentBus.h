@@ -102,6 +102,30 @@ public:
      */
     void advanceProduction(int frames);
 
+    /**
+     * Prepare the write region for intraverse-driven production.
+     * Clears the buffer region at the current writeRegionStart so that
+     * intraverse can write there safely.  Returns the writeRegionStart
+     * so intraverse can set output_offset for its instruments.
+     *
+     * Only clears on the first call per inTraverse cycle.  A bus may be
+     * visited in both TO_AUX and AUX_TO_AUX phases; the second visit
+     * must not clear data written by the first.
+     *
+     * @return  The buffer position where intraverse should write
+     */
+    int prepareForIntraverseWrite();
+
+
+    /**
+     * Check if there is room to produce another chunk without overwriting
+     * unconsumed data.  Returns true if all consumers have consumed enough
+     * that writing mBufsamps more frames won't overflow the ring buffer.
+     *
+     * Used by intraverse to skip production when downstream hasn't consumed.
+     */
+    bool hasRoomForProduction() const;
+
     /* Accessors */
     int getBusID() const { return mBusID; }
     int getBufferSize() const { return mBufferSize; }
@@ -167,6 +191,12 @@ private:
      * In the push model, bus production was inherently serial (phase ordering).
      * This lock restores that invariant for pull-based production. */
     Lockable mPullLock;
+
+    /* Tracks which production position was last cleared by
+     * prepareForIntraverseWrite.  A second phase visit to the same bus
+     * (e.g., AUX_TO_AUX after TO_AUX) will see mFramesProduced unchanged
+     * and skip the clear, preserving data the first phase wrote. */
+    FRAMETYPE mLastPreparedAt;
 
     /* Prevent copying */
     InstrumentBus(const InstrumentBus&);

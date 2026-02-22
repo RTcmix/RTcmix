@@ -26,7 +26,8 @@ InstrumentBus::InstrumentBus(int busID, int bufsamps)
     : mBusID(busID),
       mBufsamps(bufsamps),
       mBufferSize(bufsamps * INSTBUS_BUFFER_MULTIPLIER),
-      mFramesProduced(RTcmix::bufStartSamp)
+      mFramesProduced(RTcmix::bufStartSamp),
+      mLastPreparedAt(-1)
 {
 #ifdef IBUG
     printf("InstBus %d: created, bufferSize=%d frames (multiplier=%d)\n",
@@ -79,6 +80,30 @@ void InstrumentBus::advanceProduction(int frames)
 }
 
 
+/* -------------------------------- InstrumentBus::prepareForIntraverseWrite --- */
+
+int InstrumentBus::prepareForIntraverseWrite()
+{
+    int writeStart = getWriteRegionStart();
+
+#ifdef IBUG
+    printf("InstBus %d: prepareForIntraverseWrite, writeStart=%d "
+           "(mFramesProduced=%lld, preparedThisCycle=%d)\n",
+           mBusID, writeStart, (long long)mFramesProduced,
+           mPreparedThisCycle);
+#endif
+
+    /* Only clear once per inTraverse cycle.  A bus may be visited in
+     * both TO_AUX and AUX_TO_AUX phases; the second visit must not
+     * clear data the first phase wrote. */
+    if (mFramesProduced != mLastPreparedAt) {
+        clearRegion(writeStart, mBufsamps);
+        mLastPreparedAt = mFramesProduced;
+    }
+    return writeStart;
+}
+
+
 /* ---------------------------------------------- InstrumentBus::addConsumer --- */
 
 void InstrumentBus::addConsumer(Instrument* inst)
@@ -108,6 +133,32 @@ void InstrumentBus::addConsumer(Instrument* inst)
            (long long)mFramesProduced, (long long)RTcmix::bufStartSamp,
            (int)mConsumers.size());
 #endif
+}
+
+
+/* -------------------------------------- InstrumentBus::hasRoomForProduction --- */
+
+bool InstrumentBus::hasRoomForProduction() const
+{
+    /* Check whether producing mBufsamps more frames would overwrite any
+     * consumer's unconsumed data.  With MULTIPLIER=1 (bufferSize == bufsamps),
+     * this means framesAvailable must be 0 for all consumers. */
+    for (std::map<Instrument*, ConsumerState>::const_iterator it = mConsumers.begin();
+         it != mConsumers.end(); ++it) {
+        FRAMETYPE avail = mFramesProduced - it->second.framesConsumed;
+        if (avail + mBufsamps > mBufferSize) {
+#ifdef IBUG
+            printf("InstBus %d: hasRoomForProduction() = false "
+                   "(consumer %p avail=%lld, bufsamps=%d, bufSize=%d)\n",
+                   mBusID, it->first, (long long)avail, mBufsamps, mBufferSize);
+#endif
+            return false;
+        }
+    }
+#ifdef IBUG
+    printf("InstBus %d: hasRoomForProduction() = true\n", mBusID);
+#endif
+    return true;
 }
 
 

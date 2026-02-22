@@ -11,6 +11,8 @@
 
 #include <RTcmix.h>
 #include "buffers.h"
+#include "InstrumentBus.h"
+#include "InstrumentBusManager.h"
 #include <bus.h>
 #include <assert.h>
 
@@ -100,12 +102,19 @@ RTcmix::clear_aux_buffers()
 {
    int   i, j;
     const int count = bufsamps();
+   InstrumentBusManager *mgr = getInstBusManager();
 
    for (i = 0; i < busCount; i++) {
       BufPtr buf = aux_buffer[i];
-      if (buf != NULL)
+      if (buf != NULL) {
+         /* Skip InstrumentBus-managed buses — they manage their own clearing
+          * via clearRegion() in runWriterCycle() and prepareForIntraverseWrite().
+          * Clearing here would destroy ring buffer data not yet consumed. */
+         if (mgr && mgr->getInstBus(i))
+            continue;
          for (j = 0; j < count; j++)
             buf[j] = 0.0;
+      }
    }
 }
 
