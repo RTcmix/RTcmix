@@ -173,7 +173,9 @@ private:
     Node* do_op_list_float(Node *node, const MincList *srcList, MincFloat val, OpKind  op);
     Node* do_op_list_list(Node *node, const MincList *list1, const MincList *list2, OpKind  op);
     Node* do_op_float_list(Node *node, MincFloat val, const MincList *srcList, OpKind  op);
-    Node* do_op_struct_float(Node *node, MincStruct *srcStruct, MincFloat val, OpKind  op);
+	// The struct operators do not pass the 'val' argument because it is processed into an argument list.
+	template <class T>
+	Node *do_op_struct(Node *node, MincStruct *srcStruct, OpKind op);
 };
 
 class NodeOp : public Node2Children, private OperationBase

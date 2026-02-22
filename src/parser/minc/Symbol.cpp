@@ -181,9 +181,11 @@ strsave(const char *str)
     struct str *p;
     
     h = hash(str);
-    for (p = stab[h]; p != NULL; p = p->next)
-        if (strcmp(str, p->str) == 0)
+    for (p = stab[h]; p != NULL; p = p->next) {
+        if (strcmp(str, p->str) == 0) {
             return (p->str);
+        }
+    }
     p = (struct str *) emalloc(sizeof(struct str));
     try {
         p->str = (char *) emalloc(strlen(str) + 1);

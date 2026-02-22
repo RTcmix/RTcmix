@@ -231,6 +231,9 @@ static const char *methodNameFromStructAndFunction(const char *structName, const
 static void push_list(void);
 static void pop_list(void);
 
+// FunctionBalance is a utility which assures that the given pair of functions will be executed, one at the decl
+// point, the other at scope exit.  Useful for handling exception throwing.
+
 typedef void (VoidFunction)(void);
 
 class FunctionBalance {
@@ -725,7 +728,21 @@ Node *    OperationBase::do_op_float_list(Node *node, MincFloat val, const MincL
     return node;
 }
 
-const char *opNames[] {
+static const char *argTypeToSuffix(MincDataType argType) {
+    const char *suffix = "";
+    switch (argType) {
+        case MincFloatType:   suffix = "f"; break;
+        case MincStringType:  suffix = "s"; break;
+        case MincHandleType:  suffix = "h"; break;
+        case MincListType:    suffix = "l"; break;
+        case MincMapType:     suffix = "m"; break;
+        case MincStructType:  suffix = "S"; break;
+        case MincFunctionType:suffix = "F"; break;
+        default:              suffix = "";  break;
+    }
+    return suffix;
+}
+static const char *opNames[] = {
     "Invalid",
     "Invalid",
     "plus",
@@ -745,7 +762,16 @@ const char *opNames[] {
     "minusMinus"
 };
 
-static const char *op_to_method_name(const char *structType, MincDataType argType, OpKind op) {
+template <class T> struct MincTypeTag;
+template <> struct MincTypeTag<MincFloat>  { static const MincDataType value = MincFloatType;  };
+template <> struct MincTypeTag<MincString> { static const MincDataType value = MincStringType; };
+template <> struct MincTypeTag<MincHandle> { static const MincDataType value = MincHandleType; };
+template <> struct MincTypeTag<MincList> { static const MincDataType value = MincListType; };
+template <> struct MincTypeTag<MincMap> { static const MincDataType value = MincMapType; };
+template <> struct MincTypeTag<MincStruct> { static const MincDataType value = MincStructType; };
+template <> struct MincTypeTag<MincFunction> { static const MincDataType value = MincFunctionType; };
+
+static const char * op_to_method_name(const char *structType, MincDataType argType, OpKind op) {
     static char buf[128];
 //    snprintf(buf, 128, "%s.__%s%s", structType, opNames[op], argType == MincFloatType ? "f" : "");
     snprintf(buf, 128, "%s.__%s", structType, opNames[op]);
@@ -757,10 +783,11 @@ static const char *op_to_method_name(const char *structType, MincDataType argTyp
  * and retrieve and execute it if found.
  */
 
-Node *    OperationBase::do_op_struct_float(Node *node, MincStruct *srcStruct, MincFloat val, OpKind  op)
+template <class T>
+Node *OperationBase::do_op_struct(Node *node, MincStruct *srcStruct, OpKind op)
 {
     const char *structType = srcStruct->typeName();
-    const char *methodName = op_to_method_name(structType, MincFloatType, op);
+    const char *methodName = op_to_method_name(structType, MincTypeTag<T>::value, op);
     Symbol *methodSymbol = lookupSymbol(methodName, AnyLevel);
     if (methodSymbol) {
         MincFunction *theMethod = (MincFunction *)methodSymbol->value();
@@ -770,7 +797,7 @@ Node *    OperationBase::do_op_struct_float(Node *node, MincStruct *srcStruct, M
     else {
         minc_warn("variable '%s' of type 'struct %s' has no operator method defined for '%s'",
                  node->child(0)->symbol()->name(),
-                 srcStruct->typeName(), printOpKind(op));
+                 structType, printOpKind(op));
     }
     return node;
 }
@@ -1143,7 +1170,9 @@ bool functionPrintIsSuppressed(const char *functionName)
     else {
         baseName = functionName;
     }
-    bool isSuppressed = baseName[0] == '_' && RTOption::printSuppressUnderbar();
+    // N.B. All double-underbar functions are *always* suppressed.  Otherwise we check whether single-underbar
+    // names have been configured to be suppressed via set_option().
+    bool isSuppressed = baseName[0] == '_' && (RTOption::printSuppressUnderbar() || baseName[1] == '_');
     if (!isSuppressed) {
         const char *suppressedList = RTOption::suppressedFunNamelist();
         if (suppressedList != NULL) {
@@ -1729,12 +1758,14 @@ Node *OperationBase::doOperation(Node *node, const MincValue &lhs, const MincVal
             break;
         case MincStructType:
         {
+            // In order to call the struct operator member functions, the rhs value must be loaded into
+            // the static argument list.  This is why the do_op calls for struct do not pass 'val'.
             FunctionBalance fb(push_list, pop_list);
             sMincList[0] = rhs;
             sMincListLen = 1;
             switch (rhs.dataType()) {
                 case MincFloatType:
-                    do_op_struct_float(node, (MincStruct *)lhs, (MincFloat)rhs, op);
+                    do_op_struct<MincFloat>(node, (MincStruct *)lhs, op);
                     break;
                 default:
                     minc_warn("operator '%s': argument type '%s' not yet supported for operator methods",
