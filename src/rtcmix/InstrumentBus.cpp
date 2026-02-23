@@ -27,7 +27,8 @@ InstrumentBus::InstrumentBus(int busID, int bufsamps)
       mBufsamps(bufsamps),
       mBufferSize(bufsamps * INSTBUS_BUFFER_MULTIPLIER),
       mFramesProduced(RTcmix::bufStartSamp),
-      mLastPreparedAt(-1)
+      mLastPreparedAt(-1),
+      mLastAdvancedBufStart(-1)
 {
 #ifdef IBUG
     printf("InstBus %d: created, bufferSize=%d frames (multiplier=%d)\n",
@@ -69,9 +70,15 @@ void InstrumentBus::reset()
 
 /* ---------------------------------------- InstrumentBus::advanceProduction --- */
 
-void InstrumentBus::advanceProduction(int frames)
+void InstrumentBus::advanceProduction(int frames, FRAMETYPE currentBufStart)
 {
+    /* Idempotent per cycle: a bus visited in both TO_AUX and AUX_TO_AUX
+     * calls this from each phase; the second call is a no-op. */
+    if (mLastAdvancedBufStart == currentBufStart)
+        return;
+
     mFramesProduced += frames;
+    mLastAdvancedBufStart = currentBufStart;
 
 #ifdef IBUG
     printf("InstBus %d: advanceProduction(%d), mFramesProduced now %lld\n",
@@ -82,20 +89,27 @@ void InstrumentBus::advanceProduction(int frames)
 
 /* -------------------------------- InstrumentBus::prepareForIntraverseWrite --- */
 
-int InstrumentBus::prepareForIntraverseWrite()
+int InstrumentBus::prepareForIntraverseWrite(FRAMETYPE currentBufStart)
 {
+    /* If already produced this cycle (TO_AUX phase completed), the
+     * second phase (AUX_TO_AUX) accumulates into the same region. */
+    if (mLastAdvancedBufStart == currentBufStart) {
+        int prevWriteStart = (int)((mFramesProduced - mBufsamps) % mBufferSize);
+#ifdef IBUG
+        printf("InstBus %d: prepareForIntraverseWrite (2nd phase), "
+               "returning prevWriteStart=%d\n", mBusID, prevWriteStart);
+#endif
+        return prevWriteStart;
+    }
+
     int writeStart = getWriteRegionStart();
 
 #ifdef IBUG
     printf("InstBus %d: prepareForIntraverseWrite, writeStart=%d "
-           "(mFramesProduced=%lld, preparedThisCycle=%d)\n",
-           mBusID, writeStart, (long long)mFramesProduced,
-           mPreparedThisCycle);
+           "(mFramesProduced=%lld)\n",
+           mBusID, writeStart, (long long)mFramesProduced);
 #endif
 
-    /* Only clear once per inTraverse cycle.  A bus may be visited in
-     * both TO_AUX and AUX_TO_AUX phases; the second visit must not
-     * clear data the first phase wrote. */
     if (mFramesProduced != mLastPreparedAt) {
         clearRegion(writeStart, mBufsamps);
         mLastPreparedAt = mFramesProduced;
@@ -138,8 +152,13 @@ void InstrumentBus::addConsumer(Instrument* inst)
 
 /* -------------------------------------- InstrumentBus::hasRoomForProduction --- */
 
-bool InstrumentBus::hasRoomForProduction() const
+bool InstrumentBus::hasRoomForProduction(FRAMETYPE currentBufStart) const
 {
+    /* Already produced this cycle (e.g., TO_AUX phase completed) —
+     * the second phase (AUX_TO_AUX) accumulates into the same region. */
+    if (mLastAdvancedBufStart == currentBufStart)
+        return true;
+
     /* Check whether producing mBufsamps more frames would overwrite any
      * consumer's unconsumed data.  With MULTIPLIER=1 (bufferSize == bufsamps),
      * this means framesAvailable must be 0 for all consumers. */
@@ -148,15 +167,17 @@ bool InstrumentBus::hasRoomForProduction() const
         FRAMETYPE avail = mFramesProduced - it->second.framesConsumed;
         if (avail + mBufsamps > mBufferSize) {
 #ifdef IBUG
-            printf("InstBus %d: hasRoomForProduction() = false "
+            printf("InstBus %d: hasRoomForProduction(%lld) = false "
                    "(consumer %p avail=%lld, bufsamps=%d, bufSize=%d)\n",
-                   mBusID, it->first, (long long)avail, mBufsamps, mBufferSize);
+                   mBusID, (long long)currentBufStart,
+                   it->first, (long long)avail, mBufsamps, mBufferSize);
 #endif
             return false;
         }
     }
 #ifdef IBUG
-    printf("InstBus %d: hasRoomForProduction() = true\n", mBusID);
+    printf("InstBus %d: hasRoomForProduction(%lld) = true\n",
+           mBusID, (long long)currentBufStart);
 #endif
     return true;
 }
@@ -502,9 +523,19 @@ void InstrumentBus::clearRegion(int startFrame, int numFrames)
 }
 
 
-/* -------------------------------------- InstrumentBus::getConsumerCount --- */
+/* ----------------------------------------- InstrumentBus::removeConsumer --- */
 
-int InstrumentBus::getConsumerCount() const
+void InstrumentBus::removeConsumer(Instrument* inst)
 {
-    return (int)mConsumers.size();
+    AutoLock al(mPullLock);
+    std::map<Instrument*, ConsumerState>::iterator it = mConsumers.find(inst);
+    if (it != mConsumers.end()) {
+#ifdef IBUG
+        printf("InstBus %d: removeConsumer(%p), framesConsumed=%lld, "
+               "%d consumers remaining\n",
+               mBusID, inst, (long long)it->second.framesConsumed,
+               (int)mConsumers.size() - 1);
+#endif
+        mConsumers.erase(it);
+    }
 }

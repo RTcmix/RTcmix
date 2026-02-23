@@ -79,6 +79,11 @@ Instrument::~Instrument()
 
 	delete [] outbuf;
 
+	// Remove from all InstrumentBus consumer lists before releasing bus slot
+	InstrumentBusManager *mgr = RTcmix::getInstBusManager();
+	if (mgr)
+		mgr->removeConsumer(this);
+
 	RefCounted::unref(_busSlot);	// release our reference
 	_busSlot = NULL;  // poison after unref
 

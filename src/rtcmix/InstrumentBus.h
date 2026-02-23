@@ -89,48 +89,55 @@ public:
     void addConsumer(Instrument* inst);
 
     /**
+     * Remove a consumer when it finishes.  Prevents dead consumers
+     * from blocking production via hasRoomForProduction().
+     *
+     * @param inst  The instrument that is finishing
+     */
+    void removeConsumer(Instrument* inst);
+
+    /**
      * Clear all state for a new audio run.
      */
     void reset();
 
     /**
      * Advance the production counter after intraverse completes a phased
-     * TO_AUX or AUX_TO_AUX cycle for this bus.  Called from the main thread
-     * between waitForTasks() and the next phase, so no locking is needed.
+     * TO_AUX or AUX_TO_AUX cycle for this bus.  Idempotent per cycle:
+     * a bus visited in both TO_AUX and AUX_TO_AUX only advances once.
      *
-     * @param frames  Number of frames produced (typically RTBUFSAMPS)
+     * @param frames          Number of frames produced (typically RTBUFSAMPS)
+     * @param currentBufStart The current bufStartSamp (identifies the cycle)
      */
-    void advanceProduction(int frames);
+    void advanceProduction(int frames, FRAMETYPE currentBufStart);
 
     /**
      * Prepare the write region for intraverse-driven production.
-     * Clears the buffer region at the current writeRegionStart so that
-     * intraverse can write there safely.  Returns the writeRegionStart
-     * so intraverse can set output_offset for its instruments.
+     * Clears the buffer region and returns the write position.
      *
-     * Only clears on the first call per inTraverse cycle.  A bus may be
-     * visited in both TO_AUX and AUX_TO_AUX phases; the second visit
-     * must not clear data written by the first.
+     * A bus visited in both TO_AUX and AUX_TO_AUX phases: the second
+     * visit returns the same write position without clearing.
      *
+     * @param currentBufStart The current bufStartSamp (identifies the cycle)
      * @return  The buffer position where intraverse should write
      */
-    int prepareForIntraverseWrite();
-
+    int prepareForIntraverseWrite(FRAMETYPE currentBufStart);
 
     /**
      * Check if there is room to produce another chunk without overwriting
-     * unconsumed data.  Returns true if all consumers have consumed enough
-     * that writing mBufsamps more frames won't overflow the ring buffer.
+     * unconsumed data.  Returns true if already produced this cycle (so
+     * a second phase can accumulate), or if all consumers have consumed
+     * enough that writing mBufsamps more frames fits in the ring buffer.
      *
-     * Used by intraverse to skip production when downstream hasn't consumed.
+     * @param currentBufStart The current bufStartSamp (identifies the cycle)
      */
-    bool hasRoomForProduction() const;
+    bool hasRoomForProduction(FRAMETYPE currentBufStart) const;
 
     /* Accessors */
     int getBusID() const { return mBusID; }
     int getBufferSize() const { return mBufferSize; }
     FRAMETYPE getFramesProduced() const { return mFramesProduced; }
-    int getConsumerCount() const;
+    int getConsumerCount() const { return (int)mConsumers.size(); }
     int getBufsamps() const { return mBufsamps; }
 
     /** Current write region start (derived from mFramesProduced) */
@@ -197,6 +204,12 @@ private:
      * (e.g., AUX_TO_AUX after TO_AUX) will see mFramesProduced unchanged
      * and skip the clear, preserving data the first phase wrote. */
     FRAMETYPE mLastPreparedAt;
+
+    /* Tracks bufStartSamp when advanceProduction was last called.
+     * Used to detect when a bus was already produced in the current
+     * inTraverse cycle (e.g., TO_AUX phase), so the AUX_TO_AUX phase
+     * can accumulate without being blocked by hasRoomForProduction. */
+    FRAMETYPE mLastAdvancedBufStart;
 
     /* Prevent copying */
     InstrumentBus(const InstrumentBus&);

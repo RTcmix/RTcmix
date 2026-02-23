@@ -375,8 +375,6 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			rtQSize = rtQueue[busq].getSize();
 			if (rtQSize > 0) {
 				rtQchunkStart = rtQueue[busq].nextChunk();
-				// DS ADDED
-				assert(rtQchunkStart > 0 || bufStartSamp == 0);
 			}
 		}
 		else {
@@ -418,7 +416,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		if (bus_type == BUS_AUX_OUT) {
 			InstrumentBusManager *ibmgr = getInstBusManager();
 			InstrumentBus *ib = ibmgr ? ibmgr->getInstBus(bus) : NULL;
-			if (ib && !ib->hasRoomForProduction()) {
+			if (ib && !ib->hasRoomForProduction(bufStartSamp)) {
 #ifdef IBUG
 				printf("intraverse: skipping bus %d — no room for production\n", bus);
 #endif
@@ -450,7 +448,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			InstrumentBusManager *ibmgr = getInstBusManager();
 			instBus = ibmgr ? ibmgr->getInstBus(bus) : NULL;
 			if (instBus) {
-				instBusWriteStart = instBus->prepareForIntraverseWrite();
+				instBusWriteStart = instBus->prepareForIntraverseWrite(bufStartSamp);
 			}
 		}
 
@@ -535,7 +533,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
         	RTcmix::mixToBus();
 			// Notify InstrumentBus that a production cycle completed for this bus
 			if (instBus) {
-				instBus->advanceProduction(frameCount);
+				instBus->advanceProduction(frameCount, bufStartSamp);
 			}
 #if defined(IBUG)
 			printf("Re-queuing instruments\n");
@@ -598,7 +596,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
         if (bus != -1 && bus_type == BUS_AUX_OUT) {
             InstrumentBusManager *ibmgr = getInstBusManager();
             instBus = ibmgr ? ibmgr->getInstBus(bus) : NULL;
-            if (instBus && !instBus->hasRoomForProduction()) {
+            if (instBus && !instBus->hasRoomForProduction(bufStartSamp)) {
 #ifdef IBUG
                 printf("intraverse: skipping bus %d — no room for production\n", bus);
 #endif
@@ -607,7 +605,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
                 goto single_thread_skip;
             }
             if (instBus) {
-                instBusWriteStart = instBus->prepareForIntraverseWrite();
+                instBusWriteStart = instBus->prepareForIntraverseWrite(bufStartSamp);
             }
         }
 
@@ -716,7 +714,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 
         /* Advance InstrumentBus production counter (single-threaded path) */
         if (instBus) {
-            instBus->advanceProduction(frameCount);
+            instBus->advanceProduction(frameCount, bufStartSamp);
         }
 single_thread_skip:
         ;

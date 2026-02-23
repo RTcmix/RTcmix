@@ -87,13 +87,24 @@ void InstrumentBusManager::addConsumer(int busID, Instrument* inst)
 }
 
 
-/* ----------------------- InstrumentBusManager::advanceAllProduction --- */
+/* ----------------------- InstrumentBusManager::removeConsumer --- */
 
-void InstrumentBusManager::advanceAllProduction(int frames)
+void InstrumentBusManager::removeConsumer(Instrument* inst)
 {
     for (size_t i = 0; i < mInstBuses.size(); ++i) {
         if (mInstBuses[i] != NULL)
-            mInstBuses[i]->advanceProduction(frames);
+            mInstBuses[i]->removeConsumer(inst);
+    }
+}
+
+
+/* ----------------------- InstrumentBusManager::advanceAllProduction --- */
+
+void InstrumentBusManager::advanceAllProduction(int frames, FRAMETYPE currentBufStart)
+{
+    for (size_t i = 0; i < mInstBuses.size(); ++i) {
+        if (mInstBuses[i] != NULL)
+            mInstBuses[i]->advanceProduction(frames, currentBufStart);
     }
 }
 

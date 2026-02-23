@@ -60,13 +60,22 @@ public:
     void addConsumer(int busID, Instrument* inst);
 
     /**
+     * Remove an instrument as a consumer from all InstrumentBus objects.
+     * Called from the Instrument destructor.
+     *
+     * @param inst   The instrument being destroyed
+     */
+    void removeConsumer(Instrument* inst);
+
+    /**
      * Advance production counters on all active InstrumentBus objects.
      * Called from intraverse after completing a phased TO_AUX or AUX_TO_AUX
      * cycle (after waitForTasks + mixToBus, before the next phase).
      *
-     * @param frames  Number of frames produced (typically RTBUFSAMPS)
+     * @param frames          Number of frames produced (typically RTBUFSAMPS)
+     * @param currentBufStart The current bufStartSamp (identifies the cycle)
      */
-    void advanceAllProduction(int frames);
+    void advanceAllProduction(int frames, FRAMETYPE currentBufStart);
 
     /**
      * Reset all InstrumentBus objects for a new audio run.
