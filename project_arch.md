@@ -62,7 +62,6 @@ InstrumentBus
 ├── mFramesProduced      FRAMETYPE      Monotonic production counter
 ├── mConsumers           map<Inst*,CS>  Per-consumer read cursors
 ├── mPullLock            Lockable       Serializes pullFrames per bus
-├── mLastPreparedAt      FRAMETYPE      Dedup clearRegion calls
 ├── mLastAdvancedBufStart FRAMETYPE     Dedup dual-phase production
 │
 ├── pullFrames(consumer, frames) → readPos     [public, locked]
@@ -74,8 +73,13 @@ InstrumentBus
 ├── framesAvailable(consumer) → int            [public, const]
 ├── getReadPosition(consumer, frames) → readPos [public]
 │
-└── runWriterCycle()                           [private]
-    clearRegion(start, frames)                 [private]
+├── popAndPrepareWriters(busq, origin, end,    [public, static]
+│       writeStart, maxFrames, panic) → vec<Inst*>
+├── requeueOrUnref(instsToRun, end, busq,     [public, static]
+│       qStatus, panic)
+│
+├── runWriterCycle()                           [private, orchestrator]
+│   └── clearRegion(start, frames)                        [private]
 ```
 
 **No separate buffer allocation.** InstrumentBus reads and writes
@@ -88,14 +92,18 @@ Singleton owned by RTcmix.  Manages all InstrumentBus objects.
 
 ```
 InstrumentBusManager
-├── mInstBuses    vector<InstrumentBus*>   Indexed by bus ID (NULL = unmanaged)
-├── mBufsamps     int                      RTBUFSAMPS
+├── mInstBuses    map<int, InstrumentBus*>  Keyed by bus ID (only created buses)
+├── mBufsamps     int                       RTBUFSAMPS
 │
 ├── getOrCreateInstBus(busID) → InstrumentBus*   Lazy creation
 ├── getInstBus(busID) → InstrumentBus*           NULL if not created
 ├── addConsumer(busID, inst)                      Creates bus if needed
 ├── removeConsumer(inst)                          Iterates all buses
-└── advanceAllProduction(frames, bufStartSamp)    Advances all buses
+├── advanceAllProduction(frames, bufStartSamp)    Advances all buses
+├── getActiveInstBusCount() → int                 Inlined: mInstBuses.size()
+│
+RTcmix (static convenience):
+└── getInstBus(busID) → InstrumentBus*    Delegates to instBusManager
 ```
 
 ### 2.3 ConsumerState
@@ -325,17 +333,21 @@ Both use `clearRegion()` which handles wrap-around.
 
 ```
 Main thread (audio callback):
-  for each bus in TO_AUX playlist:
-    for each instrument on rtQueue[bus]:
+  for each bus in TO_AUX / AUX_TO_AUX / TO_OUT playlist:
+    instruments = InstrumentBus::popAndPrepareWriters(busq, ...)  ← static helper
+    for each inst in instruments:
       taskManager->addTask(inst->exec)     ← parallel
     taskManager->waitForTasks(instruments)  ← barrier
     RTcmix::mixToBus()                     ← merge per-thread vectors
-    instBus->advanceProduction(...)
+    instBus->advanceProduction(...)        ← ring buffer advance (aux only)
+    InstrumentBus::requeueOrUnref(instruments, ..., busq, qStatus, ...)  ← static
+    rtQueue[busq].sort()
 ```
 
-Multiple instruments writing to the same bus execute in parallel via
-`TaskManager`.  Per-thread accumulation vectors (`mixVectors[]`) avoid
-contention.  `mixToBus()` merges them after the barrier.
+The static helpers (`popAndPrepareWriters`, `requeueOrUnref`) handle scheduling
+for all bus types uniformly.  Multiple instruments writing to the same bus
+execute in parallel via `TaskManager`.  Per-thread accumulation vectors
+(`mixVectors[]`) avoid contention.  `mixToBus()` merges them after the barrier.
 
 ### 7.2 Pull Path (runWriterCycle)
 
@@ -344,18 +356,23 @@ TaskThread (via exec → run → rtgetin → pullFrames):
   AutoLock(mPullLock)                      ← serialize per bus
   while (framesAvailable < requested):
     runWriterCycle():
-      for each instrument on rtQueue[bus]:
-        inst->exec(BUS_AUX_OUT, busID)     ← sequential, same thread
-      RTcmix::mixToBus()                   ← merge (still needed in MT mode)
+      for q in {TO_AUX queue, AUX_TO_AUX queue}:
+        insts = popAndPrepareWriters(busq, mFramesProduced, ...)  ← static helper
+        for each inst in insts:
+          inst->exec(BUS_AUX_OUT, busID)   ← sequential, same thread
+        RTcmix::mixToBus()                 ← merge (still needed in MT mode)
+        requeueOrUnref(insts, ..., busq, UNKNOWN, ...)  ← static, explicit busq
+        rtQueue[busq].sort()
 ```
 
-Writers execute **sequentially** in `runWriterCycle()`, not via
-`TaskManager`.  This is because `runWriterCycle` is called from a
-`TaskThread` (the call chain is: `TaskThread` runs `Instrument::exec` →
-`run` → `rtgetin` → `pullFrames` → `runWriterCycle`).  Using `TaskManager`
-from within a `TaskThread` would cause nested `startAndWait`, where
-participatory waiting could steal unrelated tasks and cause unbounded
-recursion.
+The same static helpers are used as in the push path, but with different
+parameter values (`mFramesProduced` instead of `bufStartSamp`, etc.).
+Writers execute **sequentially** — not via `TaskManager` — because
+`runWriterCycle` is called from a `TaskThread` (the call chain is:
+`TaskThread` runs `Instrument::exec` → `run` → `rtgetin` → `pullFrames` →
+`runWriterCycle`).  Using `TaskManager` from within a `TaskThread` would
+cause nested `startAndWait`, where participatory waiting could steal
+unrelated tasks and cause unbounded recursion.
 
 `mPullLock` serializes production per bus.  Multiple consumers calling
 `pullFrames` concurrently (from different `TaskThreads`) are serialized
@@ -404,22 +421,18 @@ The entry point for pull-based input:
 
 ```cpp
 if (fdindex == NO_DEVICE_FDINDEX) {     // Input from aux buses
-    InstrumentBus *instBus = mgr->getInstBus(auxin[0]);
-    if (instBus != NULL) {
-        // Pull path: trigger production, get read position
-        for (each auxin channel)
-            readPos = instBus->pullFrames(this, frames);
-        RTcmix::readFromAuxBus(inarr, ..., readPos);
-    } else {
-        // Legacy path: read directly from aux_buffer at output_offset
-        RTcmix::readFromAuxBus(inarr, ..., output_offset);
+    int readPos = 0;
+    for (each auxin channel) {
+        InstrumentBus *instBus = RTcmix::getInstBus(chan);
+        assert(instBus != NULL);
+        readPos = instBus->pullFrames(this, frames);
     }
+    RTcmix::readFromAuxBus(inarr, ..., readPos);
 }
 ```
 
-If an InstrumentBus exists for the input bus, the pull path is used.
-Otherwise the legacy direct-read path applies (for buses not managed by
-InstrumentBus).
+Every aux bus with consumers has an InstrumentBus (created at `addConsumer`
+time), so the assert is always satisfied.  There is no legacy fallback path.
 
 ### 9.2 buffers.cpp
 
@@ -438,29 +451,36 @@ for (i = 0; i < busCount; i++) {
 - **Constructor:** Standard initialization (unchanged).
 - **`set_bus_config()`:** Registers as consumer of each `auxin` bus via
   `instBusMgr->addConsumer(auxin[i], this)`.
-- **Destructor:** Calls `instBusMgr->removeConsumer(this)` before releasing
-  `_busSlot`, ensuring dead consumers don't block production.
+- **Destructor:** Calls `RTcmix::getInstBusManager()->removeConsumer(this)`
+  before releasing `_busSlot`, ensuring dead consumers don't block production.
 
 ### 9.4 intraverse.cpp
 
-Three additions to the existing phased loop:
+The push path uses InstrumentBus ring buffer methods plus the shared static
+scheduling helpers:
 
-1. **Production guard** (before executing a bus):
-   ```cpp
-   if (instBus && !instBus->hasRoomForProduction(bufStartSamp))
-       continue;   // instruments stay on rtQueue
-   ```
+```cpp
+// Ring buffer setup (aux buses only)
+int instBusWriteStart = 0;
+InstrumentBus *instBus = (bus_type == BUS_AUX_OUT) ? getInstBus(bus) : NULL;
+if (instBus) {
+    if (!instBus->hasRoomForProduction(bufStartSamp)) {
+        continue;  // instruments stay on rtQueue for later pull
+    }
+    instBusWriteStart = instBus->prepareForIntraverseWrite(bufStartSamp);
+}
 
-2. **Write position** (before popping instruments):
-   ```cpp
-   instBusWriteStart = instBus->prepareForIntraverseWrite(bufStartSamp);
-   Iptr->set_output_offset(instBusWriteStart + offset);
-   ```
+// Shared scheduling (all bus types)
+instruments = InstrumentBus::popAndPrepareWriters(
+    busq, bufStartSamp, bufEndSamp, instBusWriteStart, frameCount, panic);
+// ... TaskManager exec, waitForTasks, mixToBus ...
+if (instBus) instBus->advanceProduction(frameCount, bufStartSamp);
+InstrumentBus::requeueOrUnref(instruments, bufEndSamp, busq, qStatus, panic);
+rtQueue[busq].sort();
+```
 
-3. **Production advance** (after waitForTasks + mixToBus):
-   ```cpp
-   instBus->advanceProduction(frameCount, bufStartSamp);
-   ```
+The static helpers work for all bus types.  For non-InstrumentBus buses
+(TO_OUT), `instBusWriteStart` is 0, which is the correct base offset.
 
 ---
 
@@ -476,7 +496,7 @@ Three additions to the existing phased loop:
 | `rtgetin.cpp` | Pull-path entry point (pullFrames in rtgetin) |
 | `buffers.cpp` | Clearing exclusion for managed buses |
 | `Instrument.cpp` | Consumer registration (set_bus_config) and removal (destructor) |
-| `RTcmix.h` | Static `instBusManager` member, `friend class InstrumentBus` |
+| `RTcmix.h` | Static `instBusManager` member, `getInstBus()` convenience method |
 
 ---
 
@@ -503,24 +523,29 @@ Runtime (RTBUFSAMPS=512, cycle 0, bufStartSamp=0):
   TO_AUX phase, bus 0:
     hasRoomForProduction(0) → true (mFramesProduced=0, consumer framesConsumed=0)
     prepareForIntraverseWrite(0) → clears [0,512), returns 0
-    Pop WAVETABLE, exec → writes 512 frames to aux_buffer[0][0..511]
+    popAndPrepareWriters(busq=0, origin=0, end=512, writeStart=0, ...)
+      → pops WAVETABLE, computes timing
+    TaskManager: exec WAVETABLE → writes 512 frames to aux_buffer[0][0..511]
     waitForTasks + mixToBus
     advanceProduction(512, 0) → mFramesProduced=512, mLastAdvancedBufStart=0
+    requeueOrUnref → WAVETABLE re-queued at 512
 
   AUX_TO_AUX phase, bus 1:
     hasRoomForProduction(0) → true
     prepareForIntraverseWrite(0) → clears [0,512), returns 0
-    Pop TRANS, exec:
+    popAndPrepareWriters → pops TRANS
+    TaskManager: exec TRANS:
       TRANS::run() → rtgetin(in, this, 1024)   [needs 1024 frames for +1oct]
         pullFrames(TRANS, 1024):
           framesAvailable = 512 (not enough)
           runWriterCycle():
-            pops WAVETABLE from rtQueue[0] at rtQchunkStart=512
+            popAndPrepareWriters(busq=0, origin=512, end=1024, ...)
+              → pops WAVETABLE from rtQueue[0] at rtQchunkStart=512
             exec WAVETABLE → writes 512 to aux_buffer[0][0..511]
                (ring wraps: 512 % 512 = 0)
             mixToBus
+            requeueOrUnref → re-queues WAVETABLE at 1024
             mFramesProduced = 1024
-            re-queues WAVETABLE at 1024
           framesAvailable = 1024 (enough)
           getReadPosition → readPos=0, framesConsumed=1024
         readFromAuxBus(inarr, ..., readPos=0)

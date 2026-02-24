@@ -89,33 +89,26 @@ and variable-size consumption.
 
 ### Threading Model (MULTI_THREAD)
 
-The push path processes each bus with this pattern:
+The push path processes each bus using the shared static helpers:
 
 ```cpp
 // For each bus in current phase (TO_AUX, AUX_TO_AUX, TO_OUT):
-vector<Instrument*> instruments;
 
-// 1. Collect all instruments writing to this bus
-while (rtQSize > 0 && rtQchunkStart < bufEndSamp) {
-    Iptr = rtQueue[busq].pop(&rtQchunkStart);
-    instruments.push_back(Iptr);
-    taskManager->addTask<Instrument, int, BusType, int, &Instrument::exec>
-        (Iptr, bus_type, bus);
-}
+// 1. Pop and prepare all instruments (shared helper — no execution)
+instruments = InstrumentBus::popAndPrepareWriters(
+    busq, bufStartSamp, bufEndSamp, instBusWriteStart, frameCount, panic);
 
-// 2. Wait for all writers to complete
+// 2. Execute in parallel via TaskManager
+for (auto *Iptr : instruments)
+    taskManager->addTask<...>(Iptr, bus_type, bus);
 taskManager->waitForTasks(instruments);
 
 // 3. Merge per-thread accumulation vectors into bus buffer
 RTcmix::mixToBus();
 
-// 4. Re-queue or unref instruments
-for (Iptr : instruments) {
-    if (endsamp > bufEndSamp)
-        rtQueue[busq].pushUnsorted(Iptr, rtQchunkStart + chunksamps);
-    else
-        Iptr->unref();
-}
+// 4. Re-queue or unref instruments (shared helper)
+InstrumentBus::requeueOrUnref(instruments, bufEndSamp, busq, qStatus, panic);
+rtQueue[busq].sort();
 ```
 
 ### Thread-Safe Accumulation
@@ -190,6 +183,13 @@ public:
     int framesAvailable(Instrument* consumer) const;
     int getReadPosition(Instrument* consumer, int frames);
 
+    // Shared scheduling helpers (static — used by both push and pull paths)
+    static std::vector<Instrument*> popAndPrepareWriters(
+        int busq, FRAMETYPE timelineOrigin, FRAMETYPE bufEnd,
+        int writeStart, int maxFrames, bool panic);
+    static void requeueOrUnref(std::vector<Instrument*> &instsToRun,
+        FRAMETYPE bufEnd, int busq, IBusClass qStatus, bool panic);
+
     void reset();
 
 private:
@@ -199,17 +199,23 @@ private:
     struct ConsumerState { FRAMETYPE framesConsumed; };
     std::map<Instrument*, ConsumerState> mConsumers;
 
-    void runWriterCycle();               // queue-based: pops rtQueue, execs, re-queues
+    void runWriterCycle();               // pull-path orchestrator
     void clearRegion(int startFrame, int numFrames);
 
     Lockable mPullLock;                  // serializes pullFrames per bus
-    FRAMETYPE mLastPreparedAt;           // dedup clearRegion
     FRAMETYPE mLastAdvancedBufStart;     // dedup dual-phase production
 };
 ```
 
 **Key design:** Writers are NOT registered with InstrumentBus.  Both intraverse
 (push) and `runWriterCycle()` (pull) pop writers from `rtQueue` at execution time.
+
+**Shared scheduling helpers:** `popAndPrepareWriters` and `requeueOrUnref` are
+static methods that contain the scheduling logic formerly duplicated between
+intraverse and InstrumentBus.  They are parameterized by timeline origin,
+buffer end bound, write position, and queue index — values that differ between
+the push and pull paths.  Neither method executes instruments; the caller
+chooses parallel (TaskManager) or sequential execution.
 
 ### InstrumentBusManager Class
 
@@ -228,12 +234,11 @@ public:
     void removeConsumer(Instrument* inst);           // iterates all buses
     void advanceAllProduction(int frames, FRAMETYPE currentBufStart);
     void reset();
-    int getActiveInstBusCount() const;
+    int getActiveInstBusCount() const { return (int)mInstBuses.size(); }
 
 private:
-    std::vector<InstrumentBus*> mInstBuses;  // indexed by bus ID
+    std::map<int, InstrumentBus*> mInstBuses;  // keyed by bus ID
     int mBufsamps;
-    int mActiveInstBusCount;
 };
 ```
 
@@ -247,30 +252,29 @@ for (int i = 0; i < _busSlot->auxin_count; i++)
 
 **Removal** (destruction, `Instrument::~Instrument()`):
 ```cpp
-InstrumentBusManager *mgr = RTcmix::getInstBusManager();
-if (mgr)
-    mgr->removeConsumer(this);
+RTcmix::getInstBusManager()->removeConsumer(this);
 ```
 
 Removal prevents dead consumers from blocking `hasRoomForProduction()`.
 
 ### Pull Path (rtgetin -> pullFrames -> runWriterCycle)
 
-When an instrument reads from an aux bus, `rtgetin()` checks for an InstrumentBus:
+When an instrument reads from an aux bus, `rtgetin()` pulls via InstrumentBus:
 
 ```cpp
 // In Instrument::rtgetin() -- aux bus input path
-InstrumentBus *instBus = mgr->getInstBus(auxin[0]);
-if (instBus != NULL) {
-    for (int n = 0; n < auxin_count; n++) {
-        readPos = mgr->getInstBus(auxin[n])->pullFrames(this, frames);
-    }
-    RTcmix::readFromAuxBus(inarr, inchans, frames, auxin, auxin_count, readPos);
-} else {
-    // Legacy path: read directly at output_offset
-    RTcmix::readFromAuxBus(inarr, inchans, frames, auxin, auxin_count, output_offset);
+int readPos = 0;
+for (int n = 0; n < auxin_count; n++) {
+    int chan = auxin[n];
+    InstrumentBus *instBus = RTcmix::getInstBus(chan);
+    assert(instBus != NULL);
+    readPos = instBus->pullFrames(this, frames);
 }
+RTcmix::readFromAuxBus(inarr, inchans, frames, auxin, auxin_count, readPos);
 ```
+
+Every aux bus with consumers has an InstrumentBus (created at `addConsumer` time),
+so the assert is always satisfied.  There is no legacy fallback path.
 
 `pullFrames()` triggers production if needed:
 
@@ -287,8 +291,7 @@ int InstrumentBus::pullFrames(Instrument* consumer, int requestedFrames) {
 }
 ```
 
-`runWriterCycle()` pops instruments from rtQueue, computes timing, executes
-sequentially (to avoid nested TaskManager issues), and re-queues:
+`runWriterCycle()` uses the shared static helpers per queue:
 
 ```cpp
 void InstrumentBus::runWriterCycle() {
@@ -296,42 +299,65 @@ void InstrumentBus::runWriterCycle() {
     FRAMETYPE localBufEnd = mFramesProduced + mBufsamps;
     clearRegion(writeStart, mBufsamps);
 
-    int busqs[2] = { mBusID, mBusID + RTcmix::busCount };  // TO_AUX, AUX_TO_AUX
+    int busqs[2] = { mBusID, mBusID + busCount };
     for (int q = 0; q < 2; q++) {
-        RTQueue &queue = RTcmix::rtQueue[busqs[q]];
-        while (queue.getSize() > 0 && queue.nextChunk() < localBufEnd) {
-            Instrument *Iptr = queue.pop(&rtQchunkStart);
-            // ... compute offset, chunksamps ...
-            Iptr->set_output_offset(writeStart + offset);
-            Iptr->exec(BUS_AUX_OUT, mBusID);  // sequential, not via TaskManager
-        }
+        auto insts = popAndPrepareWriters(busqs[q], mFramesProduced,
+                                           localBufEnd, writeStart,
+                                           mBufsamps, panic);
+        // Execute sequentially (pull path — no TaskManager)
+        for (auto *Iptr : insts) Iptr->exec(BUS_AUX_OUT, mBusID);
+        RTcmix::mixToBus();
+        requeueOrUnref(insts, localBufEnd, busqs[q], UNKNOWN, panic);
+        RTcmix::rtQueue[busqs[q]].sort();
     }
-    RTcmix::mixToBus();  // still needed in MULTI_THREAD for per-thread vectors
-    // ... re-queue or unref ...
     mFramesProduced += mBufsamps;
 }
 ```
 
+Each queue is processed independently: pop+prepare, execute sequentially,
+mix, requeue with the explicit queue index.  `UNKNOWN` as `qStatus` means
+"always unref if finished" (no phase guard needed in the pull path).
+
 ### Push Path Integration (intraverse)
 
-Three additions to the existing phased loop:
+The push path uses the shared static helpers for scheduling, plus per-bus
+InstrumentBus methods for ring buffer management:
 
-**1. Production guard** (before executing a bus):
 ```cpp
-if (instBus && !instBus->hasRoomForProduction(bufStartSamp))
-    continue;   // instruments stay on rtQueue for later pull
+// InstrumentBus ring buffer setup (aux buses only)
+int instBusWriteStart = 0;
+InstrumentBus *instBus = (bus_type == BUS_AUX_OUT) ? getInstBus(bus) : NULL;
+if (instBus) {
+    if (!instBus->hasRoomForProduction(bufStartSamp)) {
+        continue;  // instruments stay on rtQueue for later pull
+    }
+    instBusWriteStart = instBus->prepareForIntraverseWrite(bufStartSamp);
+}
+
+// Pop and prepare (shared static helper — works for all bus types)
+instruments = InstrumentBus::popAndPrepareWriters(
+    busq, bufStartSamp, bufEndSamp, instBusWriteStart, frameCount, panic);
+
+// Execute via TaskManager (parallel push path)
+for (auto *Iptr : instruments)
+    taskManager->addTask<Instrument, int, BusType, int, &Instrument::exec>(
+        Iptr, bus_type, bus);
+
+// Wait + mix + advance
+if (!instruments.empty()) {
+    taskManager->waitForTasks(instruments);
+    RTcmix::mixToBus();
+    if (instBus) instBus->advanceProduction(frameCount, bufStartSamp);
+}
+
+// Requeue or unref (shared static helper)
+InstrumentBus::requeueOrUnref(instruments, bufEndSamp, busq, qStatus, panic);
+rtQueue[busq].sort();
 ```
 
-**2. Write position** (before popping instruments):
-```cpp
-instBusWriteStart = instBus->prepareForIntraverseWrite(bufStartSamp);
-Iptr->set_output_offset(instBusWriteStart + offset);
-```
-
-**3. Production advance** (after waitForTasks + mixToBus):
-```cpp
-instBus->advanceProduction(frameCount, bufStartSamp);
-```
+The static helpers handle all bus types (TO_AUX, AUX_TO_AUX, TO_OUT) uniformly.
+`instBusWriteStart` is 0 for non-InstrumentBus buses, which is the correct
+base offset for normal `aux_buffer`/`out_buffer` writes.
 
 ### Dual-Phase Idempotency
 
@@ -385,6 +411,8 @@ All InstrumentBus code includes equivalent debug logging.
 debug output is active and piped through `head`/`tail`.
 
 ## Testing
+
+For build rules, test commands, and quick verification, see `project_testing.md`.
 
 ### Test Scores (`test/suite/instbus_*.sco`) -- 18 tests
 
@@ -476,6 +504,68 @@ routing.
    Fix: Added `removeConsumer()` to InstrumentBus and InstrumentBusManager;
    `Instrument::~Instrument()` calls `mgr->removeConsumer(this)`.
 
+7. **Stress test "scheduler behind" warnings** (FIXED 2026-02-23): The
+   interactive stress test (`test/suite/stresstest`) printed thousands of
+   "WARNING: the scheduler is behind the queue!" messages. Root cause: the
+   `stresstest` binary was compiled against stale headers. The Makefile in
+   `test/suite/` does not track header dependencies, so changes to `RTcmix.h`
+   did not trigger recompilation. Fix: `rm -f stresstest.o stresstest &&
+   make stresstest`. Added rebuild step to `project_testing.md`.
+
+## Code Cleanup Applied (2026-02-23)
+
+The following cleanup was applied to all InstrumentBus-related source files
+per the C++ coding rules above:
+
+1. Decomposed `runWriterCycle()` into orchestrator + `popAndExecWriters()` +
+   `requeueOrUnref()`. The re-queue helper derives `busq` from the instrument's
+   `BusSlot::Class()` instead of storing it separately.
+2. Inlined `getActiveInstBusCount()` in InstrumentBusManager.h.
+3. Converted all container iteration to `std::for_each` with C++11 lambdas
+   (InstrumentBusManager methods, InstrumentBus::reset).
+4. Changed `InstrumentBusManager::mInstBuses` from `vector<InstrumentBus*>`
+   to `map<int, InstrumentBus*>`, eliminating NULL checks and mActiveInstBusCount.
+5. Added `RTcmix::getInstBus(int busID)` static convenience method, eliminating
+   repeated manager lookups and NULL checks in intraverse and rtgetin.
+6. Removed legacy fallback path in rtgetin (every aux bus with consumers has
+   an InstrumentBus).
+7. Removed `mLastPreparedAt` member (redundant with `mLastAdvancedBufStart`
+   for dual-phase idempotency).
+8. Moved `cycleCount` variable inside `#ifdef IBUG` blocks.
+
+## Scheduling Logic Unification (2026-02-23)
+
+Unified ~40 lines of duplicate scheduling logic between the intraverse push
+path and `InstrumentBus::runWriterCycle()` pull path into two shared static
+methods on InstrumentBus:
+
+1. **`popAndPrepareWriters`** (static, public): Pops instruments from a single
+   queue, computes timing (offset, chunksamps, output_offset), sets values on
+   each instrument.  Does NOT execute — the caller chooses parallel (TaskManager)
+   or sequential execution.  Parameterized by:
+   - `busq`: queue index (explicit, from caller's loop)
+   - `timelineOrigin`: `bufStartSamp` (push) or `mFramesProduced` (pull)
+   - `bufEnd`: `bufEndSamp` (push) or `localBufEnd` (pull)
+   - `writeStart`: `instBusWriteStart` (push) or ring buffer position (pull)
+   - `maxFrames`: `frameCount` / `mBufsamps` (same value)
+
+2. **`requeueOrUnref`** (static, public): Re-queues instruments that haven't
+   finished, unrefs those that have.  Parameterized by:
+   - `busq`: explicit queue index for requeue (always >= 0)
+   - `qStatus`: phase guard for unref — `UNKNOWN` means always unref if
+     finished (pull path); a specific `IBusClass` means only unref when
+     `qStatus == iBus->Class()` (push path, ensuring all buses have played)
+
+3. **`runWriterCycle`** rewritten to call per-queue: iterates TO_AUX and
+   AUX_TO_AUX queues, calling `popAndPrepareWriters` + sequential exec +
+   `requeueOrUnref` for each.
+
+4. **intraverse MULTI_THREAD path**: Pop-while-loop and requeue-for-loop
+   replaced with calls to the static helpers.  Execution still uses TaskManager.
+
+Net result: -80 lines, single source of truth for scheduling logic.  Queue
+sort and `allQSize` tracking remain caller responsibilities.
+
 ## Design Decisions
 
 1. **Hybrid push/pull** -- intraverse phased execution preserved (not replaced
@@ -502,8 +592,15 @@ routing.
    `output_offset` uses the ring buffer write position.  An earlier attempt to
    remap timing into a per-bus timeline caused instruments to never finish.
 
+7. **Static scheduling helpers** -- `popAndPrepareWriters` and `requeueOrUnref`
+   are static methods because they access only `RTcmix::rtQueue` and instrument
+   state, not InstrumentBus members.  This lets intraverse call them for all
+   bus types (including non-InstrumentBus TO_OUT buses), eliminating all
+   scheduling duplication.
+
 ## References
 
+- Testing procedures: `project_testing.md`
 - Architecture doc: `project_arch.md`
 - Project plan: `project_plan.md`
 - InstrumentBus implementation: `src/rtcmix/InstrumentBus.cpp`

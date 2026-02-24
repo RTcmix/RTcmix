@@ -17,7 +17,7 @@
 
 #include <rt_types.h>
 #include <bus.h>
-#include <vector>
+#include <map>
 
 class InstrumentBus;
 class Instrument;
@@ -85,12 +85,11 @@ public:
     /**
      * Get the number of InstrumentBus objects currently active.
      */
-    int getActiveInstBusCount() const;
+    int getActiveInstBusCount() const { return (int)mInstBuses.size(); }
 
 private:
-    std::vector<InstrumentBus*> mInstBuses;  /* InstrumentBus pointers (indexed by bus ID) */
+    std::map<int, InstrumentBus*> mInstBuses;  /* busID -> InstrumentBus */
     int mBufsamps;               /* Frames per buffer */
-    int mActiveInstBusCount;     /* Number of active InstrumentBus objects */
 
     /* Prevent copying */
     InstrumentBusManager(const InstrumentBusManager&);

@@ -15,6 +15,7 @@
 #include <RTcmix.h>
 #include <stdio.h>
 #include <assert.h>
+#include <algorithm>
 
 #include "dbug.h"
 
@@ -22,10 +23,9 @@
 /* -------------------------- InstrumentBusManager::InstrumentBusManager --- */
 
 InstrumentBusManager::InstrumentBusManager(int busCount, int bufsamps)
-    : mInstBuses(busCount, NULL),
-      mBufsamps(bufsamps),
-      mActiveInstBusCount(0)
+    : mBufsamps(bufsamps)
 {
+    (void)busCount;  /* map doesn't need pre-sizing */
 }
 
 
@@ -33,9 +33,8 @@ InstrumentBusManager::InstrumentBusManager(int busCount, int bufsamps)
 
 InstrumentBusManager::~InstrumentBusManager()
 {
-    for (size_t i = 0; i < mInstBuses.size(); ++i) {
-        delete mInstBuses[i];
-    }
+    std::for_each(mInstBuses.begin(), mInstBuses.end(),
+        [](std::pair<const int, InstrumentBus*> &p) { delete p.second; });
 }
 
 
@@ -43,22 +42,23 @@ InstrumentBusManager::~InstrumentBusManager()
 
 InstrumentBus* InstrumentBusManager::getOrCreateInstBus(int busID)
 {
-    assert(busID >= 0 && (size_t)busID < mInstBuses.size());
+    assert(busID >= 0);
 
-    if (mInstBuses[busID] == NULL) {
+    std::map<int, InstrumentBus*>::iterator it = mInstBuses.find(busID);
+    if (it != mInstBuses.end())
+        return it->second;
+
 #ifdef IBUG
-        printf("InstBusMgr: creating InstrumentBus for bus %d\n", busID);
+    printf("InstBusMgr: creating InstrumentBus for bus %d\n", busID);
 #endif
-        /* aux_buffer is already allocated by bus_config.cpp.
-         * For non-persistent mode (MULTIPLIER == 1), size is correct.
-         * For persistent mode (MULTIPLIER > 1), bus_config.cpp would need
-         * to be modified to allocate larger buffers.
-         */
-        mInstBuses[busID] = new InstrumentBus(busID, mBufsamps);
-        ++mActiveInstBusCount;
-    }
-
-    return mInstBuses[busID];
+    /* aux_buffer is already allocated by bus_config.cpp.
+     * For non-persistent mode (MULTIPLIER == 1), size is correct.
+     * For persistent mode (MULTIPLIER > 1), bus_config.cpp would need
+     * to be modified to allocate larger buffers.
+     */
+    InstrumentBus *ib = new InstrumentBus(busID, mBufsamps);
+    mInstBuses[busID] = ib;
+    return ib;
 }
 
 
@@ -66,10 +66,8 @@ InstrumentBus* InstrumentBusManager::getOrCreateInstBus(int busID)
 
 InstrumentBus* InstrumentBusManager::getInstBus(int busID) const
 {
-    if (busID < 0 || (size_t)busID >= mInstBuses.size()) {
-        return NULL;
-    }
-    return mInstBuses[busID];
+    std::map<int, InstrumentBus*>::const_iterator it = mInstBuses.find(busID);
+    return (it != mInstBuses.end()) ? it->second : NULL;
 }
 
 
@@ -91,10 +89,8 @@ void InstrumentBusManager::addConsumer(int busID, Instrument* inst)
 
 void InstrumentBusManager::removeConsumer(Instrument* inst)
 {
-    for (size_t i = 0; i < mInstBuses.size(); ++i) {
-        if (mInstBuses[i] != NULL)
-            mInstBuses[i]->removeConsumer(inst);
-    }
+    std::for_each(mInstBuses.begin(), mInstBuses.end(),
+        [inst](std::pair<const int, InstrumentBus*> &p) { p.second->removeConsumer(inst); });
 }
 
 
@@ -102,10 +98,10 @@ void InstrumentBusManager::removeConsumer(Instrument* inst)
 
 void InstrumentBusManager::advanceAllProduction(int frames, FRAMETYPE currentBufStart)
 {
-    for (size_t i = 0; i < mInstBuses.size(); ++i) {
-        if (mInstBuses[i] != NULL)
-            mInstBuses[i]->advanceProduction(frames, currentBufStart);
-    }
+    std::for_each(mInstBuses.begin(), mInstBuses.end(),
+        [frames, currentBufStart](std::pair<const int, InstrumentBus*> &p) {
+            p.second->advanceProduction(frames, currentBufStart);
+        });
 }
 
 
@@ -113,21 +109,18 @@ void InstrumentBusManager::advanceAllProduction(int frames, FRAMETYPE currentBuf
 
 void InstrumentBusManager::reset()
 {
-    for (size_t i = 0; i < mInstBuses.size(); ++i) {
-        if (mInstBuses[i] != NULL) {
-            mInstBuses[i]->reset();
-        }
-    }
+    std::for_each(mInstBuses.begin(), mInstBuses.end(),
+        [](std::pair<const int, InstrumentBus*> &p) { p.second->reset(); });
 
 #ifdef IBUG
-    printf("InstBusMgr: reset %d active InstrumentBus objects\n", mActiveInstBusCount);
+    printf("InstBusMgr: reset %d active InstrumentBus objects\n", (int)mInstBuses.size());
 #endif
 }
 
 
-/* ------------------------- InstrumentBusManager::getActiveInstBusCount --- */
+/* ------------------------------------------- RTcmix::getInstBus --- */
 
-int InstrumentBusManager::getActiveInstBusCount() const
+InstrumentBus* RTcmix::getInstBus(int busID)
 {
-    return mActiveInstBusCount;
+    return instBusManager->getInstBus(busID);
 }

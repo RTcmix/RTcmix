@@ -160,6 +160,40 @@ public:
      */
     int getReadPosition(Instrument* consumer, int frames);
 
+    /**
+     * Pop instruments from the given queue, compute timing (offset, chunksamps,
+     * output_offset), and set them on each instrument.  Does NOT execute.
+     *
+     * @param busq            Queue index to pop from
+     * @param timelineOrigin  Base for offset calculation (bufStartSamp or mFramesProduced)
+     * @param bufEnd          Loop termination bound (bufEndSamp or localBufEnd)
+     * @param writeStart      Base for output_offset (instBusWriteStart or ring buffer pos)
+     * @param maxFrames       Maximum chunksamps (frameCount / mBufsamps)
+     * @param panic           If true, skip adding to result vector
+     * @return                Vector of instruments ready for execution
+     */
+    static std::vector<Instrument*> popAndPrepareWriters(int busq,
+                                                          FRAMETYPE timelineOrigin,
+                                                          FRAMETYPE bufEnd,
+                                                          int writeStart,
+                                                          int maxFrames,
+                                                          bool panic);
+
+    /**
+     * Re-queue instruments that haven't finished, unref those that have.
+     *
+     * @param instsToRun  Instruments to process
+     * @param bufEnd      End bound for requeue decision
+     * @param busq        Queue to push back onto
+     * @param qStatus     Phase for unref guard (UNKNOWN = always unref if finished)
+     * @param panic       If true, don't requeue
+     */
+    static void requeueOrUnref(std::vector<Instrument*> &instsToRun,
+                                FRAMETYPE bufEnd,
+                                int busq,
+                                IBusClass qStatus,
+                                bool panic);
+
 private:
     /* Bus identification */
     int mBusID;
@@ -180,9 +214,6 @@ private:
      * Run one production cycle by popping instruments from rtQueue,
      * computing timing, executing, and re-queuing.
      * Processes both TO_AUX and AUX_TO_AUX queues for this bus.
-     *
-     * In MULTI_THREAD mode: adds tasks, waits, mixes.
-     * In single-threaded mode: executes writers sequentially.
      */
     void runWriterCycle();
 
@@ -198,12 +229,6 @@ private:
      * In the push model, bus production was inherently serial (phase ordering).
      * This lock restores that invariant for pull-based production. */
     Lockable mPullLock;
-
-    /* Tracks which production position was last cleared by
-     * prepareForIntraverseWrite.  A second phase visit to the same bus
-     * (e.g., AUX_TO_AUX after TO_AUX) will see mFramesProduced unchanged
-     * and skip the clear, preserving data the first phase wrote. */
-    FRAMETYPE mLastPreparedAt;
 
     /* Tracks bufStartSamp when advanceProduction was last called.
      * Used to detect when a bus was already produced in the current

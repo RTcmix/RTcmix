@@ -23,6 +23,7 @@ class heap;
 class AudioDevice;
 struct Arg;
 class TaskManager;
+class InstrumentBus;
 class InstrumentBusManager;
 
 struct _handle;
@@ -131,6 +132,7 @@ public:
 
 	// InstrumentBus-based pull model support
 	static InstrumentBusManager* getInstBusManager() { return instBusManager; }
+	static InstrumentBus* getInstBus(int busID);
 
     // Tempo methods
     static double tbase(double p[], int n_args);

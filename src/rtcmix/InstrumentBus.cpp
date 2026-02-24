@@ -11,12 +11,14 @@
 
 #include "InstrumentBus.h"
 #include "Instrument.h"
+#include "BusSlot.h"
 #include <RTcmix.h>
 #include <heap/heap.h>
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <algorithm>
 
 #include "dbug.h"
 
@@ -27,7 +29,6 @@ InstrumentBus::InstrumentBus(int busID, int bufsamps)
       mBufsamps(bufsamps),
       mBufferSize(bufsamps * INSTBUS_BUFFER_MULTIPLIER),
       mFramesProduced(RTcmix::bufStartSamp),
-      mLastPreparedAt(-1),
       mLastAdvancedBufStart(-1)
 {
 #ifdef IBUG
@@ -56,10 +57,8 @@ void InstrumentBus::reset()
     memset(buf, 0, sizeof(BUFTYPE) * mBufferSize);
 
     /* Reset all consumer cursors */
-    for (std::map<Instrument*, ConsumerState>::iterator it = mConsumers.begin();
-         it != mConsumers.end(); ++it) {
-        it->second.framesConsumed = 0;
-    }
+    std::for_each(mConsumers.begin(), mConsumers.end(),
+        [](std::pair<Instrument* const, ConsumerState> &p) { p.second.framesConsumed = 0; });
 
 #ifdef IBUG
     printf("InstBus %d: reset complete, %d consumers\n",
@@ -110,10 +109,7 @@ int InstrumentBus::prepareForIntraverseWrite(FRAMETYPE currentBufStart)
            mBusID, writeStart, (long long)mFramesProduced);
 #endif
 
-    if (mFramesProduced != mLastPreparedAt) {
-        clearRegion(writeStart, mBufsamps);
-        mLastPreparedAt = mFramesProduced;
-    }
+    clearRegion(writeStart, mBufsamps);
     return writeStart;
 }
 
@@ -271,17 +267,16 @@ int InstrumentBus::pullFrames(Instrument* consumer, int requestedFrames)
 #endif
 
     /* Run production cycles until we have enough frames */
+#ifdef IBUG
     int cycleCount = 0;
+#endif
     while (framesAvailable(consumer) < requestedFrames) {
 #ifdef IBUG
         printf("InstBus %d: need more frames, running production cycle %d\n",
                mBusID, ++cycleCount);
-#else
-        (void)cycleCount;
 #endif
         runWriterCycle();
     }
-
 #ifdef IBUG
     if (cycleCount > 0) {
         printf("InstBus %d: production complete after %d cycles, "
@@ -311,177 +306,50 @@ void InstrumentBus::runWriterCycle()
 
     int writeStart = getWriteRegionStart();
     FRAMETYPE localBufEnd = mFramesProduced + mBufsamps;
+    bool panic = (RTcmix::getRunStatus() == RT_PANIC);
 
 #ifdef BBUG
     printf("InstBus %d: writeStart=%d, mFramesProduced=%lld, localBufEnd=%lld\n",
            mBusID, writeStart, (long long)mFramesProduced, (long long)localBufEnd);
 #endif
 
-    /* 1. Clear the write region */
     clearRegion(writeStart, mBufsamps);
 
-#ifdef BBUG
-    printf("InstBus %d: cleared region [%d, %d)\n",
-           mBusID, writeStart, writeStart + mBufsamps);
-#endif
-
     int busCount = RTcmix::busCount;
-    int busqs[2] = { mBusID, mBusID + busCount };  /* TO_AUX, AUX_TO_AUX */
+    int busqs[2] = { mBusID, mBusID + busCount };
+    std::vector<Instrument*> perQueue[2];
+    bool anyInsts = false;
 
-    struct QueuedInst {
-        Instrument* inst;
-        int busq;
-    };
-    std::vector<QueuedInst> queuedInsts;
-
-    bool panic = (RTcmix::getRunStatus() == RT_PANIC);
-
-    /* 2. Pop and exec from both TO_AUX and AUX_TO_AUX queues */
     for (int q = 0; q < 2; q++) {
-        int busq = busqs[q];
-        RTQueue &queue = RTcmix::rtQueue[busq];
-
-#ifdef BBUG
-        printf("InstBus %d: checking rtQueue[%d] (size=%d, %s)\n",
-               mBusID, busq, queue.getSize(),
-               q == 0 ? "TO_AUX" : "AUX_TO_AUX");
-#endif
-
-        while (queue.getSize() > 0) {
-            FRAMETYPE rtQchunkStart = queue.nextChunk();
-            if (rtQchunkStart >= localBufEnd) {
-#ifdef BBUG
-                printf("InstBus %d: nextChunk %lld >= localBufEnd %lld, "
-                       "done with queue[%d]\n",
-                       mBusID, (long long)rtQchunkStart,
-                       (long long)localBufEnd, busq);
-#endif
-                break;
-            }
-
-            Instrument *Iptr = queue.pop(&rtQchunkStart);
-            Iptr->set_ichunkstart(rtQchunkStart);
-
-            FRAMETYPE endsamp = Iptr->getendsamp();
-            int offset = (int)(rtQchunkStart - mFramesProduced);
-
-#ifdef IBUG
-            printf("InstBus %d: popped inst %p [%s] from queue[%d], "
-                   "rtQchunkStart=%lld, endsamp=%lld, offset=%d\n",
-                   mBusID, Iptr, Iptr->name(), busq,
-                   (long long)rtQchunkStart, (long long)endsamp, offset);
-#endif
-
-            if (offset < 0) {
-#ifdef DBUG
-                printf("InstBus %d: WARNING - scheduler behind queue, "
-                       "offset=%d, adjusting\n", mBusID, offset);
-#endif
-                endsamp += offset;
-                offset = 0;
-            }
-            Iptr->set_output_offset(writeStart + offset);
-
-            int chunksamps;
-            if (endsamp < localBufEnd)
-                chunksamps = (int)(endsamp - rtQchunkStart);
-            else
-                chunksamps = (int)(localBufEnd - rtQchunkStart);
-            if (chunksamps > mBufsamps) {
-#ifdef DBUG
-                printf("InstBus %d: ERROR - chunksamps %d > bufsamps %d, "
-                       "limiting\n", mBusID, chunksamps, mBufsamps);
-#endif
-                chunksamps = mBufsamps;
-            }
-            else if (chunksamps + offset > mBufsamps) {
-#ifdef DBUG
-                printf("InstBus %d: ERROR - chunksamps+offset %d > bufsamps %d, "
-                       "limiting\n", mBusID, chunksamps + offset, mBufsamps);
-#endif
-                chunksamps = mBufsamps - offset;
-            }
-
-            Iptr->setchunk(chunksamps);
-
-#ifdef IBUG
-            printf("InstBus %d: inst %p [%s] output_offset=%d, chunksamps=%d\n",
-                   mBusID, Iptr, Iptr->name(), writeStart + offset, chunksamps);
-#endif
-
-            QueuedInst qi = { Iptr, busq };
-            queuedInsts.push_back(qi);
-
-            if (!panic) {
-                /* Execute writers sequentially on the current thread.
-                 * runWriterCycle is always called from a TaskThread
-                 * (via pullFrames -> rtgetin -> Instrument::run -> exec).
-                 * Using TaskManager here would cause nested startAndWait,
-                 * where participatory waiting steals unrelated tasks from
-                 * the global stack, causing unbounded recursion. */
-                Iptr->exec(BUS_AUX_OUT, mBusID);
-#ifdef IBUG
-                printf("InstBus %d: executed inst %p [%s] directly\n",
-                       mBusID, Iptr, Iptr->name());
-#endif
-            }
-#ifdef DBUG
-            else {
-                printf("InstBus %d: panic mode, skipping exec for inst %p\n",
-                       mBusID, Iptr);
-            }
-#endif
+        perQueue[q] = popAndPrepareWriters(
+            busqs[q], mFramesProduced, localBufEnd, writeStart, mBufsamps, panic);
+        /* Execute sequentially (pull path — no TaskManager).
+         * runWriterCycle is always called from a TaskThread
+         * (via pullFrames -> rtgetin -> Instrument::run -> exec).
+         * Using TaskManager here would cause nested startAndWait,
+         * where participatory waiting steals unrelated tasks from
+         * the global stack, causing unbounded recursion. */
+        if (!panic) {
+            for (size_t i = 0; i < perQueue[q].size(); i++)
+                perQueue[q][i]->exec(BUS_AUX_OUT, mBusID);
         }
+        if (!perQueue[q].empty()) anyInsts = true;
     }
 
 #ifdef MULTI_THREAD
     /* In MULTI_THREAD mode, addToBus() queues mix operations per-thread.
      * Even though writers execute sequentially, mixToBus() is still
      * needed to apply the queued operations to aux_buffer. */
-    if (!queuedInsts.empty()) {
+    if (anyInsts) {
         RTcmix::mixToBus();
     }
 #endif
 
-    /* 3. Re-queue or unref after all writers have completed */
-    for (size_t i = 0; i < queuedInsts.size(); i++) {
-        Instrument *Iptr = queuedInsts[i].inst;
-        int busq = queuedInsts[i].busq;
-        FRAMETYPE endsamp = Iptr->getendsamp();
-        FRAMETYPE rtQchunkStart = Iptr->get_ichunkstart();
-        int chunksamps = Iptr->framesToRun();
-
-        if (endsamp > localBufEnd && !panic) {
-#ifdef IBUG
-            printf("InstBus %d: re-queuing inst %p [%s] on queue[%d] at %lld\n",
-                   mBusID, Iptr, Iptr->name(), busq,
-                   (long long)(rtQchunkStart + chunksamps));
-#endif
-            RTcmix::rtQueue[busq].pushUnsorted(Iptr, rtQchunkStart + chunksamps);
-        } else {
-            int inst_chunk_finished = Iptr->needsToRun();
-            if (inst_chunk_finished) {
-#ifdef IBUG
-                printf("InstBus %d: unref'ing inst %p [%s]\n",
-                       mBusID, Iptr, Iptr->name());
-#endif
-                Iptr->unref();
-            }
-#ifdef IBUG
-            else {
-                printf("InstBus %d: inst %p [%s] not yet finished, "
-                       "keeping ref\n", mBusID, Iptr, Iptr->name());
-            }
-#endif
-        }
-    }
-
-    /* Sort queues that received re-queued instruments */
     for (int q = 0; q < 2; q++) {
+        requeueOrUnref(perQueue[q], localBufEnd, busqs[q], UNKNOWN, panic);
         RTcmix::rtQueue[busqs[q]].sort();
     }
 
-    /* 4. Advance production counter */
     mFramesProduced += mBufsamps;
 
 #ifdef IBUG
@@ -492,6 +360,146 @@ void InstrumentBus::runWriterCycle()
 #ifdef WBUG
     printf("EXITING InstrumentBus::runWriterCycle() for bus %d\n", mBusID);
 #endif
+}
+
+
+/* --------------------------------- InstrumentBus::popAndPrepareWriters --- */
+
+std::vector<Instrument*> InstrumentBus::popAndPrepareWriters(int busq,
+                                                              FRAMETYPE timelineOrigin,
+                                                              FRAMETYPE bufEnd,
+                                                              int writeStart,
+                                                              int maxFrames,
+                                                              bool panic)
+{
+    RTQueue &queue = RTcmix::rtQueue[busq];
+    std::vector<Instrument*> instsToRun;
+
+#ifdef BBUG
+    printf("popAndPrepareWriters: queue[%d] size=%d\n", busq, queue.getSize());
+#endif
+
+    while (queue.getSize() > 0) {
+        FRAMETYPE rtQchunkStart = queue.nextChunk();
+        if (rtQchunkStart >= bufEnd) {
+#ifdef BBUG
+            printf("popAndPrepareWriters: nextChunk %lld >= bufEnd %lld, "
+                   "done with queue[%d]\n",
+                   (long long)rtQchunkStart, (long long)bufEnd, busq);
+#endif
+            break;
+        }
+
+        Instrument *Iptr = queue.pop(&rtQchunkStart);
+        Iptr->set_ichunkstart(rtQchunkStart);
+
+        FRAMETYPE endsamp = Iptr->getendsamp();
+        int offset = (int)(rtQchunkStart - timelineOrigin);
+
+#ifdef IBUG
+        printf("popAndPrepareWriters: popped inst %p [%s] from queue[%d], "
+               "rtQchunkStart=%lld, endsamp=%lld, offset=%d\n",
+               Iptr, Iptr->name(), busq,
+               (long long)rtQchunkStart, (long long)endsamp, offset);
+#endif
+
+        if (offset < 0) {
+#ifdef DBUG
+            printf("popAndPrepareWriters: WARNING - scheduler behind queue, "
+                   "offset=%d, adjusting\n", offset);
+#endif
+            endsamp += offset;
+            offset = 0;
+        }
+        Iptr->set_output_offset(writeStart + offset);
+
+        int chunksamps;
+        if (endsamp < bufEnd)
+            chunksamps = (int)(endsamp - rtQchunkStart);
+        else
+            chunksamps = (int)(bufEnd - rtQchunkStart);
+        if (chunksamps > maxFrames) {
+#ifdef DBUG
+            printf("popAndPrepareWriters: ERROR - chunksamps %d > maxFrames %d, "
+                   "limiting\n", chunksamps, maxFrames);
+#endif
+            chunksamps = maxFrames;
+        }
+        else if (chunksamps + offset > maxFrames) {
+#ifdef DBUG
+            printf("popAndPrepareWriters: ERROR - chunksamps+offset %d > maxFrames %d, "
+                   "limiting\n", chunksamps + offset, maxFrames);
+#endif
+            chunksamps = maxFrames - offset;
+        }
+
+        Iptr->setchunk(chunksamps);
+
+#ifdef IBUG
+        printf("popAndPrepareWriters: inst %p [%s] output_offset=%d, chunksamps=%d\n",
+               Iptr, Iptr->name(), writeStart + offset, chunksamps);
+#endif
+
+        if (!panic) {
+            instsToRun.push_back(Iptr);
+        }
+#ifdef DBUG
+        else {
+            printf("popAndPrepareWriters: panic mode, skipping inst %p\n", Iptr);
+        }
+#endif
+    }
+
+    return instsToRun;
+}
+
+
+/* ---------------------------------------- InstrumentBus::requeueOrUnref --- */
+
+void InstrumentBus::requeueOrUnref(std::vector<Instrument*> &instsToRun,
+                                    FRAMETYPE bufEnd,
+                                    int busq,
+                                    IBusClass qStatus,
+                                    bool panic)
+{
+    for (size_t i = 0; i < instsToRun.size(); i++) {
+        Instrument *Iptr = instsToRun[i];
+        FRAMETYPE endsamp = Iptr->getendsamp();
+        FRAMETYPE rtQchunkStart = Iptr->get_ichunkstart();
+        int chunksamps = Iptr->framesToRun();
+
+        assert(busq >= 0);
+        if (endsamp > bufEnd && !panic) {
+#ifdef IBUG
+            printf("requeueOrUnref: re-queuing inst %p [%s] on queue[%d] at %lld\n",
+                   Iptr, Iptr->name(), busq,
+                   (long long)(rtQchunkStart + chunksamps));
+#endif
+            RTcmix::rtQueue[busq].pushUnsorted(Iptr, rtQchunkStart + chunksamps);
+        } else {
+            const BusSlot *iBus = Iptr->getBusSlot();
+            int inst_chunk_finished = Iptr->needsToRun();
+            /* When qStatus == UNKNOWN, always unref if finished.
+             * Otherwise, only unref when qStatus matches the instrument's class
+             * (i.e., all buses for this instrument have played). */
+            bool shouldUnref = (qStatus == UNKNOWN)
+                ? inst_chunk_finished
+                : (qStatus == iBus->Class() && inst_chunk_finished);
+            if (shouldUnref) {
+#ifdef IBUG
+                printf("requeueOrUnref: unref'ing inst %p [%s]\n",
+                       Iptr, Iptr->name());
+#endif
+                Iptr->unref();
+            }
+#ifdef IBUG
+            else {
+                printf("requeueOrUnref: inst %p [%s] not yet finished or "
+                       "qStatus mismatch, keeping ref\n", Iptr, Iptr->name());
+            }
+#endif
+        }
+    }
 }
 
 
