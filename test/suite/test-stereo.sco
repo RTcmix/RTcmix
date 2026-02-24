@@ -2,6 +2,7 @@
 rtsetparams(44100, 2);
 load("STEREO");
 bus_config("STEREO", "in0", "out0-1");
+set_option("clobber=1");
 rtinput("./sinetone.wav");
 rtoutput("test.snd");
 setline(0,0,1,1,5,1,6,0);

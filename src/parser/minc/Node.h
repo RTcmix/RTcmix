@@ -173,6 +173,7 @@ private:
     Node* do_op_list_float(Node *node, const MincList *srcList, MincFloat val, OpKind  op);
     Node* do_op_list_list(Node *node, const MincList *list1, const MincList *list2, OpKind  op);
     Node* do_op_float_list(Node *node, MincFloat val, const MincList *srcList, OpKind  op);
+    Node* do_op_struct_float(Node *node, MincStruct *srcStruct, MincFloat val, OpKind  op);
 };
 
 class NodeOp : public Node2Children, private OperationBase
@@ -387,7 +388,7 @@ class MincFunctionHandler
 {
 public:
     MincFunctionHandler() {}
-    MincValue	callMincFunction(MincFunction *function, const char *functionName, MincStruct *thisStruct=NULL);
+    static MincValue	callMincFunction(MincFunction *function, const char *functionName, MincStruct *thisStruct=NULL);
 };
 
 //  Function call node
