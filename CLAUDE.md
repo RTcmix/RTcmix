@@ -598,6 +598,17 @@ sort and `allQSize` tracking remain caller responsibilities.
    bus types (including non-InstrumentBus TO_OUT buses), eliminating all
    scheduling duplication.
 
+8. **Ring buffer as adaptor, not variable chunksamps** -- Many instrument
+   classes (e.g., `SPECTACLE_BASE`, `PVOC`) have deep assumptions that
+   `framesToRun() == RTBUFSAMPS` on every call after the first: segmented
+   ring buffers sized in multiples of `RTBUFSAMPS`, FFT hop iteration counts
+   derived from `framesToRun() / decimation`, and read/write pointer alignment
+   that depends on fixed chunk sizes.  Rewriting every such instrument to
+   tolerate variable `chunksamps` would be impractical.  Instead, the
+   InstrumentBus ring buffer serves as an adaptor: upstream writers always
+   produce their expected fixed chunk size, while downstream consumers pull
+   arbitrary frame counts.  The ring buffer absorbs the mismatch.
+
 ## References
 
 - Testing procedures: `project_testing.md`

@@ -6,6 +6,7 @@
 #include "prototypes.h"
 #include <pthread.h>
 #ifndef EMBEDDED
+#include <algorithm>
 #include <iostream>
 #endif
 #include <stdio.h>
@@ -441,14 +442,16 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			instrumentFound = true;
 
 		// Execute via TaskManager (parallel push path)
-		for (size_t ii = 0; ii < instruments.size(); ii++) {
+		TaskManager *tmgr = taskManager;
+		std::for_each(instruments.begin(), instruments.end(),
+			[tmgr, bus_type, bus](Instrument *Iptr) {
 #ifdef IBUG
-			printf("putting inst %p into taskmgr (bus_type %d, bus %d) [%s]\n",
-				   instruments[ii], bus_type, bus, instruments[ii]->name());
+				printf("putting inst %p into taskmgr (bus_type %d, bus %d) [%s]\n",
+					   Iptr, bus_type, bus, Iptr->name());
 #endif
-			taskManager->addTask<Instrument, int, BusType, int, &Instrument::exec>(
-				instruments[ii], bus_type, bus);
-		}
+				tmgr->addTask<Instrument, int, BusType, int, &Instrument::exec>(
+					Iptr, bus_type, bus);
+			});
 
 		if (!instruments.empty()) {
 #if defined(DBUG) || defined(IBUG)
@@ -476,137 +479,66 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	}  // end while (!aux_pb_done) --------------------------------------------------
 
 #else   // MULTI_THREAD
-    {
-        /* For InstrumentBus-managed aux buses, use the ring buffer write
-         * position for output_offset.  All timing stays in global timeline.
-         *
-         * Guard: skip buses whose ring buffer still has unconsumed data.
-         * Instruments remain on rtQueue for later pullFrames/runWriterCycle. */
-        int instBusWriteStart = 0;
-        InstrumentBus *instBus = (bus != -1 && bus_type == BUS_AUX_OUT) ? getInstBus(bus) : NULL;
-        if (instBus) {
-            if (!instBus->hasRoomForProduction(bufStartSamp)) {
+		if (bus == -1) {
+#if defined(BBUG) || defined(DBUG)
+			printf("\nDone with bus type %d -- continuing\n", bus_type);
+#endif
+			continue;
+		}
+		/* For InstrumentBus-managed aux buses, use the ring buffer write
+		 * position for output_offset.  All timing (offsets, chunksamps,
+		 * re-queue decisions) stays in the global bufStartSamp timeline.
+		 *
+		 * Guard: skip buses whose ring buffer still has unconsumed data.
+		 * Instruments remain on rtQueue for later pullFrames/runWriterCycle. */
+		int instBusWriteStart = 0;
+		InstrumentBus *instBus = (bus_type == BUS_AUX_OUT) ? getInstBus(bus) : NULL;
+		if (instBus) {
+			if (!instBus->hasRoomForProduction(bufStartSamp)) {
 #ifdef IBUG
-                printf("intraverse: skipping bus %d — no room for production\n", bus);
+				printf("intraverse: skipping bus %d — no room for production\n", bus);
 #endif
-                int qSize = rtQueue[busq].getSize();
-                if (qSize) allQSize += qSize;
-                goto single_thread_skip;
-            }
-            instBusWriteStart = instBus->prepareForIntraverseWrite(bufStartSamp);
-        }
+				int qSize = rtQueue[busq].getSize();
+				if (qSize) allQSize += qSize;
+				continue;
+			}
+			instBusWriteStart = instBus->prepareForIntraverseWrite(bufStartSamp);
+		}
 
-    // Play elements on queue (insert back in if needed) ++++++++++++++++++
-    while (rtQSize > 0 && rtQchunkStart < bufEndSamp && bus != -1) {
-        int chunksamps = 0;
-		instrumentFound = true;
-        Iptr = rtQueue[busq].pop(&rtQchunkStart);  // get next instrument off queue
+#if defined(BBUG) || defined(DBUG)
+		printf("\nAdding instruments for current slice [end = %.3f ms] and bus [%d]\n",
+			   1000 * bufEndSamp/sr(), busq);
+#endif
+
+		// Play elements on queue (insert back in if needed) ++++++++++++++++++
+		{
+		std::vector<Instrument*> instruments = InstrumentBus::popAndPrepareWriters(
+			busq, bufStartSamp, bufEndSamp, instBusWriteStart, frameCount, panic);
+		if (!instruments.empty())
+			instrumentFound = true;
+
+		// Execute sequentially (single-threaded path)
+		std::for_each(instruments.begin(), instruments.end(),
+			[bus_type, bus](Instrument *Iptr) {
 #ifdef IBUG
-		printf("Iptr %p popped from rtQueue[%d] at rtQchunkStart %lld\n", Iptr, busq, rtQchunkStart);
+				printf("Iptr->exec(%d, %d) [%s]\n", bus_type, bus, Iptr->name());
 #endif
-        Iptr->set_ichunkstart(rtQchunkStart);
+				Iptr->exec(bus_type, bus);
+			});
 
-        FRAMETYPE endsamp = Iptr->getendsamp();
+		if (!instruments.empty()) {
+			// Notify InstrumentBus that a production cycle completed for this bus
+			if (instBus) {
+				instBus->advanceProduction(frameCount, bufStartSamp);
+			}
+		}
 
-        // difference in sample start (countdown)
-        int offset = int(rtQchunkStart - bufStartSamp);
-
-        if (offset < 0) { // BGG: added this trap for robustness
-#ifndef EMBEDDED
-            printf("WARNING: the scheduler is behind the queue!\n");
-            printf("bufStartSamp:  %ld\n", (long)bufStartSamp);
-            printf("endsamp:  %ld\n", (long)endsamp);
-#endif
-            endsamp += offset;  // DJT:  added this (with hope)
-            offset = 0;
-        }
-
-        Iptr->set_output_offset(instBusWriteStart + offset);
-
-        if (endsamp < bufEndSamp) {  // compute # of samples to write
-            chunksamps = int(endsamp-rtQchunkStart);
-        }
-        else {
-            chunksamps = int(bufEndSamp-rtQchunkStart);
-        }
-        if (chunksamps > frameCount) {
-#ifndef EMBEDDED
-            printf("ERROR: chunksamps is %ld - limiting to %ld\n", (long)chunksamps, (long)frameCount);
-#endif
-            chunksamps = frameCount;
-        }
-        else if (chunksamps + offset > frameCount) {
-#ifndef EMBEDDED
-        	printf("ERROR: chunksamps+offset is %ld - limiting chunksamps to %ld\n", (long)chunksamps+offset, (long)frameCount-offset);
-#endif
-        	chunksamps = frameCount - offset;
-        }
-#ifdef DBUG
-        printf("Begin playback iteration==========\n");
-        printf("bufEndSamp:  %ld\n", (long)bufEndSamp);
-        printf("frameCount:  %ld\n", (long)frameCount);
-        printf("endsamp:  %ld\n", (long)endsamp);
-        printf("offset:  %ld\n", (long)offset);
-        printf("chunksamps:  %ld\n", (long)chunksamps);
-#endif      
-        Iptr->setchunk(chunksamps);  // set "chunksamps"		 
-        
-        int inst_chunk_finished = 0;
-        
-        // DT_PANIC_MOD
-        if (!panic) {
-#ifdef IBUG
-            printf("Iptr->exec(%d, %d) [%s]\n", bus_type, bus, Iptr->name());
-#endif
-            inst_chunk_finished = Iptr->exec(bus_type, bus);    // write the samples * * * * * * * * * 
-            endsamp = Iptr->getendsamp();
-        }
-        else // DT_PANIC_MOD ... just keep on incrementing endsamp
-            endsamp += chunksamps;
-        
-        // ReQueue or unref ++++++++++++++++++++++++++++++++++++++++++++++
-        if (endsamp > bufEndSamp && !panic) {
-#ifdef IBUG
-            printf("re queueing inst %p on rtQueue[%d]\n", Iptr, busq);
-#endif
-            rtQueue[busq].push(Iptr,rtQchunkStart+chunksamps);   // put back onto queue
-        }
-        else {
-            iBus = Iptr->getBusSlot();
-            // unref only after all buses have played -- i.e., if inst_chunk_finished.
-            // if not unref'd here, it means the inst still needs to run on another bus.
-
-            if (qStatus == iBus->Class() && inst_chunk_finished) {
-#ifdef IBUG
-                printf("unref'ing inst %p\n", Iptr);
-#endif
-                Iptr->unref();
-				Iptr = NULL;
-            }
-        }  // end rtQueue or unref ----------------------------------------
-
-        // DJT:  not sure this check before new rtQchunkStart is necessary
-        rtQSize = rtQueue[busq].getSize();
-        if (rtQSize) {
-            rtQchunkStart = rtQueue[busq].nextChunk(); /* FIXME:  crapping out */
-            allQSize += rtQSize;                /* in RT situation sometimes */
-        }
-#ifdef DBUG
-        printf("rtQSize: %ld\n", (long)rtQSize);
-        printf("rtQchunkStart:  %ld\n", (long)rtQchunkStart);
-        printf("chunksamps:  %ld\n", (long)chunksamps);
-        printf("Iteration done==========\n\n");
-#endif
-    } // end while() [Play elements on queue (insert back in if needed)] -----------
-
-        /* Advance InstrumentBus production counter (single-threaded path) */
-        if (instBus) {
-            instBus->advanceProduction(frameCount, bufStartSamp);
-        }
-single_thread_skip:
-        ;
-    } // end instBusWriteStart scope
-}  // end while (!aux_pb_done) --------------------------------------------------
+		InstrumentBus::requeueOrUnref(instruments, bufEndSamp, busq, qStatus, panic);
+		rtQueue[busq].sort();
+		rtQSize = rtQueue[busq].getSize();
+		if (rtQSize) allQSize += rtQSize;
+		}
+	}  // end while (!aux_pb_done) --------------------------------------------------
 
 #endif  // MULTI_THREAD
 

@@ -330,8 +330,8 @@ void InstrumentBus::runWriterCycle()
          * where participatory waiting steals unrelated tasks from
          * the global stack, causing unbounded recursion. */
         if (!panic) {
-            for (size_t i = 0; i < perQueue[q].size(); i++)
-                perQueue[q][i]->exec(BUS_AUX_OUT, mBusID);
+            std::for_each(perQueue[q].begin(), perQueue[q].end(),
+                [this](Instrument *Iptr) { Iptr->exec(BUS_AUX_OUT, mBusID); });
         }
         if (!perQueue[q].empty()) anyInsts = true;
     }
@@ -479,12 +479,10 @@ void InstrumentBus::requeueOrUnref(std::vector<Instrument*> &instsToRun,
         } else {
             const BusSlot *iBus = Iptr->getBusSlot();
             int inst_chunk_finished = Iptr->needsToRun();
-            /* When qStatus == UNKNOWN, always unref if finished.
-             * Otherwise, only unref when qStatus matches the instrument's class
-             * (i.e., all buses for this instrument have played). */
-            bool shouldUnref = (qStatus == UNKNOWN)
-                ? inst_chunk_finished
-                : (qStatus == iBus->Class() && inst_chunk_finished);
+            /* Unref when finished and either pull path (UNKNOWN) or
+             * all buses for this instrument have played. */
+            bool shouldUnref = inst_chunk_finished
+                && (qStatus == UNKNOWN || qStatus == iBus->Class());
             if (shouldUnref) {
 #ifdef IBUG
                 printf("requeueOrUnref: unref'ing inst %p [%s]\n",
