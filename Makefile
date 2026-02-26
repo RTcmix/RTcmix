@@ -7,8 +7,10 @@ include makefile.conf
 BASE = insts/base
 ifeq ($(BUILDTYPE), STANDALONE)
 	DIRS = include genlib src insts utils apps docs snd
+	INSTALL_DIRS = $(DIRS)
 else
 	DIRS = include genlib insts src
+	INSTALL_DIRS = include genlib src
 endif
 
 all:	install_dirs $(DIRS)
@@ -29,7 +31,7 @@ standalone::
 
 install:	install_dirs
 	@echo "beginning install..."
-	@for DIR in $(DIRS); \
+	@for DIR in $(INSTALL_DIRS); \
 	do \
 	  ( cd $$DIR; $(MAKE) $(MFLAGS) install ); \
 	done
@@ -84,6 +86,10 @@ depend::
 	  $(MAKE) $(MFLAGS) depend ); \
 	done
 
+depend_clean::
+	@echo "cleaning depend files..."
+	@find . -name depend -exec rm -f '{}' ';'
+
 ###############################################################  make clean  ###
 
 clean::
@@ -103,10 +109,9 @@ cleanall::
 	( cd pkg/osx; echo "making clean in pkg/osx..." )
 
 # Make it clean for distribution or for moving to another system
-distclean: cleanall cleanac
+distclean: cleanall cleanac depend_clean
 	@cd insts; $(MAKE) $(MFLAGS) distclean; 
 	@cd apps; $(MAKE) $(MFLAGS) distclean; 
-	@find . -name depend -exec rm -f '{}' ';'
 	@$(RM) config.h
 	@$(RM) defs.conf
 	@$(RM) makefile.conf
