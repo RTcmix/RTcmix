@@ -742,6 +742,7 @@ static const char *argTypeToSuffix(MincDataType argType) {
     }
     return suffix;
 }
+
 static const char *opNames[] = {
     "Invalid",
     "Invalid",
