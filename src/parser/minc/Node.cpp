@@ -725,7 +725,7 @@ Node *    OperationBase::do_op_float_list(Node *node, MincFloat val, const MincL
     return node;
 }
 
-const char *opNames[] {
+const char *opNames[] = {
     "Invalid",
     "Invalid",
     "plus",
