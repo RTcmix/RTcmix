@@ -26,6 +26,14 @@
 
    See commands below.
 
+## Running Scores
+
+To run a score file with CMIX, use the `-f` flag:
+
+```
+CMIX -f <scorefile>
+```
+
 ## Test Commands
 
 All tests are run from `test/suite/`.

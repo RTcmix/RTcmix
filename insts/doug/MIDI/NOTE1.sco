@@ -2,8 +2,8 @@
 
 // NOTE(start, duration, MIDI chan, pitch (oct pt pc), velocity (0-1.0)
 
-set_option("midi_outdevice = Internal MIDI Bus 2");
-rtsetparams(48000, 2, 1024);
+set_option("device=Mac Studio Speakers","midi_outdevice = Internal MIDI Bus 2", "buffer_count=8");
+rtsetparams(48000, 2, 16);
 load("MIDI");
 
 setup_midi();

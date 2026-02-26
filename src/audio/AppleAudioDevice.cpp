@@ -12,6 +12,7 @@
 #include <string.h>
 #include <assert.h>
 #include <RTSemaphore.h>
+#include <atomic>
 #include <new>
 #include <syslog.h>
 
@@ -118,7 +119,7 @@ struct AppleAudioDevice::Impl {
 		int						audioBufChannels;	// channels in audioBuffers
 		int						virtualChannels;	// what is reported publically (may vary based on mono-stereo)
 		int						inLoc, outLoc;		// circ. buffer indices
-		int						audioBufFilled;		// audioBuffer samples available
+		std::atomic<int>		audioBufFilled;		// audioBuffer samples available
         UInt64                  startingHostTime;   // host time of first render or record
 #if LOCK_IO
         Lockable                lock;
@@ -363,20 +364,8 @@ AppleAudioDevice::Impl::renderProcess(void *context)
             DPRINT("\nAppleAudioDevice::Impl::renderProcess woke to stop -- breaking out\n");
             break;
         }
-#if DEBUG > 0
-        if (impl->underflowCount > 0) {
-            DPRINT("\nAppleAudioDevice::Impl::renderProcess woke up -- underflow count %d -- running slice\n", impl->underflowCount);
-            --impl->underflowCount;
-        }
-		else {
-			DPRINT("\nAppleAudioDevice::Impl::renderProcess woke up -- running slice\n");
-		}
-#endif
-        bool ret = device->runCallback();
-        if (ret == false) {
-			DPRINT("AppleAudioDevice: renderProcess: run callback returned false -- breaking out\n");
+        if (device->runCallback() == false)
             break;
-        }
     }
     DPRINT("AppleAudioDevice: renderProcess: calling stop callback\n");
     device->stopCallback();
@@ -493,7 +482,7 @@ OSStatus AppleAudioDevice::Impl::audioUnitRenderCallback(void *inUserData,
 		const int srcchans = port->audioBufChannels;
 		const int bufLen = port->audioBufFrames * srcchans;
 		int framesAvail = port->audioBufFilled;
-		
+
 		DPRINT("AppleAudioDevice: playback section (out buffer %d)\n", port->streamIndex);
 		DPRINT1("framesAvail (Filled) = %d\n", framesAvail);
 		if (framesAvail < framesToWrite) {
