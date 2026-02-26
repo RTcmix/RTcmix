@@ -17,6 +17,7 @@ endif
 
 install: all
 uninstall:
+depend:
 
 clean: 
 	$(RM) $(OBJS) sndlib.a
