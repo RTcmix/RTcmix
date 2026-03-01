@@ -3,7 +3,9 @@ include ../../makefile.conf
 ifeq ($(BUILDTYPE), STANDALONE)
 	DIRS = common datafile pfbus
     ifeq ($(ARCH), MACOSX)
-	    DIRS += mouse display
+        ifeq ($(HAS_XCODE), TRUE)
+	    	DIRS += mouse display
+        endif
     endif
     ifneq ($(ARCH), MACOSX)
         ifeq ($(XWINDOWS_SUPPORT), TRUE)

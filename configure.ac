@@ -85,6 +85,27 @@ fi
 AC_SUBST(XWINDOWS_SUPPORT)
 AC_SUBST(XLIBDIR, $x_libraries)
 
+# Check for installed Xcode.  We cannot build data display apps if it is not
+AC_MSG_CHECKING([for full Xcode installation])
+
+AC_CACHE_VAL([ac_cv_have_xcode], [
+  if test -d "/Applications/Xcode.app/Contents/Developer"; then
+    ac_cv_have_xcode=yes
+  else
+    ac_cv_have_xcode=no
+  fi
+])
+
+AC_MSG_RESULT([$ac_cv_have_xcode])
+
+if test "$ac_cv_have_xcode" = yes; then
+    HAVE_XCODE="TRUE"
+else
+    HAVE_XCODE="FALSE"
+fi
+
+AC_SUBST(HAVE_XCODE)
+
 # Check for header files.
 AC_CHECK_HEADERS(fcntl.h float.h limits.h mach/mach.h netdb.h netinet/in.h \
 stddef.h stdint.h stdlib.h string.h strings.h sys/file.h sys/ioctl.h \
@@ -502,6 +523,7 @@ echo "  " Build with FFTW support............................... : $WITH_FFTW
 echo "  " Build with MIDI support............................... : $WITH_MIDI
 echo "  " Build with external PortMIDI library.................. : $WITH_EXTERNAL_PMLIB
 echo "  " Build with OSC support................................ : $WITH_OSC
+echo "  " Build with Xcode support.............................. : $HAS_XCODE
 if test "$prefix_specified" = yes; then
 echo "  " Top-level install location set to......................: $prefix
 fi
