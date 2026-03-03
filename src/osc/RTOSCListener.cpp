@@ -2,6 +2,8 @@
 #include <cstring>
 
 #include "RTOSCListener.h"
+
+#include "RTOption.h"
 #include "../rtcmix/RTcmixMain.h"
 #include "lo/lo.h"
 
@@ -44,7 +46,9 @@ int score_handler(const char *path, const char *types, lo_arg **argv,
 
 void osc_err_handler(int num, const char *msg, const char *where) {
     std::cerr << "OSC server failure, code " << num << ": " << (msg ? msg : "(no detail)") << std::endl;
-    exit(1);
+    if (RTOption::exitOnError()) {
+        exit(1);
+    }
 }
 
 lo_server_thread start_osc_thread(const char *osc_port, int (*parseCallback)(const char*, int))
