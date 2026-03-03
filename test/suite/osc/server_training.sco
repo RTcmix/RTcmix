@@ -1,6 +1,6 @@
-float testMessageHandler(list args)
+float testMessageHandler(string path, list args)
 {
-	printf("testMessageHandler called with args %l\n", args);
+	printf("testMessageHandler called with path '%s' and args %l\n", path, args);
 	return 0;
 }
 

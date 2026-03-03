@@ -23,8 +23,7 @@ lib*.a
 autom4te.cache/*
 bin
 bin/*
-lib/*.o
-lib/lib*
+lib
 minclude
 minclude/*
 shlib
