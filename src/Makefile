@@ -2,9 +2,10 @@
 
 include ../makefile.conf
 
-DIRS = sndlib audio conf parser control rtcmix
 ifeq ($(OSC_SUPPORT), TRUE)
-	DIRS += osc
+DIRS = sndlib audio conf parser control osc rtcmix
+else
+DIRS = sndlib audio conf parser control rtcmix
 endif
 
 

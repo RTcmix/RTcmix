@@ -1,5 +1,6 @@
 # OSC Test Suite
 
+CWD = `pwd`
 COMMAND = ../osc_send -c
 SCORE = ../osc_send -s
 SEND = oscsend 127.0.0.1 7777
@@ -39,7 +40,7 @@ endef
 
 command_tests: test_restart test_var_across_scores test_var_across_audio_stop \
 test_instrument_command test_bad_command test_empty_command test_mixed_arg_type_command \
-test_osc_commands
+test_osc_read_score test_osc_commands
 
 test_quit:
 	$(RUN_SERVER)
@@ -99,6 +100,14 @@ test_mixed_arg_type_command:
 	@echo 'maketable("line", 1000, 0, 1, 1, 0);' | $(COMMAND)
 	$(STOP_SERVER)
 	
+test_osc_read_score:
+	@echo "Testing OSC command to read a score"
+	$(RUN_SERVER)
+	$(START_AUDIO)
+	@echo "Sending request to read training score"
+	@ $(SEND) /RTcmix/ScoreFile s $(CWD)/server_training.sco
+	$(STOP_SERVER)
+
 test_osc_commands:
 	@echo "Testing OSC messaging"
 	$(RUN_SERVER)

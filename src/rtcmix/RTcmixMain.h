@@ -35,6 +35,8 @@ protected:
 #ifdef OSC
 	// Give access to command_handler()
 	friend lo_server_thread start_osc_thread(const char *, int (*)(const char*, int));
+	friend int scorefile_handler(const char *, const char *, lo_arg **, int, lo_message, void *);
+	static char *	readScoreFile(const char *path);
 	static void		set_osc_port(const char *port);
 	static const char *	get_osc_port();
     int             runUsingOSC();

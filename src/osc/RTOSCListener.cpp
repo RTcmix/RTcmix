@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstring>
+#include <sys/stat.h>
 
 #include "RTOSCListener.h"
 
@@ -44,6 +45,24 @@ int score_handler(const char *path, const char *types, lo_arg **argv,
     return 0;
 }
 
+int scorefile_handler(const char *path, const char *types, lo_arg **argv,
+                  int argc, lo_message data, void *user_data)
+{
+    int (*parseCallback)(const char *, int) = (int (*)(const char *, int)) user_data;
+    if (std::strncmp(types, "s", 1) == 0) {
+        const char *pathToScore = &argv[0]->s;
+        std::cout << "Received path to score: " << pathToScore << std::endl;
+        char *scoreBuffer = RTcmixMain::readScoreFile(pathToScore);
+        if (scoreBuffer != NULL) {
+            int parseStatus = (*parseCallback)(scoreBuffer, std::strlen(scoreBuffer));
+            delete [] scoreBuffer;
+        }
+   } else {
+        std::cerr << "Received unknown typespec: " << types << std::endl;
+    }
+    return 0;
+}
+
 void osc_err_handler(int num, const char *msg, const char *where) {
     std::cerr << "OSC server failure, code " << num << ": " << (msg ? msg : "(no detail)") << std::endl;
     if (RTOption::exitOnError()) {
@@ -55,8 +74,13 @@ lo_server_thread start_osc_thread(const char *osc_port, int (*parseCallback)(con
 {
     lo_server_thread st = lo_server_thread_new(osc_port, osc_err_handler);
     if (st != NULL) {
+        // Score handed in as one text buffer
         lo_server_thread_add_method(st, "/RTcmix/ScoreCommands", "s",
                 &score_handler, (void*) parseCallback);
+        // File path to score handed in
+        lo_server_thread_add_method(st, "/RTcmix/ScoreFile", "s",
+                &scorefile_handler, (void*) parseCallback);
+        // Anything else
         if (lo_server_thread_add_method(st, "/RTcmix/*", NULL,
                 &RTcmixMain::command_handler, (void*) NULL) == NULL) {
             std::cerr << "ERROR: installed version of the OSC library must be >= 0.32" << std::endl;

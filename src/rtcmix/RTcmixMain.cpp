@@ -421,6 +421,29 @@ const char * RTcmixMain::get_osc_port() {
 	return (osc_port != NULL) ? osc_port : DEFAULT_OSC_PORT;
 }
 
+char * RTcmixMain::readScoreFile(const char *path) {
+	FILE *f = fopen(path, "r");
+	if (f == NULL) {
+		std::cout << "RTcmixMain: cannot open score file " << path;
+		return NULL;
+	}
+	struct stat st;
+	if (fstat(fileno(f), &st) != 0) {
+		std::cout << "RTcmixMain: cannot stat score file " << path;
+		return NULL;
+	}
+	char *scriptBuffer = new char[st.st_size+1];
+	if (fread(scriptBuffer, st.st_size, 1, f) != 1) {
+		std::cout << "RTcmixMain: cannot read OSC script " << path;
+		delete [] scriptBuffer;
+		fclose(f);
+		return NULL;
+	}
+	fclose(f);
+	scriptBuffer[st.st_size] = '\0';	// force EOF
+	return scriptBuffer;
+}
+
 int
 RTcmixMain::runUsingOSC()
 {
@@ -429,27 +452,15 @@ RTcmixMain::runUsingOSC()
 	const char *initScriptPath = get_osc_init_script_path();
 	if (initScriptPath) {
 		rtcmix_debug("RTcmixMain", "reading OSC server init script");
-		FILE *f = fopen(initScriptPath, "r");
-		if (f == NULL) {
-			rterror("RTcmixMain", "cannot open OSC init script '%s'\n", initScriptPath);
-			return -1;
-		}
-		struct stat st;
-		if (fstat(fileno(f), &st) != 0) {
-			rterror("RTcmixMain", "cannot stat OSC init script '%s'\n", initScriptPath);
-			return -1;
-		}
-		char *scriptBuffer = new char[st.st_size];
-		if (fread(scriptBuffer, st.st_size, 1, f) != 1) {
-			rterror("RTcmixMain", "cannot read OSC init script '%s'\n", initScriptPath);
-			return -1;
-		}
-		retcode = parse_score_buffer(scriptBuffer, st.st_size);
-		delete [] scriptBuffer;
-		fclose(f);
-		if (retcode != 0) {
-			rterror("RTcmixMain", "parse_score_buffer() failed on OSC init script\n");
-			return -1;
+		char *scriptBuffer = readScoreFile(initScriptPath);
+		if (scriptBuffer != NULL) {
+			int parseStatus = parse_score_buffer(scriptBuffer, strlen(scriptBuffer));
+			if (parseStatus != 0) {
+				rterror("RTcmixMain", "parse_score_buffer() failed on OSC init script\n");
+				if (get_bool_option(kOptionExitOnError)) {
+					exit(1);
+				}
+			}
 		}
 	}
 	rtcmix_debug("RTcmixMain", "creating OSC_Server() thread");

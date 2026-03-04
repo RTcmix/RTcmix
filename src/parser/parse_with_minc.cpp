@@ -181,15 +181,16 @@ use_script_file(char *fname)
 #ifndef EMBEDDED
 	/* <yyin> is yacc's input file. If left alone, stdin will be used. */
 	extern FILE *yyin;
-	
+
 	// BGG mm -- we don't use this in Max/MSP, and there is no yy_in var
 	yyin = fopen(fname, "r+");
 	if (yyin == NULL) {
 		RTFPrintf(stderr, "Can't open %s\n", fname);
 		exit(1);
 	}
-	if (get_print_option() >= MMP_ADVISE)
-		RTPrintf("Using score file %s\n", fname);
+	if (get_print_option() >= MMP_ADVISE) {
+	    RTPrintf("Using score file %s\n", fname);
+	}
 #else
     rterror("use_script_file", "Command not available for embedded builds");
 #endif
