@@ -634,51 +634,53 @@ int RTcmixMain::default_osc_handler(const char *path, const char *types, lo_arg 
 	// Begin the "master" array which will be the second argument to handleOSCMessage()
 	sb = startArray(sb, sbend, true);
 	// Walk the types array, converting arguments into MinC array items.
-	for (const char *t = types; *t != '\0' && argcount < argc && status == 0; t++) {
+	for (const char *t = types; *t != '\0' && argcount < argc && status == 0; ++t, ++argcount) {
 		switch (*t) {
-			case 'T':
+			case LO_TRUE:
 				// boolean true present
 				sb = addBool(sb, sbend, true, firstElement);
 				firstElement = false;
 				break;
-			case 'F':
+			case LO_FALSE:
 				// boolean false present
 				sb = addBool(sb, sbend, false, firstElement);
 				firstElement = false;
 				break;
-			case '[':
+#ifdef USE_INTERNAL_LIBLO
+			case LO_ARRAY_BEGIN:
 				sb = startArray(sb, sbend, firstElement);
 				firstElement = true;
 				break;
-			case ']':
+			case LO_ARRAY_END:
 				sb = endArray(sb, sbend);
 				break;
+#endif
 			case LO_CHAR:
 				{
 				char cstring[2];
-				snprintf(cstring, 2, "%c", argv[argcount++]->c);	// convert char to a string
+				snprintf(cstring, 2, "%c", argv[argcount]->c);	// convert char to a string
 				sb = addString(sb, sbend, cstring, firstElement);
 				firstElement = false;
 				}
 				break;
 			case LO_STRING:
-				sb = addString(sb, sbend, &argv[argcount++]->s, firstElement);
+				sb = addString(sb, sbend, &argv[argcount]->s, firstElement);
 				firstElement = false;
 				break;
 			case LO_SYMBOL:
-				sb = addString(sb, sbend, &argv[argcount++]->S, firstElement);
+				sb = addString(sb, sbend, &argv[argcount]->S, firstElement);
 				firstElement = false;
 				break;
 			case LO_FLOAT:
-				sb = addDouble(sb, sbend, (double)argv[argcount++]->f, firstElement);
+				sb = addDouble(sb, sbend, (double)argv[argcount]->f, firstElement);
 				firstElement = false;
 				break;
 			case LO_DOUBLE:
-				sb = addDouble(sb, sbend, argv[argcount++]->d, firstElement);
+				sb = addDouble(sb, sbend, argv[argcount]->d, firstElement);
 				firstElement = false;
 				break;
 			case LO_INT32:
-				sb = addDouble(sb, sbend, (double)argv[argcount++]->i, firstElement);
+				sb = addDouble(sb, sbend, (double)argv[argcount]->i, firstElement);
 				firstElement = false;
 				break;
 			case LO_INT64:
@@ -689,7 +691,6 @@ int RTcmixMain::default_osc_handler(const char *path, const char *types, lo_arg 
 					status = -1;
 				}
 				sb = addDouble(sb, sbend, asDouble, firstElement);
-				++argcount;
 				firstElement = false;
 				}
 				break;

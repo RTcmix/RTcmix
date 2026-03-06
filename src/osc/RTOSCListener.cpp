@@ -55,6 +55,7 @@ int scorefile_handler(const char *path, const char *types, lo_arg **argv,
         char *scoreBuffer = RTcmixMain::readScoreFile(pathToScore);
         if (scoreBuffer != NULL) {
             int parseStatus = (*parseCallback)(scoreBuffer, std::strlen(scoreBuffer));
+            std::cout << "Finished parsing score" << std::endl;
             delete [] scoreBuffer;
         }
    } else {
