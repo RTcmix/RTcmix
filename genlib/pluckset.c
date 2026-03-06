@@ -1,12 +1,16 @@
+extern 	void srrand(unsigned int x);
+extern float rrand(void);
+
 void
 pluckset(float xlp, float amp, float seed, float c, float *q, float sr)
 {
 	int len,i;
-	float x,rrand();
+	float x;
+	srrand((unsigned int)seed);
 	q[1]=(int)(xlp*sr+4.5);
 		len=q[1]-1;
 	for(i=4; i<len; i++) {
-		x=rrand(1.,seed);
+		x=rrand();
 		q[i]=amp;
 		if(x < 0.) q[i] = amp;
 	}
