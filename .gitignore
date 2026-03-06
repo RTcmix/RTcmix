@@ -46,6 +46,7 @@ package.conf
 # symlinked headers
 include/byte_routines.h
 include/Instrument.h
+include/lo/*
 include/lock.h
 include/Lockable.h
 include/Locked.h

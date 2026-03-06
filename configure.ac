@@ -430,6 +430,10 @@ AC_SUBST(PMLIB_CFLAGS)
 AC_SUBST(PMLIB_LDFLAGS)
 
 # liblo options, for OSC server plugin (in src/control/osc)
+
+LIBLO_CFLAGS=""
+LIBLO_LIBS=""
+
 OSC_SUPPORT=FALSE                         # default
 WITH_OSC="false"                          # just for summary display below
 AC_ARG_WITH(osc,
@@ -441,8 +445,62 @@ AC_ARG_WITH(osc,
    fi]
 )
 AC_SUBST(OSC_SUPPORT)
+
+AS_IF([test "x$WITH_OSC" = "xtrue"], [
+
+dnl ------------------------------------------------------------
+dnl Optional internal liblo
+dnl ------------------------------------------------------------
+
+  AC_ARG_WITH([internal-liblo],
+    AS_HELP_STRING([--with-internal-liblo],
+                   [build and use the bundled liblo in src/osc/liblo (if OSC_SUPPORT is yes)]),
+    [with_internal_liblo=$withval],
+    [with_internal_liblo=auto])
+
+  use_internal_liblo=no
+
+  if test "x$with_internal_liblo" != "xyes"; then
+    AC_CHECK_HEADER([lo/lo.h], [have_lo_h=yes], [have_lo_h=no])
+    AC_CHECK_LIB([lo], [lo_server_new],
+                 [have_lo_lib=yes], [have_lo_lib=no])
+
+    if test "x$have_lo_h" = "xyes" && test "x$have_lo_lib" = "xyes"; then
+      AC_MSG_NOTICE([Using system liblo])
+      LO_LIBS="-llo"
+      use_internal_liblo=no
+    else
+      use_internal_liblo=yes
+    fi
+  else
+    use_internal_liblo=yes
+  fi
+
+  if test "x$use_internal_liblo" = "xyes"; then
+  dnl Force liblo to skip docs (avoids doxygen dependency)
+    ac_configure_args="$ac_configure_args --disable-doc"
+    export ac_configure_args
+
+    AC_MSG_NOTICE([Using internal liblo])
+    USE_INTERNAL_LIBLO=TRUE
+    WITH_INTERNAL_LIBLO="true"                          # just for summary display below
+    export CC CFLAGS CPPFLAGS LDFLAGS AR RANLIB
+    AC_CONFIG_SUBDIRS([src/osc/liblo])
+
+    LIBLO_CFLAGS="-I$(INCLUDEDIR)"                      # sources will still use #include <lo/<header>
+    LIBLO_LIBS="-L$(LIBDIR) -Wl,-rpath,$(LIBDIR) -lloextended"  # we link against our renamed dynamic internal liblo
+  else
+    AC_MSG_NOTICE([Using external liblo])
+    USE_INTERNAL_LIBLO=FALSE
+    WITH_INTERNAL_LIBLO="false"                          # just for summary display below
+fi
+
+])
+
+AC_SUBST(USE_INTERNAL_LIBLO)
 AC_SUBST(LIBLO_CFLAGS)
 AC_SUBST(LIBLO_LIBS)
+
 
 #AC_SUBST(WITH_VAL, "$withval")    # for debugging this script
 
@@ -523,6 +581,7 @@ echo "  " Build with FFTW support............................... : $WITH_FFTW
 echo "  " Build with MIDI support............................... : $WITH_MIDI
 echo "  " Build with external PortMIDI library.................. : $WITH_EXTERNAL_PMLIB
 echo "  " Build with OSC support................................ : $WITH_OSC
+echo "  " Build with internal liblo library..................... : $WITH_INTERNAL_LIBLO
 echo "  " Build with Xcode support.............................. : $HAS_XCODE
 if test "$prefix_specified" = yes; then
 echo "  " Top-level install location set to......................: $prefix

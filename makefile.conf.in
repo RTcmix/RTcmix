@@ -384,6 +384,10 @@ ifeq ($(OSC_SUPPORT), TRUE)
 	RTLDFLAGS += $(LIBLO_LIBS)
 endif
 
+ifeq ($(USE_INTERNAL_LIBLO), TRUE)
+	CMIX_FLAGS += -DUSE_INTERNAL_LIBLO
+endif
+
 # Platform-specific library flags Key:
 #
 # SYS_LDFLAGS:		  External libraries for each platform.
