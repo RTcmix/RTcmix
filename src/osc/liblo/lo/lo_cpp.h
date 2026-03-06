@@ -417,6 +417,12 @@ namespace lo {
         int add_infinitum()
             { LO_CHECK_BEFORE; return lo_message_add_infinitum(message); }
 
+        int add_array_begin()
+            { LO_CHECK_BEFORE; return lo_message_add_array_begin(message); }
+
+        int add_array_end()
+            { LO_CHECK_BEFORE; return lo_message_add_array_end(message); }
+
         // Note, for polymorphic versions of "add", below, we can't do
         // this for "string" or "symbol" types, since it is ambiguous
         // with "add(types, ...)" above.

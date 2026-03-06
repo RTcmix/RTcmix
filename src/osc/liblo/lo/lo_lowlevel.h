@@ -335,6 +335,22 @@ int lo_message_add_nil(lo_message m);
 int lo_message_add_infinitum(lo_message m);
 
 /**
+ * \brief  Append an array-begin marker '[' to a message's type tag string.
+ * No data is added.
+ *
+ * \return Less than 0 on failure, 0 on success.
+ */
+int lo_message_add_array_begin(lo_message m);
+
+/**
+ * \brief  Append an array-end marker ']' to a message's type tag string.
+ * No data is added.
+ *
+ * \return Less than 0 on failure, 0 on success.
+ */
+int lo_message_add_array_end(lo_message m);
+
+/**
  * \brief  Returns the source (\ref lo_address) of an incoming message.
  *
  * Returns NULL if the message is outgoing. Do not free the returned

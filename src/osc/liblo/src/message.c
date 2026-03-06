@@ -257,6 +257,14 @@ int lo_message_add_varargs_internal(lo_message msg, const char *types,
             lo_message_add_infinitum(msg);
             break;
 
+        case LO_ARRAY_BEGIN:
+            lo_message_add_array_begin(msg);
+            break;
+
+        case LO_ARRAY_END:
+            lo_message_add_array_end(msg);
+            break;
+
         case '$':
             if (*types == '$') {
                 // type strings ending in '$$' indicate not to perform
@@ -490,6 +498,16 @@ int lo_message_add_infinitum(lo_message m)
     return lo_message_add_typechar(m, LO_INFINITUM);
 }
 
+int lo_message_add_array_begin(lo_message m)
+{
+    return lo_message_add_typechar(m, LO_ARRAY_BEGIN);
+}
+
+int lo_message_add_array_end(lo_message m)
+{
+    return lo_message_add_typechar(m, LO_ARRAY_END);
+}
+
 static int lo_message_add_typechar(lo_message m, char t)
 {
     if (m->typelen + 1 >= m->typesize) {
@@ -553,6 +571,8 @@ size_t lo_arg_size(lo_type type, void *data)
     case LO_FALSE:
     case LO_NIL:
     case LO_INFINITUM:
+    case LO_ARRAY_BEGIN:
+    case LO_ARRAY_END:
         return 0;
 
     case LO_INT32:
@@ -696,6 +716,8 @@ ssize_t lo_validate_arg(lo_type type, void *data, ssize_t size)
     case LO_FALSE:
     case LO_NIL:
     case LO_INFINITUM:
+    case LO_ARRAY_BEGIN:
+    case LO_ARRAY_END:
         return 0;
 
     case LO_INT32:
@@ -751,6 +773,8 @@ void lo_arg_host_endian(lo_type type, void *data)
     case LO_FALSE:
     case LO_NIL:
     case LO_INFINITUM:
+    case LO_ARRAY_BEGIN:
+    case LO_ARRAY_END:
         /* these are fine */
         break;
 
@@ -791,6 +815,8 @@ void lo_arg_network_endian(lo_type type, void *data)
     case LO_FALSE:
     case LO_NIL:
     case LO_INFINITUM:
+    case LO_ARRAY_BEGIN:
+    case LO_ARRAY_END:
         /* these are fine */
         break;
 
@@ -1133,6 +1159,14 @@ void lo_arg_pp_internal(lo_type type, void *data, int bigendian)
 
     case LO_INFINITUM:
         printf("Infinitum");
+        break;
+
+    case LO_ARRAY_BEGIN:
+        printf("[");
+        break;
+
+    case LO_ARRAY_END:
+        printf("]");
         break;
 
     default:

@@ -67,6 +67,8 @@ void usage(void)
     printf("          %c - FALSE (no value required)\n", LO_FALSE);
     printf("          %c - NIL (no value required)\n", LO_NIL);
     printf("          %c - INFINITUM (no value required)\n", LO_INFINITUM);
+    printf("          %c - array begin (no value required)\n", LO_ARRAY_BEGIN);
+    printf("          %c - array end (no value required)\n", LO_ARRAY_END);
     printf("values  : space separated values.\n\n"
            "Example\n"
            "$ oscsend localhost 7777 /sample/address %c%c%c%c 1 3.14 hello\n",
@@ -238,6 +240,12 @@ lo_message create_message(char **argv)
             break;
         case LO_INFINITUM:
             lo_message_add_infinitum(message);
+            break;
+        case LO_ARRAY_BEGIN:
+            lo_message_add_array_begin(message);
+            break;
+        case LO_ARRAY_END:
+            lo_message_add_array_end(message);
             break;
         default:
             fprintf(stderr, "Type '%c' is not supported or invalid.\n",

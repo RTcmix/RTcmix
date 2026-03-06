@@ -90,7 +90,11 @@ typedef enum {
 	/** Sybol representing the value Nil. */
 	LO_NIL =       'N',
 	/** Sybol representing the value Infinitum. */
-	LO_INFINITUM = 'I'
+	LO_INFINITUM = 'I',
+	/** Beginning of an OSC array. */
+	LO_ARRAY_BEGIN = '[',
+	/** End of an OSC array. */
+	LO_ARRAY_END = ']'
 } lo_type;
 
 
