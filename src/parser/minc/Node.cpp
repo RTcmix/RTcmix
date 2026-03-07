@@ -232,16 +232,18 @@ static void push_list(void);
 static void pop_list(void);
 
 // FunctionBalance is a utility which assures that the given pair of functions will be executed, one at the decl
-// point, the other at scope exit.  Useful for handling exception throwing.
+// point, the other at scope exit.  Useful for handling exception throwing.  Optional enabled allows for cases where
+// the call to the function is controlled by a condition.
 
 typedef void (VoidFunction)(void);
 
 class FunctionBalance {
 public:
-    FunctionBalance(VoidFunction *in_function, VoidFunction *out_function) : _out_function(out_function) { in_function(); }
-    ~FunctionBalance() { _out_function(); }
+    FunctionBalance(VoidFunction *in_function, VoidFunction *out_function, bool enabled=true) : _out_function(out_function), _enabled(enabled) { if (_enabled) in_function(); }
+    ~FunctionBalance() { if (_enabled) _out_function(); }
 private:
-    VoidFunction *_out_function;
+    VoidFunction *  _out_function;
+    bool            _enabled;
 };
 
 #ifdef DEBUG_NODE_MEMORY
@@ -323,9 +325,19 @@ Node *	Node::exct()
     }
     yy_store_lineno(lineno);
     yy_set_current_include_filename(includeFilename);
-	Node *outNode = doExct();	// this is redefined on all subclasses
+	Node *outNode = NULL;
+    try {
+        outNode = doExct();	// this is redefined on all subclasses
+    }
+    catch (...) {
+#ifdef DEBUG_FILENAME_INCLUDES
+        printf("%s::exct(%p) catch: restoring current location to '%s'\n", classname(), this, savedIncludeFilename);
+#endif
+        yy_set_current_include_filename(savedIncludeFilename);
+        throw;
+    }
     TPRINT("%s::exct(%p) done: returning node %p of type %s\n", classname(), this, outNode, MincTypeName(outNode->dataType()));
-    #ifdef DEBUG_FILENAME_INCLUDES
+#ifdef DEBUG_FILENAME_INCLUDES
     printf("%s::exct(%p) restoring current location to '%s'\n", classname(), this, savedIncludeFilename);
 #endif
     yy_set_current_include_filename(savedIncludeFilename);
@@ -1192,7 +1204,7 @@ MincValue MincFunctionHandler::callMincFunction(MincFunction *function, const ch
     assert(function != NULL);
     TPRINT("MincFunctionHandler::callMincFunction: theFunction (%p) -- calling '%s'\n", function, functionName);
     FunctionBalance fb(push_function_stack, pop_function_stack);
-    push_scope();           // move into function-body scope.  This scope is destroyed in pop_function_stack().
+    FunctionBalance sb(push_scope, pop_scope);  // move into function-body scope.  This scope is destroyed in pop_function_stack().
     int savedLineNo=0;
     try {
         // This replicates the argument-printing mechanism used by compiled-in functions.
@@ -1209,7 +1221,7 @@ MincValue MincFunctionHandler::callMincFunction(MincFunction *function, const ch
         // A non-null 'thisStruct' indicates we are calling a method on the struct.
         function->handleThis(thisStruct, NULL);     // This can throw
         savedLineNo = yyget_lineno();
-        incrementFunctionCallDepth();
+        FunctionBalance fcd(incrementFunctionCallDepth, decrementFunctionCallDepth);
         /* The exp list is copied to the symbols for the function's arg list. */
         TPRINT("MincFunctionHandler::callMincFunction declaring all argument symbols in the function's scope\n");
         function->copyArguments();
@@ -1225,7 +1237,7 @@ MincValue MincFunctionHandler::callMincFunction(MincFunction *function, const ch
             RTFPrintf(stderr, "[During call to '%s']\n", sCalledFunctions.back());
             sCalledFunctions.pop_back();
         }
-        decrementFunctionCallDepth();
+        yyset_lineno(savedLineNo);
         throw;
     }
     catch(...) {    // Anything else is an error
@@ -1233,10 +1245,9 @@ MincValue MincFunctionHandler::callMincFunction(MincFunction *function, const ch
             RTFPrintf(stderr, "[During call to '%s']\n", sCalledFunctions.back());
             sCalledFunctions.pop_back();
         }
-        decrementFunctionCallDepth();
+        yyset_lineno(savedLineNo);
         throw;
     }
-    decrementFunctionCallDepth();
     // restore parser line number
     yyset_lineno(savedLineNo);
     sCalledFunctions.pop_back();
@@ -1817,24 +1828,22 @@ Node *	NodeOr::doExct()
 
 Node *	NodeIf::doExct()
 {
-    incrementIfElseBlockDepth();
+    FunctionBalance ieb(incrementIfElseBlockDepth, decrementIfElseBlockDepth);
     if ((bool)child(0)->exct()->value() == true) {
 		child(1)->exct();
     }
-    decrementIfElseBlockDepth();
 	return this;
 }
 
 Node *	NodeIfElse::doExct()
 {
-    incrementIfElseBlockDepth();
+    FunctionBalance ieb(incrementIfElseBlockDepth, decrementIfElseBlockDepth);
     if ((bool)child(0)->exct()->value() == true) {
         child(1)->exct();
     }
 	else {
         child(2)->exct();
     }
-    decrementIfElseBlockDepth();
 	return this;
 }
 
@@ -1842,11 +1851,10 @@ Node *	NodeIfElse::doExct()
 
 Node *	NodeWhile::doExct()
 {
-    incrementForWhileBlockDepth();
+    FunctionBalance fwb(incrementForWhileBlockDepth, decrementForWhileBlockDepth);
     while ((bool)child(0)->exct()->value() == true) {
 		child(1)->exct();
     }
-    decrementForWhileBlockDepth();
 	return this;
 }
 
@@ -1962,12 +1970,11 @@ Node *	NodeFuncBodySeq::doExct()
 Node *	NodeFor::doExct()
 {
 	child(0)->exct();         /* init */
-    incrementForWhileBlockDepth();
+    FunctionBalance fb(incrementForWhileBlockDepth, decrementForWhileBlockDepth);
 	while ((bool)child(1)->exct()->value() == true) { /* condition */
 		_child4->exct();      /* execute block */
 		child(2)->exct();      /* prepare for next iteration */
 	}
-    decrementForWhileBlockDepth();
 	return this;
 }
 
@@ -1983,13 +1990,8 @@ Node *	NodeSeq::doExct()
 
 Node *	NodeBlock::doExct()
 {
-    if (!inIfOrElseBlock() || inFunctionCall()) {
-        push_scope();
-    }
+    FunctionBalance sb(push_scope, pop_scope, !inIfOrElseBlock() || inFunctionCall());
 	child(0)->exct();
-    if (!inIfOrElseBlock() || inFunctionCall()) {
-        pop_scope();
-    }
 	return this;				// NodeBlock returns void type
 }
 

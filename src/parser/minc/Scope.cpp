@@ -15,9 +15,16 @@
 #include <string.h>
 
 #undef SCOPE_DEBUG
+#undef SYM_DEBUG
+
 #ifdef SCOPE_DEBUG
 #undef DPRINT
 #define DPRINT(...) rtcmix_print(__VA_ARGS__)
+#ifdef SYM_DEBUG
+#define SPRINT DPRINT
+#else
+#define SPRINT(...)
+#endif
 #else
 #define DPRINT(...)
 #endif
@@ -89,7 +96,7 @@ Scope::lookup(const char *name) const
             break;
         }
     }
-    DPRINT("Scope::lookup (%p, '%s') [scope %d] => %p\n", this, name, depth(), p);
+    SPRINT("Scope::lookup (%p, '%s') [scope %d] => %p\n", this, name, depth(), p);
     return p;
 }
 
@@ -182,7 +189,7 @@ void push_scope()
     assert(!stack->empty());
     int newscope = current_scope() + 1;
     Scope *scope = new Scope(newscope);
-    DPRINT("push_scope() ScopeStack %p adding scope %p for depth %d\n", stack, scope, scope->depth());
+    DPRINT("push_scope() => %d (stack %p adding scope %p)\n", current_scope()+1, stack, scope);
     scope->ref();
     stack->push_back(scope);
 }
@@ -266,10 +273,10 @@ lookupSymbol(const char *name, ScopeLookupType lookupType)
     }
 #ifdef SCOPE_DEBUG
     if (p) {
-        DPRINT("lookup ('%s', %s) => %p (scope %d, type %s)\n", name, typeString, p, foundLevel, MincTypeName(p->dataType()));
+        SPRINT("lookup ('%s', %s) => %p (scope %d, type %s)\n", name, typeString, p, foundLevel, MincTypeName(p->dataType()));
     }
     else {
-        DPRINT("lookup ('%s', %s) => %p\n", name, typeString, p);
+        SPRINT("lookup ('%s', %s) => %p\n", name, typeString, p);
     }
 #endif
     return p;
@@ -277,24 +284,24 @@ lookupSymbol(const char *name, ScopeLookupType lookupType)
 
 Symbol * lookupOrAutodeclare(const char *name, Bool useLocalScope)
 {
-    DPRINT("lookupOrAutodeclare('%s', %d)\n", name, useLocalScope);
+    SPRINT("lookupOrAutodeclare('%s', %d)\n", name, useLocalScope);
     Symbol *sym = lookupSymbol(name, ThisLevel);    // Check at current scope *only*
     if (sym != NULL) {
-        DPRINT("\tfound it at same scope\n");
+        SPRINT("\tfound it at same scope\n");
         return sym;
     }
     else {
-        DPRINT("\tnot in this scope - checking all scopes\n");
+        SPRINT("\tnot in this scope - checking all scopes\n");
         sym = lookupSymbol(name, AnyLevel);
         if (sym) {
-            DPRINT("\tfound it\n");
+            SPRINT("\tfound it\n");
             // lookupOrAutodeclare is only used for lvalues, so we know we're going to modify this
             if (useLocalScope && sym->scope() == 0 && RTOption::parserWarnings() > 1) {
                 minc_advise("Caution -- modifying global variable '%s' within a function or a for/while loop", name);
             }
         }
         else {
-            DPRINT("\tnot found - installing %s\n", useLocalScope ? "at current scope" : "at global scope");
+            SPRINT("\tnot found - installing %s\n", useLocalScope ? "at current scope" : "at global scope");
         }
         return (sym) ? sym : installSymbol(name, useLocalScope ? NO : YES);
     }
@@ -398,21 +405,21 @@ lookupStructType(const char *typeName, ScopeLookupType lookupType)
 void dump_symbols()
 {
 #ifdef SCOPE_DEBUG
-    DPRINT("---- SYMBOL DUMP ----\n");
+    SPRINT("---- SYMBOL DUMP ----\n");
     if (sCallStack != NULL) {
-        DPRINT("CallStack %p:\n", sCallStack);
+        SPRINT("CallStack %p:\n", sCallStack);
         for (CallStack::iterator it1 = sCallStack->begin(); it1 != sCallStack->end(); ++it1) {
             ScopeStack *stack = *it1;
-            DPRINT("\tScopeStack %p:\n", stack);
+            SPRINT("\tScopeStack %p:\n", stack);
             for (ScopeStack::iterator it2 = stack->begin(); it2 != stack->end(); ++it2) {
                 Scope *scope = *it2;
-                DPRINT("\t\tScope %p [%d]:\n", scope, scope->depth());
+                SPRINT("\t\tScope %p [%d]:\n", scope, scope->depth());
                 scope->dump("\t\t\t");
             }
         }
     }
     ScopeManager::dump();
-    DPRINT("---- END ----\n");
+    SPRINT("---- END ----\n");
 #endif  /* SCOPE_DEBUG */
 }
 
