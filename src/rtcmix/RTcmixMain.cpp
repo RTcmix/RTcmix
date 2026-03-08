@@ -5,7 +5,6 @@
 
 #include <signal.h>
 #include <stdlib.h>
-#include <iostream>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -30,8 +29,6 @@
 #endif
 
 #undef DBUG
-
-using namespace std;
 
 #ifdef NETAUDIO
 extern int setnetplay(char *, char *);    // in setnetplay.cpp
@@ -424,17 +421,17 @@ const char * RTcmixMain::get_osc_port() {
 char * RTcmixMain::readScoreFile(const char *path) {
 	FILE *f = fopen(path, "r");
 	if (f == NULL) {
-		std::cout << "RTcmixMain: cannot open score file " << path;
+		rterror("RTcmixMain", "Cannot open score file '%s'", path);
 		return NULL;
 	}
 	struct stat st;
 	if (fstat(fileno(f), &st) != 0) {
-		std::cout << "RTcmixMain: cannot stat score file " << path;
+		rterror("RTcmixMain", "Cannot stat score file '%s'", path);
 		return NULL;
 	}
 	char *scriptBuffer = new char[st.st_size+1];
 	if (fread(scriptBuffer, st.st_size, 1, f) != 1) {
-		std::cout << "RTcmixMain: cannot read OSC script " << path;
+		rterror("RTcmixMain", "Cannot read OSC script '%s'", path);
 		delete [] scriptBuffer;
 		fclose(f);
 		return NULL;
@@ -456,7 +453,7 @@ RTcmixMain::runUsingOSC()
 		if (scriptBuffer != NULL) {
 			int parseStatus = parse_score_buffer(scriptBuffer, strlen(scriptBuffer));
 			if (parseStatus != 0) {
-				rterror("RTcmixMain", "parse_score_buffer() failed on OSC init script\n");
+				rterror("RTcmixMain", "parse_score_buffer() failed on OSC init script");
 				if (get_bool_option(kOptionExitOnError)) {
 					exit(1);
 				}
@@ -466,7 +463,7 @@ RTcmixMain::runUsingOSC()
 	rtcmix_debug("RTcmixMain", "creating OSC_Server() thread");
     retcode = pthread_create(&serverThread, NULL, &RTcmixMain::OSC_Server, (void *) this);
     if (retcode != 0) {
-        rterror("RTcmixMain", "OSC_Server() thread create failed\n");
+        rterror("RTcmixMain", "OSC_Server() thread create failed");
         goto Failed;
     }
 	// Loop here until server killed
@@ -475,7 +472,7 @@ RTcmixMain::runUsingOSC()
     	rtcmix_debug(NULL, "calling runMainLoop()");
     	retcode = runMainLoop();
     	if (retcode != 0) {
-    		rterror("RTcmixMain", "runMainLoop() failed\n");
+    		rterror("RTcmixMain", "runMainLoop() failed");
     		goto Failed;
     	}
     	else {
@@ -486,7 +483,7 @@ RTcmixMain::runUsingOSC()
     	rtcmix_debug("RTcmixMain", "calling waitForMainLoop()");
     	retcode = waitForMainLoop();
     	if (retcode != 0) {
-    		rterror("RTcmixMain", "waitForMainLoop() failed\n");
+    		rterror("RTcmixMain", "waitForMainLoop() failed");
     		goto Failed;
     	}
     	if (osc_thread_handle != NULL && !exit_osc) {
@@ -504,7 +501,7 @@ RTcmixMain::runUsingOSC()
 	rtcmix_debug("RTcmixMain", "joining OSC_Server() thread");
 	retcode = pthread_join(serverThread, NULL);
 	if (retcode != 0) {
-		rterror("RTcmixMain", "OSC_Server() thread join failed\n");
+		rterror("RTcmixMain", "OSC_Server() thread join failed");
 		goto Failed;
 	}
 
@@ -731,7 +728,7 @@ int     RTcmixMain::runUsingSockit()
     rtcmix_debug("RTcmixMain", "creating sockit() thread");
     retcode = pthread_create(&serverThread, NULL, &RTcmixMain::sockit, (void *) this);
     if (retcode != 0) {
-        rterror("RTcmixMain", "sockit() thread create failed\n");
+        rterror("RTcmixMain", "sockit() thread create failed");
         goto Failed;
     }
     
@@ -739,7 +736,7 @@ int     RTcmixMain::runUsingSockit()
     rtcmix_debug("RTcmixMain", "calling runMainLoop()");
     retcode = runMainLoop();
     if (retcode != 0) {
-        rterror("RTcmixMain", "runMainLoop() failed\n");
+        rterror("RTcmixMain", "runMainLoop() failed");
         goto Failed;
     }
     else {
@@ -750,7 +747,7 @@ int     RTcmixMain::runUsingSockit()
     rtcmix_debug("RTcmixMain", "joining sockit() thread");
     retcode = pthread_join(serverThread, NULL);
     if (retcode != 0) {
-        rterror(NULL, "sockit() thread join failed\n");
+        rterror(NULL, "sockit() thread join failed");
         goto Failed;
     }
     
@@ -758,7 +755,7 @@ int     RTcmixMain::runUsingSockit()
     rtcmix_debug("RTcmixMain", "calling waitForMainLoop()");
     retcode = waitForMainLoop();
     if (retcode != 0) {
-        rterror("RTcmixMain", "waitForMainLoop() failed\n");
+        rterror("RTcmixMain", "waitForMainLoop() failed");
         goto Failed;
     }
 Failed:
@@ -1135,7 +1132,7 @@ RTcmixMain::sockit(void *arg)
       }
     }
 #ifdef DBUG
-    cout << "EXITING sockit() FUNCTION **********\n";
+    rterror("sockit", "Exiting function **********");
 #endif
 }
 

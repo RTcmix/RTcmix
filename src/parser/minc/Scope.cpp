@@ -27,6 +27,7 @@
 #endif
 #else
 #define DPRINT(...)
+#define SPRINT(...)
 #endif
 
 // New Scope Code

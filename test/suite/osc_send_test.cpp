@@ -156,7 +156,7 @@ int main(int argc, char *argv[]){
 		}
 	}
 	else {
-	    std::printf("\nsending score: '\n%s\n'", content.c_str());
+	    std::printf("\nsending score: '\n%s\n'\n", content.c_str());
 		if (lo_send(t, "/RTcmix/ScoreCommands", "s", content.c_str()) == -1) {
 			fprintf(stderr, "%s: OSC error %d: %s\n", argv[0], lo_address_errno(t),
 					lo_address_errstr(t));
