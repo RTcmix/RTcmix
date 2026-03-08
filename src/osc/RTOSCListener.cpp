@@ -1,10 +1,10 @@
-#include <iostream>
 #include <cstring>
 #include <sys/stat.h>
 
 #include "RTOSCListener.h"
 
 #include "RTOption.h"
+#include <ugens.h>
 #include "../rtcmix/RTcmixMain.h"
 #include "lo/lo.h"
 
@@ -37,10 +37,10 @@ int score_handler(const char *path, const char *types, lo_arg **argv,
     int (*parseCallback)(const char *, int) = (int (*)(const char *, int)) user_data;
     if (std::strncmp(types, "s", 1) == 0) {
         char *theScore = &argv[0]->s;
-        std::cout << "Received score: \n\n" << theScore << std::endl;
+        rtcmix_advise("score_handler", "Received score: \n\n%s", theScore);
         int parseStatus = (*parseCallback)(theScore, std::strlen(theScore));
     } else {
-        std::cerr << "Received unknown typespec: " << types << std::endl;
+        rterror("score_handler", "Received unknown typespec: '%s'", types);
     }
     return 0;
 }
@@ -51,24 +51,22 @@ int scorefile_handler(const char *path, const char *types, lo_arg **argv,
     int (*parseCallback)(const char *, int) = (int (*)(const char *, int)) user_data;
     if (std::strncmp(types, "s", 1) == 0) {
         const char *pathToScore = &argv[0]->s;
-        std::cout << "Received path to score: " << pathToScore << std::endl;
+        rtcmix_advise("scorefile_handler", "Received path to score: '%s'", pathToScore);
         char *scoreBuffer = RTcmixMain::readScoreFile(pathToScore);
         if (scoreBuffer != NULL) {
             int parseStatus = (*parseCallback)(scoreBuffer, std::strlen(scoreBuffer));
-            std::cout << "Finished parsing score" << std::endl;
+            rtcmix_advise("scorefile_handler", "Finished parsing score");
             delete [] scoreBuffer;
         }
    } else {
-        std::cerr << "Received unknown typespec: " << types << std::endl;
+        rterror("scorefile_handler", "Received unknown typespec: '%s'", types);
     }
     return 0;
 }
 
 void osc_err_handler(int num, const char *msg, const char *where) {
-    std::cerr << "OSC server failure, code " << num << ": " << (msg ? msg : "(no detail)") << std::endl;
-    if (RTOption::exitOnError()) {
-        exit(1);
-    }
+    rterror("osc_err_handler", "OSC server failure, code %d: %s", num, msg ? msg : "(no detail)");
+    exit(1);
 }
 
 lo_server_thread start_osc_thread(const char *osc_port, int (*parseCallback)(const char*, int))
@@ -84,12 +82,12 @@ lo_server_thread start_osc_thread(const char *osc_port, int (*parseCallback)(con
         // Anything else
         if (lo_server_thread_add_method(st, "/RTcmix/*", NULL,
                 &RTcmixMain::command_handler, (void*) NULL) == NULL) {
-            std::cerr << "ERROR: installed version of the OSC library must be >= 0.32" << std::endl;
+            rterror("start_osc_thread", "Installed version of the OSC library must be >= 0.32");
             exit(1);
         }
         if (lo_server_thread_add_method(st, NULL, NULL,
                 &RTcmixMain::default_osc_handler, (void*) NULL) == NULL) {
-            std::cerr << "ERROR: installed version of the OSC library must be >= 0.32" << std::endl;
+            rterror("start_osc_thread", "Installed version of the OSC library must be >= 0.32");
             exit(1);
         }
         lo_server_thread_start(st);

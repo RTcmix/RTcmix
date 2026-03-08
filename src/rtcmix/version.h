@@ -1,9 +1,9 @@
 #ifndef EMBEDDED
 #define RTCMIX_NAME "RTcmix"
 #define RTCMIX_MAJOR_VERSION "5"
-#define RTCMIX_MINOR_VERSION "8"
-#define RTCMIX_MICRO_VERSION "1"
-#define RTCMIX_VERSION "5.8.1"
+#define RTCMIX_MINOR_VERSION "9"
+#define RTCMIX_MICRO_VERSION "0"
+#define RTCMIX_VERSION "5.9.0"
 
 #else // EMBEDDED
 #define RTCMIX_NAME "RTcmix-mm"

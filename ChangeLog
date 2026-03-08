@@ -1,6 +1,13 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2026-03-07 Douglas Scott <netdscott-at-netscape.net>
+    * Fixed long-standing bug involving exceptions and scopes.
+    * Substantial additions to the OSC server.
+    * Added a customized internal copy of liblo source which includes support for array types.  This is configurable.
+    * MAC systems without Xcode will no longer fail during building of the control code.
+    * Bumped version to 5.9.0.
+
 2025-12-03 Douglas Scott <netdscott-at-netscape.net>
 	* Fixed a couple of bugs which slipped into the .0 release.
 	* Revised and expanded OSC support and added unit tests.

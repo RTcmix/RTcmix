@@ -36,6 +36,9 @@ scores/*
 *.tab.h*
 *lex.yy.c*
 src/conf/lex.conf.c
+src/osc/liblo/src/lib*
+src/osc/liblo/src/.libs
+src/osc/liblo/src/.libs/*
 snd/input.wav
 
 config.h

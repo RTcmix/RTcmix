@@ -1,9 +1,11 @@
+include ../../../makefile.conf
+
 # OSC Test Suite
 
 CWD = `pwd`
 COMMAND = ../osc_send -c
 SCORE = ../osc_send -s
-SEND = oscsend 127.0.0.1 7777
+SEND = $(DESTDIR)/oscsend 127.0.0.1 7777
 CMIX_ARGS =
 
 # Common log file for the server
@@ -40,7 +42,7 @@ endef
 
 command_tests: test_restart test_var_across_scores test_var_across_audio_stop \
 test_instrument_command test_bad_command test_empty_command test_mixed_arg_type_command \
-test_osc_read_score test_osc_commands
+test_osc_read_score test_osc_commands test_osc_types test_osc_arrays
 
 test_quit:
 	$(RUN_SERVER)
@@ -118,10 +120,34 @@ test_osc_commands:
 	@ $(SEND) /test ddsifT 77.7 88.8 "foobar" 9 100.1
 	$(STOP_SERVER)
 
+test_osc_types:
+	@echo "Testing OSC messaging"
+	$(RUN_SERVER)
+	$(START_AUDIO)
+	@echo "Testing all ordinal types"
+	@echo "Loading training score"
+	@echo "float ordinalMessageHandler(string path, list args) { if (args[0] + args[1] + args[2] != 6) { exit(\"args did not add up!\"); } return 0; };\noscRegisterMessageHandler(\"/ordinals\", ordinalMessageHandler);" | $(SCORE)
+	@ $(SEND) /ordinals ifd 1 2 3
+	@echo "Testing T/F types"
+	@echo "Loading training score"
+	@echo "float tfMessageHandler(string path, list args) { if (args[0] != 1 || args[1] != 0 || args[2] != 1) { exit(\"problem with T/F args!\"); } return 0; };\noscRegisterMessageHandler(\"/truefalse\", tfMessageHandler);" | $(SCORE)
+	@ $(SEND) /truefalse TFT
+	$(STOP_SERVER)
+
+test_osc_arrays:
+	@echo "Testing OSC messaging"
+	$(RUN_SERVER)
+	$(START_AUDIO)
+	@echo "Testing array type"
+	@echo "Loading training score"
+	@echo "float arrayMessageHandler(string path, list args) { if (args[0].type() != \"list\" || args[0][0].type() != \"list\") { exit(\"problem with array-within-array!\"); } return 0; };\noscRegisterMessageHandler(\"/arrays\", arrayMessageHandler);" | $(SCORE)
+	@ $(SEND) /arrays [[]]
+	$(STOP_SERVER)
+
 cleanup:
 	@rm -f $(CMIX_LOG)
 	@echo "killing stray CMIX processes"
-	@-killall -q CMIX
+	@-killall -9 -q CMIX
 
 .EXIT: .END
 
