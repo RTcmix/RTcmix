@@ -101,13 +101,13 @@ float oscUnregisterDefaultMessageHandler()
 // oscRegisterDefaultErrorHandler() sets a Minc function pointer which
 // will be called if a handler returns non-zero.
 
-float oscRegisterDefaultError(mfunction handler)
+float oscRegisterDefaultErrorHandler(mfunction handler)
 {
 	__gDefaultErrorHandler = handler;
 	return 0;
 }
 
-// oscUnregisterErrorHandler() switches back to the default function pointer
+// oscUnregisterDefaultErrorHandler() switches back to the default function pointer
 
 float oscUnregisterDefaultErrorHandler()
 {
