@@ -4,6 +4,7 @@
 #include <sys/file.h>
 #include <sys/types.h>
 #include <stdlib.h>
+#include <math.h>
 
 extern SFHEADER      sfdesc[NFILES];
 extern float SR();
@@ -117,7 +118,6 @@ float transpose(float num)
 {
 	int octave;
 	float fract,mult;
-	double pow();
 
 	octave = num;
 	fract = (num - (float)octave)/.12;

@@ -190,17 +190,21 @@ bstml:	'{'			{ if (!xblock) incrLevel(); }
 
 ret: TOK_RETURN exp			{	MPRINT("return exp -> ret");
 								MPRINT1("\tcalled at level %d", level);
+								if (flevel == 0) { minc_die("return statements only allowed inside functions"); }
 								$$ = new NodeRet($2);
 							}
 	| TOK_RETURN exp ';'	{	MPRINT("return exp; -> ret");
 								MPRINT1("\tcalled at level %d", level);
+								if (flevel == 0) { minc_die("return statements only allowed inside functions"); }
 								$$ = new NodeRet($2);
 							}
 	| TOK_RETURN            {   MPRINT("return");
-                                if (level > 0) { minc_die("return statements must return a value"); } $$ = new NodeNoop();
+								if (flevel == 0) { minc_die("return statements only allowed inside functions"); }
+                                else if (level > 0) { minc_die("return statements must return a value"); } $$ = new NodeNoop();
                             }
 	| TOK_RETURN ';'        {   MPRINT("return;");
-                                if (level > 0) { minc_die("return statements must return a value"); } $$ = new NodeNoop();
+    							if (flevel == 0) { minc_die("return statements only allowed inside functions"); }
+                                else if (level > 0) { minc_die("return statements must return a value"); } $$ = new NodeNoop();
                             }
 	;
 

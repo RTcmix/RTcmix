@@ -53,7 +53,7 @@ usage()
       "           -i       run in interactive mode\n"
       "           -n       no init script (interactive mode only)\n"
 #ifdef OSC
-      "           -o <port> run with background OSC server on given port (default if not provided)\n"
+      "           -o <port> run with background OSC server on given port (default is 7777 if not provided)\n"
 #endif
 #ifdef LINUX
       "           -p NUM   set process priority to NUM (as root only)\n"
@@ -266,7 +266,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                break;
             case 'i':               /* for separate parseit thread */
                setInteractive(true);
-         		setAudioConfigured(false);
+				setAudioConfigured(false);
                RTOption::exitOnError(false);  /* we cannot simply quit when in interactive mode */
                break;
             case 'o':
@@ -427,6 +427,10 @@ char * RTcmixMain::readScoreFile(const char *path) {
 	struct stat st;
 	if (fstat(fileno(f), &st) != 0) {
 		rterror("RTcmixMain", "Cannot stat score file '%s'", path);
+		return NULL;
+	}
+	if (st.st_size > 1024*1024) {
+		rterror("RTcmixMain", "OSC script '%s' is larger than 1Mbyte", path);
 		return NULL;
 	}
 	char *scriptBuffer = new char[st.st_size+1];
