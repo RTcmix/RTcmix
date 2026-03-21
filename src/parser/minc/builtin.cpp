@@ -696,34 +696,12 @@ _minc_index(const MincValue args[], int nargs)
 
    for (i = 0; i < len; i++) {
       if (data[i].dataType() == argtype) {
-         if (argtype == MincFloatType) {
-            if ((MincFloat)data[i] == (MincFloat)args[1]) {
-               index = i;
-               break;
-            }
-         }
-         else if (argtype == MincStringType) {
-            if (strcmp((MincString)data[i], (MincString)args[1]) == 0) {
-               index = i;
-               break;
-            }
-         }
-//FIXME: should this recurse and match entire list contents??
-         else if (argtype == MincListType) {
-            if ((MincList*)data[i] == (MincList*)args[1]) {
-               index = i;
-               break;
-            }
-         }
-         else if (argtype == MincHandleType) {
-			 if ((MincHandle)data[i] == (MincHandle)args[1]) {
-               index = i;
-               break;
-            }
-         }
+          if (data[i] == args[1]) {
+              index = i;
+              break;
+          }
       }
    }
-
    return (MincFloat) index;
 }
 
