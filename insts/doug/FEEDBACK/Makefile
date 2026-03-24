@@ -8,7 +8,14 @@ CMIXOBJS += $(PROFILE_O)
 CXXFLAGS += -I. -Wall 
 PROGS = $(NAME) lib$(NAME).so
 
+.PHONY: all standalone install dso_install standalone_install \
+uninstall dso_uninstall standalone_uninstall clean cleanall
+
+ifeq ($(BUILDTYPE), STANDALONE)
 all: lib$(NAME).so
+else
+all: $(OBJS)
+endif
 
 standalone: $(NAME)
 

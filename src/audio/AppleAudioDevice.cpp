@@ -803,6 +803,7 @@ int AppleAudioDevice::doOpen(int mode)
         }
     }
     if (enableOutput) {
+#ifndef IOS
         UInt32 supportsOutput = 0;
         UInt32 uSize = sizeof(supportsOutput);
         status = AudioUnitGetProperty(impl->audioUnit,
@@ -814,6 +815,7 @@ int AppleAudioDevice::doOpen(int mode)
         if (status != noErr || !supportsOutput) {
             return error("Selected audio device does not support output - use aggregate device");
         }
+#endif  // IOS
     }
 	// Enable IO for playback and/or record.  This is done before setting the (OSX) device.
     	
