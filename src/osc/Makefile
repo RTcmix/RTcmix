@@ -33,7 +33,7 @@ endif
 
 CXXFLAGS += -I. -I../parser $(LIBLO_CFLAGS)
 
-all: $(OSCLIB) liblo_install		# the custom liblo needs to be installed as part of 'all'
+all: liblo_install $(OSCLIB) # the custom liblo needs to be installed as part of 'all'
 
 $(OSCLIB): $(OBJECTS)
 	$(RM) $@

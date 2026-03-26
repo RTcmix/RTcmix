@@ -487,8 +487,9 @@ dnl ------------------------------------------------------------
     export CC CFLAGS CPPFLAGS LDFLAGS AR RANLIB
     AC_CONFIG_SUBDIRS([src/osc/liblo])
 
-    LIBLO_CFLAGS="-I${INCLUDEDIR}"                      # sources will still use #include <lo/<header>
-    LIBLO_LIBS="-L${LIBDIR} -Wl,-rpath,${LIBDIR} -lloextended"  # we link against our renamed dynamic internal liblo
+    LIBLO_CFLAGS="-I${ac_abs_srcdir}/include"	# sources will still use #include <lo/<header>
+    # we link against our renamed dynamic internal liblo
+    LIBLO_LIBS="-L${ac_abs_srcdir}/lib -Wl,-rpath,${ac_abs_srcdir}/lib -lloextended"
   else
     AC_MSG_NOTICE([Using external liblo])
     USE_INTERNAL_LIBLO=FALSE
