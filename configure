@@ -4559,8 +4559,8 @@ $as_echo "$as_me: Using internal liblo" >&6;}
     subdirs="$subdirs src/osc/liblo"
 
 
-    LIBLO_CFLAGS="-I$(INCLUDEDIR)"                      # sources will still use #include <lo/<header>
-    LIBLO_LIBS="-L$(LIBDIR) -Wl,-rpath,$(LIBDIR) -lloextended"  # we link against our renamed dynamic internal liblo
+    LIBLO_CFLAGS="-I${INCLUDEDIR}"                      # sources will still use #include <lo/<header>
+    LIBLO_LIBS="-L${LIBDIR} -Wl,-rpath,${LIBDIR} -lloextended"  # we link against our renamed dynamic internal liblo
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: Using external liblo" >&5
 $as_echo "$as_me: Using external liblo" >&6;}
