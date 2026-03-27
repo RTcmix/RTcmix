@@ -3,7 +3,7 @@
 include ../makefile.conf
 
 ifeq ($(OSC_SUPPORT), TRUE)
-DIRS = sndlib audio conf parser control osc rtcmix
+DIRS = sndlib audio conf parser osc control rtcmix
 else
 DIRS = sndlib audio conf parser control rtcmix
 endif
