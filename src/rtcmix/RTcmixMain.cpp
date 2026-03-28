@@ -54,6 +54,7 @@ usage()
       "           -n       no init script (interactive mode only)\n"
 #ifdef OSC
       "           -o <port> run with background OSC server on given port (default is 7777 if not provided)\n"
+      "                      (CMIX standalone CLI only)\n"
 #endif
 #ifdef LINUX
       "           -p NUM   set process priority to NUM (as root only)\n"
@@ -71,7 +72,7 @@ usage()
       "           -e NUM   end time (seconds)\n"
 #endif
       "           -f NAME  read score from NAME instead of stdin\n"
-      "                      (Minc and Python only)\n"
+      "                      (CMIX and PYCMIX standalone CLI only)\n"
       "           --debug  enter parser debugger (Perl only)\n"
       "           -q       quiet -- suppress print to screen\n"
       "           -Q       really quiet -- not even clipping or peak stats\n"
@@ -240,7 +241,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
    int		   priority = 0;
 #endif
    int		   printlevel = 5;
-   char        *infile;
+   char        *infile = NULL;
 #ifdef NETAUDIO
    char        rhostname[60], thesocket[8];
 
@@ -271,6 +272,11 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                break;
             case 'o':
 #ifdef OSC
+         		// Sanity check
+         		if (infile != NULL) {
+         			fprintf(stderr, "%s: -f cannot be used in OSC mode\n", argv[0]);
+         			exit(1);
+         		}
          		if (i+1 < argc && argv[i+1][0] != '-') {
          			set_osc_port(argv[++i]);
          		}
@@ -302,7 +308,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                }
                printlevel = atoi(argv[i]);
                if (printlevel < MMP_FATAL || printlevel > MMP_DEBUG) {
-                  fprintf(stderr, "Print level must be between %d and %d.\n", MMP_FATAL, MMP_DEBUG);
+                  fprintf(stderr, "%s: Print level must be between %d and %d.\n", argv[0], MMP_FATAL, MMP_DEBUG);
                   printlevel = MMP_DEBUG;
                }
 				RTOption::print(printlevel);
@@ -318,7 +324,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
 #endif
             case 'D':
                if (++i >= argc || argv[i][0] == '-') {
-                  fprintf(stderr, "You didn't give an audio device name.\n");
+                  fprintf(stderr, "%s: You didn't give an audio device name.\n", argv[0]);
                   exit(1);
                }
                RTOption::device(argv[i]);
@@ -326,7 +332,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
 #ifdef NETAUDIO
             case 'r':               /* set up for network playing */
               	if (++i >= argc || argv[i][0] == '-') {
-                  fprintf(stderr, "You didn't give a remote host ip.\n");
+                  fprintf(stderr, "%s: You didn't give a remote host ip.\n", argv[0]);
                   exit(1);
               	}
                /* host ip num */
@@ -338,7 +344,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
             case 'k':               /* socket number for network playing */
                                     /* defaults to 9999 */
                if (++i >= argc || argv[i][0] == '-') {
-                  fprintf(stderr, "You didn't give a socket number.\n");
+                  fprintf(stderr, "%s: You didn't give a socket number.\n", argv[0]);
                   exit(1);
                }
                strncpy(thesocket, argv[i], 7);
@@ -348,7 +354,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
 #endif
             case 'S':               /* set up a socket offset */
                if (++i >= argc || argv[i][0] == '-') {
-                  fprintf(stderr, "You didn't give a socket offset.\n");
+                  fprintf(stderr, "%s: You didn't give a socket offset.\n", argv[0]);
                   exit(1);
                }
                socknew = atoi(argv[i]);
@@ -356,7 +362,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                break;
             case 's':               /* start time (offset into playback) */
                  if (++i >= argc || argv[i][0] == '-') {
-                    fprintf(stderr, "You didn't give a skip time.\n");
+                    fprintf(stderr, "%s: You didn't give a skip time.\n", argv[0]);
                     exit(1);
                  }
                  setBufTimeOffset((float)atof(argv[i]), false);
@@ -366,8 +372,13 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                fprintf(stderr, "-d, -e options not yet implemented\n");
                exit(1);
             case 'f':     /* use file name arg instead of stdin as score */
+         		// sanity check
+         		if (usingOSC()) {
+         			fprintf(stderr, "%s: -f cannot be used in OSC mode\n", argv[0]);
+         			exit(1);
+         		}
                if (++i >= argc || argv[i][0] == '-') {
-                  fprintf(stderr, "You didn't give a file name.\n");
+                  fprintf(stderr, "%s: You didn't give a file name for '-f'.\n", argv[0]);
                   exit(1);
                }
                infile = argv[i];
@@ -387,7 +398,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
          xargv[xargc++] = arg;          /* copy for parser */
 
       if (xargc >= MAXARGS) {
-         fprintf(stderr, "Too many command-line options.\n");
+         fprintf(stderr, "%s: Too many command-line options.\n", argv[0]);
          exit(1);
       }
    }
@@ -397,8 +408,8 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
    if (netplay) {             /* set up socket for sending audio */
       int status = ::setnetplay(rhostname, thesocket);
       if (status == -1) {
-         fprintf(stderr, "Cannot establish network connection to '%s' for "
-                                             "remote playing\n", rhostname);
+         fprintf(stderr, "%s: Cannot establish network connection to '%s' for "
+                                             "remote playing\n", argv[0], rhostname);
          exit(-1);
       }
       fprintf(stderr, "Network sound playing enabled on machine '%s'\n",
