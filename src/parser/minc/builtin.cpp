@@ -448,9 +448,14 @@ _minc_printf(const MincValue args[], int nargs)
                      minc_warn("printf: wrong argument type for %%l format");
                      goto err;
                   }
-                  RTPrintfCat("[");
-                  _do_print(((MincList *)args[n])->data, ((MincList *)args[n])->len);
-                  RTPrintfCat("]");
+                  else if ((MincList *) args[n] == NULL) {
+                     RTPrintfCat("NULL");
+                  }
+                  else {
+                      RTPrintfCat("[");
+                      _do_print(((MincList *)args[n])->data, ((MincList *)args[n])->len);
+                      RTPrintfCat("]");
+                  }
                   break;
                case 's':      /* print string object */
                   if (args[n].dataType() != MincStringType) {
