@@ -583,7 +583,7 @@ echo "  " Build with MIDI support............................... : $WITH_MIDI
 echo "  " Build with external PortMIDI library.................. : $WITH_EXTERNAL_PMLIB
 echo "  " Build with OSC support................................ : $WITH_OSC
 echo "  " Build with internal liblo library..................... : $WITH_INTERNAL_LIBLO
-echo "  " Build with Xcode support.............................. : $HAS_XCODE
+echo "  " Build with Xcode support.............................. : $HAVE_XCODE
 if test "$prefix_specified" = yes; then
 echo "  " Top-level install location set to......................: $prefix
 fi
