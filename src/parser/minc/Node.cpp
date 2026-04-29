@@ -119,6 +119,33 @@ static void incrementIfElseBlockDepth() { ++sIfElseBlockDepth; SPRINT("sIfElseBl
 static void decrementIfElseBlockDepth() { assert(sIfElseBlockDepth > 0); --sIfElseBlockDepth; SPRINT("sIfElseBlockDepth -> %d", sIfElseBlockDepth); }
 static bool inIfOrElseBlock() { return sIfElseBlockDepth > 0; }
 
+// Return-pending flag: set by NodeRet::doExct() to signal an early return
+// from any depth of nested if/while/for/block, avoiding exception-handling cost.
+// The flag is consumed by callMincFunction() before it returns, so nested
+// function calls each see a clean flag.
+static bool sReturnPending = false;
+static MincValue sReturnValue;
+static void setReturnPending(const MincValue &v) {
+    sReturnPending = true;
+    sReturnValue = v;
+    SPRINT("sReturnPending -> true");
+}
+static bool isReturnPending() { return sReturnPending; }
+static MincValue consumeReturnValue() {
+    MincValue v = sReturnValue;
+    sReturnPending = false;
+    sReturnValue = MincValue();
+    SPRINT("sReturnPending -> false (consumed)");
+    return v;
+}
+static void clearReturnPending() {
+    if (sReturnPending) {
+        sReturnPending = false;
+        sReturnValue = MincValue();
+        SPRINT("sReturnPending -> false (cleared)");
+    }
+}
+
 static void copyNodeToMincList(MincValue *edest, Node *  tpsrc);
 
 static MincWarningLevel sMincWarningLevel = MincAllWarnings;
@@ -1227,12 +1254,16 @@ MincValue MincFunctionHandler::callMincFunction(MincFunction *function, const ch
         function->copyArguments();
         TPRINT("MincFunctionHandler::callMincFunction executing %s()\n", sCalledFunctions.back());
         returnedValue = function->execute()->value();
-    }
-    catch (const MincValue &returned) {    // This catches return statements!
-        TPRINT("MincFunctionHandler::callMincFunction caught MincValue as return stmt throw\n");
-        returnedValue = returned;
+        if (isReturnPending()) {
+            // An explicit return statement was reached inside the body.
+            TPRINT("MincFunctionHandler::callMincFunction consuming pending return value\n");
+            returnedValue = consumeReturnValue();
+        }
     }
     catch (MincError err) {
+        // A MincError may have unwound past a NodeRet that already set the
+        // return-pending flag; clear it so it doesn't leak into the next call.
+        clearReturnPending();
         if (!sCalledFunctions.empty()) {
             RTFPrintf(stderr, "[During call to '%s']\n", sCalledFunctions.back());
             sCalledFunctions.pop_back();
@@ -1241,6 +1272,7 @@ MincValue MincFunctionHandler::callMincFunction(MincFunction *function, const ch
         throw;
     }
     catch(...) {    // Anything else is an error
+        clearReturnPending();
         if (!sCalledFunctions.empty()) {
             RTFPrintf(stderr, "[During call to '%s']\n", sCalledFunctions.back());
             sCalledFunctions.pop_back();
@@ -1854,6 +1886,7 @@ Node *	NodeWhile::doExct()
     FunctionBalance fwb(incrementForWhileBlockDepth, decrementForWhileBlockDepth);
     while ((bool)child(0)->exct()->value() == true) {
 		child(1)->exct();
+		if (isReturnPending()) break;
     }
 	return this;
 }
@@ -1950,15 +1983,22 @@ Node *	NodeRet::doExct()
     TPRINT("NodeRet(%p): Evaluate returned value %p (child 0)\n", this, child(0));
 	child(0)->exct();
 	copyValue(child(0));
-	TPRINT("NodeRet throwing %p for return stmt\n", this);
-	throw this->value();	// Cool, huh?  Throws this node's value out to function's endpoint!
-	return NULL;	// notreached
+	TPRINT("NodeRet setting return-pending for %p\n", this);
+	setReturnPending(this->value());
+	return this;
 }
 
 Node *	NodeFuncBodySeq::doExct()
 {
     TPRINT("NodeFuncBodySeq(%p): Executing function body\n", this);
 	child(0)->exct();
+	if (isReturnPending()) {
+		// An explicit return was encountered inside the body; the trailing
+		// return expression must not run.  callMincFunction() will consume
+		// the pending value.
+		TPRINT("NodeFuncBodySeq(%p): skipping trailing return (pending)\n", this);
+		return this;
+	}
     TPRINT("NodeFuncBodySeq executing return statement\n");
 	child(1)->exct();
 	copyValue(child(1));
@@ -1973,6 +2013,7 @@ Node *	NodeFor::doExct()
     FunctionBalance fb(incrementForWhileBlockDepth, decrementForWhileBlockDepth);
 	while ((bool)child(1)->exct()->value() == true) { /* condition */
 		_child4->exct();      /* execute block */
+		if (isReturnPending()) break;
 		child(2)->exct();      /* prepare for next iteration */
 	}
 	return this;
@@ -1981,6 +2022,7 @@ Node *	NodeFor::doExct()
 Node *	NodeSeq::doExct()
 {
 	child(0)->exct();
+	if (isReturnPending()) return this;
 	child(1)->exct();
 	return this;
 }
