@@ -162,7 +162,8 @@ RTcmix::init_options(bool fromMain, const char *defaultDSOPath)
 		RTOption::exitOnError(true); // we do this no matter what is in config file
 #else
 		RTOption::exitOnError(false);
-        setInteractive(false);
+#endif
+        	setInteractive(false);
 	}
 	else {
 		setSR(44100.0); // what the heck...
