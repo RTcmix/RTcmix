@@ -688,14 +688,23 @@ void AppleAudioDevice::Impl::stopRenderThread()
 {
     assert(renderThread != 0);	// should not get called again!
 	stopping = true;
-    DPRINT("AppleAudioDevice::Impl::stopRenderThread: posting to semaphore for thread\n");
-    renderSema->post();  // wake up, it's time to die
-    DPRINT("AppleAudioDevice::Impl::stopRenderThread: waiting for thread to finish\n");
-    if (pthread_join(renderThread, NULL) != 0) {
-        DERROR("AppleAudioDevice::Impl::stopRenderThread: terminating thread!\n");
-        pthread_cancel(renderThread);
-        renderThread = 0;
-    }
+	if (!pthread_equal(pthread_self(), renderThread))
+	{
+		DPRINT("AppleAudioDevice::Impl::stopRenderThread: posting to semaphore for thread\n");
+		renderSema->post(); // wake up, it's time to die
+		DPRINT("AppleAudioDevice::Impl::stopRenderThread: waiting for thread to finish\n");
+		if (pthread_join(renderThread, NULL) != 0)
+		{
+			DERROR("AppleAudioDevice::Impl::stopRenderThread: terminating thread!\n");
+			pthread_cancel(renderThread);
+			renderThread = 0;
+		}
+	}
+	else
+	{
+		DPRINT("AppleAudioDevice::Impl::stopRenderThread: called on render thread.  Detaching\n");
+		pthread_detach(renderThread);
+	}
     DPRINT("\tAppleAudioDevice::Impl::stopRenderThread: thread done\n");
 }
 
