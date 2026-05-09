@@ -11,6 +11,7 @@
 #include <assert.h>
 #include <RTOption.h>
 #include <ugens.h>
+#include <PField.h>
 
 /* Minc builtin functions, for use only in Minc scripts.
    To add a builtin function, make an entry for it in the function ptr array
@@ -583,19 +584,30 @@ _minc_len(const MincValue args[], int nargs)
     }
     else {
       switch (args[0].dataType() ) {
-         case MincFloatType:
-            len = 1;
-          break;
-         case MincStringType:
+          case MincFloatType:
+              len = 1;
+              break;
+          case MincStringType:
           {
               MincString string = (MincString)args[0];
               len = string ? strlen(string) : 0;
           }
-          break;
-         case MincHandleType:
-            /* NB: To get length of a table, call tablelen(handle) */
-            len = 1;
-            break;
+              break;
+          case MincHandleType:
+          {
+              Handle handle = (Handle)(MincHandle)args[0];
+              if (handle) {
+                  if (handle->type == PFieldType) {
+                      PField *pf = (PField *)handle->ptr;
+                      len = pf ? (unsigned long)pf->values() : 0;
+                  }
+                  else if (handle->type == ListType) {
+                      Array *arr = (Array *)handle->ptr;
+                      len = arr ? arr->len : 0;
+                  }
+              }
+          }
+              break;
          case MincListType:
           {
               MincList *list = (MincList *)args[0];
