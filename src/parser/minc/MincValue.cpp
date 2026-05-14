@@ -689,13 +689,13 @@ bool MincValue::operator < (const MincValue &rhs) const
             return smaller(_u.string, rhs._u.string);
         case MincHandleType:
         case MincFunctionType:
+        case MincMapType:
+        case MincStructType:
             return rawValue() < rhs.rawValue();
         case MincListType:
             // This logic handles either side being NULL
             return (_u.list == NULL && rhs._u.list == NULL) ? false :
                 (_u.list == NULL) ? true : (rhs._u.list == NULL) ? false : *_u.list < *rhs._u.list;
-        case MincMapType:
-        case MincStructType:
        default:
             throw InvalidTypeException("Can't compare objects of this type");
     }
@@ -713,13 +713,13 @@ bool MincValue::operator > (const MincValue &rhs) const
             return bigger(_u.string, rhs._u.string);
         case MincHandleType:
         case MincFunctionType:
+        case MincMapType:
+        case MincStructType:
             return (rawValue() > rhs.rawValue());
         case MincListType:
             // This logic handles either side being NULL
             return (_u.list == NULL && rhs._u.list == NULL) ? false :
                 (_u.list == NULL) ? false : (rhs._u.list == NULL) ? true : *_u.list > *rhs._u.list;
-        case MincMapType:
-        case MincStructType:
        default:
             throw InvalidTypeException("Can't compare objects of this type");
     }
