@@ -119,32 +119,59 @@ static void incrementIfElseBlockDepth() { ++sIfElseBlockDepth; SPRINT("sIfElseBl
 static void decrementIfElseBlockDepth() { assert(sIfElseBlockDepth > 0); --sIfElseBlockDepth; SPRINT("sIfElseBlockDepth -> %d", sIfElseBlockDepth); }
 static bool inIfOrElseBlock() { return sIfElseBlockDepth > 0; }
 
-// Return-pending flag: set by NodeRet::doExct() to signal an early return
-// from any depth of nested if/while/for/block, avoiding exception-handling cost.
-// The flag is consumed by callMincFunction() before it returns, so nested
-// function calls each see a clean flag.
-static bool sReturnPending = false;
-static MincValue sReturnValue;
-static void setReturnPending(const MincValue &v) {
-    sReturnPending = true;
-    sReturnValue = v;
-    SPRINT("sReturnPending -> true");
-}
-static bool isReturnPending() { return sReturnPending; }
-static MincValue consumeReturnValue() {
-    MincValue v = sReturnValue;
-    sReturnPending = false;
-    sReturnValue = MincValue();
-    SPRINT("sReturnPending -> false (consumed)");
-    return v;
-}
-static void clearReturnPending() {
-    if (sReturnPending) {
-        sReturnPending = false;
-        sReturnValue = MincValue();
-        SPRINT("sReturnPending -> false (cleared)");
+// PendingFlag<Tag>: a file-scoped boolean + MincValue payload used to
+// signal control-flow events (early return, unresolved function-name
+// lookup) without paying the cost of throw/catch.  Each Tag yields a
+// distinct static instance.  The payload carries whatever data the
+// signal needs to communicate -- a return value, a function name, etc.
+
+template <class Tag>
+class PendingFlag {
+public:
+    static void set(const MincValue &v) {
+        sFlag = true; sValue = v;
+        SPRINT("%s -> true", Tag::name());
     }
-}
+    static bool isSet() { return sFlag; }
+    static MincValue consume() {
+        MincValue v = sValue;
+        sFlag = false; sValue = MincValue();
+        SPRINT("%s -> false (consumed)", Tag::name());
+        return v;
+    }
+    static void clear() {
+        if (sFlag) {
+            sFlag = false; sValue = MincValue();
+            SPRINT("%s -> false (cleared)", Tag::name());
+        }
+    }
+private:
+    static bool sFlag;
+    static MincValue sValue;
+};
+template <class Tag> bool PendingFlag<Tag>::sFlag = false;
+template <class Tag> MincValue PendingFlag<Tag>::sValue;
+
+// Return-pending: set by NodeRet::doExct() to signal an early return out
+// of any depth of nested if/while/for/block.  Consumed by
+// callMincFunction() before it returns, so nested calls each see a
+// clean flag.  Payload is the value being returned.
+struct ReturnTag { static const char *name() { return "sReturnPending"; } };
+using ReturnPending = PendingFlag<ReturnTag>;
+
+// Function-name unresolved: set by NodeLoadSym::finishExct() when an
+// identifier used as a function name is not declared.  Payload is the
+// unresolved name as a MincString.  Only consulted when
+// sFunctionLookupActive is set (armed by NodeFunctionCall around its
+// function-node evaluation); outside that window NodeLoadSym throws
+// UndeclaredVariableException so a true undeclared-variable reference
+// is still reported as an error.
+struct FunctionLookupTag { static const char *name() { return "sFunctionNameUnresolved"; } };
+using FunctionUnresolved = PendingFlag<FunctionLookupTag>;
+static bool sFunctionLookupActive = false;
+static void armFunctionLookup() { sFunctionLookupActive = true; }
+static void disarmFunctionLookup() { sFunctionLookupActive = false; }
+static bool isFunctionLookupActive() { return sFunctionLookupActive; }
 
 static void copyNodeToMincList(MincValue *edest, Node *  tpsrc);
 
@@ -874,13 +901,18 @@ Node *	NodeLoadSym::finishExct()
         copyValue(nodeSymbol, true, true);
 	}
 	else {
-        // Special trick: Store function name into Node's value
-        TPRINT("NodeLoadSym: did not locate '%s' - storing name into Node in case it is a builtin function\n", symbolName());
-        setValue(MincValue(symbolName()));
-        // Now throw exception.  This will be caught in the case where a function call is being made.
-        char msg[128];
-		snprintf(msg, 128, "'%s' is not declared", symbolName());
-        throw UndeclaredVariableException(msg);
+        if (isFunctionLookupActive()) {
+            // Evaluated as the function-name child of NodeFunctionCall;
+            // pass the name via the flag's payload, the caller will
+            // route to the builtin/constructor path.
+            TPRINT("NodeLoadSym: did not locate '%s' - signaling unresolved function-name lookup\n", symbolName());
+            FunctionUnresolved::set(MincValue(symbolName()));
+        }
+        else {
+            char msg[128];
+            snprintf(msg, 128, "'%s' is not declared", symbolName());
+            throw UndeclaredVariableException(msg);
+        }
 	}
 	return this;
 }
@@ -1254,16 +1286,17 @@ MincValue MincFunctionHandler::callMincFunction(MincFunction *function, const ch
         function->copyArguments();
         TPRINT("MincFunctionHandler::callMincFunction executing %s()\n", sCalledFunctions.back());
         returnedValue = function->execute()->value();
-        if (isReturnPending()) {
+        if (ReturnPending::isSet()) {
             // An explicit return statement was reached inside the body.
             TPRINT("MincFunctionHandler::callMincFunction consuming pending return value\n");
-            returnedValue = consumeReturnValue();
+            returnedValue = ReturnPending::consume();
         }
     }
     catch (MincError err) {
-        // A MincError may have unwound past a NodeRet that already set the
-        // return-pending flag; clear it so it doesn't leak into the next call.
-        clearReturnPending();
+        // A MincError may have unwound past a node that set one of these
+        // flags; clear them so nothing leaks into the next call.
+        ReturnPending::clear();
+        FunctionUnresolved::clear();
         if (!sCalledFunctions.empty()) {
             RTFPrintf(stderr, "[During call to '%s']\n", sCalledFunctions.back());
             sCalledFunctions.pop_back();
@@ -1272,7 +1305,8 @@ MincValue MincFunctionHandler::callMincFunction(MincFunction *function, const ch
         throw;
     }
     catch(...) {    // Anything else is an error
-        clearReturnPending();
+        ReturnPending::clear();
+        FunctionUnresolved::clear();
         if (!sCalledFunctions.empty()) {
             RTFPrintf(stderr, "[During call to '%s']\n", sCalledFunctions.back());
             sCalledFunctions.pop_back();
@@ -1401,18 +1435,18 @@ Node *	NodeFunctionCall::doExct() {
     // Phase 1: decide what we're calling (MinC function vs constructor/builtin).
     Node *calledFunction = NULL;
     const char *builtinFunctionString = NULL;
-    try {
+    {
         TPRINT("NodeFunctionCall: Func: node %p (child 0)\n", functionNode);
-        /* Lookup function.  NOTE: This operation can throw if the function is not a Minc function.
-         * This is caught and handled below as a compiled function.
+        /* Lookup function.  Arm the function-lookup flag so NodeLoadSym
+         * signals an unresolved name via flag (with the name as payload)
+         * instead of throwing.  FunctionBalance disarms even if a real
+         * exception unwinds.
          */
+        FunctionBalance lookupGuard(armFunctionLookup, disarmFunctionLookup);
         calledFunction = functionNode->exct();
-    } catch (UndeclaredVariableException &) {
-        if (functionNode->dataType() == MincStringType) {
-            // NodeLoadSym stashed the unknown name as a string for builtin/ctor path
-            builtinFunctionString = functionNode->value();
-        } else {
-            throw;   // Not the function-name case; propagate
+        if (FunctionUnresolved::isSet()) {
+            builtinFunctionString = (MincString) FunctionUnresolved::consume();
+            calledFunction = NULL;   // route to builtin/ctor below
         }
     }
 
@@ -1886,7 +1920,7 @@ Node *	NodeWhile::doExct()
     FunctionBalance fwb(incrementForWhileBlockDepth, decrementForWhileBlockDepth);
     while ((bool)child(0)->exct()->value() == true) {
 		child(1)->exct();
-		if (isReturnPending()) break;
+		if (ReturnPending::isSet()) break;
     }
 	return this;
 }
@@ -1984,7 +2018,7 @@ Node *	NodeRet::doExct()
 	child(0)->exct();
 	copyValue(child(0));
 	TPRINT("NodeRet setting return-pending for %p\n", this);
-	setReturnPending(this->value());
+	ReturnPending::set(this->value());
 	return this;
 }
 
@@ -1992,7 +2026,7 @@ Node *	NodeFuncBodySeq::doExct()
 {
     TPRINT("NodeFuncBodySeq(%p): Executing function body\n", this);
 	child(0)->exct();
-	if (isReturnPending()) {
+	if (ReturnPending::isSet()) {
 		// An explicit return was encountered inside the body; the trailing
 		// return expression must not run.  callMincFunction() will consume
 		// the pending value.
@@ -2013,7 +2047,7 @@ Node *	NodeFor::doExct()
     FunctionBalance fb(incrementForWhileBlockDepth, decrementForWhileBlockDepth);
 	while ((bool)child(1)->exct()->value() == true) { /* condition */
 		_child4->exct();      /* execute block */
-		if (isReturnPending()) break;
+		if (ReturnPending::isSet()) break;
 		child(2)->exct();      /* prepare for next iteration */
 	}
 	return this;
@@ -2022,7 +2056,7 @@ Node *	NodeFor::doExct()
 Node *	NodeSeq::doExct()
 {
 	child(0)->exct();
-	if (isReturnPending()) return this;
+	if (ReturnPending::isSet()) return this;
 	child(1)->exct();
 	return this;
 }
