@@ -947,6 +947,9 @@ int call_list_method(MincValue &object, const char *methodName, const MincValue 
     }
     int found = 1;
     if (strcmp (methodName, "append") == 0) {
+        if (nargs != 1) {
+            minc_die("%s: expected 1 argument, got %d", methodName, nargs);
+        }
         *retval = list_append(theList, arglist);
     }
     else if (strcmp (methodName, "min") == 0) {
@@ -986,31 +989,52 @@ int call_object_method(MincValue &object, const char *methodName, const MincValu
 {
     if (strcmp (methodName, "contains") == 0) {
         MincValue args[2];
+        if (nargs != 1) {
+            minc_die("%s: expected 1 argument, got %d", methodName, nargs);
+        }
         concatArgs(args, object, arglist, nargs);
         *retval = (MincFloat) _minc_contains(args, 2);
     }
     else if (strcmp (methodName, "remove") == 0) {
         MincValue args[2];
+        if (nargs != 1) {
+            minc_die("%s: expected 1 argument, got %d", methodName, nargs);
+        }
         concatArgs(args, object, arglist, nargs);
         *retval = (MincFloat) _minc_remove(args, 2);
     }
     else if (strcmp (methodName, "insert") == 0) {
         MincValue args[3];
+        if (nargs != 2) {
+            minc_die("%s: expected 2 arguments, got %d", methodName, nargs);
+        }
         concatArgs(args, object, arglist, nargs);
         *retval = (MincFloat) _minc_insert(args, 3);
     }
     else if (strcmp (methodName, "index") == 0) {
         MincValue args[2];
+        if (nargs != 1) {
+            minc_die("%s: expected 1 argument, got %d", methodName, nargs);
+        }
         concatArgs(args, object, arglist, nargs);
         *retval = (MincFloat) _minc_index(args, 2);
     }
     else if (strcmp (methodName, "len") == 0) {
+        if (nargs != 0) {
+            minc_die("%s: expected no arguments, got %d", methodName, nargs);
+        }
         *retval = (MincFloat) _minc_len((const MincValue *) &object, 1);
     }
     else if (strcmp (methodName, "print") == 0) {
+        if (nargs != 0) {
+            minc_die("%s: expected no arguments, got %d", methodName, nargs);
+        }
         *retval = (MincFloat) _minc_print((const MincValue *) &object, 1);
     }
     else if (strcmp(methodName, "type") == 0) {
+        if (nargs != 0) {
+            minc_die("%s: expected no arguments, got %d", methodName, nargs);
+        }
         *retval = (MincString) _minc_type((const MincValue *) &object, 1);
     }
     // Check for list-specific methods
