@@ -896,7 +896,7 @@ RTcmixMain::signal_handler(int signo)
 	   default:
 		   fflush(stdout);
 		   fflush(stderr);
-  	 	   exit(1);
+  	 	   _Exit(1);		// prevents new round of deallocation
 	   }
 	}
 }
