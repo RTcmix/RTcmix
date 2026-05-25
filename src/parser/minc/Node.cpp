@@ -1370,24 +1370,23 @@ bool NodeFunctionCall::callConstructor(const char *functionName)
             // We create a temporary Symbol object in order to avoid moving or duplicating initAsStruct() method
             sym = Symbol::create("temporary");
             sym->_scope = 0;    // XXX
-            // Wrap global sMincList to pass as argument
-            initList = new MincList(0);
+            // Copy sMincList args into initList's own data[]. Aliasing initList->data
+            // to sMincList caused use-after-free when initAsStruct retained initList past
+            // the next pop_list, which delete[]s sMincList.
+            initList = new MincList(sMincListLen);
             initList->ref();
-            initList->data = sMincList;
-            initList->len = sMincListLen;
+            for (int i = 0; i < sMincListLen; ++i) {
+                initList->data[i] = sMincList[i];
+            }
             TPRINT("NodeFunctionCall::callConstructor -- initializing struct members from sMincList\n");
             sym->initAsStruct(structType, initList, true);  // Default args allowed for constructor functions
             callInitMethodIfPresent((MincStruct *)sym->value());
             copyValue(sym, false);
-            initList->data = NULL;
-            initList->len = 0;
             initList->unref();
             initList = NULL;
             delete sym;
         } catch (...) {
             if (initList) {
-                initList->data = NULL;
-                initList->len = 0;
                 initList->unref();
             }
             delete sym;
