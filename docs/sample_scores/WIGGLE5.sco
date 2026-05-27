@@ -40,7 +40,7 @@ pitch = 5.10
 carwav = maketable("wave", 2000, 1, .5, .3, .1)
 amp = ampdb(gaindb)
 WIGGLE(start, dur, amp * env, pitch, depth_type=0, filt_type=0, filt_steep,
-	balance, carwav, modwav, mod_freq, mod_depth, filt_cf, pan=0)
+	balance, carwav, modwav, mod_freq, mod_depth, filt_cf, pan2=0)
 pitch += 0.001
 WIGGLE(start, dur, amp * env, pitch, depth_type=0, filt_type=0, filt_steep,
-	balance, carwav, modwav, mod_freq, mod_depth, filt_cf, pan=1)
+	balance, carwav, modwav, mod_freq, mod_depth, filt_cf, pan2=1)
