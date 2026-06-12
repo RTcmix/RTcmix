@@ -81,6 +81,7 @@ struct_var_scope.sco \
 struct_with_same_as_member.sco \
 struct01.sco \
 struct02.sco \
+switch.sco \
 ternary.sco \
 test_double_include.sco \
 test_rhs.sco \
@@ -117,7 +118,14 @@ type_conflict1.sco \
 uninit_fun_member.sco \
 uninit_mfunction.sco \
 var_overwrite.sco \
-while_scope.sco
+while_scope.sco \
+nested_switch.sco \
+switch_scope.sco \
+switch_default_not_last.sco \
+switch_two_defaults.sco \
+switch_unbraced_case.sco \
+switch_empty.sco \
+switch_exception_cleanup.sco
 
 all:	scores_that_pass scores_that_fail
 

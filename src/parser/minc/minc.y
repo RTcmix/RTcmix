@@ -48,12 +48,16 @@ const char *lookup_token(const char *token, bool printWarning);
 #undef YYDEBUG
 #define YYDEBUG 1
 #define MAXTOK_IDENTLIST 200
+#define MAXTOK_CASELIST 200
 #define TRUE 1
 #define FALSE 0
 
 static Node *	program;
 static int		idcount = 0;
-static char		*idlist[MAXTOK_IDENTLIST];  
+static char		*idlist[MAXTOK_IDENTLIST];
+static int		switchLevel = 0;	/* > 0 if we are currently parsing a switch statement (nesting disallowed) */
+static int		caseNodeCount = 0;	/* number of case/default clauses accumulated for the current switch */
+static Node *	caseNodeList[MAXTOK_CASELIST];	/* scratch array of clause nodes for the current switch */
 static int		flerror;		/* set if there was an error during parsing */
 static int		level = 0;		/* keeps track whether we are in a sub-block */
 static int		flevel = 0;		/* > 0 if we are in a function decl block */
@@ -65,6 +69,8 @@ static void 	incrLevel();
 static void		decrLevel();
 static void     incrFunctionLevel();
 static void     decrFunctionLevel();
+static void     incrSwitchLevel();
+static void     decrSwitchLevel();
 static void     setStructName(const char *name);
 static Node * declare(MincDataType type);
 static Node * declareStructs(const char *typeName);
@@ -99,6 +105,7 @@ static Node * go(Node * t1);
 %token <ival> TOK_MFUNC_DECL;
 %token <ival> TOK_METHOD;
 %token <ival> TOK_IDENT TOK_NUM TOK_ARG_QUERY TOK_ARG TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
+%token <ival> TOK_SWITCH TOK_CASE TOK_DEFAULT
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
 
 %type  <node> stml stmt rstmt expl exp expblk str ret bstml obj fexp fexpl func fcall mcall subscript ternary
@@ -151,6 +158,17 @@ stmt: decl                 { MPRINT("decl -> stmt"); $$ = $1; }
 								$$ = go(new NodeFor($4, $6, $8, $10));
 								xblock = 0;
 							}
+	| TOK_SWITCH level swlevel '(' exp ')' '{' caselist '}' { xblock = 1; MPRINT("SWITCH exp { caselist } -> stmt");
+								/* Build the switch from the clauses accumulated in caseNodeList[].
+								   NodeSwitch refs the clauses in its constructor, so we can reset
+								   the scratch array right afterwards. */
+								Node *theSwitch = new NodeSwitch($5, caseNodeList, caseNodeCount);
+								caseNodeCount = 0;
+								decrSwitchLevel();
+								decrLevel();
+								$$ = go(theSwitch);
+								xblock = 0;
+							}
 	| ret                   { MPRINT("ret -> stmt");
 	                          if (level == 0) {
 	                            minc_die("return statements are not allowed in main score"); $$ = new NodeNoop();
@@ -185,6 +203,39 @@ bstml:	'{'			{ if (!xblock) incrLevel(); }
 								$$ = go(new NodeBlock(new NodeNoop()));
 								}
 	;
+
+/* The body of a switch statement: one or more 'case' clauses, optionally followed
+   by a single 'default' clause.  Requiring 'default' to come last (enforced here in
+   the grammar) means the switch Node can simply test each clause in order and run the
+   first match: a 'default' clause matches unconditionally, so being last makes it the
+   fallback without any extra bookkeeping.
+
+   These rules carry no semantic value: like the 'idl' identifier list, each clause node
+   is created as a side effect and pushed onto the caseNodeList[] scratch array, which the
+   enclosing switch rule reads when it builds the NodeSwitch. */
+caselist: caseclauses
+    | caseclauses defaultclause
+    | defaultclause
+    ;
+
+/* one or more 'case <exp>: { block }' clauses */
+caseclauses: caseclause
+    | caseclauses caseclause
+    ;
+
+/* a single case clause.  $2 is the (runtime) label expression, $4 is a NodeBlock body. */
+caseclause: TOK_CASE exp ':' bstml      { MPRINT("case exp : block -> caseclause");
+                                            if (caseNodeCount >= MAXTOK_CASELIST) { minc_die("too many case clauses in switch statement"); }
+                                            else { caseNodeList[caseNodeCount++] = new NodeCaseClause($2, $4); }
+                                        }
+    ;
+
+/* the optional default clause.  $3 is a NodeBlock body. */
+defaultclause: TOK_DEFAULT ':' bstml    { MPRINT("default : block -> defaultclause");
+                                            if (caseNodeCount >= MAXTOK_CASELIST) { minc_die("too many case clauses in switch statement"); }
+                                            else { caseNodeList[caseNodeCount++] = new NodeDefaultClause($3); }
+                                        }
+    ;
 
 /* A return statement.  Only used inside functions. */
 
@@ -259,6 +310,12 @@ mfuncdecl:    TOK_MFUNC_DECL idl    {     MPRINT("mfuncdecl -> decl"); $$ = go(d
 level:  /* nothing */ { incrLevel(); }
 	;
 
+/* switch-in-progress marker.  This empty rule fires before a switch body is parsed, so
+   incrSwitchLevel() can reject a switch nested inside another switch (we disallow that,
+   the same way nested function decls are disallowed). */
+swlevel:  /* nothing */ { incrSwitchLevel(); }
+	;
+
 subscript:  '[' exp ']'         {       MPRINT("[exp] -> subscript"); $$ = $2; }
 
 /* An obj is an id or anything that can be operator accessed via . or [] */
@@ -298,6 +355,8 @@ mcall: obj '.' id func {  MPRINT("obj.id func -> mcall"); $$ = new NodeMethodCal
 
 /* New ternary statement - Doug likes having these */
 ternary: exp '?' exp ':' exp { $$ = new NodeTernary($1, $3, $5); }
+    | exp ':' exp            { minc_die("':' without a matching '?' (malformed conditional - or possible bad switch statement?)");
+                              flerror = 1; $$ = new NodeNoop(); }
     ;
 
 /* An rstmt is statement returning a value, such as assignments, function calls, etc. */
@@ -591,6 +650,21 @@ static void        decrFunctionLevel()
     --flevel; MPRINT1("flevel => %d", flevel);
 }
 
+// Switch-statement nesting is disallowed (like nested function decls).  The block-nesting
+// 'level' counter is bumped separately by the 'level' marker rule, so these only manage the
+// switch-in-progress flag.
+
+static void     incrSwitchLevel()
+{
+    if (switchLevel > 0) { minc_die("nested switch statements are not allowed"); }
+    ++switchLevel; MPRINT1("switchLevel => %d", switchLevel);
+}
+
+static void        decrSwitchLevel()
+{
+    --switchLevel; MPRINT1("switchLevel => %d", switchLevel);
+}
+
 static void     setStructName(const char *name)
 {
     if (name == NULL || sCurrentStructname == NULL) {   // never override one with another
@@ -831,6 +905,13 @@ static void cleanup()
 	cpcomments = 0;
 	xblock = 0;
 	idcount = 0;
+	/* On a parse error mid-switch, clause nodes may be left in the scratch array owned by
+	   no one (NodeSwitch never got built).  Unref them here so they don't leak. */
+	for (int i = 0; i < caseNodeCount; i++) {
+		RefCounted::unref(caseNodeList[i]);
+	}
+	caseNodeCount = 0;
+	switchLevel = 0;
 	flerror = 0;
 	flevel = 0;
     sCurrentStructname = NULL;

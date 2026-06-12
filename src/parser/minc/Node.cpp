@@ -239,7 +239,10 @@ static const char *s_NodeKinds[] = {
    "NodeFuncDecl",
    "NodeMethodDecl",
    "NodeBlock",
-   "NodeNoop"
+   "NodeNoop",
+   "NodeSwitch",
+   "NodeCaseClause",
+   "NodeDefaultClause"
 };
 
 static const char *s_OpKinds[] = {
@@ -2068,6 +2071,57 @@ Node *	NodeBlock::doExct()
     FunctionBalance sb(push_scope, pop_scope, !inIfOrElseBlock() || inFunctionCall());
 	child(0)->exct();
 	return this;				// NodeBlock returns void type
+}
+
+// Switch statement.  child(0) is the condition; child(1..N) are the clause nodes.  We evaluate the
+// condition once, then hand its value to each clause (via setValue) and exct the clauses in order.
+// Each clause reports a match by leaving value() true; the first match wins (no fall-through).  Case
+// bodies get local scope like while/for, hence the for/while block-depth balance.
+
+Node *	NodeSwitch::doExct()
+{
+    FunctionBalance fwb(incrementForWhileBlockDepth, decrementForWhileBlockDepth);
+    MincValue switchValue = child(0)->exct()->value();      // evaluate the switch condition exactly once
+    for (int i = 1; i < childCount(); ++i) {                // child(0) is the condition; clauses follow
+        Node *clause = child(i);
+        clause->setValue(switchValue);                      // hand the switch value to the clause via its value()
+        clause->exct();                                     // clause compares, runs its own body on match, and
+        if ((bool)clause->value() == true) {                //   replaces its value() with the boolean result
+            break;                                          // first match wins
+        }
+    }
+    return this;
+}
+
+// A 'case <expression>: { body }' clause.  NodeSwitch has placed the switch value in our value().
+// We evaluate our expression subtree, compare, run our own body if it matches, then overwrite our
+// value() with the boolean match result.  A type-mismatched (or uncomparable) comparison is simply
+// not a match -- MinC lists are heterogeneous, so we must not fail when types differ.
+
+Node *	NodeCaseClause::doExct()		// child(0) = case expression, child(1) = body block
+{
+    MincValue switchValue = this->value();                  // the value NodeSwitch handed us
+    bool matched = false;
+    try {
+        matched = (child(0)->exct()->value() == switchValue);
+    }
+    catch (const NonmatchingTypeException &) { matched = false; }
+    catch (const InvalidTypeException   &) { matched = false; }
+    if (matched) {
+        child(1)->exct();                                   // run our own body
+    }
+    setValue(MincValue(matched ? 1.0 : 0.0));               // replace value() with the boolean match result
+    return this;
+}
+
+// A 'default: { body }' clause.  child(0) = body block.  It always runs its body and always reports
+// a match; being the last clause (grammar-enforced) makes it the fallback.
+
+Node *	NodeDefaultClause::doExct()		// child(0) = body block
+{
+    child(0)->exct();                                       // always run our own body
+    setValue(MincValue(1.0));                               // a default always matches
+    return this;
 }
 
 Node *	NodeDecl::doExct()

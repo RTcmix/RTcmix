@@ -124,6 +124,9 @@ num   {dig}+
 <INIT>if                return TOK_IF;
 <INIT>else              return TOK_ELSE;
 <INIT>while             return TOK_WHILE;
+<INIT>switch            return TOK_SWITCH;
+<INIT>case              return TOK_CASE;
+<INIT>default           return TOK_DEFAULT;
 <INIT>and               return TOK_AND;
 <INIT>"&&"              return TOK_AND;
 <INIT>not               return TOK_NOT;
