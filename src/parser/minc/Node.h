@@ -68,7 +68,10 @@ typedef enum {
 	eNodeBlock,
 	eNodeNoop,
 	eNodeSwitch,
+	eNodeCaseClauseList,
 	eNodeCaseClause,
+	eNodeCaseLabelList,
+	eNodeCaseLabel,
 	eNodeDefaultClause
 } NodeKind;
 
@@ -710,42 +713,66 @@ protected:
 	virtual Node*		doExct();
 };
 
-// Switch statement node.
-//   child(0)        = the switch condition expression
-//   child(1..N)     = the clause nodes (NodeCaseClause's, optionally a final NodeDefaultClause)
-// At exct time the condition is evaluated once, then each clause is handed that value (via setValue)
-// and exct'd in order; the first clause that reports a match (its value() becomes true) wins.
+// The switch clauses share one contract: handed the switch value in value(), when exct'd they test,
+// run their body on a match, and leave a boolean match-result in value().  NodeCaseClauseList and
+// NodeCaseLabelList compose two such match-reporters, so the whole tree evaluates via exct() alone.
 
-class NodeSwitch : public NodeNChildren
+// child(0) = switch condition; child(1) = clause tree (a clause or a NodeCaseClauseList).
+class NodeSwitch : public Node2Children
 {
 public:
-	NodeSwitch(Node *condition, Node **clauses, int numClauses) : NodeNChildren(OpFree, eNodeSwitch, 1 + numClauses) {
-		setChild(0, condition);
-		for (int i = 0; i < numClauses; ++i) { setChild(1 + i, clauses[i]); }
-		NPRINT("NodeSwitch(%p, %d clauses) => %p\n", condition, numClauses, this);
+	NodeSwitch(Node *condition, Node *clauses) : Node2Children(OpFree, eNodeSwitch, condition, clauses) {
+		NPRINT("NodeSwitch(%p, %p) => %p\n", condition, clauses, this);
 	}
 protected:
 	virtual Node*		doExct();
 };
 
-// A single 'case <expression>: { body }' clause.
-//   child(0) = case expression, child(1) = body block
-// NodeSwitch sets our value() to the switch value before exct'ing us; we compare, run our own body
-// on a match, then replace our value() with the boolean match result for NodeSwitch to read.
+// child(0) = earlier clauses, child(1) = this clause.  First match wins (tests child(0) first).
+class NodeCaseClauseList : public Node2Children
+{
+public:
+	NodeCaseClauseList(Node *earlier, Node *clause) : Node2Children(OpFree, eNodeCaseClauseList, earlier, clause) {
+		NPRINT("NodeCaseClauseList(%p, %p) => %p\n", earlier, clause, this);
+	}
+protected:
+	virtual Node*		doExct();
+};
 
+// child(0) = label matcher (a NodeCaseLabel or NodeCaseLabelList), child(1) = body block.
 class NodeCaseClause : public Node2Children
 {
 public:
-	NodeCaseClause(Node *expression, Node *body) : Node2Children(OpFree, eNodeCaseClause, expression, body) {
-		NPRINT("NodeCaseClause(%p, %p) => %p\n", expression, body, this);
+	NodeCaseClause(Node *labels, Node *body) : Node2Children(OpFree, eNodeCaseClause, labels, body) {
+		NPRINT("NodeCaseClause(%p, %p) => %p\n", labels, body, this);
 	}
 protected:
 	virtual Node*		doExct();
 };
 
-// A 'default: { body }' clause.  child(0) = body block.  Always reports a match (value() = 1.0);
-// being last (grammar-enforced) makes it the fallback.
+// child(0) = earlier labels, child(1) = this label.  Matches if either matches (label grouping).
+class NodeCaseLabelList : public Node2Children
+{
+public:
+	NodeCaseLabelList(Node *earlier, Node *label) : Node2Children(OpFree, eNodeCaseLabelList, earlier, label) {
+		NPRINT("NodeCaseLabelList(%p, %p) => %p\n", earlier, label, this);
+	}
+protected:
+	virtual Node*		doExct();
+};
 
+// A single 'case <expression>:' label.  Reports a match when its expression equals the switch value.
+class NodeCaseLabel : public Node1Child
+{
+public:
+	NodeCaseLabel(Node *expression) : Node1Child(OpFree, eNodeCaseLabel, expression) {
+		NPRINT("NodeCaseLabel(%p) => %p\n", expression, this);
+	}
+protected:
+	virtual Node*		doExct();
+};
+
+// A 'default: { body }' clause.  child(0) = body block.  Always matches; grammar puts it last.
 class NodeDefaultClause : public Node1Child
 {
 public:

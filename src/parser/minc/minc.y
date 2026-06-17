@@ -48,7 +48,6 @@ const char *lookup_token(const char *token, bool printWarning);
 #undef YYDEBUG
 #define YYDEBUG 1
 #define MAXTOK_IDENTLIST 200
-#define MAXTOK_CASELIST 200
 #define TRUE 1
 #define FALSE 0
 
@@ -56,8 +55,6 @@ static Node *	program;
 static int		idcount = 0;
 static char		*idlist[MAXTOK_IDENTLIST];
 static int		switchLevel = 0;	/* > 0 if we are currently parsing a switch statement (nesting disallowed) */
-static int		caseNodeCount = 0;	/* number of case/default clauses accumulated for the current switch */
-static Node *	caseNodeList[MAXTOK_CASELIST];	/* scratch array of clause nodes for the current switch */
 static int		flerror;		/* set if there was an error during parsing */
 static int		level = 0;		/* keeps track whether we are in a sub-block */
 static int		flevel = 0;		/* > 0 if we are in a function decl block */
@@ -110,15 +107,16 @@ static Node * go(Node * t1);
 
 %type  <node> stml stmt rstmt expl exp expblk str ret bstml obj fexp fexpl func fcall mcall subscript ternary
 %type  <node> decl fdecl sdecl hdecl ldecl mapdecl structdecl structinit mfuncdecl arg argl funcdef fblock fargl funcname mbr mbrl structdef methodname methoddef
+%type  <node> caselist caseclauses caseclause defaultclause morelabels
 %type  <str> id structname basename
 
-%destructor { MPRINT1("yydestruct unref'ing node %p\n", $$); RefCounted::unref($$); } stml stmt rstmt expl exp str ret bstml fdecl sdecl hdecl ldecl ternary mapdecl structdecl structinit mfuncdecl funcdef arg argl fargl funcname mbr mbrl structdef obj fexp fexpl fblock expblk subscript methodname methoddef
+%destructor { MPRINT1("yydestruct unref'ing node %p\n", $$); RefCounted::unref($$); } stml stmt rstmt expl exp str ret bstml fdecl sdecl hdecl ldecl ternary mapdecl structdecl structinit mfuncdecl funcdef arg argl fargl funcname mbr mbrl structdef obj fexp fexpl fblock expblk subscript methodname methoddef caselist caseclauses caseclause defaultclause morelabels
 
 %error-verbose
 
 %%
 /* program (the "start symbol") */
-prg:	| stml				{ MPRINT("prg:"); program = $1; program->ref(); cleanup(); return 0; }
+prg:	| stml				{ MPRINT("prg:"); program = $1; program->ref(); cleanup(); }
 	;
  
 /* statement list */
@@ -159,11 +157,7 @@ stmt: decl                 { MPRINT("decl -> stmt"); $$ = $1; }
 								xblock = 0;
 							}
 	| TOK_SWITCH level swlevel '(' exp ')' '{' caselist '}' { xblock = 1; MPRINT("SWITCH exp { caselist } -> stmt");
-								/* Build the switch from the clauses accumulated in caseNodeList[].
-								   NodeSwitch refs the clauses in its constructor, so we can reset
-								   the scratch array right afterwards. */
-								Node *theSwitch = new NodeSwitch($5, caseNodeList, caseNodeCount);
-								caseNodeCount = 0;
+								Node *theSwitch = new NodeSwitch($5, $8);	/* $5 = condition, $8 = clause structure */
 								decrSwitchLevel();
 								decrLevel();
 								$$ = go(theSwitch);
@@ -204,37 +198,36 @@ bstml:	'{'			{ if (!xblock) incrLevel(); }
 								}
 	;
 
-/* The body of a switch statement: one or more 'case' clauses, optionally followed
-   by a single 'default' clause.  Requiring 'default' to come last (enforced here in
-   the grammar) means the switch Node can simply test each clause in order and run the
-   first match: a 'default' clause matches unconditionally, so being last makes it the
-   fallback without any extra bookkeeping.
-
-   These rules carry no semantic value: like the 'idl' identifier list, each clause node
-   is created as a side effect and pushed onto the caseNodeList[] scratch array, which the
-   enclosing switch rule reads when it builds the NodeSwitch. */
-caselist: caseclauses
-    | caseclauses defaultclause
-    | defaultclause
+/* Switch body: case clauses, optional 'default' last.  Each rule builds a clause tree of
+   match-reporter nodes; the switch tests them in source order and runs the first match. */
+caselist: caseclauses                   { MPRINT("caseclauses -> caselist"); $$ = $1; }
+    | caseclauses defaultclause         { MPRINT("caseclauses default -> caselist"); $$ = new NodeCaseClauseList($1, $2); }
+    | defaultclause                     { MPRINT("default -> caselist"); $$ = $1; }
     ;
 
-/* one or more 'case <exp>: { block }' clauses */
-caseclauses: caseclause
-    | caseclauses caseclause
+caseclauses: caseclause                 { MPRINT("caseclause -> caseclauses"); $$ = $1; }
+    | caseclauses caseclause            { MPRINT("caseclauses caseclause -> caseclauses"); $$ = new NodeCaseClauseList($1, $2); }
     ;
 
-/* a single case clause.  $2 is the (runtime) label expression, $4 is a NodeBlock body. */
-caseclause: TOK_CASE exp ':' bstml      { MPRINT("case exp : block -> caseclause");
-                                            if (caseNodeCount >= MAXTOK_CASELIST) { minc_die("too many case clauses in switch statement"); }
-                                            else { caseNodeList[caseNodeCount++] = new NodeCaseClause($2, $4); }
+/* One or more 'case <exp>:' labels sharing one body block (fall-through grouping).  The body stays
+   in the same rule as the final label (its ':' shifts straight to bstml), and leading bare labels
+   reduce only on a TOK_CASE lookahead -- disjoint from the 'exp : exp' stray-colon rule, so no conflict. */
+caseclause: morelabels TOK_CASE exp ':' bstml { MPRINT("morelabels case exp : block -> caseclause");
+                                            Node *label = new NodeCaseLabel($3);
+                                            Node *labels = $1 ? new NodeCaseLabelList($1, label) : label;
+                                            $$ = new NodeCaseClause(labels, $5);
                                         }
     ;
 
-/* the optional default clause.  $3 is a NodeBlock body. */
-defaultclause: TOK_DEFAULT ':' bstml    { MPRINT("default : block -> defaultclause");
-                                            if (caseNodeCount >= MAXTOK_CASELIST) { minc_die("too many case clauses in switch statement"); }
-                                            else { caseNodeList[caseNodeCount++] = new NodeDefaultClause($3); }
+/* leading bare labels of a clause; NULL when the clause has a single label */
+morelabels: /* nothing */               { $$ = NULL; }
+    | morelabels TOK_CASE exp ':'       { MPRINT("morelabels case exp : -> morelabels");
+                                            Node *label = new NodeCaseLabel($3);
+                                            $$ = $1 ? new NodeCaseLabelList($1, label) : label;
                                         }
+    ;
+
+defaultclause: TOK_DEFAULT ':' bstml    { MPRINT("default : block -> defaultclause"); $$ = new NodeDefaultClause($3); }
     ;
 
 /* A return statement.  Only used inside functions. */
@@ -905,12 +898,6 @@ static void cleanup()
 	cpcomments = 0;
 	xblock = 0;
 	idcount = 0;
-	/* On a parse error mid-switch, clause nodes may be left in the scratch array owned by
-	   no one (NodeSwitch never got built).  Unref them here so they don't leak. */
-	for (int i = 0; i < caseNodeCount; i++) {
-		RefCounted::unref(caseNodeList[i]);
-	}
-	caseNodeCount = 0;
 	switchLevel = 0;
 	flerror = 0;
 	flevel = 0;

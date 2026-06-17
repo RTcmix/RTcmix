@@ -241,7 +241,10 @@ static const char *s_NodeKinds[] = {
    "NodeBlock",
    "NodeNoop",
    "NodeSwitch",
+   "NodeCaseClauseList",
    "NodeCaseClause",
+   "NodeCaseLabelList",
+   "NodeCaseLabel",
    "NodeDefaultClause"
 };
 
@@ -1138,12 +1141,11 @@ Node *	NodeSubscriptRead::doExct()	// was exct_subscript_read()
 Node *	NodeSubscriptWrite::doExct()	// was exct_subscript_write()
 {
 	ENTER();
-    TPRINT("NodeSubscriptWrite: Object exct:\n");
-	child(0)->exct();         /* lookup target */
-    TPRINT("NodeSubscriptWrite: Index exct:\n");
-	child(1)->exct();         /* index */
-    TPRINT("NodeSubscriptWrite: Exp to store exct:\n");
+    /* Resolve the target LAST (as NodeStore does): the RHS may recurse through this same
+       shared node and clobber the target's cached Symbol, which is freed on scope unwind. */
 	child(2)->exct();         /* expression to store */
+	child(1)->exct();         /* index */
+	child(0)->exct();         /* lookup target (must be last) */
     Node *object = child(0);
     switch (object->dataType()) {
         case MincListType:
@@ -2073,54 +2075,83 @@ Node *	NodeBlock::doExct()
 	return this;				// NodeBlock returns void type
 }
 
-// Switch statement.  child(0) is the condition; child(1..N) are the clause nodes.  We evaluate the
-// condition once, then hand its value to each clause (via setValue) and exct the clauses in order.
-// Each clause reports a match by leaving value() true; the first match wins (no fall-through).  Case
-// bodies get local scope like while/for, hence the for/while block-depth balance.
-
+// Evaluate the condition once, hand its value to the clause tree, and exct it; the clause tree
+// reports the first match itself.  Case bodies get local scope like while/for, hence the balance.
 Node *	NodeSwitch::doExct()
 {
     FunctionBalance fwb(incrementForWhileBlockDepth, decrementForWhileBlockDepth);
-    MincValue switchValue = child(0)->exct()->value();      // evaluate the switch condition exactly once
-    for (int i = 1; i < childCount(); ++i) {                // child(0) is the condition; clauses follow
-        Node *clause = child(i);
-        clause->setValue(switchValue);                      // hand the switch value to the clause via its value()
-        clause->exct();                                     // clause compares, runs its own body on match, and
-        if ((bool)clause->value() == true) {                //   replaces its value() with the boolean result
-            break;                                          // first match wins
-        }
-    }
+    MincValue switchValue = child(0)->exct()->value();
+    child(1)->setValue(switchValue);                        // hand the switch value to the clause tree
+    child(1)->exct();
     return this;
 }
 
-// A 'case <expression>: { body }' clause.  NodeSwitch has placed the switch value in our value().
-// We evaluate our expression subtree, compare, run our own body if it matches, then overwrite our
-// value() with the boolean match result.  A type-mismatched (or uncomparable) comparison is simply
-// not a match -- MinC lists are heterogeneous, so we must not fail when types differ.
-
-Node *	NodeCaseClause::doExct()		// child(0) = case expression, child(1) = body block
+// First match wins: test the earlier clauses before this one.  child(0) = earlier, child(1) = clause.
+Node *	NodeCaseClauseList::doExct()
 {
-    MincValue switchValue = this->value();                  // the value NodeSwitch handed us
+    MincValue switchValue = this->value();
+    child(0)->setValue(switchValue);
+    child(0)->exct();
+    if ((bool)child(0)->value() == true) {
+        setValue(MincValue(1.0));
+        return this;
+    }
+    child(1)->setValue(switchValue);
+    child(1)->exct();
+    setValue(child(1)->value());
+    return this;
+}
+
+// child(0) = label matcher, child(1) = body block.  Run the body iff the labels match.
+Node *	NodeCaseClause::doExct()
+{
+    MincValue switchValue = this->value();
+    child(0)->setValue(switchValue);
+    child(0)->exct();
+    bool matched = (bool)child(0)->value();
+    if (matched) {
+        child(1)->exct();
+    }
+    setValue(MincValue(matched ? 1.0 : 0.0));
+    return this;
+}
+
+// Label grouping: match if either the earlier labels or this one match.  child(0)/child(1) as above.
+Node *	NodeCaseLabelList::doExct()
+{
+    MincValue switchValue = this->value();
+    child(0)->setValue(switchValue);
+    child(0)->exct();
+    if ((bool)child(0)->value() == true) {
+        setValue(MincValue(1.0));
+        return this;
+    }
+    child(1)->setValue(switchValue);
+    child(1)->exct();
+    setValue(child(1)->value());
+    return this;
+}
+
+// Match iff our expression equals the switch value.  A type mismatch is simply not a match, since
+// MinC lists are heterogeneous and must not fail when types differ.
+Node *	NodeCaseLabel::doExct()		// child(0) = case expression
+{
+    MincValue switchValue = this->value();
     bool matched = false;
     try {
         matched = (child(0)->exct()->value() == switchValue);
     }
     catch (const NonmatchingTypeException &) { matched = false; }
     catch (const InvalidTypeException   &) { matched = false; }
-    if (matched) {
-        child(1)->exct();                                   // run our own body
-    }
-    setValue(MincValue(matched ? 1.0 : 0.0));               // replace value() with the boolean match result
+    setValue(MincValue(matched ? 1.0 : 0.0));
     return this;
 }
 
-// A 'default: { body }' clause.  child(0) = body block.  It always runs its body and always reports
-// a match; being the last clause (grammar-enforced) makes it the fallback.
-
-Node *	NodeDefaultClause::doExct()		// child(0) = body block
+// child(0) = body block.  Always runs its body and always matches; grammar puts it last.
+Node *	NodeDefaultClause::doExct()
 {
-    child(0)->exct();                                       // always run our own body
-    setValue(MincValue(1.0));                               // a default always matches
+    child(0)->exct();
+    setValue(MincValue(1.0));
     return this;
 }
 

@@ -82,6 +82,8 @@ struct_with_same_as_member.sco \
 struct01.sco \
 struct02.sco \
 switch.sco \
+switch_fallthrough.sco \
+switch_fallthrough_scope.sco \
 ternary.sco \
 test_double_include.sco \
 test_rhs.sco \
