@@ -128,61 +128,32 @@ protected:
     virtual        ~Node1Child() { RefCounted::unref(_child); }
 };
 
-class Node2Children : public Node
-{
-	Node* _children[2];
-public:
-	Node2Children(OpKind op, NodeKind kind, Node *n1, Node *n2)
-        : Node(op, kind) { _children[0] = n1; _children[1]= n2; n1->ref(); n2->ref(); }
-	virtual Node*	child(int index) const { return (index < 2) ? _children[index] : NULL; }
-protected:
-    virtual            ~Node2Children() { _children[0]->unref(); _children[1]->unref(); }
-};
+// Base for nodes whose child count is known only at construction
 
-class Node3Children : public Node
-{
-	Node* _children[3];
+template <int ChildCount>
+class NodeWithChildren : public Node {
+	Node* _children[ChildCount];
 public:
-	Node3Children(OpKind op, NodeKind kind, Node *n1, Node *n2, Node *n3)
-    : Node(op, kind) {
-        _children[0] = n1; _children[1]= n2; _children[2] = n3;
-        n1->ref(); n2->ref(); n3->ref();
-    }
+	NodeWithChildren(OpKind op, NodeKind kind, Node *n1, Node *n2)
+		: Node(op, kind) { init(); setChild(0, n1); setChild(1, n2); }
+	NodeWithChildren(OpKind op, NodeKind kind, Node *n1, Node *n2, Node *n3)
+	: Node(op, kind) { init(); setChild(0, n1); setChild(1, n2); setChild(2, n3); }
+	virtual Node*	child(int index) const { return (index < ChildCount) ? _children[index] : NULL; }
 protected:
-	virtual			~Node3Children() {
-		_children[0]->unref(); _children[1]->unref(); _children[2]->unref();
-	}
-	virtual Node*		child(int index) const { return (index < 3) ? _children[index] : NULL; }
-};
-
-// Base for nodes whose child count is known only at construction (e.g. NodeSwitch, whose number
-// of clauses depends on the score).  Unlike the fixed-arity bases above, storage is heap-allocated.
-class NodeNChildren : public Node
-{
-	Node**	_children;
-	int		_count;
-public:
-	NodeNChildren(OpKind op, NodeKind kind, int count)
-		: Node(op, kind), _children((count > 0) ? new Node*[count] : NULL), _count(count) {
-		for (int i = 0; i < _count; ++i) { _children[i] = NULL; }
-	}
-	virtual Node*		child(int index) const { return (index >= 0 && index < _count) ? _children[index] : NULL; }
-	int					childCount() const { return _count; }
-protected:
-	void				setChild(int index, Node *n) {		// stores n in slot 'index' and refs it
+	void	init() { for (int i = 0; i < ChildCount; ++i) { _children[i] = NULL; } }
+	void	setChild(int index, Node *n) {		// stores n in slot 'index' and refs it
 		_children[index] = n;
 		RefCounted::ref(n);
 	}
-	virtual			~NodeNChildren() {
-		for (int i = 0; i < _count; ++i) { RefCounted::unref(_children[i]); }
-		delete [] _children;
+	virtual	~NodeWithChildren() {
+		for (int i = 0; i < ChildCount; ++i) { RefCounted::unref(_children[i]); }
 	}
 };
 
-class NodeSeq : public Node2Children
+class NodeSeq : public NodeWithChildren<2>
 {
 public:
-	NodeSeq(Node *n1, Node *n2) : Node2Children(OpFree, eNodeSeq, n1, n2) {
+	NodeSeq(Node *n1, Node *n2) : NodeWithChildren<2>(OpFree, eNodeSeq, n1, n2) {
 		NPRINT("NodeSeq(%p, %p) => %p\n", n1, n2, this);
 	}
 protected:
@@ -208,10 +179,10 @@ private:
 	Node *do_op_struct(Node *node, MincStruct *srcStruct, OpKind op);
 };
 
-class NodeOp : public Node2Children, private OperationBase
+class NodeOp : public NodeWithChildren<2>, private OperationBase
 {
 public:
-	NodeOp(OpKind op, Node *n1, Node *n2) : Node2Children(op, eNodeOperator, n1, n2) {
+	NodeOp(OpKind op, Node *n1, Node *n2) : NodeWithChildren<2>(op, eNodeOperator, n1, n2) {
 		NPRINT("NodeOperator(%d, %p, %p) => %p\n", op, n1, n2, this);
 	}
 protected:
@@ -229,11 +200,11 @@ protected:
 };
 
 /* store a value into a variable */
-class NodeStore : public Node2Children
+class NodeStore : public NodeWithChildren<2>
 {
 public:
 	NodeStore(Node *n1, Node *n2, bool allowTypeOverwrite=true)
-        : Node2Children(OpFree, eNodeStore, n1, n2), _allowTypeOverwrite(allowTypeOverwrite) {
+        : NodeWithChildren<2>(OpFree, eNodeStore, n1, n2), _allowTypeOverwrite(allowTypeOverwrite) {
 		NPRINT("NodeStore (%p, %p, %d) => %p\n", n1, n2, allowTypeOverwrite, this);
 	}
 protected:
@@ -243,10 +214,10 @@ private:
 };
 
 /* like NodeStore, but modify value before storing into variable */
-class NodeOpAssign : public Node2Children, private OperationBase
+class NodeOpAssign : public NodeWithChildren<2>, private OperationBase
 {
 public:
-	NodeOpAssign(Node *n1, Node *n2, OpKind op) : Node2Children(op, eNodeOpAssign, n1, n2) {
+	NodeOpAssign(Node *n1, Node *n2, OpKind op) : NodeWithChildren<2>(op, eNodeOpAssign, n1, n2) {
 		NPRINT("NodeOpAssign(%p, %p, op=%d) => %p\n", n1, n2, op, this);
 	}
 protected:
@@ -308,10 +279,10 @@ private:
     double number;
 };
 
-class NodeArgListElem : public Node2Children
+class NodeArgListElem : public NodeWithChildren<2>
 {
 public:
-	NodeArgListElem(Node *n1, Node *n2) : Node2Children(OpFree, eNodeArgListElem, n1, n2) {
+	NodeArgListElem(Node *n1, Node *n2) : NodeWithChildren<2>(OpFree, eNodeArgListElem, n1, n2) {
 		NPRINT("NodeArgListElem(%p, %p) => %p\n", n1, n2, this);
 	}
 protected:
@@ -374,10 +345,10 @@ private:
     const char *    _baseName;
 };
 
-class NodeFuncBodySeq : public Node2Children
+class NodeFuncBodySeq : public NodeWithChildren<2>
 {
 public:
-	NodeFuncBodySeq(Node *n1, Node *n2) : Node2Children(OpFree, eNodeFuncBodySeq, n1, n2) {
+	NodeFuncBodySeq(Node *n1, Node *n2) : NodeWithChildren<2>(OpFree, eNodeFuncBodySeq, n1, n2) {
 		NPRINT("NodeFuncBodySeq(%p, %p) => %p\n", n1, n2, this);
 	}
 protected:
@@ -389,14 +360,14 @@ protected:
 //	argList  NodeArgList (argument symbol decls)
 //	funcBody NodeFuncBodySeq function body (statements), which returns value
 
-class NodeFuncDef : public Node3Children
+class NodeFuncDef : public NodeWithChildren<3>
 {
 public:
-	NodeFuncDef(Node *funcDecl, Node *argList, Node *funcBody) : Node3Children(OpFree, eNodeFuncDef, funcDecl, argList, funcBody), _isMethod(false) {
+	NodeFuncDef(Node *funcDecl, Node *argList, Node *funcBody) : NodeWithChildren<3>(OpFree, eNodeFuncDef, funcDecl, argList, funcBody), _isMethod(false) {
 		NPRINT("NodeFuncDef(%p, %p, %p) => %p\n", funcDecl, argList, funcBody, this);
 	}
 protected:
-    NodeFuncDef(Node *funcDecl, Node *argList, Node *funcBody, NodeKind kind) : Node3Children(OpFree, kind, funcDecl, argList, funcBody), _isMethod(kind==eNodeMethodDef) {}
+    NodeFuncDef(Node *funcDecl, Node *argList, Node *funcBody, NodeKind kind) : NodeWithChildren<3>(OpFree, kind, funcDecl, argList, funcBody), _isMethod(kind==eNodeMethodDef) {}
 	virtual Node*		doExct();
     bool                _isMethod;
 };
@@ -427,10 +398,10 @@ public:
 //  n1 Function symbol node
 //  n2 Function arguments list
 
-class NodeFunctionCall : public Node2Children, private MincFunctionHandler
+class NodeFunctionCall : public NodeWithChildren<2>, private MincFunctionHandler
 {
 public:
-    NodeFunctionCall(Node *func, Node *args) : Node2Children(OpFree, eNodeFuncCall, func, args) {
+    NodeFunctionCall(Node *func, Node *args) : NodeWithChildren<2>(OpFree, eNodeFuncCall, func, args) {
 		NPRINT("NodeFunctionCall(%p, %p) => %p\n", func, args, this);
 	}
 protected:
@@ -446,10 +417,10 @@ private:
 //  s  Method name
 //  n2 Function arguments list
 
-class NodeMethodCall : public Node2Children, private MincFunctionHandler
+class NodeMethodCall : public NodeWithChildren<2>, private MincFunctionHandler
 {
 public:
-    NodeMethodCall(Node *obj, const char *methodName, Node *args) : Node2Children(OpFree, eNodeMethodCall, obj, args), _methodName(methodName) {
+    NodeMethodCall(Node *obj, const char *methodName, Node *args) : NodeWithChildren<2>(OpFree, eNodeMethodCall, obj, args), _methodName(methodName) {
         NPRINT("NodeMethodCall(%p, '%s', %p) => %p\n", obj, methodName, args, this);
     }
 protected:
@@ -460,20 +431,20 @@ private:
     const char *    _methodName;
 };
 
-class NodeAnd : public Node2Children
+class NodeAnd : public NodeWithChildren<2>
 {
 public:
-	NodeAnd(Node *lhs, Node *rhs) : Node2Children(OpFree, eNodeAnd, lhs, rhs) {
+	NodeAnd(Node *lhs, Node *rhs) : NodeWithChildren<2>(OpFree, eNodeAnd, lhs, rhs) {
 		NPRINT("NodeAnd(%p, %p) => %p\n", lhs, rhs, this);
 	}
 protected:
 	virtual Node*		doExct();
 };
 
-class NodeOr : public Node2Children
+class NodeOr : public NodeWithChildren<2>
 {
 public:
-	NodeOr(Node *lhs, Node *rhs) : Node2Children(OpFree, eNodeOr, lhs, rhs) {
+	NodeOr(Node *lhs, Node *rhs) : NodeWithChildren<2>(OpFree, eNodeOr, lhs, rhs) {
 		NPRINT("NodeOr(%p, %p) => %p\n", lhs, rhs, this);
 	}
 protected:
@@ -490,10 +461,10 @@ protected:
 	virtual Node*		doExct();
 };
 
-class NodeRelation : public Node2Children
+class NodeRelation : public NodeWithChildren<2>
 {
 public:
-	NodeRelation(OpKind op, Node *n1, Node *n2) : Node2Children(op, eNodeRelation, n1, n2) {
+	NodeRelation(OpKind op, Node *n1, Node *n2) : NodeWithChildren<2>(op, eNodeRelation, n1, n2) {
 		NPRINT("NodeRelation(%d, %p, %p) => %p\n", op, n1, n2, this);
 	}
 protected:
@@ -516,10 +487,10 @@ protected:
 	virtual Node*		doExct();
 };
 
-class NodeListElem : public Node2Children
+class NodeListElem : public NodeWithChildren<2>
 {
 public:
-	NodeListElem(Node *elem, Node *payload) : Node2Children(OpFree, eNodeListElem, elem, payload) {
+	NodeListElem(Node *elem, Node *payload) : NodeWithChildren<2>(OpFree, eNodeListElem, elem, payload) {
 		NPRINT("NodeListElem(%p, %p) => %p\n", elem, payload, this);
 	}
 protected:
@@ -547,30 +518,30 @@ public:
     void writeWithMapKey(Node *mapNode, Node *keyNode, const MincValue &value);
 };
 
-class NodeSubscriptRead : public Node2Children, private Subscript
+class NodeSubscriptRead : public NodeWithChildren<2>, private Subscript
 {
 public:
-	NodeSubscriptRead(Node *n1, Node *n2) : Node2Children(OpFree, eNodeSubscriptRead, n1, n2) {
+	NodeSubscriptRead(Node *n1, Node *n2) : NodeWithChildren<2>(OpFree, eNodeSubscriptRead, n1, n2) {
 		NPRINT("NodeSubscriptRead(%p, %p) => %p\n", n1, n2, this);
 	}
 protected:
 	virtual Node*		doExct();
 };
 
-class NodeSubscriptWrite : public Node3Children, private Subscript
+class NodeSubscriptWrite : public NodeWithChildren<3>, private Subscript
 {
 public:
-	NodeSubscriptWrite(Node *n1, Node *n2, Node *n3) : Node3Children(OpFree, eNodeSubscriptWrite, n1, n2, n3) {
+	NodeSubscriptWrite(Node *n1, Node *n2, Node *n3) : NodeWithChildren<3>(OpFree, eNodeSubscriptWrite, n1, n2, n3) {
 		NPRINT("NodeSubscriptWrite(%p, %p, %p) => %p\n", n1, n2, n3, this);
 	}
 protected:
 	virtual Node*		doExct();
 };
 
-class NodeSubscriptOpAssign : public Node3Children, private Subscript, private OperationBase
+class NodeSubscriptOpAssign : public NodeWithChildren<3>, private Subscript, private OperationBase
 {
 public:
-    NodeSubscriptOpAssign(Node *n1, Node *n2, Node *n3, OpKind op) : Node3Children(op, eNodeSubscriptOpAssign, n1, n2, n3) {
+    NodeSubscriptOpAssign(Node *n1, Node *n2, Node *n3, OpKind op) : NodeWithChildren<3>(op, eNodeSubscriptOpAssign, n1, n2, n3) {
         NPRINT("NodeSubscriptOpAssign(%p, %p, %p, op=%d) => %p\n", n1, n2, n3, op, this);
     }
 protected:
@@ -593,31 +564,31 @@ private:
     const char *_memberName;
 };
 
-class NodeIf : public Node2Children
+class NodeIf : public NodeWithChildren<2>
 {
 public:
-	NodeIf(Node *n1, Node *n2) : Node2Children(OpFree, eNodeIf, n1, n2) {
+	NodeIf(Node *n1, Node *n2) : NodeWithChildren<2>(OpFree, eNodeIf, n1, n2) {
 		NPRINT("NodeIf(%p, %p) => %p\n", n1, n2, this);
 	}
 protected:
 	virtual Node*		doExct();
 };
 
-class NodeIfElse : public Node3Children
+class NodeIfElse : public NodeWithChildren<3>
 {
 public:
-	NodeIfElse(Node *n1, Node *n2, Node *n3) : Node3Children(OpFree, eNodeIfElse, n1, n2, n3) {
+	NodeIfElse(Node *n1, Node *n2, Node *n3) : NodeWithChildren<3>(OpFree, eNodeIfElse, n1, n2, n3) {
 		NPRINT("NodeIfElse(%p, %p, %p) => %p\n", n1, n2, n3, this);
 	}
 protected:
 	virtual Node*		doExct();
 };
 
-class NodeFor : public Node3Children
+class NodeFor : public NodeWithChildren<3>
 {
 	Node *_child4;
 public:
-	NodeFor(Node *n1, Node *n2, Node *n3, Node *n4) : Node3Children(OpFree, eNodeFor, n1, n2, n3), _child4(n4) {
+	NodeFor(Node *n1, Node *n2, Node *n3, Node *n4) : NodeWithChildren<3>(OpFree, eNodeFor, n1, n2, n3), _child4(n4) {
 		NPRINT("NodeFor(%p, %p, %p, <e4>) => %p\n", n1, n2, n3, this);
         n4->ref();
 	}
@@ -626,20 +597,20 @@ protected:
 	virtual Node*		doExct();
 };
 
-class NodeWhile : public Node2Children
+class NodeWhile : public NodeWithChildren<2>
 {
 public:
-	NodeWhile(Node *n1, Node *n2) : Node2Children(OpFree, eNodeWhile, n1, n2) {
+	NodeWhile(Node *n1, Node *n2) : NodeWithChildren<2>(OpFree, eNodeWhile, n1, n2) {
 		NPRINT("NodeWhile(%p, %p) => %p\n", n1, n2, this);
 	}
 protected:
 	virtual Node*		doExct();
 };
 
-class NodeTernary : public Node3Children
+class NodeTernary : public NodeWithChildren<3>
 {
 public:
-    NodeTernary(Node *n1, Node *n2, Node *n3) : Node3Children(OpFree, eNodeTernary, n1, n2, n3) {
+    NodeTernary(Node *n1, Node *n2, Node *n3) : NodeWithChildren<3>(OpFree, eNodeTernary, n1, n2, n3) {
         NPRINT("NodeTernary(%p, %p, %p) => %p\n", n1, n2, n3, this);
     }
 protected:
@@ -718,10 +689,10 @@ protected:
 // NodeCaseLabelList compose two such match-reporters, so the whole tree evaluates via exct() alone.
 
 // child(0) = switch condition; child(1) = clause tree (a clause or a NodeCaseClauseList).
-class NodeSwitch : public Node2Children
+class NodeSwitch : public NodeWithChildren<2>
 {
 public:
-	NodeSwitch(Node *condition, Node *clauses) : Node2Children(OpFree, eNodeSwitch, condition, clauses) {
+	NodeSwitch(Node *condition, Node *clauses) : NodeWithChildren<2>(OpFree, eNodeSwitch, condition, clauses) {
 		NPRINT("NodeSwitch(%p, %p) => %p\n", condition, clauses, this);
 	}
 protected:
@@ -729,10 +700,10 @@ protected:
 };
 
 // child(0) = earlier clauses, child(1) = this clause.  First match wins (tests child(0) first).
-class NodeCaseClauseList : public Node2Children
+class NodeCaseClauseList : public NodeWithChildren<2>
 {
 public:
-	NodeCaseClauseList(Node *earlier, Node *clause) : Node2Children(OpFree, eNodeCaseClauseList, earlier, clause) {
+	NodeCaseClauseList(Node *earlier, Node *clause) : NodeWithChildren<2>(OpFree, eNodeCaseClauseList, earlier, clause) {
 		NPRINT("NodeCaseClauseList(%p, %p) => %p\n", earlier, clause, this);
 	}
 protected:
@@ -740,10 +711,10 @@ protected:
 };
 
 // child(0) = label matcher (a NodeCaseLabel or NodeCaseLabelList), child(1) = body block.
-class NodeCaseClause : public Node2Children
+class NodeCaseClause : public NodeWithChildren<2>
 {
 public:
-	NodeCaseClause(Node *labels, Node *body) : Node2Children(OpFree, eNodeCaseClause, labels, body) {
+	NodeCaseClause(Node *labels, Node *body) : NodeWithChildren<2>(OpFree, eNodeCaseClause, labels, body) {
 		NPRINT("NodeCaseClause(%p, %p) => %p\n", labels, body, this);
 	}
 protected:
@@ -751,10 +722,10 @@ protected:
 };
 
 // child(0) = earlier labels, child(1) = this label.  Matches if either matches (label grouping).
-class NodeCaseLabelList : public Node2Children
+class NodeCaseLabelList : public NodeWithChildren<2>
 {
 public:
-	NodeCaseLabelList(Node *earlier, Node *label) : Node2Children(OpFree, eNodeCaseLabelList, earlier, label) {
+	NodeCaseLabelList(Node *earlier, Node *label) : NodeWithChildren<2>(OpFree, eNodeCaseLabelList, earlier, label) {
 		NPRINT("NodeCaseLabelList(%p, %p) => %p\n", earlier, label, this);
 	}
 protected:
