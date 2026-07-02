@@ -930,15 +930,6 @@ static MincValue list_max(MincList *inList)
     return val;
 }
 
-static MincValue list_copy(MincList *inList)
-{
-    MincList *listCopy = new MincList(inList->len);
-    for (int item = 0; item < listCopy->len; ++item) {
-        listCopy->data[item] = inList->data[item];
-    }
-    return MincValue(listCopy);
-}
-
 int call_list_method(MincValue &object, const char *methodName, const MincValue arglist[], int nargs, MincValue *retval)
 {
     MincList *theList = (MincList *)object;
@@ -963,9 +954,6 @@ int call_list_method(MincValue &object, const char *methodName, const MincValue 
             minc_die("%s: empty list", methodName);
         }
         *retval = list_max(theList);
-    }
-    else if (strcmp(methodName, "copy") == 0) {
-        *retval = list_copy(theList);
     }
     else {
         found = 0;
@@ -1036,6 +1024,12 @@ int call_object_method(MincValue &object, const char *methodName, const MincValu
             minc_die("%s: expected no arguments, got %d", methodName, nargs);
         }
         *retval = (MincString) _minc_type((const MincValue *) &object, 1);
+    }
+    else if (strcmp(methodName, "copy") == 0) {
+        if (nargs != 0) {
+            minc_die("%s: expected no arguments, got %d", methodName, nargs);
+        }
+        *retval = object.copy();
     }
     // Check for list-specific methods
     else if (object.dataType() == MincListType) {

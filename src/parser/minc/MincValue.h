@@ -24,6 +24,7 @@ class MincList : public MincObject, public RefCounted
 {
 public:
     MincList(int len=0);
+    MincList *copy() const;     // shallow (one-level) copy
     void resize(int newLen);
     bool removeAtIndex(int itemIndex);
     bool insertAtIndex(const MincValue &item, int itemIndex);
@@ -48,6 +49,7 @@ private:
     };
 public:
     MincMap();
+    MincMap *copy() const;      // shallow (one-level) copy
     int len() const { return (int) map.size(); }
     bool contains(const MincValue &element);
     bool remove(const MincValue &element);
@@ -66,6 +68,7 @@ class MincStruct : public MincObject, public RefCounted
 {
 public:
     MincStruct(const char *typeName, const char *baseTypeName=NULL) : _typeName(typeName), _baseTypeName(baseTypeName), _memberList(NULL) {}
+    MincStruct *copy() const;   // new instance, members shallow-copied
     const char *typeName() const { return _typeName; }
     const char *baseTypeName() const { return _baseTypeName; }
     Symbol *    addMember(const char *name, const MincValue &value, int scope, const char *structTypeName);
@@ -74,6 +77,7 @@ public:
     void        print();
 protected:
     virtual ~MincStruct();
+    void        linkMember(Symbol *memberSym);      // append to _memberList in order
 protected:
     const char *    _typeName;
     const char *    _baseTypeName;
@@ -155,6 +159,7 @@ public:
     bool operator <= (const MincValue &rhs) const;
     bool operator >= (const MincValue &rhs) const;
     
+    MincValue       copy() const;   // shallow copy; new instance for container types, shared otherwise
     MincDataType    dataType() const { return type; }
     bool isZero() const { return _u.raw == 0ULL; }
     void zero() { _u.list = NULL; }        // zeroes without changing type

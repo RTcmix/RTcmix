@@ -47,6 +47,18 @@ MincList::~MincList()
 #endif
 }
 
+// Shallow copy: new list, elements copied as plain MincValues (reference-type elements shared/ref'd).
+
+MincList *
+MincList::copy() const
+{
+    MincList *listCopy = new MincList(len);
+    for (int i = 0; i < len; ++i) {
+        listCopy->data[i] = data[i];
+    }
+    return listCopy;
+}
+
 void
 MincList::resize(int newLen)
 {
@@ -187,6 +199,16 @@ MincMap::~MincMap()
 #endif
 }
 
+// Shallow copy: new map; std::map assignment copies each key/value MincValue (reference-type entries shared/ref'd).
+
+MincMap *
+MincMap::copy() const
+{
+    MincMap *mapCopy = new MincMap();
+    mapCopy->map = map;
+    return mapCopy;
+}
+
 bool MincMap::contains(const MincValue &element)
 {
     return map.count(element) > 0;
@@ -242,7 +264,13 @@ Symbol * MincStruct::addMember(const char *name, const MincValue &value, int sco
         memberSym->initAsStruct(structType);
     }
 #endif
-    // Ugly, but lets us put them on in order
+    linkMember(memberSym);
+    return memberSym;
+}
+
+// Append a member symbol to the end of _memberList.
+void MincStruct::linkMember(Symbol *memberSym)
+{
     if (_memberList == NULL) {
         _memberList = memberSym;
     }
@@ -251,7 +279,22 @@ Symbol * MincStruct::addMember(const char *name, const MincValue &value, int sco
         for (member = _memberList; member->next != NULL; member = member->next) {}
         member->next = memberSym;
     }
-    return memberSym;
+}
+
+// Shallow copy: new struct instance with a fresh member symbol per member, each holding a plain copy
+// of the source member's value (reference-type members shared/ref'd, matching list/map copy).
+
+MincStruct *
+MincStruct::copy() const
+{
+    MincStruct *structCopy = new MincStruct(_typeName, _baseTypeName);
+    for (Symbol *member = _memberList; member != NULL; member = member->next) {
+        Symbol *memberSym = Symbol::create(member->name());
+        memberSym->setValue(member->value());
+        memberSym->_scope = member->scope();
+        structCopy->linkMember(memberSym);
+    }
+    return structCopy;
 }
 
 Symbol * MincStruct::lookupMember(const char *name)
@@ -488,6 +531,24 @@ void MincValue::doCopy(const MincValue &rhs)
 bool MincValue::validType(unsigned allowedTypes) const
 {
     return ((type & allowedTypes) == type);
+}
+
+// Returns a shallow copy.  Container types (list, map, struct) return a new instance whose elements
+// are shared; all other types (float, string, handle, function) are returned as-is (shared by value
+// or by reference).  NULL container pointers pass through unchanged.
+
+MincValue MincValue::copy() const
+{
+    switch (type) {
+        case MincListType:
+            return _u.list ? MincValue(_u.list->copy()) : *this;
+        case MincMapType:
+            return _u.map ? MincValue(_u.map->copy()) : *this;
+        case MincStructType:
+            return _u.mstruct ? MincValue(_u.mstruct->copy()) : *this;
+        default:
+            return *this;
+    }
 }
 
 void MincValue::print() const
