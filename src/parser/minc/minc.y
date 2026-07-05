@@ -71,6 +71,7 @@ static void     decrSwitchLevel();
 static void     setStructName(const char *name);
 static Node * declare(MincDataType type);
 static Node * declareStructs(const char *typeName);
+static Node * declareNullStructs(const char *typeName);
 static Node * initializeStruct(const char *typeName, Node *initList);
 static Node * parseArgumentQuery(const char *text, int *pOutErr);
 static Node * parseScoreArgument(const char *text, int *pOutErr);
@@ -103,7 +104,7 @@ static Node * go(Node * t1);
 %token <ival> TOK_METHOD;
 %token <ival> TOK_IDENT TOK_NUM TOK_ARG_QUERY TOK_ARG TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_SWITCH TOK_CASE TOK_DEFAULT
-%token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
+%token <ival> TOK_TRUE TOK_FALSE TOK_STRING TOK_NULL '{' '}'
 
 %type  <node> stml stmt rstmt expl exp expblk str ret bstml obj fexp fexpl func fcall mcall subscript ternary
 %type  <node> decl fdecl sdecl hdecl ldecl mapdecl structdecl structinit mfuncdecl arg argl funcdef fblock fargl funcname mbr mbrl structdef methodname methoddef
@@ -517,6 +518,7 @@ structdecl: TOK_STRUCT_DECL id idl    { $$ = go(declareStructs($2)); idcount = 0
 
 /* A structinit is a struct decl plus an initializer */
 structinit: TOK_STRUCT_DECL id idl '=' expblk {   MPRINT("structinit: struct <type> id = expblk -> stmt"); $$ = go(initializeStruct($2, $5)); idcount = 0; }
+    | TOK_STRUCT_DECL id idl '=' TOK_NULL {   MPRINT("structinit: struct <type> id = null -> stmt"); $$ = go(declareNullStructs($2)); idcount = 0; }
 
 /* Rules for declaring and defining functions and methods */
 
@@ -695,6 +697,18 @@ static Node * declareStructs(const char *typeName)
     Node * t = new NodeNoop();    // end of the list
     for (int i = 0; i < idcount; i++) {
         Node * decl = new NodeStructDecl(idlist[i], typeName);
+        t = new NodeSeq(t, decl);
+    }
+    return t;
+}
+
+static Node * declareNullStructs(const char *typeName)
+{
+    MPRINT2("declareNullStructs(typeName='%s', idcount=%d)", typeName, idcount);
+    assert(idcount > 0);
+    Node * t = new NodeNoop();    // end of the list
+    for (int i = 0; i < idcount; i++) {
+        Node * decl = new NodeStructDecl(idlist[i], typeName, NULL, /*declareNull=*/true);
         t = new NodeSeq(t, decl);
     }
     return t;

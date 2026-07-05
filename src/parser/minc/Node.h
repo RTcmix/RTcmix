@@ -633,8 +633,8 @@ private:
 class NodeStructDecl : public Node1Child
 {
 public:
-    NodeStructDecl(const char *name, const char *typeName, Node *initializerList=NULL) : Node1Child(OpFree, eNodeStructDecl, initializerList),
-        _symbolName(name), _typeName(typeName) {
+    NodeStructDecl(const char *name, const char *typeName, Node *initializerList=NULL, bool declareNull=false) : Node1Child(OpFree, eNodeStructDecl, initializerList),
+        _symbolName(name), _typeName(typeName), _declareNull(declareNull) {
         this->_type = MincStructType;
         NPRINT("NodeStructDecl('struct %s %s') => %p\n", _typeName, _symbolName, this);
     }
@@ -643,6 +643,7 @@ protected:
 private:
     const char *    _symbolName;
     const char *    _typeName;
+    bool            _declareNull;   // if true, install a NULL struct instead of instantiating
 };
 
 class NodeFuncDecl : public Node

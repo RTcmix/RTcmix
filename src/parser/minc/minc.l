@@ -138,6 +138,7 @@ num   {dig}+
 <INIT>false             return TOK_FALSE;
 <INIT>FALSE             return TOK_FALSE;
 <INIT>struct            return TOK_STRUCT_DECL;
+<INIT>null              return TOK_NULL;
 <INIT>structbase        return TOK_BASE_DECL;
 <INIT>float             return TOK_FLOAT_DECL;
 <INIT>string            return TOK_STRING_DECL;

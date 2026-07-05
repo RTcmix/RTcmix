@@ -2236,7 +2236,10 @@ Node *    NodeStructDecl::doExct()
         if (!sym) {
             sym = installSymbol(_symbolName, NO);   // install sym at current scope
             MincList *initList = (initializers) ? (MincList *)initializers->value() : NULL;
-            sym->initAsStruct(structType, initList);
+            if (_declareNull)
+                sym->setValue(MincValue(MincStructType));   // typed NULL struct, no members
+            else
+                sym->initAsStruct(structType, initList);
         }
         else {
             if (sym->scope() == current_scope()) {
@@ -2254,7 +2257,10 @@ Node *    NodeStructDecl::doExct()
                 }
                 sym = installSymbol(_symbolName, NO);
                 MincList *initList = (initializers) ? (MincList *)initializers->value() : NULL;
-                sym->initAsStruct(structType, initList);
+                if (_declareNull)
+                    sym->setValue(MincValue(MincStructType));   // typed NULL struct, no members
+                else
+                    sym->initAsStruct(structType, initList);
             }
         }
         this->setSymbol(sym);
