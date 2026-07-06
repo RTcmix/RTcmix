@@ -30,8 +30,10 @@ if_else_scope.sco \
 list_as_object.sco \
 list_compare.sco \
 list_increment_element.sco \
+list_method_copy.sco \
 list_operate_element.sco \
 list_read_write.sco \
+map_method_copy.sco \
 maptest1.sco \
 maptest2.sco \
 maptest3.sco \
@@ -53,6 +55,7 @@ newfunction01.sco \
 newfunction02.sco \
 newfunction03.sco \
 null_list.sco \
+null_struct_decl.sco \
 object_as_listelem.sco \
 object_methods.sco \
 object_test01.sco \
@@ -77,6 +80,7 @@ struct_copy.sco \
 struct_increment_element.sco \
 struct_increment_element_via_method.sco \
 struct_initializer.sco \
+struct_method_copy.sco \
 struct_var_scope.sco \
 struct_with_same_as_member.sco \
 struct01.sco \
