@@ -45,20 +45,21 @@ typedef std::vector<CancelInfo>::iterator CancelIter;
 static bool sCancelPending = false;
 static Lockable sCancelLock;
 
-static void setCancel(int channel, int controllerNumber)
+static void setCancel(CONTROLLER *ctrlr, int channel, int controllerNumber)
 {
     AutoLock a(sCancelLock);
+    PRINT("setCancel(%p, %d, %d): cancel request pushed to stack\n", ctrlr, channel, controllerNumber);
     sPendingCancels.push_back(CancelInfo(channel, controllerNumber));
     sCancelPending = true;
 }
 
-static bool wasCancelled(int channel, int controllerNumber)
+static bool wasCancelled(CONTROLLER *ctrlr, int channel, int controllerNumber)
 {
     if (sCancelPending) {           // NOTE!! For now, checking this outside the lock
         AutoLock a(sCancelLock);
         CancelIter ci = std::find(sPendingCancels.begin(), sPendingCancels.end(), CancelInfo(channel, controllerNumber));
         if (ci != sPendingCancels.end()) {
-            PRINT("wasCancelled(%d, %d): sCancelPending was set and cancel request found\n", channel, controllerNumber);
+            PRINT("wasCancelled(%p, %d, %d): sCancelPending was set and cancel request found\n", ctrlr, channel, controllerNumber);
             sPendingCancels.erase(ci);
             sCancelPending = !sPendingCancels.empty();  // if NO cancels waiting, unset flag
             return true;
@@ -123,6 +124,9 @@ int CONTROLLER::init(double p[], int n_args)
 }
 
 void CONTROLLER::doStart(FRAMETYPE frameOffset) {
+    if (wasCancelled(this, _midiChannel, _controllerNumber)) {
+        rtcmix_warn("CONTROLLER", "Controller cancelled before its start time - ignoring");
+    }
     if (!_cancelPending) {
         long timestamp = getEventTimestamp(frameOffset);
         unsigned value = unsigned(0.5 + (_controllerValue * 127));
@@ -148,7 +152,7 @@ void CONTROLLER::doupdate(FRAMETYPE currentFrame)
     // The following happens in the CONTROLLER which was given the -1 value.
     if (_cancelPending) {
         PRINT("doUpdate(%p): Cancelling ctlr %d on channel %d (curframe %d)\n", this, _controllerNumber, _midiChannel, (int)currentFrame);
-        setCancel(_midiChannel, _controllerNumber);     // set up the globals to indicate cancel-in-progress
+        setCancel(this, _midiChannel, _controllerNumber);     // set up the globals to indicate cancel-in-progress
         _cancelPending = false;
         _cancelled = true;      // The next call to doupdate() will just return below
         setendsamp(0);          // Cause this inst to exit ASAP
@@ -160,7 +164,7 @@ void CONTROLLER::doupdate(FRAMETYPE currentFrame)
     _controllerValue = p[4];
 
     // This happens in the CONTROLLER which picks up the cancel request
-    if (wasCancelled(_midiChannel, _controllerNumber)) {
+    if (wasCancelled(this, _midiChannel, _controllerNumber)) {
         PRINT("doUpdate(%p): Ctlr %d on channel %d was cancelled (curframe %d)\n", this, _controllerNumber, _midiChannel, (int)currentFrame);
         _cancelled = true;  // avoids duplicate messages
         setendsamp(0);
