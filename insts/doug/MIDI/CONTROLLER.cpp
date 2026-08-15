@@ -125,7 +125,7 @@ int CONTROLLER::init(double p[], int n_args)
 
 void CONTROLLER::doStart(FRAMETYPE frameOffset) {
     if (wasCancelled(this, _midiChannel, _controllerNumber)) {
-        rtcmix_warn("CONTROLLER", "Controller cancelled before its start time - ignoring");
+//        rtcmix_warn("CONTROLLER", "Controller cancelled before its start time - ignoring");
     }
     if (!_cancelPending) {
         long timestamp = getEventTimestamp(frameOffset);
