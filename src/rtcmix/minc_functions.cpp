@@ -263,6 +263,24 @@ double m_min(double p[], int n_args)
 	return(min);
 }
 
+double m_dmax(double p[], int n_args)
+{
+	int i;
+	double max = -1e+22;
+	for(i=0; i<n_args; i++)
+		if(p[i] > max) max=p[i];
+	return(max);
+}
+
+double m_dmin(double p[], int n_args)
+{
+	int i;
+	double min = 1e+22;
+	for(i=0; i<n_args; i++)
+		if(p[i] < min) min=p[i];
+	return(min);
+}
+
 double m_exit(double p[], int n_args)
 {
 	const char *message = DOUBLE_TO_STRING(p[0]);
