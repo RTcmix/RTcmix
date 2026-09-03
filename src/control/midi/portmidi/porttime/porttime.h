@@ -7,6 +7,9 @@
 
 /* Should there be a way to choose the source of time here? */
 
+#ifndef __porttime_h__
+#define __porttime_h__
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,4 +36,6 @@ PtTimestamp Pt_Time();
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif

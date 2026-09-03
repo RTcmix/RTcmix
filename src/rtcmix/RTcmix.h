@@ -87,6 +87,7 @@ public:
 	static int chans() { return NCHANS; }
 	static void setBufTimeOffset(float inOffset, bool inRunToOffset);
 	static FRAMETYPE getElapsedFrames() { return elapsed + bufsamps(); }
+	static FRAMETYPE getElapsed() { return elapsed; }	// used by RTcmixMIDI
 	static bool outputOpen() { return rtfileit != -1; }
 	static bool rtsetparams_was_called() { return rtsetparams_called; }
 	
@@ -206,7 +207,6 @@ protected:
 	static int checkfunc(const char *funcname, const Arg arglist[], int nargs, Arg *retval);
 	static int findAndLoadFunction(const char *funcname);
 	static void freefuncs();
-	static FRAMETYPE getElapsed() { return elapsed; }
 
 protected:
 	static int 		NCHANS;

@@ -382,7 +382,8 @@ void RTcmixMIDIOutput::_midiCallback(PtTimestamp timestamp, void *context)
 
 }
 
-RTcmixMIDIOutput::RTcmixMIDIOutput(const char *portname) : _portname(portname), _deviceID(0), _outstream(NULL)
+RTcmixMIDIOutput::RTcmixMIDIOutput(const char *portname)
+	: _portname(portname), _deviceID(0), _midiTimeStartFrame(0), _outstream(NULL)
 {
     
 }
@@ -397,6 +398,14 @@ RTcmixMIDIOutput::~RTcmixMIDIOutput()
     Pt_Stop();
 #endif
     Pm_Terminate();
+}
+
+long RTcmixMIDIOutput::audioTimeProc(void *timeInfo)
+{
+	RTcmixMIDIOutput *self = static_cast<RTcmixMIDIOutput *>(timeInfo);
+
+	const FRAMETYPE frames = RTcmix::getElapsed() - self->_midiTimeStartFrame;
+	return long((1000.0 * frames) / RTcmix::sr());
 }
 
 int RTcmixMIDIOutput::init()
@@ -442,8 +451,16 @@ int RTcmixMIDIOutput::init()
 
 int RTcmixMIDIOutput::start(long latency)
 {
+	_midiTimeStartFrame = RTcmix::getElapsed();
     PRINT("Opening Portmidi output stream with latency of %ld ms\n", latency);
-    PmError err = Pm_OpenOutput(&_outstream, _deviceID, NULL, INBUF_SIZE, NULL, NULL, latency);
+    PmError err = Pm_OpenOutput(&_outstream,
+    							_deviceID,
+    							NULL,
+    							INBUF_SIZE,
+    							NULL,
+    //							&RTcmixMIDIOutput::audioTimeProc,
+    							this,
+    							latency);
     if (err != pmNoError) {
         rterror(NULL,"Could not open MIDI output stream: %s.", Pm_GetErrorText(err));
         return -1;
@@ -502,9 +519,9 @@ void RTcmixMIDIOutput::sendControl(long timestamp, uchar chan, uchar control, un
 void RTcmixMIDIOutput::sendPitchBend(long timestamp, uchar chan, unsigned value)
 {
     PmEvent buffer;
-    uchar msb = (value >> 8) & 0xff;
-    uchar lsb = value & 0xff;
-    buffer.message = Pm_Message(make_status(kPitchBend, chan), lsb, msb);
+	uchar lsb = value & 0x7f;
+	uchar msb = (value >> 7) & 0x7f;
+	buffer.message = Pm_Message(make_status(kPitchBend, chan), lsb, msb);
     buffer.timestamp = timestamp;
     PRINT("RTcmixMIDIOutput::sendPitchBend: sending event with ts = %ld\n", timestamp);
     AutoLock al(this);
@@ -549,6 +566,7 @@ void RTcmixMIDIOutput::sendMIDIStart(long timestamp) {
     if (RTOption::sendMIDIRecordAutoStart()) {
         PRINT("RTcmixMIDIOutput::sendMIDIStart: sending MIDI ResetAllControllers and CC 119 ts = %ld\n", timestamp);
         startEvent.message = Pm_Message(make_status(kControl, 0), 119, 127);
+    	startEvent.timestamp = timestamp;
         Pm_Write(outstream(), &startEvent, 1);
     }
 

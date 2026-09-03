@@ -61,7 +61,7 @@ int PITCHBEND::init(double p[], int n_args)
 void PITCHBEND::doStart(FRAMETYPE frameOffset)
 {
     long timestamp = getEventTimestamp(frameOffset);
-    unsigned value = 16383.5 + unsigned(0.5 + (_bendValue * 16383));
+    unsigned value = unsigned(8192 + (_bendValue * 8191));
     PRINT("doStart sending pitch bend on chan %d: value %u at timestamp %ld\n", _midiChannel, value, timestamp);
     _outputPort->sendPitchBend(timestamp, (unsigned char)_midiChannel, value);
 }
@@ -88,7 +88,7 @@ void PITCHBEND::doupdate(FRAMETYPE currentFrame)
         newValue = 1.0;
     }
     if (newValue != _bendValue) {
-        unsigned value = 16383.5 + unsigned(0.5 + (_bendValue * 16383));
+        unsigned value = unsigned(8192 + (newValue * 8191));
         long timestamp = getEventTimestamp(currentFrame);
         PRINT("doUpdate sending pitch bend value %u with timestamp %ld ms\n", value, timestamp);
         _outputPort->sendPitchBend(timestamp, (unsigned char)_midiChannel, value);

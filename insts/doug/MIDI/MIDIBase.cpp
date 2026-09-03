@@ -68,13 +68,10 @@ int MIDIBase::configure()
 int MIDIBase::run()
 {
     _runStartFrame = currentFrame();
-    // We only do work for the first frame.  We access the offset into the audio buffer via the base
-    // class 'output_offset'
-    int frameOffset = 0;
+    // We only do this call the first frame.
     if (_runStartFrame == 0) {
-        frameOffset = this->output_offset;
-        PRINT("MIDIBase::run(%p) calling doStart(frameOffset = %d)\n", this, frameOffset);
-        doStart(frameOffset);
+        PRINT("MIDIBase::run(%p) calling doStart()\n", this);
+        doStart(0);
     }
 
     // Note:  We cannot cache currentFrame() because it updates with increment()
@@ -89,13 +86,13 @@ int MIDIBase::run()
     for (int fr = 0; fr < frameCount; ++fr) {
         int current = currentFrame();
         if (--_branch <= 0) {
-            doupdate(frameOffset+fr);
+            doupdate(fr);
             _branch = getSkip();
         }
         increment();
         if (current == end) {
-            PRINT("MIDIBase::run(%p) calling doStop(frameOffset = %d)\n", this, frameOffset+fr);
-            doStop(frameOffset+fr);
+            PRINT("MIDIBase::run(%p) calling doStop(%d)\n", this, fr);
+            doStop(fr);
             break;
         }
     }

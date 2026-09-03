@@ -11,6 +11,7 @@
 #include <pmutil.h>
 #include <RTMIDIOutput.h>
 #include <Lockable.h>
+#include <rt_types.h>
 #include <list>
 
 #define SLEEP_MSEC			1		// How long to nap between polling of events
@@ -122,10 +123,13 @@ protected:
     static void _midiCallback(PtTimestamp timestamp, void *context);
     inline PmStream *outstream() { return _outstream; }
 private:
-    const char *                        _portname;
+	static long audioTimeProc(void *timeInfo);
+
+	const char *                        _portname;
     int                                 _deviceID;
-    PmStream *                          _outstream;
-    typedef std::pair<uchar, uchar> MidiItem;
+	FRAMETYPE							_midiTimeStartFrame;
+	PmStream *                          _outstream;
+    typedef std::pair<uchar, uchar>		MidiItem;
     std::list<MidiItem>                 _noteList;
 };
 
