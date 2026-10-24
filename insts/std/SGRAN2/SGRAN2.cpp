@@ -23,6 +23,7 @@
         p19: wavetable**
         p20: grainEnv**
         p21: grainLimit=1500 (optional)
+        p22: random seed (optional)
 
         * may receive pfield values
         ** must be passed pfield maketables.
@@ -72,7 +73,7 @@ int SGRAN2::init(double p[], int n_args)
 
 	if (n_args < 21)
 		return die("SGRAN2", "21 arguments are required");
-	else if (n_args > 22)
+	else if (n_args > 23) // mmh added seed
 		return die("SGRAN2", "too many arguments");
 	grainEnvLen = 0;
 	wavetableLen = 0;
@@ -96,6 +97,11 @@ int SGRAN2::init(double p[], int n_args)
 	}
 	else
 		grainLimit = MAXGRAINS;
+    if (p[22] > 0)
+       srrand(p[22]);
+    else
+       srrand(3);
+
 
 	return nSamps();
 }

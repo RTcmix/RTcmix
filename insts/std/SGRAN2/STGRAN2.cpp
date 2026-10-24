@@ -25,7 +25,8 @@ Args:
     p20: grainEnv**
     p21: bufferSize=1 (size of the buffer used to choose new grains)*
     p22: maxGrains=1500
-    p23: inchan=0
+    p23: inchan=0 (optional)
+    p24: random seed (optional) // mmh added 10/26
     
     * may receive a table or some other pfield source
     ** must be passed as a pfield maketable.
@@ -159,7 +160,7 @@ int STGRAN2::init(double p[], int n_args)
 	if (n_args < 21)
 		return die("STGRAN2", "21 arguments are required");
 
-	else if (n_args > 24)
+	else if (n_args > 25)
 		return die("STGRAN2", "too many arguments");
 
 	if (inputChannels() > 1)
@@ -190,6 +191,10 @@ int STGRAN2::init(double p[], int n_args)
 
 	if (inchan >= inputChannels())
 		return die("MYINST", "You asked for channel %d of a %d-channel input.",								                                             inchan, inputChannels());
+    if (p[24] > 0)
+       srrand(p[24]);
+    else
+       srrand(3);
 
 	newGrainCounter = 0;
 

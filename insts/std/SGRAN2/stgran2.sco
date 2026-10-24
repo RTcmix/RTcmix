@@ -26,7 +26,8 @@ load("./libSTGRAN2.so")
                 p20: grainEnv**
                 p21: bufferSize=1 (size of the buffer used to choose new grains)*
 		p22: maxGrains=1500
-		p23: inchan=0
+		p23: inchan=0 
+		p24: random seed
 		
 		* may receive a table or some other pfield source
                 ** must be passed as a pfield maketable.  
@@ -47,9 +48,9 @@ durmid = 0.03
 durhi = 0.1
 durti = 1
 
-translo = -1.00
+translo = -.12
 transmid = 0
-transhi = 1.00
+transhi = .12
 transti = 2
 
 panlo = 0
@@ -61,6 +62,11 @@ env = maketable("window", 1000, "hanning") // grain env
 
 buffer_size = makeLFO("square", .5, 0.02, 1) // audio buffer
 
-STGRAN2(outskip, inskip, dur, 0.2 * amp, ratelo, ratemid, ratehi, rateti, durlo, durmid, durhi, durti, translo, transmid, transhi, transti, panlo, panmid, panhi, panti, env, buffer_size)
+maxgrains = 1500
+inchan = 0
+
+seed = 9876
+
+STGRAN2(outskip, inskip, dur, 0.2 * amp, ratelo, ratemid, ratehi, rateti, durlo, durmid, durhi, durti, translo, transmid, transhi, transti, panlo, panmid, panhi, panti, env, buffer_size, maxgrains, inchan, seed )
 
 
