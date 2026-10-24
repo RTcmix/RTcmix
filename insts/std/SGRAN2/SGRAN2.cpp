@@ -99,8 +99,6 @@ int SGRAN2::init(double p[], int n_args)
 		grainLimit = MAXGRAINS;
     if (p[22] > 0)
        srrand(p[22]);
-    else
-       srrand(3);
 
 
 	return nSamps();

@@ -191,11 +191,10 @@ int STGRAN2::init(double p[], int n_args)
 
 	if (inchan >= inputChannels())
 		return die("MYINST", "You asked for channel %d of a %d-channel input.",								                                             inchan, inputChannels());
+    
     if (p[24] > 0)
        srrand(p[24]);
-    else
-       srrand(3);
-
+    
 	newGrainCounter = 0;
 
 	// init tables
